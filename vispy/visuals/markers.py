@@ -6,12 +6,11 @@
 """Marker Visual and shader definitions."""
 
 import warnings
-from enum import Enum, auto
 
 import numpy as np
 
 from ..color import ColorArray
-from ..gloo import VertexBuffer, _check_valid
+from ..gloo import VertexBuffer
 from .shaders import Function, Variable
 from .visual import Visual
 
@@ -27,18 +26,22 @@ attribute vec4 a_fg_color;
 attribute vec4 a_bg_color;
 attribute float a_edgewidth;
 attribute float a_size;
+attribute float a_symbol;
 
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
 varying float v_depth_middle;
 varying float v_alias_ratio;
+varying float v_symbol;
 
 float big_float = 1e10; // prevents numerical imprecision
 
 void main (void) {
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
+    // fluctuations can mess "fake integers" up, so we do +0.5 and floor to make sure it's right
+    v_symbol = a_symbol + 0.5;
 
     vec4 pos = vec4(a_position, 1);
     vec4 fb_pos = $visual_to_framebuffer(pos);
@@ -77,7 +80,7 @@ void main (void) {
 """
 
 
-_FRAGMENT_SHADER = """
+_FRAGMENT_SHADER = """#version 120
 uniform vec3 u_light_position;
 uniform vec3 u_light_color;
 uniform float u_light_ambient;
@@ -90,6 +93,7 @@ varying vec4 v_bg_color;
 varying float v_edgewidth;
 varying float v_depth_middle;
 varying float v_alias_ratio;
+varying float v_symbol;
 
 void main()
 {
@@ -103,7 +107,7 @@ void main()
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
-    float r = $marker(gl_PointCoord, size);
+    float r = $marker(gl_PointCoord, size, int(v_symbol));
 
     // it takes into account an antialising layer
     // of size u_antialias inside the edge
@@ -199,7 +203,7 @@ void main()
 """
 
 
-symbols = {
+symbol_shaders = {
     'disc': """
         float r = length((pointcoord.xy - vec2(0.5,0.5))*size);
         r -= $v_size/2.;
@@ -301,6 +305,7 @@ symbols = {
     """,
 
     'tailed_arrow': """
+        const float sqrt2 = sqrt(2.);
         float half_size = $v_size/2.;
         float ady = abs(pointcoord.y -.5)*size;
         float dx = (pointcoord.x -.5)*size;
@@ -407,76 +412,6 @@ symbols = {
         return star;
     """,
 
-    # the following two markers needs x and y sizes
-    'rect': """
-        float x_boundaries = abs(pointcoord.x - 0.5)*size - $v_size.x/2.;
-        float y_boundaries = abs(pointcoord.y - 0.5)*size - $v_size.y/2.;
-        return max(x_boundaries, y_boundaries);
-    """,
-
-    'ellipse': """
-        float x = (pointcoord.x - 0.5)*size;
-        float y = (pointcoord.y - 0.5)*size;
-        // normalise radial distance (for edge and antialising to remain isotropic)
-        // Scaling factor is the norm of the gradient of the function defining
-        // the surface taken at a well chosen point on the edge of the ellipse
-        // f(x, y) = (sqrt(x^2/a^2 + y^2/b^2) = 0.5 in this case
-        // where a = v_size.x and b = v_size.y)
-        // The well chosen point on the edge of the ellipse should be the point
-        // whose normal points towards the current point.
-        // Below we choose a different point whose computation
-        // is simple enough to fit here.
-        float f = length(vec2(x / $v_size.x, y / $v_size.y));
-        // We set the default value of the norm so that
-        // - near the axes (x=0 or y=0 +/- 1 pixel), the norm is correct
-        //   (the computation below is unstable near the axes)
-        // - if the ellipse is a circle, the norm is correct
-        // - if we are deep in the interior of the ellipse the norm
-        //   is set to an arbitrary value (but is not used)
-        float norm = abs(x) < 1. ? 1./$v_size.y : 1./$v_size.x;
-        if (f > 1e-3 && abs($v_size.x - $v_size.y) > 1e-3
-            && abs(x) > 1. && abs(y) > 1.)
-        {
-            // Find the point x0, y0 on the ellipse which has the same hyperbola
-            // coordinate in the elliptic coordinate system linked to the ellipse
-            // (finding the right 'well chosen' point is too complicated)
-            // Visually it's nice, even at high eccentricities, where
-            // the approximation is visible but not ugly.
-            float a = $v_size.x/2.;
-            float b = $v_size.y/2.;
-            float C = max(a, b);
-            float c = min(a, b);
-            float focal_length = sqrt(C*C - c*c);
-            float fl2 = focal_length*focal_length;
-            float x2 = x*x;
-            float y2 = y*y;
-            float tmp = fl2 + x2 + y2;
-            float x0 = 0;
-            float y0 = 0;
-            if ($v_size.x > $v_size.y)
-            {
-                float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*x2)) / fl2;
-                cos2v = fract(cos2v);
-                x0 = a * sqrt(cos2v);
-                // v_size.x = focal_length*cosh m where m is the ellipse coordinate
-                y0 = b * sqrt(1-cos2v);
-                // v_size.y = focal_length*sinh m
-            }
-            else // $v_size.x < $v_size.y
-            {//exchange x and y axis for elliptic coordinate
-                float cos2v = 0.5 * (tmp - sqrt(tmp*tmp - 4.*fl2*y2)) / fl2;
-                cos2v = fract(cos2v);
-                x0 = a * sqrt(1-cos2v);
-                // v_size.x = focal_length*sinh m where m is the ellipse coordinate
-                y0 = b * sqrt(cos2v);
-                // v_size.y = focal_length*cosh m
-            }
-            vec2 normal = vec2(2.*x0/v_size.x/v_size.x, 2.*y0/v_size.y/v_size.y);
-            norm = length(normal);
-        }
-        return (f - 0.5) / norm;
-    """,
-
     'cross_lines': """
         //vbar
         float r1 = abs(pointcoord.x - 0.5)*size;
@@ -490,15 +425,16 @@ symbols = {
     """,
 }
 
-symbol = f"""
+# combine all the symbol shaders in a big if-else statement
+symbol_func = f"""
 float symbol(vec2 pointcoord, float size, int symbol) {{
    {' else'.join(
     f''' if (symbol == {i}) {{
-        # {name}
+        // {name}
         {shader}
     }}'''
-    for i, (name, shader) in enumerate(symbols.items())
-)}
+    for i, (name, shader) in enumerate(symbol_shaders.items())
+    )}
 }}"""
 
 # aliases
@@ -515,6 +451,11 @@ symbol_aliases = {
     'v': 'triangle_down',
     '*': 'star',
 }
+
+symbol_shader_values = {name: i for i, name in enumerate(symbol_shaders)}
+symbol_shader_values.update({
+    **{alias: symbol_shader_values[name] for alias, name in symbol_aliases.items()},
+})
 
 
 class MarkersVisual(Visual):
@@ -563,19 +504,21 @@ class MarkersVisual(Visual):
         'vertex': _VERTEX_SHADER,
         'fragment': _FRAGMENT_SHADER,
     }
-    _symbols = symbols
+    _symbol_shader_values = symbol_shader_values
+    _symbol_shader = symbol_func
 
-    def __init__(self, symbol='o', scaling=False, alpha=1, antialias=1, spherical=False,
+    def __init__(self, scaling=False, alpha=1, antialias=1, spherical=False,
                  light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
-        self._marker_fun = None
-        self._symbol = None
         self._data = None
 
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+        self._symbol_func = Function(self._symbol_shader)
+        self.shared_program.frag['marker'] = self._symbol_func
         self._v_size_var = Variable('varying float v_size')
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
+        self._symbol_func['v_size'] = self._v_size_var
 
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -584,7 +527,6 @@ class MarkersVisual(Visual):
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
-        self.symbol = symbol
         self.scaling = scaling
         self.antialias = antialias
         self.light_color = light_color
@@ -597,7 +539,7 @@ class MarkersVisual(Visual):
 
     def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
                  edge_color='black', face_color='white',
-                 symbol=None, scaling=None):
+                 symbol='o', scaling=None):
         """Set the data used to display this visual.
 
         Parameters
@@ -629,6 +571,10 @@ class MarkersVisual(Visual):
             if np.any(edge_width_rel < 0):
                 raise ValueError('edge_width_rel cannot be negative')
 
+        if symbol is not None:
+            if not np.all(np.isin(np.asarray(symbol), self.symbols)):
+                raise ValueError(f'symbols must one of {self.symbols}')
+
         if scaling is not None:
             warnings.warn(
                 "The scaling parameter is deprecated. Use MarkersVisual.scaling instead",
@@ -636,14 +582,6 @@ class MarkersVisual(Visual):
                 stacklevel=2,
             )
             self.scaling = scaling
-
-        if symbol is not None:
-            warnings.warn(
-                "The symbol parameter is deprecated. Use MarkersVisual.symbol instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.symbol = symbol
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -662,7 +600,8 @@ class MarkersVisual(Visual):
                                       ('a_fg_color', np.float32, 4),
                                       ('a_bg_color', np.float32, 4),
                                       ('a_size', np.float32),
-                                      ('a_edgewidth', np.float32)])
+                                      ('a_edgewidth', np.float32),
+                                      ('a_symbol', np.float32)])
             data['a_fg_color'] = edge_color
             data['a_bg_color'] = face_color
             if edge_width is not None:
@@ -671,49 +610,18 @@ class MarkersVisual(Visual):
                 data['a_edgewidth'] = size * edge_width_rel
             data['a_position'][:, :pos.shape[1]] = pos
             data['a_size'] = size
+
+            data['a_symbol'] = np.vectorize(self._symbol_shader_values.get)(symbol)
+
             self._data = data
-            if self._symbol is not None:
-                # If we have no symbol set, we skip drawing (_prepare_draw
-                # returns False). This causes the GLIR queue to not flush,
-                # and thus the GLIR queue fills with VBO DATA commands, resulting
-                # in a "memory leak". Thus only set the VertexBuffer data if we
-                # are actually going to draw.
-                self._vbo.set_data(data)
-                self.shared_program.bind(self._vbo)
+            self._vbo.set_data(data)
+            self.shared_program.bind(self._vbo)
 
         self.update()
 
     @property
     def symbols(self):
-        return list(self._marker_funcs)
-
-    @property
-    def symbol(self):
-        return self._symbol
-
-    @symbol.setter
-    def symbol(self, symbol):
-        if symbol == self._symbol:
-            return
-        if (symbol is not None and self._symbol is None and
-                self._data is not None):
-            # Allow user to configure symbol after a set_data call with
-            # symbol=None. This can break down if the user does a consecutive
-            # marker.symbol = 'disc'
-            # marker.symbol = None
-            # without drawing. At this point the memory leaking ensues
-            # but this case is unlikely/makes no sense.
-            self._vbo.set_data(self._data)
-            self.shared_program.bind(self._vbo)
-        self._symbol = symbol
-        if symbol is None:
-            self._marker_fun = None
-        else:
-            _check_valid('symbol', symbol, self._marker_funcs.keys())
-            self._marker_fun = Function(self._marker_funcs[symbol])
-            self._marker_fun['v_size'] = self._v_size_var
-            self.shared_program.frag['marker'] = self._marker_fun
-        self.update()
+        return list(self._symbol_shader_values)
 
     @property
     def scaling(self):
@@ -815,7 +723,7 @@ class MarkersVisual(Visual):
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
 
     def _prepare_draw(self, view):
-        if self._data is None or self._symbol is None:
+        if self._data is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
         view.view_program['u_scaling'] = self.scaling
