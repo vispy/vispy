@@ -396,8 +396,10 @@ class ImageVisual(Visual):
         if not isinstance(texture, Texture2D):
             raise ValueError(f'texture must be a Texture2D, got {texture.__class__}.')
         self._texture = texture
-        self._data_lookup_fn['texture'] = self._texture
+        if self._data_lookup_fn is not None:
+            self._data_lookup_fn['texture'] = self._texture
         self._need_colortransform_update = True
+        self._need_vertex_update = True
 
     def view(self):
         """Get the :class:`vispy.visuals.visual.VisualView` for this visual."""

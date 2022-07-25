@@ -363,7 +363,6 @@ class BaseTexture(GLObject):
         if offset is None:
             offset = tuple(0 for i in range(self._ndim))
         offset_slices = tuple(slice(i, None) for i in offset)
-        print(type(offset))
         self._glir.command('DATA', self._id, offset, self._data[offset_slices])
 
     def __getitem__(self, key):
