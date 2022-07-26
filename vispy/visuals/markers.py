@@ -496,8 +496,8 @@ class MarkersVisual(Visual):
         The color used to draw each symbol outline.
     face_color : Color | ColorArray
         The color used to draw each symbol interior.
-    symbol : str
-        The style of symbol to draw (see Notes).
+    symbol : str or array
+        The style of symbol used to draw each marker (see Notes).
     scaling : bool
         If set to True, marker scales when rezooming.
     alpha : float
@@ -559,7 +559,7 @@ class MarkersVisual(Visual):
 
     def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
                  edge_color='black', face_color='white',
-                 symbol='o', scaling=None):
+                 symbol='o'):
         """Set the data used to display this visual.
 
         Parameters
@@ -577,6 +577,8 @@ class MarkersVisual(Visual):
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
             The color used to draw each symbol interior.
+        symbol : str or array
+            The style of symbol used to draw each marker (see Notes).
         """
         if (edge_width is not None) + (edge_width_rel is not None) != 1:
             raise ValueError('exactly one of edge_width and edge_width_rel '
@@ -594,14 +596,6 @@ class MarkersVisual(Visual):
         if symbol is not None:
             if not np.all(np.isin(np.asarray(symbol), self.symbols)):
                 raise ValueError(f'symbols must one of {self.symbols}')
-
-        if scaling is not None:
-            warnings.warn(
-                "The scaling parameter is deprecated. Use MarkersVisual.scaling instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.scaling = scaling
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
