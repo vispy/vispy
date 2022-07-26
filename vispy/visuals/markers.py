@@ -5,8 +5,6 @@
 # -----------------------------------------------------------------------------
 """Marker Visual and shader definitions."""
 
-import warnings
-
 import numpy as np
 
 from ..color import ColorArray
