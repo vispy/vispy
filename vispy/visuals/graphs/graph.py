@@ -63,7 +63,7 @@ class GraphVisual(CompoundVisual):
     _arrow_kw_trans = dict(line_color='color', line_width='width')
     _node_kw_trans = dict(node_symbol='symbol', node_size='size',
                           border_color='edge_color', border_width='edge_width')
-    _node_properties_args = ('symbol',)
+    _node_properties_args = ()
 
     def __init__(self, adjacency_mat=None, directed=False, layout=None,
                  animate=False, line_color=None, line_width=None,
