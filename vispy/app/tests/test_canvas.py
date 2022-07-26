@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from vispy.app import Canvas
+from vispy.app import Canvas, MouseEvent
 from vispy.visuals import ImageVisual
 from vispy.testing import requires_application
 from vispy.visuals.transforms import STTransform
@@ -106,3 +106,17 @@ def test_blend_presets(preset):
             
         rgba_result = c.render()
         assert not np.allclose(rgba_result[..., :3], 0)
+
+
+@requires_application()
+@pytest.mark.parametrize("mouse_event_type, button, buttons, expected_button, expected_buttons", [
+    ('mouse_press', 1, [], 1, [1]),
+    ('mouse_release', 1, [1], 1, [1]),
+    # left click pressed and held, followed by a right click
+    ('mouse_press', 2, [1], 2, [1, 2]),
+    ('mouse_release', 2, [1, 2], 2, [1, 2]),
+])
+def test_mouse_event(mouse_event_type, button, buttons, expected_button, expected_buttons):
+    mev = MouseEvent(type=mouse_event_type, button=button, buttons=buttons)
+    assert mev.buttons == expected_buttons
+    assert mev.button == expected_button
