@@ -13,7 +13,7 @@ from .globject import GLObject
 from .util import check_enum
 
 
-def downcast_to_32(data, copy=False):
+def downcast_to_32bit_if_needed(data, copy=False):
     """Downcast to 32bit dtype if necessary."""
     dtype = np.dtype(data.dtype)
     if dtype.itemsize > 4:
@@ -330,7 +330,7 @@ class BaseTexture(GLObject):
     def _set_data(self, data, offset=None, copy=False):
         """Internal method for set_data."""
         # Copy if needed, check/normalize shape
-        data = downcast_to_32(data, copy=copy)
+        data = downcast_to_32bit_if_needed(data, copy=copy)
         data = self._normalize_shape(data)
 
         # Maybe resize to purge DATA commands?
