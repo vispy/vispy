@@ -8,7 +8,6 @@ from __future__ import division
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..gloo.texture import downcast_to_32bit_if_needed
 from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
@@ -388,9 +387,8 @@ class ImageVisual(Visual):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
             )
-        data = downcast_to_32bit_if_needed(data, copy=copy)
         # can the texture handle this data?
-        self._texture.check_data_format(data)
+        self._texture.check_data_format(data, copy=copy)
         if self._data is None or self._data.shape[:2] != data.shape[:2]:
             # Only rebuild if the size of the image changed
             self._need_vertex_update = True

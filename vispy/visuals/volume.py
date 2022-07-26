@@ -41,7 +41,6 @@ from functools import lru_cache
 
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture2D
 from ..gloo import VertexBuffer, IndexBuffer
-from ..gloo.texture import downcast_to_32bit_if_needed
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
@@ -843,10 +842,9 @@ class VolumeVisual(Visual):
             self._texture.set_clim(clim)
 
         # Apply to texture
-        vol = downcast_to_32bit_if_needed(vol, copy=copy)
         self._texture.check_data_format(vol)
         self._last_data = vol
-        self._texture.scale_and_set_data(vol, copy=False)
+        self._texture.scale_and_set_data(vol, copy=copy)
         self.shared_program['clim'] = self._texture.clim_normalized
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
