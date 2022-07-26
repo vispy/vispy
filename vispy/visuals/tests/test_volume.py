@@ -469,6 +469,7 @@ def test_minip_cutoff():
         assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
 
 
+@requires_pyopengl()
 @requires_application()
 def test_volume_set_data_different_dtype():
     size = (80, 80)
