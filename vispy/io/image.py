@@ -35,7 +35,7 @@ def _make_png(data, level=6):
         PNG formatted array
     """
     # Eventually we might want to use ext/png.py for this, but this
-    # routine *should* be faster b/c it's speacialized for our use case
+    # routine *should* be faster b/c it's specialized for our use case
 
     def mkchunk(data, name):
         if isinstance(data, np.ndarray):
