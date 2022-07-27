@@ -106,7 +106,7 @@ def update(ev):
     if index > 0 and index < 25:
         # update left panes rolling upwards
         noise = np.roll(noise, 1, axis=0)
-        image1.set_data(noise)
+        image1.set_data(noise, copy=True)
         curve1a.set_data(noise)
         curve1b.set_data(noise)
 
