@@ -382,13 +382,13 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = np.asarray(image)
+        data = np.array(image, copy=copy)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
             )
         # can the texture handle this data?
-        self._texture.check_data_format(data, copy=copy)
+        self._texture.check_data_format(data)
         if self._data is None or self._data.shape[:2] != data.shape[:2]:
             # Only rebuild if the size of the image changed
             self._need_vertex_update = True
@@ -602,7 +602,8 @@ class ImageVisual(Visual):
         except RuntimeError:
             pre_clims = "auto"
         pre_internalformat = self._texture.internalformat
-        self._texture.scale_and_set_data(self._data)
+        # copy was already made on `set_data` if requested
+        self._texture.scale_and_set_data(self._data, copy=False)
         post_clims = self._texture.clim_normalized
         post_internalformat = self._texture.internalformat
         # color transform needs rebuilding if the internalformat was changed
