@@ -306,7 +306,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
     def _scale_data_and_clim(self, data, copy=True):
         """Upload new data to the GPU, scaling if necessary."""
         # ensure dtype is the same as it was before, or funny things happen
-        # we use the `copy` value only here, to avoid copyign multiple times when True
+        # we use the `copy` value only here, to avoid copying multiple times when True
         data = np.array(data, dtype=self._data.dtype, copy=copy)
 
         clim = self._clim

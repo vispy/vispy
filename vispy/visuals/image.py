@@ -5,10 +5,11 @@
 
 from __future__ import division
 
+import warnings
+
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..gloo.texture import downcast_to_32
 from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
@@ -211,9 +212,8 @@ class ImageVisual(Visual):
         in vispy/gloo/glsl/misc/spatial_filters.frag
 
             * 'nearest': Default, uses 'nearest' with Texture interpolation.
-            * 'bilinear': uses 'linear' with Texture interpolation.
-            * 'linear': alias for 'bilinear'
-            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
+            * 'linear': uses 'linear' with Texture interpolation.
+            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'cubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
             * 'custom': uses the sampling kernel provided through 'custom_kernel'.
@@ -342,14 +342,13 @@ class ImageVisual(Visual):
         interpolation_fun = dict(zip(interpolation_names, fun))
         interpolation_names = tuple(sorted(interpolation_names))
 
-        # overwrite "nearest" and "bilinear" spatial-filters
+        # overwrite "nearest" and "linear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
         interpolation_fun['linear'] = hardware_lookup
-        # alias bilinear to linear for compatibility with Volume visual
-        # without breaking backward compatibility
-        interpolation_names = interpolation_names + ('bilinear',)
+        # alias bilinear to linear and bicubic to cubic (but deprecate)
+        interpolation_names = interpolation_names + ('bilinear', 'bicubic')
         return interpolation_names, interpolation_fun
 
     def _init_texture(self, data, texture_format, **texture_kwargs):
@@ -381,7 +380,7 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = downcast_to_32(image, copy=copy)
+        data = np.asarray(image)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
@@ -523,7 +522,20 @@ class ImageVisual(Visual):
         interpolation = self._interpolation
         # alias bilinear to linear
         if interpolation == 'bilinear':
+            warnings.warn(
+                "'bilinear' interpolation is Deprecated. Use 'linear' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             interpolation = 'linear'
+        # alias bicubic to cubic
+        if interpolation == 'bicubic':
+            warnings.warn(
+                "'bicubic' interpolation is Deprecated. Use 'cubic' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            interpolation = 'cubic'
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 

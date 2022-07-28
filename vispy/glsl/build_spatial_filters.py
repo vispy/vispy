@@ -55,7 +55,7 @@ Available filters:
   - Hermite (radius 1)
   - Kaiser (radius 1)
   - Quadric (radius 1.5)
-  - Bicubic (radius 2)
+  - Cubic (radius 2)
   - CatRom (radius 2)
   - Mitchell (radius 2)
   - Spline16 (radius 2)
@@ -202,9 +202,9 @@ class Quadric(SpatialFilter):
         return 0
 
 
-class Bicubic(SpatialFilter):
+class Cubic(SpatialFilter):
     """
-    Bicubic filter (radius = 2).
+    Cubic filter (radius = 2).
 
     Weight function::
 
@@ -579,7 +579,7 @@ def generate_filter_code(radius):
 def main():
     # Generate kernels texture (16 x 1024)
     filters = [Linear(), Hanning(), Hamming(), Hermite(), Kaiser(), Quadric(),
-               Bicubic(), CatRom(), Mitchell(), Spline16(), Spline36(), Gaussian(),
+               Cubic(), CatRom(), Mitchell(), Spline16(), Spline36(), Gaussian(),
                Bessel(), Sinc(), Lanczos(), Blackman()]
 
     n = 1024

@@ -38,10 +38,10 @@ from __future__ import annotations
 
 from typing import Optional
 from functools import lru_cache
+import warnings
 
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture2D
 from ..gloo import VertexBuffer, IndexBuffer
-from ..gloo.texture import downcast_to_32
 from . import Visual
 from .shaders import Function
 from ..color import get_colormap
@@ -617,7 +617,7 @@ class VolumeVisual(Visual):
 
             * 'nearest': Default, uses 'nearest' with Texture interpolation.
             * 'linear': uses 'linear' with Texture interpolation.
-            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
+            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'cubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
     texture_format : numpy.dtype | str | None
@@ -789,6 +789,8 @@ class VolumeVisual(Visual):
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
         interpolation_fun['linear'] = hardware_lookup
+        # alias bicubic to cubic (but deprecate)
+        interpolation_methods = interpolation_methods + ('bicubic',)
         return interpolation_methods, interpolation_fun
 
     def _create_texture(self, texture_format, data):
@@ -843,10 +845,9 @@ class VolumeVisual(Visual):
             self._texture.set_clim(clim)
 
         # Apply to texture
-        vol = downcast_to_32(vol, copy=copy)
         self._texture.check_data_format(vol)
         self._last_data = vol
-        self._texture.scale_and_set_data(vol, copy=False)
+        self._texture.scale_and_set_data(vol, copy=copy)
         self.shared_program['clim'] = self._texture.clim_normalized
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
@@ -937,6 +938,14 @@ class VolumeVisual(Visual):
     def _build_interpolation(self):
         """Rebuild the _data_lookup_fn for different interpolations."""
         interpolation = self._interpolation
+        # alias bicubic to cubic
+        if interpolation == 'bicubic':
+            warnings.warn(
+                "'bicubic' interpolation is Deprecated. Use 'cubic' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            interpolation = 'cubic'
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         try:
             self.shared_program.frag['get_data'] = self._data_lookup_fn

@@ -255,7 +255,7 @@ Windows
 
 In Windows, you should open the the Nvidia-console and add your specific
 python to the list of programs that should use the dedicated graphics card.
-Note that this setting is seperate for different conda environments so make
+Note that this setting is separate for different conda environments so make
 sure you have selected the one you are using VisPy with.
 
 Linux
