@@ -49,9 +49,18 @@ void main (void) {
 
     if (u_scaling == true) {
         // calculate point size from visual to framebuffer coords to determine size
-        vec4 x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
-        x = (x - pos);
-        vec4 size_vec = $visual_to_framebuffer(pos + normalize(x) * a_size);
+        // move horizontally in framebuffer space
+        // then go to scene coordinates (not visual, so scaling is accounted for)
+        vec4 x = $framebuffer_to_scene(fb_pos + vec4(big_float, 0, 0, 0));
+        // subtract position, so we get the scene-coordinate vector describing
+        // an "horizontal direction parallel to the screen"
+        vec4 scene_pos = $framebuffer_to_scene(fb_pos);
+        x = (x - scene_pos);
+        // multiply that direction by the size (in scene space) and add it to the position
+        // this gives us the position of the edge of the point, which we convert in screen space
+        vec4 size_vec = $scene_to_framebuffer(scene_pos + normalize(x) * a_size);
+        // divide by `w` for perspective, and subtract pos
+        // this gives us the actual screen-space size of the point
         $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
         v_edgewidth = ($v_size / a_size) * a_edgewidth;
     }
@@ -752,6 +761,8 @@ class MarkersVisual(Visual):
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
         view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
+        view.view_program.vert['framebuffer_to_scene'] = view.get_transform('framebuffer', 'scene')
+        view.view_program.vert['scene_to_framebuffer'] = view.get_transform('scene', 'framebuffer')
 
     def _prepare_draw(self, view):
         if self._data is None:
