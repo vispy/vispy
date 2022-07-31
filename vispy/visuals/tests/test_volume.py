@@ -238,7 +238,7 @@ def _make_test_data(shape, input_dtype):
 @requires_pyopengl()
 def test_set_data_does_not_change_input():
     # Create volume
-    V = scene.visuals.Volume(np.zeros((20, 20, 20)))
+    V = scene.visuals.Volume(np.zeros((20, 20, 20), dtype=np.float32))
 
     # calling Volume.set_data() should NOT alter the values of the input array
     # regardless of data type
@@ -251,7 +251,9 @@ def test_set_data_does_not_change_input():
 
     # for those using float32 who want to avoid the copy operation,
     # using set_data() with `copy=False` should be expected to alter the data.
-    vol2 = np.array(vol, dtype='float32', copy=True)
+    # dtype has to be the same as the one used to init the texture, or it will
+    # be first coerced to the same dtype as the init
+    vol2 = np.array(vol, dtype=np.float32, copy=True)
     assert np.allclose(vol, vol2)
     V.set_data(vol2, clim=(0, 200), copy=False)
     assert not np.allclose(vol, vol2)
@@ -465,6 +467,54 @@ def test_minip_cutoff():
         # we should see black
         rendered = c.render()
         assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
+
+
+@requires_pyopengl()
+@requires_application()
+def test_volume_set_data_different_dtype():
+    size = (80, 80)
+    data = np.array([[[0, 127]]], dtype=np.int8)
+    left = (40, 10)
+    right = (40, 70)
+    white = (255, 255, 255, 255)
+    black = (0, 0, 0, 255)
+
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
+        view = c.central_widget.add_view()
+        view.camera = 'arcball'
+        view.camera.fov = 0
+        view.camera.center = 0.5, 0, 0
+        view.camera.scale_factor = 2
+        volume = scene.visuals.Volume(
+            data,
+            cmap='grays',
+            clim=[0, 127],
+            parent=view.scene
+        )
+
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # same data as float should change nothing
+        volume.set_data(data.astype(np.float32))
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # something inverted, different dtype
+        new_data = np.array([[[127, 0]]], dtype=np.float16)
+        volume.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], white)
+        assert np.allclose(render[right], black)
+
+        # out of bounds should wrap around cleanly
+        new_data = np.array([[[0, 128]]], dtype=np.float64)
+        volume.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], black)
 
 
 run_tests_if_main()

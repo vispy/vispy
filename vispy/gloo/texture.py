@@ -13,21 +13,19 @@ from .globject import GLObject
 from .util import check_enum
 
 
-F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
-                         "than 32-bits, precision will be lost due to "
-                         "downcasting to 32-bit float.")
+def downcast_to_32bit_if_needed(data, copy=False):
+    """Downcast to 32bit dtype if necessary."""
+    dtype = np.dtype(data.dtype)
+    if dtype.itemsize > 4:
+        warnings.warn(
+            f"GPUs can't support dtypes bigger than 32-bit, but got '{dtype}'. "
+            "Precision will be lost due to downcasting to 32-bit."
+        )
 
+    size = min(dtype.itemsize, 4)
+    kind = dtype.kind
 
-def should_cast_to_f32(data_dtype):
-    """Check if data type is floating point with more than 32-bits."""
-    data_dtype = np.dtype(data_dtype)
-    is_floating = np.issubdtype(data_dtype, np.floating)
-    gt_float32 = data_dtype.itemsize > 4
-    if is_floating and gt_float32:
-        # OpenGL can't support floating point numbers greater than 32-bits
-        warnings.warn(F64_PRECISION_WARNING)
-        return True
-    return False
+    return np.array(data, dtype=f'{kind}{size}', copy=copy)
 
 
 class BaseTexture(GLObject):
@@ -116,9 +114,9 @@ class BaseTexture(GLObject):
 
         # Init shape and format
         self._resizable = True  # at least while we're in init
-        self._shape = tuple([0 for i in range(self._ndim+1)])
         self._format = format
         self._internalformat = internalformat
+        self._data = None
 
         # Set texture parameters (before setting data)
         self.interpolation = interpolation or 'nearest'
@@ -132,7 +130,7 @@ class BaseTexture(GLObject):
                 raise ValueError('Texture needs data or shape, not both.')
             data = np.array(data, copy=False)
             # So we can test the combination
-            self._resize(data.shape, format, internalformat)
+            self._check_shape_and_format(data.shape, format, internalformat)
             self._set_data(data)
         elif shape is not None:
             self._resize(shape, format, internalformat)
@@ -151,24 +149,23 @@ class BaseTexture(GLObject):
             assert isinstance(data_or_shape, tuple)
             data = None
             shape = data_or_shape
-        # Check and correct
-        if shape:
-            if len(shape) < self._ndim:
-                raise ValueError("Too few dimensions for texture")
-            elif len(shape) > self._ndim + 1:
-                raise ValueError("Too many dimensions for texture")
-            elif len(shape) == self._ndim:
-                shape = shape + (1,)
-            else:  # if len(shape) == self._ndim + 1:
-                if shape[-1] > 4:
-                    raise ValueError("Too many channels for texture")
+
+        if len(shape) < self._ndim:
+            raise ValueError("Too few dimensions for texture")
+        elif len(shape) > self._ndim + 1:
+            raise ValueError("Too many dimensions for texture")
+        elif len(shape) == self._ndim:
+            shape = shape + (1,)
+        else:  # if len(shape) == self._ndim + 1:
+            if shape[-1] > 4:
+                raise ValueError("Too many channels for texture")
         # Return
         return data.reshape(shape) if data is not None else shape
 
     @property
     def shape(self):
         """Data shape (last dimension indicates number of color channels)"""
-        return self._shape
+        return self._data.shape
 
     @property
     def format(self):
@@ -290,8 +287,7 @@ class BaseTexture(GLObject):
             raise ValueError('Internalformat does not match with given shape.')
         return internalformat
 
-    def _resize(self, shape, format=None, internalformat=None):
-        """Internal method for resize."""
+    def _check_shape_and_format(self, shape, format, internalformat):
         shape = self._normalize_shape(shape)
 
         # Check
@@ -300,12 +296,17 @@ class BaseTexture(GLObject):
 
         format = self._check_format_change(format, shape[-1])
         internalformat = self._check_internalformat_change(internalformat, shape[-1])
+        return shape, format, internalformat
 
+    def _resize(self, shape, format=None, internalformat=None):
+        """Internal method for resize."""
         # Store and send GLIR command
-        self._shape = shape
+        shape, format, internalformat = self._check_shape_and_format(shape, format, internalformat)
+        if self._data is not None:
+            self._data = np.resize(self._data.resize, shape)
         self._format = format
         self._internalformat = internalformat
-        self._glir.command('SIZE', self._id, self._shape, self._format,
+        self._glir.command('SIZE', self._id, shape, self._format,
                            self._internalformat)
 
     def set_data(self, data, offset=None, copy=False):
@@ -327,89 +328,80 @@ class BaseTexture(GLObject):
         This operation implicitly resizes the texture to the shape of
         the data if given offset is None.
         """
-        return self._set_data(data, offset, copy)
+        self._set_data(data, offset, copy)
 
     def _set_data(self, data, offset=None, copy=False):
         """Internal method for set_data."""
         # Copy if needed, check/normalize shape
-        data = np.array(data, copy=copy)
+        data = downcast_to_32bit_if_needed(data, copy=copy)
         data = self._normalize_shape(data)
 
         # Maybe resize to purge DATA commands?
-        if offset is None:
+        if offset is None or all([i == 0 for i in offset]):
             self._resize(data.shape)
-        elif all([i == 0 for i in offset]) and data.shape == self._shape:
-            self._resize(data.shape)
+        else:
+            # Check if data fits
+            for i in range(len(data.shape)-1):
+                if offset[i] + data.shape[i] > self._data.shape[i]:
+                    raise ValueError("Data is too large")
 
         # Convert offset to something usable
         offset = offset or tuple([0 for i in range(self._ndim)])
         assert len(offset) == self._ndim
 
-        # Check if data fits
-        for i in range(len(data.shape)-1):
-            if offset[i] + data.shape[i] > self._shape[i]:
-                raise ValueError("Data is too large")
-
+        # convert offset to slices
+        if all(i == 0 for i in offset):
+            # probably better cause it does not mess with memory
+            self._data = data
+        else:
+            offset_slices = tuple(slice(i, None) for i in offset)
+            self._data[offset_slices] = data
         # Send GLIR command
         self._glir.command('DATA', self._id, offset, data)
 
+    def _update_data(self, offset=None):
+        if offset is None:
+            offset = tuple(0 for i in range(self._ndim))
+        offset_slices = tuple(slice(i, None) for i in offset)
+        self._glir.command('DATA', self._id, offset, self._data[offset_slices])
+
+    def __getitem__(self, key):
+        return self._data[key]
+
     def __setitem__(self, key, data):
         """x.__getitem__(y) <==> x[y]"""
+        self._data[key] = data
+
         # Make sure key is a tuple
         if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
-
-        # Default is to access the whole texture
-        shape = self._shape
-        slices = [slice(0, shape[i]) for i in range(len(shape))]
 
         # Check last key/Ellipsis to decide on the order
         keys = key[::+1]
         dims = range(0, len(key))
         if key[0] == Ellipsis:
             keys = key[::-1]
-            dims = range(len(self._shape) - 1,
-                         len(self._shape) - 1 - len(keys), -1)
+            dims = range(len(self._data.shape) - 1,
+                         len(self._data.shape) - 1 - len(keys), -1)
 
         # Find exact range for each key
+        offset = [0 for _ in range(self._ndim)]
         for k, dim in zip(keys, dims):
-            size = self._shape[dim]
             if isinstance(k, int):
-                if k < 0:
-                    k += size
-                if k < 0 or k > size:
-                    raise IndexError("Texture assignment index out of range")
-                start, stop = k, k + 1
-                slices[dim] = slice(start, stop, 1)
+                offset[dim] = k
             elif isinstance(k, slice):
-                start, stop, step = k.indices(size)
-                if step != 1:
-                    raise IndexError("Cannot access non-contiguous data")
-                if stop < start:
-                    start, stop = stop, start
-                slices[dim] = slice(start, stop, step)
+                offset[dim] = k.start or 0
             elif k == Ellipsis:
                 pass
             else:
                 raise TypeError("Texture indices must be integers")
 
-        offset = tuple([s.start for s in slices])[:self._ndim]
-        shape = tuple([s.stop - s.start for s in slices])
-        size = np.prod(shape) if len(shape) > 0 else 1
-
-        # Make sure data is an array
-        if not isinstance(data, np.ndarray):
-            data = np.array(data, copy=False)
-        # Make sure data is big enough
-        if data.shape != shape:
-            data = np.resize(data, shape)
-
-        # Set data (deferred)
-        self._set_data(data=data, offset=offset, copy=False)
+        offset = tuple(offset)
+        self._update_data(offset)
 
     def __repr__(self):
         return "<%s shape=%r format=%r at 0x%x>" % (
-            self.__class__.__name__, self._shape, self._format, id(self))
+            self.__class__.__name__, self._data.shape, self._format, id(self))
 
 
 # --------------------------------------------------------- Texture1D class ---
@@ -456,7 +448,7 @@ class Texture1D(BaseTexture):
     @property
     def width(self):
         """Texture width"""
-        return self._shape[0]
+        return self._data.shape[0]
 
     @property
     def glsl_type(self):
@@ -517,12 +509,12 @@ class Texture2D(BaseTexture):
     @property
     def height(self):
         """Texture height"""
-        return self._shape[0]
+        return self._data.shape[0]
 
     @property
     def width(self):
         """Texture width"""
-        return self._shape[1]
+        return self._data.shape[1]
 
     @property
     def glsl_type(self):
@@ -584,17 +576,17 @@ class Texture3D(BaseTexture):
     @property
     def width(self):
         """Texture width"""
-        return self._shape[2]
+        return self._data.shape[2]
 
     @property
     def height(self):
         """Texture height"""
-        return self._shape[1]
+        return self._data.shape[1]
 
     @property
     def depth(self):
         """Texture depth"""
-        return self._shape[0]
+        return self._data.shape[0]
 
     @property
     def glsl_type(self):
@@ -652,24 +644,24 @@ class TextureCube(BaseTexture):
                  internalformat=None, resizeable=None):
         BaseTexture.__init__(self, data, format, resizable, interpolation,
                              wrapping, shape, internalformat, resizeable)
-        if self._shape[0] != 6:
+        if self._data.shape[0] != 6:
             raise ValueError("Texture cube require arrays first dimension to be 6 :"
-                             " {} was given.".format(self._shape[0]))
+                             " {} was given.".format(self._data.shape[0]))
 
     @property
     def height(self):
         """Texture height"""
-        return self._shape[1]
+        return self._data.shape[1]
 
     @property
     def width(self):
         """Texture width"""
-        return self._shape[2]
+        return self._data.shape[2]
 
     @property
     def depth(self):
         """Texture depth"""
-        return self._shape[0]
+        return self._data.shape[0]
 
     @property
     def glsl_type(self):
@@ -1004,13 +996,13 @@ class TextureAtlas(Texture2D):
         node = self._atlas_nodes[index]
         x, y = node[0], node[1]
         width_left = width
-        if x+width > self._shape[1]:
+        if x+width > self._data.shape[1]:
             return -1
         i = index
         while width_left > 0:
             node = self._atlas_nodes[i]
             y = max(y, node[1])
-            if y+height > self._shape[0]:
+            if y+height > self._data.shape[0]:
                 return -1
             width_left -= node[2]
             i += 1

@@ -435,7 +435,7 @@ class Colormap(BaseColormap):
         if self.texture_map_data is None:
             return None
         interp = 'linear' if self.interpolation == 'linear' else 'nearest'
-        texture_LUT = vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
+        texture_LUT = vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape, dtype=np.float32),
                                            interpolation=interp)
         texture_LUT.set_data(self.texture_map_data, offset=None, copy=True)
         return texture_LUT
