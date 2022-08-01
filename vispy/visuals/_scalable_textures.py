@@ -300,6 +300,9 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
     def _scale_data_on_cpu(data, clim, copy=True):
         data = np.array(data, dtype=np.float32, copy=copy)
         if clim[0] != clim[1]:
+            # we always must copy the data if we change it here, otherwise it might change
+            # unexpectedly the data held outside of here
+            data = data.copy()
             data -= clim[0]
             data *= 1 / (clim[1] - clim[0])
         return data
