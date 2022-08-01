@@ -249,14 +249,15 @@ def test_set_data_does_not_change_input():
         V.set_data(vol_copy, clim=(0, 200))
         assert np.allclose(vol, vol_copy)
 
-    # for those using float32 who want to avoid the copy operation,
-    # using set_data() with `copy=False` should be expected to alter the data.
     # dtype has to be the same as the one used to init the texture, or it will
     # be first coerced to the same dtype as the init
+
     vol2 = np.array(vol, dtype=np.float32, copy=True)
     assert np.allclose(vol, vol2)
+    # we explicitly create a copy when data would be altered by the texture,
+    # no matter what the user asks, so the data outside should never change
     V.set_data(vol2, clim=(0, 200), copy=False)
-    assert not np.allclose(vol, vol2)
+    assert np.allclose(vol, vol2)
 
 
 @requires_pyopengl()
