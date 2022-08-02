@@ -261,6 +261,27 @@ def test_set_data_does_not_change_input():
 
 
 @requires_pyopengl()
+def test_set_data_changes_shape():
+    dtype = np.float32
+    # Create initial volume
+    V = scene.visuals.Volume(np.zeros((20, 20, 20), dtype=dtype))
+
+    # Sending new three dimensional data of different shape should alter volume shape
+    vol = np.zeros((25, 25, 10), dtype=dtype)
+    V.set_data(vol)
+    assert V._vol_shape == (25, 25, 10)
+
+    # Sending data of dimension other than 3 should raise a ValueError
+    vol2 = np.zeros((20, 20), dtype=dtype)
+    with pytest.raises(ValueError):
+        V.set_data(vol2)
+
+    vol2 = np.zeros((20, 20, 20, 20), dtype=dtype)
+    with pytest.raises(ValueError):
+        V.set_data(vol2)
+        
+        
+@requires_pyopengl()
 @requires_application()
 def test_changing_cmap():
     """Test that changing colormaps updates the display."""
