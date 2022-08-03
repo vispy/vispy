@@ -5,7 +5,7 @@ import warnings
 
 import numpy as np
 
-from vispy.gloo import Texture2D, Texture3D
+from vispy.gloo.texture import Texture2D, Texture3D, convert_dtype_and_clip
 
 
 def get_default_clim_from_dtype(dtype):
@@ -310,10 +310,12 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
 
     def scale_and_set_data(self, data, offset=None, copy=True):
         """Upload new data to the GPU, scaling if necessary."""
+        if self._data_dtype is None:
+            data.dtype == self._data_dtype
+
         # ensure dtype is the same as it was before, or funny things happen
-        # we use the `copy` value only here, to avoid copying multiple times when True
-        data = np.array(data, dtype=self._data_dtype, copy=copy)
-        self._data_dtype = data.dtype
+        # no copy is performed unless asked for or necessary
+        data = convert_dtype_and_clip(data, self._data_dtype, copy=copy)
 
         clim = self._clim
         is_auto = isinstance(clim, str) and clim == 'auto'

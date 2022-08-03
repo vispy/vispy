@@ -531,12 +531,12 @@ def test_volume_set_data_different_dtype():
         assert np.allclose(render[left], white)
         assert np.allclose(render[right], black)
 
-        # out of bounds should wrap around cleanly
-        new_data = np.array([[[0, 128]]], dtype=np.float64)
+        # out of bounds should clip (2000 > 127)
+        new_data = np.array([[[0, 2000]]], dtype=np.float64)
         volume.set_data(new_data)
         render = c.render()
         assert np.allclose(render[left], black)
-        assert np.allclose(render[right], black)
+        assert np.allclose(render[right], white)
 
 
 run_tests_if_main()
