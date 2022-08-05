@@ -12,6 +12,7 @@ Update VisPy visualizations from a background QThread.
 
 """
 import time
+from math import sin, pi
 
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
@@ -77,10 +78,10 @@ class CanvasWrapper:
         print(f"Changing line color to {color}")
         self.line.set_data(color=color)
 
-    def update_data(self, new_image_data):
+    def update_data(self, new_data_dict):
         print("Updating data...")
-        self.image.set_data(new_image_data)
-        self.image.update()
+        self.image.set_data(new_data_dict["image"])
+        self.line.set_data(new_data_dict["line"])
 
 
 def _generate_random_image_data(shape, dtype=np.float32):
@@ -128,28 +129,46 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
 class DataSource(QtCore.QObject):
     """Object representing a complex data producer."""
-    new_data = QtCore.pyqtSignal(np.ndarray)
+    new_data = QtCore.pyqtSignal(dict)
     finished = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, num_iterations=1000, parent=None):
         super().__init__(parent)
         self._should_end = False
         self._count = 0
-        self._data = _generate_random_image_data(IMAGE_SHAPE)
+        self._num_iters = num_iterations
+        self._image_data = _generate_random_image_data(IMAGE_SHAPE)
+        self._line_data = _generate_random_line_positions(NUM_LINE_POINTS)
 
     def run_data_creation(self):
-        if self._should_end or self._count >= IMAGE_SHAPE[1]:
+        if self._should_end or self._count >= self._num_iters:
             print("Data source finishing")
             self.finished.emit()
             return
 
         time.sleep(1.0)
-        self._data[:, self._count] = self._count / IMAGE_SHAPE[1]
-        rdata_shape = (IMAGE_SHAPE[0], IMAGE_SHAPE[1] - self._count - 1)
-        self._data[:, self._count + 1:] = _generate_random_image_data(rdata_shape)
+        image_data = self._update_image_data(self._count)
+        line_data = self._update_line_data(self._count)
         self._count += 1
-        self.new_data.emit(self._data)
+
+        data_dict = {
+            "image": image_data,
+            "line": line_data,
+        }
+        self.new_data.emit(data_dict)
         QtCore.QTimer.singleShot(0, self.run_data_creation)
+
+    def _update_image_data(self, count):
+        img_count = count % IMAGE_SHAPE[1]
+        self._image_data[:, img_count] = img_count / IMAGE_SHAPE[1]
+        rdata_shape = (IMAGE_SHAPE[0], IMAGE_SHAPE[1] - img_count - 1)
+        self._image_data[:, img_count + 1:] = _generate_random_image_data(rdata_shape)
+        return self._image_data.copy()
+
+    def _update_line_data(self, count):
+        self._line_data[:, 1] = np.roll(self._line_data[:, 1], -1)
+        self._line_data[-1, 1] = abs(sin((count / self._num_iters) * 16 * pi))
+        return self._line_data
 
     def stop_data(self):
         print("Data source is quitting...")
