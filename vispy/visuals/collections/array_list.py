@@ -52,7 +52,7 @@ class ArrayList(object):
             an error is raised.
 
             If `itemsize` is 1-D array, the array will be divided into
-            elements whose succesive sizes will be picked from itemsize.
+            elements whose successive sizes will be picked from itemsize.
             If the sum of itemsize values is different from array size,
             an error is raised.
 
@@ -291,7 +291,7 @@ class ArrayList(object):
             an error is raised.
 
             If `itemsize` is 1-D array, the array will be divided into
-            elements whose succesive sizes will be picked from itemsize.
+            elements whose successive sizes will be picked from itemsize.
             If the sum of itemsize values is different from array size,
             an error is raised.
         """
@@ -394,7 +394,7 @@ class ArrayList(object):
             an error is raised.
 
             If `itemsize` is 1-D array, the array will be divided into
-            elements whose succesive sizes will be picked from itemsize.
+            elements whose successive sizes will be picked from itemsize.
             If the sum of itemsize values is different from array size,
             an error is raised.
         """

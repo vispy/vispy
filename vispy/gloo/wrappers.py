@@ -43,12 +43,14 @@ GL_PRESETS = {
         depth_test=True,
         cull_face=False,
         blend=True,
-        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one')),
+        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        blend_equation='func_add'),
     'additive': dict(
         depth_test=False,
         cull_face=False,
         blend=True,
-        blend_func=('src_alpha', 'one')),
+        blend_func=('src_alpha', 'one'),
+        blend_equation='func_add'),
 }
 
 

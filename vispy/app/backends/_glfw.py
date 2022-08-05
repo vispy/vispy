@@ -27,7 +27,7 @@ glfw = None
 try:
     import glfw
 except ImportError:
-    why_not = "Could not import glwf, you may need to `pip install glfw` first."
+    why_not = "Could not import glfw, you may need to `pip install glfw` first."
     available, testable, why_not, which = False, False, why_not, None
 except Exception as err:
     why_not = "Error importing glfw: " + str(err)
