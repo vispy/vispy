@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+from typing import Union
 
 import numpy as np
 
@@ -67,7 +68,7 @@ class ViewBox(Widget):
             raise TypeError('Argument "camera" must be None, str, or Camera.')
 
     @property
-    def camera(self):
+    def camera(self) -> BaseCamera:
         """Get/set the Camera in use by this ViewBox
 
         If a string is given (e.g. 'panzoom', 'turntable', 'fly'). A
@@ -84,7 +85,7 @@ class ViewBox(Widget):
         return self._camera
 
     @camera.setter
-    def camera(self, cam):
+    def camera(self, cam: Union[str, BaseCamera]):
         if isinstance(cam, str):
             # Try to select an existing camera
             for child in self.scene.children:
