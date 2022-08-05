@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Create data using a loop in a background thread
+Update data using a loop in a background thread
 ===============================================
 
 Update VisPy visualizations from a background QThread.

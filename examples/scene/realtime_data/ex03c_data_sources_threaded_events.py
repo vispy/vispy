@@ -5,10 +5,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Create data using events in a background thread
-===============================================
+Update data using timer events in a background thread
+=====================================================
 
-Update VisPy visualizations from a background QThread.
+Update VisPy visualizations from timer events in a background QThread.
 
 """
 import time

@@ -8,7 +8,7 @@
 Embed VisPy into Qt
 ===================
 
-Display VisPy visualizations in a PySide2 application.
+Display VisPy visualizations in a PyQt5 application.
 
 """
 

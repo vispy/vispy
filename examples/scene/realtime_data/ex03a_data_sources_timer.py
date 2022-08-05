@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Create data using timer-based events
+Update data using timer-based events
 ====================================
 
 Update VisPy visualizations from a QTimer in the main GUI thread.
