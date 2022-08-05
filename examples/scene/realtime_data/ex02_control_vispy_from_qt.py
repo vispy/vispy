@@ -82,7 +82,7 @@ class CanvasWrapper:
             parent=self.view_top.scene,
         )
         self.view_top.camera = "panzoom"
-        self.view_top.camera.set_range(x=(0, IMAGE_SHAPE[1]), y=(0, IMAGE_SHAPE[0]))
+        self.view_top.camera.set_range(x=(0, IMAGE_SHAPE[1]), y=(0, IMAGE_SHAPE[0]), margin=0)
 
         self.view_bot = self.grid.add_view(1, 0, bgcolor='#c0c0c0')
         line_data = _generate_random_line_positions(NUM_LINE_POINTS)
