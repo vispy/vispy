@@ -30,6 +30,7 @@ from .line_plot import LinePlotVisual  # noqa
 from .markers import MarkersVisual  # noqa
 from .mesh import MeshVisual  # noqa
 from .mesh_normals import MeshNormalsVisual  # noqa
+from .multichannel_image import MultiChannelImageVisual  # noqa
 from .plane import PlaneVisual  # noqa
 from .polygon import PolygonVisual  # noqa
 from .rectangle import RectangleVisual  # noqa
