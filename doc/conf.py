@@ -39,6 +39,7 @@ extensions = ['sphinx.ext.autodoc',
               'numpydoc',
               'sphinxcontrib.apidoc',
               'sphinx_gallery.gen_gallery',
+              'myst_parser',
               ]
 
 # API docs

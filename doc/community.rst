@@ -2,13 +2,21 @@
 Community
 =========
 
+.. toctree::
+  :hidden:
+  :glob:
+
+  org/*
+  governance/*
+
+
 .. container:: row
 
    .. container:: col-md-1 text-center
 
       .. raw:: html
 
-         <i class="fa fa-comment-o fa-4x"></i>
+         <i class="fa fa-comment fa-4x"></i>
 
 
    .. container:: col-md-4
@@ -59,7 +67,7 @@ Community
 
       .. raw:: html
 
-         <i class="fa fa-group fa-4x"></i>
+         <i class="fa fa-people-group fa-4x"></i>
 
 
    .. container:: col-md-4
@@ -68,3 +76,33 @@ Community
       <https://github.com/vispy/vispy>`_ or the
       `Developer Gitter <https://gitter.im/vispy/vispy-dev>`_.  There is also
       a `developer's mailing list <vispy-dev@googlegroups.com>`_.
+
+.. container:: row
+
+   .. container:: col-md-1 text-center
+
+      .. raw:: html
+
+         <i class="fa fa-landmark fa-4x"></i>
+
+   .. container:: col-md-4
+
+      VisPy is both a library and an organization. If you want to know more
+      about the organization and its structure check out our
+      :doc:`installation <installation>` and
+      :doc:`Charter <./org/CHARTER>` and see who's on the
+      :doc:`Steering Committee <./org/STEERING-COMMITTEE>`.
+
+
+   .. container:: col-md-1 text-center
+
+      .. raw:: html
+
+         <i class="fa fa-clipboard-list-check fa-4x"></i>
+
+   .. container:: col-md-4
+
+      The :doc:`maintainers <./governance/MAINTAINERS>` of VisPy manage
+      the project following a simple set of expectations which you can find
+      in the :doc:`governance <./governance/GOVERNANCE>` document.
+

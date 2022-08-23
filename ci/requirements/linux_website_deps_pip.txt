@@ -4,3 +4,9 @@
  sphinx
  sphinx_bootstrap_theme
  sphinx_gallery
+ sphinxcontrib-apidoc
+ myst-parser
+ pydata-sphinx-theme
+ pytest
+ pillow
+ pyopengl
