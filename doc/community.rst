@@ -67,7 +67,7 @@ Community
 
       .. raw:: html
 
-         <i class="fa fa-people-group fa-4x"></i>
+         <i class="fa fa-users fa-4x"></i>
 
 
    .. container:: col-md-4
@@ -98,7 +98,7 @@ Community
 
       .. raw:: html
 
-         <i class="fa fa-clipboard-list-check fa-4x"></i>
+         <i class="fa fa-clipboard-check fa-4x"></i>
 
    .. container:: col-md-4
 
