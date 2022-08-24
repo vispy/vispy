@@ -14,7 +14,6 @@ organization (designated below), you represent that you have the authority to bi
 | Lorenzo Gaisfas | N/A              |
 | David Hoese     | N/A              |
 | Almar Klein     | N/A              |
-| Eric Larson     | N/A              |
 | Kai Mühlbauer   | N/A              |
 | Cyrille Rossant | N/A              |
 | Nicolas Rougier | N/A              |
