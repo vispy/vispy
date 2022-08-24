@@ -25,7 +25,7 @@ requirements.
 
 **2.2. Appeal Process**. Decisions may be appealed by opening an issue and that appeal will be considered by the
 Maintainers in good faith, who will respond in writing within a reasonable time. If the Maintainers deny the appeal, the
-appeal my be brought before the Organization Steering Committee, who will also respond in writing in a reasonable time.
+appeal may be brought before the Organization Steering Committee, who will also respond in writing in a reasonable time.
 
 ## 3. How We Work.
 
