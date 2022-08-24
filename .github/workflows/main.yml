@@ -180,15 +180,10 @@ jobs:
             new_qt: false
           - test_number: 3
             python_version: "3.7"
-            deps: "full"
-            test: "examples"
-            new_qt: false
-          - test_number: 4
-            python_version: "3.7"
             deps: "osmesa"
             test: "osmesa"
             new_qt: false
-          - test_number: 5
+          - test_number: 4
             python_version: "3.9"
             deps: "full"
             test: "standard"
@@ -271,22 +266,13 @@ jobs:
           export DISPLAY=:99.0
           python make test unit --tb=short
         fi
-        if [ "${{ matrix.test }}" == 'examples' ]; then
-          export DISPLAY=:99.0
-          export XDG_RUNTIME_DIR=/tmp/runtime-runner
-          mkdir -p $XDG_RUNTIME_DIR
-          chmod 0700 $XDG_RUNTIME_DIR
-          make examples
-        fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
           export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi
-        if [ "${{ matrix.test }}" != "examples" ]; then
-          COVERAGE_FILE=.vispy-coverage coverage combine
-          mv .vispy-coverage .coverage
-        fi
+        COVERAGE_FILE=.vispy-coverage coverage combine
+        mv .vispy-coverage .coverage
     - name: Coveralls Parallel
       uses: AndreMiras/coveralls-python-action@develop
       with:

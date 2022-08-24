@@ -60,7 +60,7 @@ class VisPyGalleryScraper:
         example_fn = block_vars["src_file"]
         frame_num_list = self._get_frame_list_from_source(example_fn)
         image_path_iterator = block_vars['image_path_iterator']
-        canvas_or_widget = self._get_canvaslike_from_globals(block_vars["example_globals"])
+        canvas_or_widget = get_canvaslike_from_globals(block_vars["example_globals"])
         if not frame_num_list:
             image_paths = []
         elif isinstance(frame_num_list[0], str):
@@ -133,35 +133,37 @@ class VisPyGalleryScraper:
             frame_paths.append(frame_fn)
         return frame_paths
 
-    def _get_canvaslike_from_globals(self, globals_dict):
-        qt_widget = self._get_qt_top_parent(globals_dict)
-        if qt_widget is not None:
-            return qt_widget
 
-        # Get canvas
-        if "canvas" in globals_dict:
-            return globals_dict["canvas"]
-        if "Canvas" in globals_dict:
-            return globals_dict["Canvas"]()
-        if "fig" in globals_dict:
-            return globals_dict["fig"]
+def get_canvaslike_from_globals(globals_dict):
+    qt_widget = _get_qt_top_parent(globals_dict)
+    if qt_widget is not None:
+        return qt_widget
+
+    # Get canvas
+    if "canvas" in globals_dict:
+        return globals_dict["canvas"]
+    if "Canvas" in globals_dict:
+        return globals_dict["Canvas"]()
+    if "fig" in globals_dict:
+        return globals_dict["fig"]
+    return None
+
+
+def _get_qt_top_parent(globals_dict):
+    if "QWidget" not in globals_dict and "QMainWindow" not in globals_dict and "QtWidgets" not in globals_dict:
         return None
 
-    @staticmethod
-    def _get_qt_top_parent(globals_dict):
-        if "QWidget" not in globals_dict and "QMainWindow" not in globals_dict:
-            return None
-
-        qmainwindow = globals_dict.get("QMainWindow")
-        qwidget = globals_dict.get("QWidget", qmainwindow)
-        all_qt_widgets = [widget for widget in globals_dict.values()
-                          if isinstance(widget, qwidget) and widget is not None]
-        all_qt_mains = [widget for widget in all_qt_widgets if isinstance(widget, qmainwindow)]
-        if all_qt_mains:
-            return all_qt_mains[0]
-        if all_qt_widgets:
-            return all_qt_widgets[0]
-        return None
+    qtwidgets = globals_dict.get("QtWidgets")
+    qmainwindow = globals_dict.get("QMainWindow", getattr(qtwidgets, "QMainWindow", None))
+    qwidget = globals_dict.get("QWidget", getattr(qtwidgets, "QWidget", qmainwindow))
+    all_qt_widgets = [widget for widget in globals_dict.values()
+                      if isinstance(widget, qwidget) and widget is not None]
+    all_qt_mains = [widget for widget in all_qt_widgets if isinstance(widget, qmainwindow)]
+    if all_qt_mains:
+        return all_qt_mains[0]
+    if all_qt_widgets:
+        return all_qt_widgets[0]
+    return None
 
 
 class FrameGrabber:
@@ -204,13 +206,19 @@ class FrameGrabber:
 
     def _grab_qt_screenshot(self):
         from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import QTimer
         self._canvas.show()
         # Qt is going to grab from the screen so we need the window on top
         self._canvas.raise_()
         # We need to give the GUI event loop and OS time to draw everything
-        QApplication.processEvents()
         time.sleep(1.5)
         QApplication.processEvents()
+        QTimer.singleShot(1000, self._grab_widget_screenshot)
+        time.sleep(1.5)
+        QApplication.processEvents()
+
+    def _grab_widget_screenshot(self):
+        from PyQt5.QtWidgets import QApplication
         screen = QApplication.screenAt(self._canvas.pos())
         screenshot = screen.grabWindow(int(self._canvas.windowHandle().winId()))
         arr = self._qpixmap_to_ndarray(screenshot)
@@ -218,14 +226,16 @@ class FrameGrabber:
 
     @staticmethod
     def _qpixmap_to_ndarray(pixmap):
+        from PyQt5 import QtGui
         import numpy as np
-        im = pixmap.toImage()
+        im = pixmap.toImage().convertToFormat(QtGui.QImage.Format.Format_RGB32)
         size = pixmap.size()
         width = size.width()
         height = size.height()
-        im_bits = im.bits()
-        im_bits.setsize(height * width * 4)  # RGBA
-        return np.frombuffer(im_bits, np.uint8).reshape((height, width, 4))
+        im_bits = im.constBits()
+        im_bits.setsize(height * width * 4)
+        # Convert 0xffRRGGBB buffer -> (B, G, R, 0xff) -> (R, G, B)
+        return np.array(im_bits).reshape((height, width, 4))[:, :, 2::-1]
 
     def _grab_vispy_screenshots(self):
         os.environ['VISPY_IGNORE_OLD_VERSION'] = 'true'
