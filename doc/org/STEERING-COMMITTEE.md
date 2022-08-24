@@ -11,10 +11,12 @@ Committee because of your affiliation with another organization (designated
 below), you represent that you have authority to bind that organization to
 these policies.
 
-| **NAME** | **Handle** | **Affiliated Organization** |
-| --- | --- | --- |
-| [Steering Committee Member] | [handle ] | [affiliation] |
-|  ... | ... | ... |
+| **NAME**        | **Handle**  | **Affiliated Organization** |
+|-----------------|-------------|-----------------------------|
+| David Hoese     | @djhoese    | N/A                         |
+| Almar Klein     | @almarklein | N/A                         |
+| Cyrille Rossant | @rossant    | N/A                         |
+| Nicolas Rougier | @rougier    | N/A                         |
 
 ---
 Part of MVG-0.1-beta.

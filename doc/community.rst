@@ -89,7 +89,6 @@ Community
 
       VisPy is both a library and an organization. If you want to know more
       about the organization and its structure check out our
-      :doc:`installation <installation>` and
       :doc:`Charter <./org/CHARTER>` and see who's on the
       :doc:`Steering Committee <./org/STEERING-COMMITTEE>`.
 

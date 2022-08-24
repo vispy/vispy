@@ -9,10 +9,15 @@ the [code of conduct](https://github.com/vispy/vispy/blob/main/CODE_OF_CONDUCT.m
 and [antitrust policy](../org/ANTITRUST.md). If you are participating because of your affiliation with another
 organization (designated below), you represent that you have the authority to bind that organization to these policies.
 
-| **NAME** | **Organization** |
-| --- | --- |
-| Maintainer 1 | |
-| Maintainer 2 | |
+| **NAME**        | **Organization** |
+|-----------------|------------------|
+| Lorenzo Gaisfas | N/A              |
+| David Hoese     | N/A              |
+| Almar Klein     | N/A              |
+| Eric Larson     | N/A              |
+| Kai Mühlbauer   | N/A              |
+| Cyrille Rossant | N/A              |
+| Nicolas Rougier | N/A              |
 
 ---
 Part of MVG-0.1-beta.

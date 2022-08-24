@@ -1,11 +1,12 @@
 # Charter for the [FIXME] Organization
 
-This is the organizational charter for the [FIXME] Organization (the "Organization"). By adding their name to
+This is the organizational charter for the VisPy Organization (the "Organization"). By adding their name to
 the [Steering Committee.md file](./STEERING-COMMITTEE.md), Steering Committee members agree as follows.
 
 ## 1. Mission
 
-[Set out mission of the Organization].
+The VisPy organization's mission is to provide libraries and tools that allow for high-performance interactive 2D and
+3D scientific visualizations.
 
 ## 2. Steering Committee
 
@@ -73,7 +74,8 @@ In order to be eligible to be a Organization project, a project must:
       the [Open Web Foundation Agreements](https://www.openwebfoundation.org/the-agreements)
       or [Community Specification Agreement](https://github.com/CommunitySpecification/1.0).
 * Include and adhere to the Organization's policies, including the [trademark policy](./TRADEMARKS.md),
-  the [antitrust policy](./ANTITRUST.md), and the [code of conduct](https://github.com/vispy/vispy/blob/main/CODE_OF_CONDUCT.md).
+  the [antitrust policy](./ANTITRUST.md), and the
+  [code of conduct](https://github.com/vispy/vispy/blob/main/CODE_OF_CONDUCT.md).
 
 ## 9. Amendments
 
