@@ -1,6 +1,6 @@
 # Governance Policy
 
-This document provides the governance policy for the Project. Maintainers agree to this policy and to abide by all
+This document provides the governance policy for the VisPy Project. Maintainers agree to this policy and to abide by all
 Project polices, including the [code of conduct](https://github.com/vispy/vispy/blob/main/CODE_OF_CONDUCT.md),
 [trademark policy](../org/TRADEMARKS.md), and [antitrust policy](../org/ANTITRUST.md) by adding their name to
 the [maintainers.md file](./MAINTAINERS.md).
