@@ -1,4 +1,4 @@
-# Charter for the [FIXME] Organization
+# Charter for the VisPy Organization
 
 This is the organizational charter for the VisPy Organization (the "Organization"). By adding their name to
 the [Steering Committee.md file](./STEERING-COMMITTEE.md), Steering Committee members agree as follows.
