@@ -65,7 +65,7 @@ class TubeVisual(MeshVisual):
         segments = len(points) - 1
 
         # if single radius, convert to list of radii
-        if not isinstance(radius, collections.Iterable):
+        if not isinstance(radius, collections.abc.Iterable):
             radius = [radius] * len(points)
         elif len(radius) != len(points):
             raise ValueError('Length of radii list must match points.')
