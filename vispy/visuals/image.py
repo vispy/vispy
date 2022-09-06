@@ -10,7 +10,6 @@ import warnings
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..gloo.texture import should_cast_to_f32
 from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
@@ -373,7 +372,7 @@ class ImageVisual(Visual):
             )
         return tex
 
-    def set_data(self, image):
+    def set_data(self, image, copy=False):
         """Set the image data.
 
         Parameters
@@ -383,13 +382,11 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = np.asarray(image)
+        data = np.array(image, copy=copy)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
             )
-        if should_cast_to_f32(data.dtype):
-            data = data.astype(np.float32)
         # can the texture handle this data?
         self._texture.check_data_format(data)
         if self._data is None or self._data.shape[:2] != data.shape[:2]:
@@ -618,7 +615,8 @@ class ImageVisual(Visual):
         except RuntimeError:
             pre_clims = "auto"
         pre_internalformat = self._texture.internalformat
-        self._texture.scale_and_set_data(self._data)
+        # copy was already made on `set_data` if requested
+        self._texture.scale_and_set_data(self._data, copy=False)
         post_clims = self._texture.clim_normalized
         post_internalformat = self._texture.internalformat
         # color transform needs rebuilding if the internalformat was changed

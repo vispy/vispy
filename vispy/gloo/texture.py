@@ -13,21 +13,44 @@ from .globject import GLObject
 from .util import check_enum
 
 
-F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
-                         "than 32-bits, precision will be lost due to "
-                         "downcasting to 32-bit float.")
+def get_dtype_limits(dtype):
+    if np.issubdtype(dtype, np.floating):
+        info = np.finfo(dtype)
+    else:
+        info = np.iinfo(dtype)
+    return info.min, info.max
 
 
-def should_cast_to_f32(data_dtype):
-    """Check if data type is floating point with more than 32-bits."""
-    data_dtype = np.dtype(data_dtype)
-    is_floating = np.issubdtype(data_dtype, np.floating)
-    gt_float32 = data_dtype.itemsize > 4
-    if is_floating and gt_float32:
-        # OpenGL can't support floating point numbers greater than 32-bits
-        warnings.warn(F64_PRECISION_WARNING)
-        return True
-    return False
+def convert_dtype_and_clip(data, dtype, copy=False):
+    """
+    cast dtype to a new one, but first clip data to the new dtype's limits if needed
+    """
+    old_min, old_max = get_dtype_limits(data.dtype)
+    new_min, new_max = get_dtype_limits(dtype)
+    if new_max >= old_max and new_min <= old_min:
+        # no need to clip
+        return np.array(data, dtype=dtype, copy=copy)
+    else:
+        # to reduce copying, we clip into a pre-generated array of the right dtype
+        new_data = np.empty_like(data, dtype=dtype)
+        np.clip(data, new_min, new_max, out=new_data)
+        return new_data
+
+
+def downcast_to_32bit_if_needed(data, copy=False):
+    """Downcast to 32bit dtype if necessary."""
+    dtype = np.dtype(data.dtype)
+    if dtype.itemsize > 4:
+        warnings.warn(
+            f"GPUs can't support dtypes bigger than 32-bit, but got '{dtype}'. "
+            "Precision will be lost due to downcasting to 32-bit."
+        )
+
+    size = min(dtype.itemsize, 4)
+    kind = dtype.kind
+
+    new_dtype = np.dtype(f'{kind}{size}')
+    return convert_dtype_and_clip(data, new_dtype, copy=copy)
 
 
 class BaseTexture(GLObject):
@@ -332,7 +355,7 @@ class BaseTexture(GLObject):
     def _set_data(self, data, offset=None, copy=False):
         """Internal method for set_data."""
         # Copy if needed, check/normalize shape
-        data = np.array(data, copy=copy)
+        data = downcast_to_32bit_if_needed(data, copy=copy)
         data = self._normalize_shape(data)
 
         # Maybe resize to purge DATA commands?

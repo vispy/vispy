@@ -122,7 +122,7 @@ class IsocurveVisual(LineVisual):
         # this works for now and the existing examples, but should be tested
         # thoroughly also with the data-sanity check in set_data-function
         choice = np.nonzero((self.levels > self._data.min()) &
-                            (self._levels < self._data.max()))
+                            (self.levels < self._data.max()))
         levels_to_calc = np.array(self.levels)[choice]
 
         # save minimum level index

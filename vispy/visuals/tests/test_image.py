@@ -76,7 +76,7 @@ def _get_orig_and_new_clims(input_dtype):
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
-    size = (40, 40)
+    size = (80, 80)
     if texture_format == '__dtype__':
         texture_format = input_dtype
     shape = size + (num_channels,) if num_channels > 0 else size
@@ -346,6 +346,46 @@ def test_image_interpolation():
         assert np.allclose(render[left], black)
         assert np.allclose(render[right], white)
         assert np.allclose(render[center], gray, atol=5)  # we just want gray, this is not quantitative
+
+
+@requires_application()
+def test_image_set_data_different_dtype():
+    size = (80, 80)
+    data = np.array([[0, 127]], dtype=np.int8)
+    left = (40, 10)
+    right = (40, 70)
+    white = (255, 255, 255, 255)
+    black = (0, 0, 0, 255)
+
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
+        view = c.central_widget.add_view()
+        view.camera = PanZoomCamera((0, 0, 2, 1))
+        image = Image(data=data, cmap='grays', clim=[0, 127],
+                      parent=view.scene)
+
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # same data as float should change nothing
+        image.set_data(data.astype(np.float32))
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # something inverted, different dtype
+        new_data = np.array([[127, 0]], dtype=np.float16)
+        image.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], white)
+        assert np.allclose(render[right], black)
+
+        # out of bounds should clip (2000 > 127)
+        new_data = np.array([[0, 2000]], dtype=np.float64)
+        image.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
 
 
 run_tests_if_main()
