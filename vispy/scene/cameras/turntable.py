@@ -24,17 +24,15 @@ class TurntableCamera(Base3DRotationCamera):
         Field of view. Zero (default) means orthographic projection.
     elevation : float
         Elevation angle in degrees. The elevation angle represents a
-        rotation of the camera around the scene x-axis according to the
-        right-hand screw rule. The camera looks along the +y direction
-        when the elevation is 0 degrees.
+        rotation of the camera around the current scene x-axis. The
+        camera looks along the +y direction when the elevation is 0 degrees.
     azimuth : float
         Azimuth angle in degrees. The azimuth angle represents a
-        rotation of the camera around the scene y-axis according to the
+        rotation of the camera around the scene z-axis according to the
         right-hand screw rule.
     roll : float
         Roll angle in degrees. The roll angle represents a rotation of
-        the camera around the scene z-axis according to the right-hand
-        screw rule.
+        the camera around the current scene y-axis.
     distance : float | None
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
@@ -70,12 +68,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def elevation(self):
-        """Get the camera elevation angle in degrees.
-
-        The elevation angle represents a rotation of the camera around
-        the scene x-axis according to the right-hand screw rule. The
-        camera looks along the +y direction when the elevation is 0
-        degrees."""
+        """Get the camera elevation angle in degrees."""
         return self._elevation
 
     @elevation.setter
@@ -86,10 +79,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def azimuth(self):
-        """Get the camera azimuth angle in degrees.
-
-        The azimuth angle represents a rotation of the camera around the
-        scene y-axis according to the right-hand screw rule."""
+        """Get the camera azimuth angle in degrees."""
         return self._azimuth
 
     @azimuth.setter
@@ -104,10 +94,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def roll(self):
-        """Get the camera roll angle in degrees.
-
-        The roll angle represents a rotation of the camera around the
-        scene z-axis according to the right-hand screw rule."""
+        """Get the camera roll angle in degrees."""
         return self._roll
 
     @roll.setter
@@ -147,7 +134,7 @@ class TurntableCamera(Base3DRotationCamera):
         """Return a rotation matrix based on camera parameters"""
         up, forward, right = self._get_dim_vectors()
         matrix = (
-            transforms.rotate(self.elevation, right)
+            transforms.rotate(self.elevation, -right)
             .dot(transforms.rotate(self.azimuth, up))
             .dot(transforms.rotate(self.roll, forward))
         )
