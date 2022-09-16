@@ -416,6 +416,10 @@ class VertexBuffer(DataBuffer):
 
     _GLIR_TYPE = 'VertexBuffer'
 
+    def __init__(self, data):
+        super().__init__(data)
+        self._divisors = {}
+
     def _prepare_data(self, data, convert=False):
         # Build a structured view of the data if:
         #  -> it is not already a structured array
@@ -448,6 +452,15 @@ class VertexBuffer(DataBuffer):
             data = data.view(dtype=[dtype_def])
             self._last_dim = c
         return data
+
+    def set_instancing_divisor(self, attribute, divisor):
+        if attribute not in self.data.dtype.names:
+            raise KeyError(attribute)
+        self._divisors[attribute] = int(divisor)
+
+    def set_data(self, data, copy=False):
+        super().set_data(data, copy)
+        self._divisors = {k: self._divisors[k] for k in self.data.dtype.names}
 
 
 def _last_stack_str():
