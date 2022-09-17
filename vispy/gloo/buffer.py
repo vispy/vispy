@@ -414,11 +414,11 @@ class VertexBuffer(DataBuffer):
         Buffer data (optional)
     """
 
-    _GLIR_TYPE = 'VertexBuffer'
-
-    def __init__(self, data):
+    def __init__(self, data, divisor=None):
         super().__init__(data)
-        self._divisors = {}
+        self.set_instancing_divisor(divisor)
+
+    _GLIR_TYPE = 'VertexBuffer'
 
     def _prepare_data(self, data, convert=False):
         # Build a structured view of the data if:
@@ -453,14 +453,8 @@ class VertexBuffer(DataBuffer):
             self._last_dim = c
         return data
 
-    def set_instancing_divisor(self, attribute, divisor):
-        if attribute not in self.data.dtype.names:
-            raise KeyError(attribute)
-        self._divisors[attribute] = int(divisor)
-
-    def set_data(self, data, copy=False):
-        super().set_data(data, copy)
-        self._divisors = {k: self._divisors[k] for k in self.data.dtype.names}
+    def set_instancing_divisor(self, divisor):
+        self._divisor = int(divisor) if divisor else None
 
 
 def _last_stack_str():
