@@ -414,7 +414,7 @@ class VertexBuffer(DataBuffer):
         Buffer data (optional)
     """
 
-    def __init__(self, data, divisor=None):
+    def __init__(self, data=None, divisor=None):
         super().__init__(data)
         self.set_instancing_divisor(divisor)
 
