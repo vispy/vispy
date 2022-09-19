@@ -83,7 +83,6 @@ class TurntableCamera(Base3DRotationCamera):
         """Get the camera elevation angle in degrees.
         
         The camera points along the x-y plane when the angle is 0.
-        
         """
         return self._elevation
 
@@ -95,8 +94,10 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def azimuth(self):
-        """Get the camera azimuth angle in degrees. The camera points
-        along the y-z plane when the angle is 0."""
+        """Get the camera azimuth angle in degrees.
+        
+        The camera points along the y-z plane when the angle is 0.
+        """
         return self._azimuth
 
     @azimuth.setter
