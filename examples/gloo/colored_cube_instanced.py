@@ -3,9 +3,13 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-# Author: Nicolas P .Rougier
+# Author: Nicolas P .Rougier, Lorenzo Gaifas
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
+"""
+Draw many colored cubes using instanced rendering
+=================================================
+"""
 
 import numpy as np
 
@@ -21,10 +25,13 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+# per-vertex attributes
 attribute vec3 position;
 attribute vec2 texcoord;
 attribute vec3 normal;
-attribute vec4 color; // unused
+attribute vec4 color; // unused (it's returned by generate_cube() but we don't need it)
+
+# per-instance attributes
 attribute vec3 instance_shift;
 attribute vec3 instance_color;
 
@@ -47,7 +54,7 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(512, 512), title='Coloinstance_color cube',
+        app.Canvas.__init__(self, size=(512, 512), title='Colored instanced cube',
                             keys='interactive')
 
         # Build cube data
