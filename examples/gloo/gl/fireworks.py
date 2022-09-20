@@ -9,9 +9,10 @@
 # Keywords: oarticles, gl, sprites
 # -----------------------------------------------------------------------------
 """
-Example demonstrating simulation of fireworks using point sprites.
-(adapted from the "OpenGL ES 2.0 Programming Guide")
+Example demonstrating simulation of fireworks using point sprites
+=================================================================
 
+(adapted from the "OpenGL ES 2.0 Programming Guide")
 This example demonstrates a series of explosions that last one second. The
 visualization during the explosion is highly optimized using a Vertex Buffer
 Object (VBO). After each explosion, vertex data for the next explosion are
