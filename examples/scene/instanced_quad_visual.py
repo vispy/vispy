@@ -5,9 +5,13 @@
 # -----------------------------------------------------------------------------
 from vispy import app, gloo, visuals, scene, use
 import numpy as np
+"""
+Custom Visual for instanced rendering of a colored quad
+=======================================================
+"""
+# this example is based on the tutorial: T01_basic_visual.py
 
-# this example is based on T01_basic_visual.py
-
+# full gl+ context is required for instanced rendering
 use(gl='gl+')
 
 
@@ -62,11 +66,12 @@ class InstancedRectVisual(visuals.Visual):
         view.view_program.vert['transform'] = view.get_transform()
 
 
+# create a visual node class to add it to the canvas
 InstancedRect = scene.visuals.create_visual_node(InstancedRectVisual)
 
 canvas = scene.SceneCanvas(keys='interactive', show=True)
 
-rect = [InstancedRect(0, 0, 20, 40, parent=canvas.scene)]
+rect = InstancedRect(0, 0, 20, 40, parent=canvas.scene)
 
 if __name__ == '__main__':
     import sys
