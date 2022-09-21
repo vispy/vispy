@@ -25,13 +25,13 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-# per-vertex attributes
+// per-vertex attributes
 attribute vec3 position;
 attribute vec2 texcoord;
 attribute vec3 normal;
 attribute vec4 color; // unused (it's returned by generate_cube() but we don't need it)
 
-# per-instance attributes
+// per-instance attributes
 attribute vec3 instance_shift;
 attribute vec3 instance_color;
 
