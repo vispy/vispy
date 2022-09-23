@@ -104,10 +104,15 @@ class PlanesClipper(Filter):
     def clipping_planes(self, value: Optional[np.ndarray]):
         if value is None:
             value = np.empty([0, 2, 3])
-        self._clipping_planes = value
 
-        clip_func = Function(self._build_clipping_planes_glsl(len(value)))
-        self.fshader['clip_with_planes'] = clip_func
+        # only recreate function if amount of clipping planes changes
+        if len(value) != len(self._clipping_planes):
+            clip_func = Function(self._build_clipping_planes_glsl(len(value)))
+            self.fshader['clip_with_planes'] = clip_func
+        else:
+            clip_func = self.fshader['clip_with_planes']
+
+        self._clipping_planes = value
 
         for idx, plane in enumerate(value):
             clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
