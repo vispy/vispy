@@ -141,7 +141,6 @@ vec4 texture_lookup(vec2 texcoord) {
     vec2 kernel_pos, tex_pos;
     vec4 color = vec4(0);
     float weight;
-    float weight_sum = 0;
 
     // offset 0.5 to sample center of pixels
     for (float i = 0.5; i < $kernel_shape.x; i++) {
@@ -150,15 +149,14 @@ vec4 texture_lookup(vec2 texcoord) {
             tex_pos = sampling_corner + vec2(i, j) * tex_pixel;
             // TODO: allow other edge effects, like mirror or wrap
             if (tex_pos.x >= 0 && tex_pos.y >= 0 && tex_pos.x <= 1 && tex_pos.y <= 1) {
-                weight = texture2D($kernel, kernel_pos).g;
-                weight_sum += weight;
+                weight = texture2D($kernel, kernel_pos).r;
                 // make sure to clamp or we sample outside
                 color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
             }
         }
     }
 
-    return color / weight_sum;
+    return color;
 }
 """
 
@@ -505,7 +503,7 @@ class ImageVisual(Visual):
         if value.ndim != 2:
             raise ValueError(f'kernel must have 2 dimensions; got {value.ndim}')
         self._custom_kernel = value
-        self._custom_kerneltex = Texture2D(value, interpolation='nearest')
+        self._custom_kerneltex = Texture2D(value, interpolation='nearest', internalformat='r32f')
         if self._data_lookup_fn is not None and 'kernel' in self._data_lookup_fn:
             self._data_lookup_fn['kernel'] = self._custom_kerneltex
             self._data_lookup_fn['kernel_shape'] = value.shape[::-1]

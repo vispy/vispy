@@ -21,6 +21,7 @@ from vispy import app
 from vispy.io import load_data_file, read_png
 
 from scipy.signal.windows import gaussian
+from scipy.ndimage import gaussian_filter
 import numpy as np
 
 canvas = scene.SceneCanvas(keys='interactive')
@@ -30,25 +31,31 @@ canvas.show()
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
-# Create the image
-img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
+# Load the image with a slight blur (so we can later show the sharpening filter)
+img_data = gaussian_filter(
+    read_png(load_data_file('mona_lisa/mona_lisa_sm.png')),
+    sigma=1,
+)
 
-# build custom kernels
+# build gaussian kernel
 small_gaussian_window = gaussian(5, 1)
 small_gaussian_kernel = np.outer(small_gaussian_window, small_gaussian_window)
+# normalize
+small_gaussian_kernel = small_gaussian_kernel / small_gaussian_kernel.sum()
 
+# do the same but larget and with bigger sigma
 big_gaussian_window = gaussian(20, 10)
 big_gaussian_kernel = np.outer(big_gaussian_window, big_gaussian_window)
+big_gaussian_kernel = big_gaussian_kernel / big_gaussian_kernel.sum()
 
-h_prewitt_kernel = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])
-v_prewitt_kernel = h_prewitt_kernel.T
+# sharpening kernel
+sharpen_kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
 
 kernels = {
     'null': np.ones((1, 1)),
     'small gaussian': small_gaussian_kernel,
     'big gaussian': big_gaussian_kernel,
-    'horizontal prewitt': h_prewitt_kernel,
-    'vertical prewitt': v_prewitt_kernel,
+    'sharpening': sharpen_kernel,
 }
 
 k_names = cycle(kernels.keys())
