@@ -42,8 +42,6 @@ class PlanesClipper(Filter):
     """
 
     def __init__(self, clipping_planes: Optional[np.ndarray] = None, coord_system: str = 'scene'):
-        self._clipping_planes = np.empty((0, 2, 3), dtype=np.float32)
-
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if coord_system not in tr:
             raise ValueError(f'Invalid coordinate system {coord_system}. Must be one of {tr}.')
@@ -53,6 +51,11 @@ class PlanesClipper(Filter):
             vcode=Function(self.VERT_CODE), vhook='post', vpos=1,
             fcode=Function(self.FRAG_CODE), fhook='pre', fpos=1,
         )
+
+        # initialize clipping planes
+        self._clipping_planes = np.empty((0, 2, 3), dtype=np.float32)
+        self._clipping_planes_func = Function(self._build_clipping_planes_glsl(0))
+        self.fshader['clip_with_planes'] = self._clipping_planes_func
 
         v_position = Varying('v_position', 'vec4')
         self.vshader['v_position'] = v_position
@@ -109,13 +112,11 @@ class PlanesClipper(Filter):
 
         # only recreate function if amount of clipping planes changes
         if len(value) != len(self._clipping_planes):
-            clip_func = Function(self._build_clipping_planes_glsl(len(value)))
-            self.fshader['clip_with_planes'] = clip_func
-        else:
-            clip_func = self.fshader['clip_with_planes']
+            self._clipping_planes_func = Function(self._build_clipping_planes_glsl(len(value)))
+            self.fshader['clip_with_planes'] = self._clipping_planes_func
 
         self._clipping_planes = value
 
         for idx, plane in enumerate(value):
-            clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
-            clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
+            self._clipping_planes_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            self._clipping_planes_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
