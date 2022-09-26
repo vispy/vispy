@@ -42,6 +42,8 @@ class PlanesClipper(Filter):
     """
 
     def __init__(self, clipping_planes: Optional[np.ndarray] = None, coord_system: str = 'scene'):
+        self._clipping_planes = np.empty((0, 2, 3), dtype=np.float32)
+
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if coord_system not in tr:
             raise ValueError(f'Invalid coordinate system {coord_system}. Must be one of {tr}.')
@@ -103,7 +105,7 @@ class PlanesClipper(Filter):
     @clipping_planes.setter
     def clipping_planes(self, value: Optional[np.ndarray]):
         if value is None:
-            value = np.empty([0, 2, 3])
+            value = np.empty((0, 2, 3), dtype=np.float32)
 
         # only recreate function if amount of clipping planes changes
         if len(value) != len(self._clipping_planes):
