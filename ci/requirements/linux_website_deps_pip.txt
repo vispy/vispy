@@ -6,7 +6,7 @@
  sphinx_gallery
  sphinxcontrib-apidoc
  myst-parser
- pydata-sphinx-theme
+ pydata-sphinx-theme!=0.10
  pytest
  pillow
  pyopengl
