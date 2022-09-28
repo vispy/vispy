@@ -416,7 +416,7 @@ class VertexBuffer(DataBuffer):
 
     def __init__(self, data=None, divisor=None):
         super().__init__(data)
-        self.set_instancing_divisor(divisor)
+        self.divisor = divisor
 
     _GLIR_TYPE = 'VertexBuffer'
 
@@ -453,8 +453,13 @@ class VertexBuffer(DataBuffer):
             self._last_dim = c
         return data
 
-    def set_instancing_divisor(self, divisor):
-        self._divisor = int(divisor) if divisor else None
+    @property
+    def divisor(self):
+        return self._divisor
+
+    @divisor.setter
+    def divisor(self, value):
+        self._divisor = max(1, int(value)) if value else None
 
 
 def _last_stack_str():
