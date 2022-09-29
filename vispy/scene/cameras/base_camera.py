@@ -88,7 +88,7 @@ class BaseCamera(Node):
 
         # We initialize these parameters here, because we want these props
         # available in all cameras. Note that PanZoom does not use _center
-        self._fov = self.fow(kwargs.pop('fov', 0.0))
+        self._fov = self.fov(kwargs.pop('fov', 0.0))
         self._center = None
         self._depth_value = 1e6  # bit+depth >= 24, otherwise should do 3e3
 
@@ -224,8 +224,8 @@ class BaseCamera(Node):
     @fov.setter
     def fov(self, fov):
         fov = float(fov)
-        if fov < 0 or fov >= 180:
-            raise ValueError("fov must be between 0 and 180.")
+        if fov < 0 or fov > 180:
+            raise ValueError("fov must be 0 <= fov <= 180")
         self._fov = fov
         self.view_changed()
 
