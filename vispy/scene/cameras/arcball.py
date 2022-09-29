@@ -24,7 +24,7 @@ class ArcballCamera(Base3DRotationCamera):
     Parameters
     ----------
     fov : float
-        Field of view. Zero (default) means orthographic projection.
+        Field of view. Zero means orthographic projection, default is 45.0 (some perspective)
     distance : float | None
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
