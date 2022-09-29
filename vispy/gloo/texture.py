@@ -37,7 +37,7 @@ def convert_dtype_and_clip(data, dtype, copy=False):
                 import cupy as cp
             except ImportError:
                 raise e
-            data = cp.array(data, dtype=dtype, copy=copy)
+            return cp.array(data, dtype=dtype, copy=copy)
     else:
         # to reduce copying, we clip into a pre-generated array of the right dtype
         new_data = np.empty_like(data, dtype=dtype)
@@ -175,7 +175,7 @@ class BaseTexture(GLObject):
 
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input
-        if isinstance(data_or_shape, np.ndarray):
+        if hasattr(data_or_shape, 'shape'):
             data = data_or_shape
             shape = data.shape
         else:
@@ -811,7 +811,7 @@ class TextureEmulated3D(Texture2D):
         self._update_variables()
 
     def _set_emulated_shape(self, data_or_shape):
-        if isinstance(data_or_shape, np.ndarray):
+        if hasattr(data_or_shape, 'shape'):
             self._emulated_shape = data_or_shape.shape
         else:
             assert isinstance(data_or_shape, tuple)
