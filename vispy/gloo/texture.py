@@ -29,7 +29,15 @@ def convert_dtype_and_clip(data, dtype, copy=False):
     new_min, new_max = get_dtype_limits(dtype)
     if new_max >= old_max and new_min <= old_min:
         # no need to clip
-        return np.array(data, dtype=dtype, copy=copy)
+        try:
+            return np.array(data, dtype=dtype, copy=copy)
+        except TypeError as e:
+            # might be a cupy array, which raises error with implicit conversion
+            try:
+                import cupy as cp
+            except ImportError:
+                raise e
+            data = cp.array(data, dtype=dtype, copy=copy)
     else:
         # to reduce copying, we clip into a pre-generated array of the right dtype
         new_data = np.empty_like(data, dtype=dtype)

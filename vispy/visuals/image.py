@@ -382,7 +382,15 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = np.array(image, copy=copy)
+        try:
+            data = np.array(image, copy=copy)
+        except TypeError as e:
+            # might be a cupy array, which raises error with implicit conversion
+            try:
+                import cupy as cp
+            except ImportError:
+                raise e
+            data = cp.array(image, copy=copy)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
