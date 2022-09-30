@@ -53,7 +53,7 @@ class BaseCamera(Node):
     zoom_factor = 0.007
 
     def __init__(self, interactive=True, flip=None, up='+z', parent=None,
-                 name=None):
+                 name=None, fov=0.0):
         super(BaseCamera, self).__init__(parent, name)
 
         # The viewbox for which this camera is active
@@ -88,7 +88,7 @@ class BaseCamera(Node):
 
         # We initialize these parameters here, because we want these props
         # available in all cameras. Note that PanZoom does not use _center
-        self._fov = self.fov(kwargs.pop('fov', 0.0))
+        self.fov = fov
         self._center = None
         self._depth_value = 1e6  # bit+depth >= 24, otherwise should do 3e3
 

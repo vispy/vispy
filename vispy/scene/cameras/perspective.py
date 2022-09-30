@@ -30,12 +30,12 @@ class PerspectiveCamera(BaseCamera):
     _state_props = ('scale_factor', 'center', 'fov')
 
     def __init__(self, fov=60.0, scale_factor=None, center=None, **kwargs):
+        kwargs['fov'] = fov
         super(PerspectiveCamera, self).__init__(**kwargs)
         # Camera transform
         self.transform = MatrixTransform()
 
         # Set camera attributes
-        self.fov = fov
         self._scale_factor = None
         self._center = None
 
