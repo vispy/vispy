@@ -1,6 +1,5 @@
 import numpy as np
 from vispy import scene, app
-from vispy.color import ColorArray
 
 if __name__ == "__main__":
 
@@ -24,8 +23,8 @@ if __name__ == "__main__":
 
     grid_lines1 = scene.visuals.GridLines(parent=vb1.scene)
 
-    bar1 = scene.Bar(height=np.arange(0, 250, 0.5), bottom=np.arange(0,125, 0.25),width=0.8, shift=0.5, color=(0.25, 0.8, 0.),
-                           parent=vb1.scene)
+    bar1 = scene.Bar(height=np.arange(0, 250, 0.5), bottom=np.arange(0, 125, 0.25), width=0.8, shift=0.5, 
+                     color=(0.25, 0.8, 0.), parent=vb1.scene)
 
     vb1.camera.set_range()
 
