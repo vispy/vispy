@@ -232,6 +232,7 @@ def generate_docstring(subclass, clsname):
 
 Arrow = create_visual_node(visuals.ArrowVisual)
 Axis = create_visual_node(visuals.AxisVisual)
+Bar = create_visual_node(visuals.BarVisual)
 Box = create_visual_node(visuals.BoxVisual)
 ColorBar = create_visual_node(visuals.ColorBarVisual)
 Compound = create_visual_node(visuals.CompoundVisual)
