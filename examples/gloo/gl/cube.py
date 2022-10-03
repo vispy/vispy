@@ -6,6 +6,10 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
+"""
+Drawing a rotated 3D cube
+=========================
+"""
 import math
 import numpy as np
 
