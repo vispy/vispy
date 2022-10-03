@@ -8,7 +8,9 @@
 # Date:   2015-01-22
 # -----------------------------------------------------------------------------
 
-"""Example using texture internalformat for higher precision.
+"""
+Example using texture internalformat for higher precision
+=========================================================
 
 Generates a gradient texture with high dynamic range and renders it
 with a fragment shader that tests for quantization errors by comparing
