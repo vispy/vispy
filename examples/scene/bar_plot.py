@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 2
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""
+Bar plot with Axis 
+=====================
+"""
+
 import numpy as np
 from vispy import scene, app
 
@@ -27,6 +38,5 @@ if __name__ == "__main__":
                      color=(0.25, 0.8, 0.), parent=vb1.scene)
 
     vb1.camera.set_range()
-
-    canvas.measure_fps()
+    
     app.run()
