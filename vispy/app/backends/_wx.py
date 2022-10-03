@@ -466,7 +466,7 @@ class TimerBackend(BaseTimerBackend):
         parent.Bind(wx.EVT_TIMER, self._vispy_timeout, self._timer)
 
     def _vispy_start(self, interval):
-        self._timer.Start(interval * 1000., False)
+        self._timer.Start(int(interval * 1000.), False)
 
     def _vispy_stop(self):
         self._timer.Stop()
