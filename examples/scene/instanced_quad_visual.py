@@ -3,13 +3,15 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-from vispy import app, gloo, visuals, scene, use
-import numpy as np
 """
 Custom Visual for instanced rendering of a colored quad
 =======================================================
-"""
+
 # this example is based on the tutorial: T01_basic_visual.py
+"""
+
+from vispy import app, gloo, visuals, scene, use
+import numpy as np
 
 # full gl+ context is required for instanced rendering
 use(gl='gl+')
