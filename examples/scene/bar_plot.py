@@ -5,8 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Bar plot with Axis 
-==================
+Vertical bar plot with Axis 
+===========================
 """
 
 import numpy as np
@@ -34,8 +34,9 @@ if __name__ == "__main__":
 
     grid_lines1 = scene.visuals.GridLines(parent=vb1.scene)
 
-    bar1 = scene.Bar(height=np.arange(0, 250, 0.5), bottom=np.arange(0, 125, 0.25), width=0.8, shift=0.5, 
-                     color=(0.25, 0.8, 0.), parent=vb1.scene)
+    bar1 = scene.Bar(height=np.arange(0, 250, 0.5),  # for a more traditional horizontal plot, either remove the 
+                     bottom=np.arange(0, 125, 0.25), width=0.8, shift=0.5,  # orientation paramenter outright
+                     color=(0.25, 0.8, 0.), orientation='v', parent=vb1.scene)  # or set it to 'h'
 
     vb1.camera.set_range()
     
