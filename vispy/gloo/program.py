@@ -251,13 +251,16 @@ class Program(GLObject):
         self._code_variables = {}
         for kind in ('uniform', 'attribute', 'varying', 'const', 'in', 'out'):
 
+            # pick regex for the correct kind of var
+            reg = REGEX_VAR[kind]
+
             # treat *in* like attribute, *out* like varying
             if kind == 'in':
                 kind = 'attribute'
             elif kind == 'out':
                 kind = 'varying'
 
-            for m in re.finditer(REGEX_VAR[kind], code):
+            for m in re.finditer(reg, code):
                 gtype = m.group('type')
                 size = int(m.group('size')) if m.group('size') else -1
                 this_kind = kind

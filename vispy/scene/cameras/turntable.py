@@ -18,19 +18,25 @@ class TurntableCamera(Base3DRotationCamera):
     the ``center`` indicates the position to put at the center of the
     view.
 
+    When ``elevation`` and ``azimuth`` are set to 0, the camera
+    points along the +y axis.
+
     Parameters
     ----------
     fov : float
         Field of view. Zero (default) means orthographic projection.
     elevation : float
-        Elevation angle in degrees. Positive angles place the camera
-        above the cente point, negative angles place the camera below
-        the center point.
+        Elevation angle in degrees. The elevation angle represents a
+        rotation of the camera around the current scene x-axis. The
+        camera points along the x-y plane when the angle is 0.
     azimuth : float
-        Azimuth angle in degrees. Zero degrees places the camera on the
-        positive x-axis, pointing in the negative x direction.
+        Azimuth angle in degrees. The azimuth angle represents a
+        rotation of the camera around the scene z-axis according to the
+        right-hand screw rule. The camera points along the y-z plane when
+        the angle is 0.
     roll : float
-        Roll angle in degrees
+        Roll angle in degrees. The roll angle represents a rotation of
+        the camera around the current scene y-axis.
     distance : float | None
         The distance of the camera from the rotation point (only makes sense
         if fov > 0). If None (default) the distance is determined from the
@@ -51,24 +57,32 @@ class TurntableCamera(Base3DRotationCamera):
 
     """
 
-    _state_props = Base3DRotationCamera._state_props + ('elevation',
-                                                        'azimuth', 'roll')
+    _state_props = Base3DRotationCamera._state_props + ("elevation", "azimuth", "roll")
 
-    def __init__(self, fov=45.0, elevation=30.0, azimuth=30.0, roll=0.0,
-                 distance=None, translate_speed=1.0, **kwargs):
+    def __init__(
+        self,
+        fov=45.0,
+        elevation=30.0,
+        azimuth=30.0,
+        roll=0.0,
+        distance=None,
+        translate_speed=1.0,
+        **kwargs
+    ):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes
         self.azimuth = azimuth
         self.elevation = elevation
-        self.roll = roll  # interaction not implemented yet
+        self.roll = roll
         self.distance = distance  # None means auto-distance
         self.translate_speed = translate_speed
 
     @property
     def elevation(self):
-        """The angle of the camera in degrees above the horizontal (x, z)
-        plane.
+        """Get the camera elevation angle in degrees.
+        
+        The camera points along the x-y plane when the angle is 0.
         """
         return self._elevation
 
@@ -80,8 +94,9 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def azimuth(self):
-        """The angle of the camera in degrees around the y axis. An angle of
-        0 places the camera within the (y, z) plane.
+        """Get the camera azimuth angle in degrees.
+        
+        The camera points along the y-z plane when the angle is 0.
         """
         return self._azimuth
 
@@ -97,9 +112,7 @@ class TurntableCamera(Base3DRotationCamera):
 
     @property
     def roll(self):
-        """The angle of the camera in degrees around the z axis. An angle of
-        0 places puts the camera upright.
-        """
+        """Get the camera roll angle in degrees."""
         return self._roll
 
     @roll.setter
@@ -138,10 +151,12 @@ class TurntableCamera(Base3DRotationCamera):
     def _get_rotation_tr(self):
         """Return a rotation matrix based on camera parameters"""
         up, forward, right = self._get_dim_vectors()
-        return np.dot(
-            transforms.rotate(self.elevation, -right),
-            transforms.rotate(self.azimuth, up)
+        matrix = (
+            transforms.rotate(self.elevation, -right)
+            .dot(transforms.rotate(self.azimuth, up))
+            .dot(transforms.rotate(self.roll, forward))
         )
+        return matrix
 
     def _dist_to_trans(self, dist):
         """Convert mouse x, y movement into x, y, z translations"""

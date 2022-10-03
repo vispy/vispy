@@ -50,12 +50,12 @@ def test_rotation_angle():
     view.camera.elevation = 90.
 
     assert_allclose(axis1._rotation_angle, 0)
-    assert_allclose(axis2._rotation_angle, -30)
+    assert_allclose(axis2._rotation_angle, -30, rtol=1e-3)
 
     view.camera.elevation = 45.
 
     assert_allclose(axis1._rotation_angle, 0)
-    assert_allclose(axis2._rotation_angle, -22.207653)
+    assert_allclose(axis2._rotation_angle, -22.207653, rtol=1e-3)
 
     view.camera.fov = 20.
 
