@@ -6,6 +6,10 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
+"""
+Show a rotating textured cube
+=============================
+"""
 import numpy as np
 
 from vispy import gloo, app

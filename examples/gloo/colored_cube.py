@@ -6,6 +6,10 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
+"""
+Show a rotating colored cube
+============================
+"""
 
 import numpy as np
 
