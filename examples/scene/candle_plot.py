@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 2
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""
+Candle with Animation and Axis 
+=====================
+"""
+
 import numpy as np
 from vispy import scene, app
 from io import StringIO
@@ -127,7 +138,7 @@ if __name__ == "__main__":
             ii = int(i)
 
     canvas = scene.SceneCanvas(keys='interactive', vsync=False)
-    canvas.size = 2160, 600
+    canvas.size = 800, 600
     canvas.show()
 
     grid = canvas.central_widget.add_grid()
