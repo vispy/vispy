@@ -26,23 +26,39 @@ class BarVisual(MeshVisual):
     color : instance of Color
         Color of the bar.
     orientation : {'h', 'v'}
-        Orientation of the histogram - 'h' is default
+        Orientation of the bars - 'h' is default
+    color_array : array-like
+        [[1, 0, 0], [0, 1, 0], [0, 0, 1]] exactly one rgb array for each bar. This would be for 3 Bars 
     """
 
-    def __init__(self, height, bottom=None, width=0.8, shift=0.0, color='w', orientation='h'):
+    def __init__(self, height, bottom=None, width=0.8, shift=0.0, color='w', orientation='h', color_array=None):
         if bottom is None:
             bottom = np.zeros(height.shape[0])
+
+        if height.shape != bottom.shape:
+            raise ValueError("Height and Bottom must be same shape: Height: " + height.shape + " Bottom: " + bottom.shape)
         
         rr, tris = calc_vertices(height, bottom, width, shift, orientation)
 
-        MeshVisual.__init__(self, rr, tris, color=color)
+        if color_array is not None and color_array.shape[0] == height.shape[0] and color_array.shape[1] == 3:
+            MeshVisual.__init__(self, rr, tris, face_colors=np.repeat(color_array, 2, axis=0))
+        else:
+            MeshVisual.__init__(self, rr, tris, color=color)
 
-    def update_data(self, height, bottom=None, width=0.8, shift=0.0, color='w'):
+    def update_data(self, height, bottom=None, width=0.8, shift=0.0, color='w', orientation='h', color_array=None):
         if bottom is None:
             bottom = np.zeros(height.shape[0])
-        rr, tris = calc_vertices(height, bottom, width, shift=shift)
 
-        MeshVisual.set_data(self, rr, tris, color=color)
+        if height.shape != bottom.shape:
+            raise ValueError("Height and Bottom must be same shape: Height: " + height.shape + " Bottom: " + bottom.shape)
+
+        rr, tris = calc_vertices(height, bottom, width, shift, orientation)
+
+        if color_array is not None and color_array.shape[0] == height.shape[0] and color_array.shape[1] == 3:
+            MeshVisual.set_data(self, rr, tris, face_colors=np.repeat(color_array, 2, axis=0))
+        else:
+            MeshVisual.set_data(self, rr, tris, color=color)
+
 
 
 def calc_vertices(height, bottom, width, shift, orientation):
@@ -54,16 +70,13 @@ def calc_vertices(height, bottom, width, shift, orientation):
 
     y_position = y_position.flatten().repeat(2)
 
-    stack_n_x2 = np.arange(0, height.shape[0], dtype=int) 
-    stack_n_x2 = np.expand_dims(stack_n_x2, axis=1)
-    stack_n_x2 = np.repeat(stack_n_x2, 1, axis=1)
-    stack_n_x2 = np.repeat(stack_n_x2, 2, axis=0)
+    stack_n_x2 = np.arange(height.shape[0]).repeat(2).reshape(-1, 1)
 
     vertices = np.array([
-        [-width/2 + shift, 1, 0],
-        [width/2 + shift, 1, 0],
-        [width/2 + shift, 0, 0],
-        [-width/2 + shift, 0, 0]])
+        [-width/2 + shift, 1],
+        [width/2 + shift, 1],
+        [width/2 + shift, 0],
+        [-width/2 + shift, 0]])
 
     vertices = np.tile(vertices, (height.shape[0], 1))
 
@@ -81,6 +94,6 @@ def calc_vertices(height, bottom, width, shift, orientation):
 
     base_faces = np.tile(base_faces, (height.shape[0], 1))
 
-    faces = stack_n_x2*4 + base_faces
+    faces = stack_n_x2 * 4 + base_faces
 
     return vertices, faces

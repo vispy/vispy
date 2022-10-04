@@ -34,9 +34,11 @@ if __name__ == "__main__":
 
     grid_lines1 = scene.visuals.GridLines(parent=vb1.scene)
 
-    bar1 = scene.Bar(height=np.arange(0, 250, 0.5),  # for a more traditional horizontal plot, either remove the 
-                     bottom=np.arange(0, 125, 0.25), width=0.8, shift=0.5,  # orientation paramenter outright
-                     color=(0.25, 0.8, 0.), orientation='v', parent=vb1.scene)  # or set it to 'h'
+    color_array = np.array([[1,0,0], [0,1,0], [0, 0, 1], [0.5, 1, 0.25], [1, 0.5, 0.25], [0.25, 0.5, 1], [1,0,0], [0,1,0], [0, 0, 1], [0.5, 1, 0.25], [1, 0.5, 0.25], [0.25, 0.5, 1]])
+
+    bar1 = scene.Bar(height=np.arange(0, 6, 0.5),  # for a more traditional horizontal plot, either remove the 
+                     bottom=np.arange(0, 3, 0.25), width=0.8, shift=0.5,  # orientation paramenter outright
+                     orientation='v', color_array=color_array, parent=vb1.scene)  # or set it to 'h'
 
     vb1.camera.set_range()
     
