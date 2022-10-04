@@ -509,16 +509,13 @@ class Visual(BaseVisual):
         view : instance of VisualView | None
             The view to use.
         """
-        try:
-            if view is None:
-                self._vshare.filters.remove(filt)
-                for view in self._vshare.views.keys():
-                    filt._detach(view)
-            else:
-                view._filters.remove(filt)
+        if view is None:
+            self._vshare.filters.remove(filt)
+            for view in self._vshare.views.keys():
                 filt._detach(view)
-        except ValueError:
-            pass
+        else:
+            view._filters.remove(filt)
+            filt._detach(view)
 
 
 class VisualView(BaseVisualView, Visual):
