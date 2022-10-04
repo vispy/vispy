@@ -1,2 +1,3 @@
 pyopengltk
-pyqt6
+pyqt6 <6.4.0
+pyqt6-qt6 <6.4.0
