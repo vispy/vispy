@@ -302,9 +302,8 @@ def test_image_interpolation():
     """Test different interpolations"""
     size = (81, 81)
     data = np.array([[0, 1]], dtype=int)
-    # we need to avoid the edges because the canvas adds a white border of 1 px
-    left = (40, 10)
-    right = (40, 71)
+    left = (40, 0)
+    right = (40, 80)
     center_left = (40, 39)
     center = (40, 40)
     center_right = (40, 41)
@@ -313,7 +312,7 @@ def test_image_interpolation():
     gray = (128, 128, 128, 255)
 
     with TestingCanvas(size=size[::-1], bgcolor="w") as c:
-        view = c.central_widget.add_view()
+        view = c.central_widget.add_view(border_width=0)
         view.camera = PanZoomCamera((0, 0, 2, 1))
         image = Image(data=data, cmap='grays',
                       parent=view.scene)
@@ -337,9 +336,9 @@ def test_image_interpolation():
         image.interpolation = 'custom'
         image.custom_kernel = np.array([[0]])  # no sampling
         render = c.render()
-        assert np.allclose(render[left], white)
-        assert np.allclose(render[right], white)
-        assert np.allclose(render[center], white)
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], black)
+        assert np.allclose(render[center], black)
 
         image.custom_kernel = np.array([[1]])  # same as linear
         render = c.render()
