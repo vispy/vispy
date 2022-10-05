@@ -34,7 +34,8 @@ if __name__ == "__main__":
 
     grid_lines1 = scene.visuals.GridLines(parent=vb1.scene)
 
-    color_array = np.array([[1,0,0], [0,1,0], [0, 0, 1], [0.5, 1, 0.25], [1, 0.5, 0.25], [0.25, 0.5, 1], [1,0,0], [0,1,0], [0, 0, 1], [0.5, 1, 0.25], [1, 0.5, 0.25], [0.25, 0.5, 1]])
+    color_array = np.array([[0, 1, 0], [0, 1, 0], [0, 0, 1], [0.5, 1, 0.25], [1, 0.5, 0.25], [0.25, 0.5, 1], [1, 0, 0],
+                           [0, 1, 0], [0, 0, 1], [0.5, 1, 0.25], [1, 0.5, 0.25], [0.25, 0.5, 1]])
 
     bar1 = scene.Bar(height=np.arange(0, 6, 0.5),  # for a more traditional horizontal plot, either remove the 
                      bottom=np.arange(0, 3, 0.25), width=0.8, shift=0.5,  # orientation paramenter outright

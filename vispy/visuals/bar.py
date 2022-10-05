@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 
 import numpy as np
+import warnings
 
 from vispy.color.color_array import ColorArray
 from .mesh import MeshVisual
@@ -44,22 +45,19 @@ class BarVisual(MeshVisual):
                              + bottom.shape)
 
         color_array = None
-
-        if isinstance(color, np.ndarray):
-            if len(color.shape) == 2:
-                if color.shape[1] == 3:
-                    if color.shape[0] > 1 and color.shape[0] != 0:
-                        color_array = np.repeat(color, 2, axis=0)
-                        color = None
-                else:
-                    raise ValueError('If you pass an numpy array as color it needs to be rgb i.e. 3 columns')
-        elif isinstance(color, ColorArray):
-            pass
-        elif isinstance(color, str):
-            pass
-        else:
-            raise ValueError("Color has to be either a vispy ColorArray, numpy array or a string for example: 'w'") 
         
+        color = ColorArray(color).rgba
+
+        if len(color) == 1: 
+            pass
+        elif len(color) != len(height):
+            warnings.warn("Color array does not match the length of height, this means we can't match a color to each\
+                         bar - we will use the first color for all bars")
+            color = color[0]
+        else:
+            color_array = np.repeat(color, 2, axis=0)
+            color = None
+            
         rr, tris = calc_vertices(height, bottom, width, shift, orientation)
 
         MeshVisual.__init__(self, rr, tris, color=color, face_colors=color_array)
@@ -73,21 +71,18 @@ class BarVisual(MeshVisual):
                              + bottom.shape)
         
         color_array = None
-
-        if isinstance(color, np.ndarray):
-            if len(color.shape) == 2:
-                if color.shape[1] == 3:
-                    if color.shape[0] > 1 and color.shape[0] != 0:
-                        color_array = np.repeat(color, 2, axis=0)
-                        color = None
-                else:
-                    raise ValueError('If you pass an numpy array as color it needs to be rgb i.e. 3 columns')
-        elif isinstance(color, ColorArray):
+        
+        color = ColorArray(color).rgba
+        
+        if len(color) == 1: 
             pass
-        elif isinstance(color, str):
-            pass
+        elif len(color) != len(height):
+            warnings.warn("Color array does not match the length of height, this means we can't match a color to each\
+                         bar - we will use the first color for all bars")
+            color = color[0]
         else:
-            raise ValueError("Color has to be either a vispy ColorArray, numpy array or a string for example: 'w'") 
+            color_array = np.repeat(color, 2, axis=0)
+            color = None
 
         rr, tris = calc_vertices(height, bottom, width, shift, orientation)
             
