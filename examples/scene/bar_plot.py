@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     bar1 = scene.Bar(height=np.arange(0, 6, 0.5),  # for a more traditional horizontal plot, either remove the 
                      bottom=np.arange(0, 3, 0.25), width=0.8, shift=0.5,  # orientation paramenter outright
-                     orientation='v', color_array=color_array, parent=vb1.scene)  # or set it to 'h'
+                     orientation='v', color=color_array, parent=vb1.scene)  # or set it to 'h'
 
     vb1.camera.set_range()
     

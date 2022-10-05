@@ -5,6 +5,8 @@
 # -----------------------------------------------------------------------------
 
 import numpy as np
+
+from vispy.color.color_array import ColorArray
 from .mesh import MeshVisual
 
 
@@ -23,8 +25,8 @@ class BarVisual(MeshVisual):
         Width of all bars
     shift : int | float
         Shift of all bars along the x-axis
-    color : instance of Color
-        Color of the bar.
+    color : ColorArray | numpy.ndarray | str
+        Color of the bars or you can pass a 2d array with rgb values for each individual bar
     orientation : {'h', 'v'}
         Orientation of the bars - 'v' is default 
         'v' : |
@@ -33,22 +35,32 @@ class BarVisual(MeshVisual):
         [[1, 0, 0], [0, 1, 0], [0, 0, 1]] exactly one rgb array for each bar. This would be for 3 Bars 
     """
 
-    def __init__(self, height, bottom=None, width=0.8, shift=0.0, color='w', orientation='v', color_array=None):
+    def __init__(self, height, bottom=None, width=0.8, shift=0.0, color='w', orientation='v'):
         if bottom is None:
             bottom = np.zeros(height.shape[0])
 
         if height.shape != bottom.shape:
             raise ValueError("Height and Bottom must be same shape: Height: " + height.shape + " Bottom: "
                              + bottom.shape)
+
+        color_array = None
+
+        if isinstance(color, np.ndarray):
+            if len(color.shape) == 2:
+                if color.shape[1] == 3:
+                    if color.shape[0] > 1 and color.shape[0] != 0:
+                        color_array = np.repeat(color, 2, axis=0)
+                        color = None
+                else:
+                    raise ValueError('If you pass an numpy array as color it needs to be rgb i.e. 3 columns')
+        elif isinstance(color, ColorArray):
+            pass
+        elif isinstance(color, str):
+            pass
+        else:
+            raise ValueError("Color has to be either a vispy ColorArray, numpy array or a string for example: 'w'") 
         
         rr, tris = calc_vertices(height, bottom, width, shift, orientation)
-
-        if color_array is not None:
-            if color_array.shape[0] == height.shape[0] and color_array.shape[1] == 3:
-                color_array = np.repeat(color_array, 2, axis=0)
-            else:
-                raise ValueError('color_array needs to have the same length (' + color_array.shape[0] + ') as height ('
-                                 + height.shape[0] + ') and 3 rows: ' + color_array.shape)
 
         MeshVisual.__init__(self, rr, tris, color=color, face_colors=color_array)
 
@@ -59,15 +71,25 @@ class BarVisual(MeshVisual):
         if height.shape != bottom.shape:
             raise ValueError("Height and Bottom must be same shape: Height: " + height.shape + " Bottom: "
                              + bottom.shape)
+        
+        color_array = None
+
+        if isinstance(color, np.ndarray):
+            if len(color.shape) == 2:
+                if color.shape[1] == 3:
+                    if color.shape[0] > 1 and color.shape[0] != 0:
+                        color_array = np.repeat(color, 2, axis=0)
+                        color = None
+                else:
+                    raise ValueError('If you pass an numpy array as color it needs to be rgb i.e. 3 columns')
+        elif isinstance(color, ColorArray):
+            pass
+        elif isinstance(color, str):
+            pass
+        else:
+            raise ValueError("Color has to be either a vispy ColorArray, numpy array or a string for example: 'w'") 
 
         rr, tris = calc_vertices(height, bottom, width, shift, orientation)
-
-        if color_array is not None:
-            if color_array.shape[0] == height.shape[0] and color_array.shape[1] == 3:
-                color_array = np.repeat(color_array, 2, axis=0)
-            else:
-                raise ValueError('color_array needs to have the same length (' + color_array.shape[0] + ') as height ('
-                                 + height.shape[0] + ') and 3 rows: ' + color_array.shape)
             
         MeshVisual.set_data(self, rr, tris, color=color, face_colors=color_array)
 
