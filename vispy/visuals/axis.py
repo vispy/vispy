@@ -634,7 +634,7 @@ class Ticker(object):
                 # print(f'domain: {domain}, axis_mapping: {len(self.axis.axis_mapping)}')
                 # print(f'axis_mapping: {len(self.axis.axis_mapping)}')
 
-            major, datecode, datestring = _get_ticks_talbot(domain[0], domain[1], n_inches, density, mapping=self.axis.axis_mapping)
+            major = _get_ticks_talbot(domain[0], domain[1], n_inches, density, mapping=self.axis.axis_mapping)
 
             # if self.axis.axis_mapping is not None:
             #     # print(f'domain: {domain}, n_inches: {n_inches}')
@@ -644,7 +644,6 @@ class Ticker(object):
             #     print(f'major_date: {_get_ticks_talbot_dates(domain[0], domain[1], self.axis.axis_mapping, density)}')
 
             #     pass
-
             labels = []
             if self.axis.axis_mapping is not None:
                 # print(f'major: {major}, type: {type(major)}, len: {len(major)}, major first: {major[0]}, firsttype: {type(major[0])}')
@@ -664,8 +663,15 @@ class Ticker(object):
                         # try:
                         # print(f'dmax: {int(domain[1])}, len(axis_mapping): {len(self.axis.axis_mapping)}, x: {x}')
 
-                        label = self.axis.axis_mapping[int(x)]
-                        label_plus_one = self.axis.axis_mapping[int(x) + 1]
+                        # label = self.axis.axis_mapping[int(x)]
+                        # label_plus_one = self.axis.axis_mapping[int(x) + 1]
+
+                        label_0 = self.axis.axis_mapping[0]
+                        label_1 = self.axis.axis_mapping[1]
+
+                        label_0_adj_mapping = label_0 + ((label_1 - label_0) * int(x))
+
+                        label_1_adj_mapping = label_0 + ((label_1 -label_0) * (int(x) + 1))
                         # except IndexError:
                             # label = x
                             # label_plus_one = None
@@ -697,13 +703,13 @@ class Ticker(object):
                             # print(f'int x: {x}')
                             # x = x.astype(int)
                             # label_string = str(self.axis.axis_mapping[int(x)])
-                            label_string = _label_string_for_datetime(x, label, self.axis.date_format_string,
+                            label_string = _label_string_for_datetime(x, label_0_adj_mapping, self.axis.date_format_string,
                                                                       self.axis.date_verbose)
                         else:
                             # print(f'float x: {x}')
-                            if isinstance(label, datetime.datetime) and label_plus_one is not None and self.axis.interpolation_between_dates:
-                                a = label
-                                b = label_plus_one
+                            if isinstance(label_0_adj_mapping, datetime.datetime) and label_1_adj_mapping is not None and self.axis.interpolation_between_dates:
+                                a = label_0_adj_mapping
+                                b = label_1_adj_mapping
                                 # print(f'x: {x}')
                                 date = (b - (b - a) / (1 - (x - int(x))) ** -1)  # here the magic of date interpolation happens
                                 # print(f'date: {date} a: {a}, b: {b}, x: {x}, int x: {int(x)}')
@@ -1003,363 +1009,122 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=2., mapping=None):
     if best is None:
         raise RuntimeError('could not converge on ticks')
 
-
     if mapping:
+        return date_tick_locator(dmin, dmax, mapping[0], mapping[1], best)
+            
+    return np.arange(best[4], dtype=np.int32) * best[2] + best[0]
+
+def date_tick_locator(lower, upper, first_date, second_date, best):
+    absolut_distance = abs(upper) - lower
+    tick_amount = best[4]
+    if lower < 0:
+        lower = 0
+        tick_amount = int(abs(upper) / absolut_distance * tick_amount) + 1
+    if upper < 0:
+        upper = 0
+        return np.arange(best[4], dtype=np.int32) * best[2] + best[0]
+    else:
+        deltatime_in_seconds = (second_date-first_date).total_seconds()
+
+        dmin_adj_mapping = first_date + ((second_date-first_date) * int(lower))
+
+        dmin_plus_one_adj_mapping = first_date + ((second_date-first_date) * (int(lower) + 1))
+
+        timesteps = [[0.000001*3, relativedelta(microseconds=+1), 'ms', 1], [0.000002*3, relativedelta(microseconds=+2), 'ms', 2], [0.000005*3, relativedelta(microseconds=+5), 'ms', 5],
+                [0.00001*3, relativedelta(microseconds=+10), 'ms', 10], [0.00002*3, relativedelta(microseconds=+20), 'ms', 20], [0.00005*3, relativedelta(microseconds=+50), 'ms', 50], 
+                [0.0001*3, relativedelta(microseconds=+100), 'ms', 100], [0.0002*3, relativedelta(microseconds=+200), 'ms', 200], [0.0005*3, relativedelta(microseconds=+500), 'ms', 500], 
+                [0.001*3, relativedelta(microseconds=+1_000), 'ms', 1_000], [0.002*3, relativedelta(microseconds=+2_000), 'ms', 2_000], [0.005*3, relativedelta(microseconds=+5_000), 'ms', 5_000], 
+                [0.01*3, relativedelta(microseconds=+10_000), 'ms', 10_000], [0.02*3, relativedelta(microseconds=+20_000), 'ms', 20_000], [0.05*3, relativedelta(microseconds=+50_000), 'ms', 50_000], 
+                [0.1*3, relativedelta(microseconds=+100_000), 'ms', 100_000], [0.2*3, relativedelta(microseconds=+200_000), 'ms', 200_000], [0.5*3, relativedelta(microseconds=+500_000), 'ms', 500_000],
+                
+                [3*1, relativedelta(seconds=+1), 's', 1], 
+                
+                [3*2, relativedelta(seconds=+2), 's', 2], [3*5, relativedelta(seconds=+5), 's', 5], 
+                [3*10, relativedelta(seconds=+10), 's', 10], [3*15, relativedelta(seconds=+15), 's', 15], 
+                [3*30, relativedelta(seconds=+30), 's', 30], 
+                
+                [2*60, relativedelta(minutes=+1), 'm', 1], 
+                
+                [4*120, relativedelta(minutes=+2), 'm', 2], [2*300, relativedelta(minutes=+5), 'm', 5], 
+                [3*600, relativedelta(minutes=+10), 'm', 10], [3*900, relativedelta(minutes=+15), 'm', 15], 
+                [2*1200, relativedelta(minutes=+20), 'm', 20], [3*1800, relativedelta(minutes=+30), 'm', 30], 
+                
+                [3*3600, relativedelta(hours=+1), 'h', 1], 
+                
+                [3*7200, relativedelta(hours=+2), 'h', 2], 
+                [3*10800, relativedelta(hours=+3), 'h', 3], [3*14400, relativedelta(hours=+4), 'h', 4], 
+                [3*21600, relativedelta(hours=+6), 'h', 6], [3*28800, relativedelta(hours=+8), 'h', 8], 
+                [3*43200, relativedelta(hours=+12), 'h', 12], 
+                
+                [3*86400, relativedelta(days=+1), 'd', 1], 
+                
+                [6*86400, relativedelta(days=+2), 'd', 2], [9*86400, relativedelta(days=+3), 'd', 3],  [15 * 86400, relativedelta(days=+5), 'd', 5],
+                
+                [21*86400, relativedelta(weeks=+1), 'W', 1], 
+                [3*14*86400, relativedelta(weeks=+2), 'W', 2], 
+
+                [93*86400, relativedelta(months=+1), 'M', 1], 
+
+                [3*2*31*86400, relativedelta(months=+2), 'M', 2], [3*3*31*86400, relativedelta(months=+3), 'M', 3], 
+                [3*4*31*86400, relativedelta(months=+4), 'M', 4], [3*6*31*86400, relativedelta(months=+6), 'M', 6],  
+                
+                [4*365*86400, relativedelta(years=+1), 'Y', 1],
+                
+                [4*2*365*86400, relativedelta(years=+2), 'Y', 2], [4*3*365*86400, relativedelta(years=+3), 'Y', 3], [4*5*365*86400, relativedelta(years=+5), 'Y', 5],
+                [4*10*365*86400, relativedelta(years=+10), 'Y', 10], [4*25*365*86400, relativedelta(years=+25), 'Y', 25], [4*50*365*86400, relativedelta(years=+50), 'Y', 50],
+                [4*100*365*86400, relativedelta(years=+1), 'Y', 100]]
         
-        absolut_distance = abs(dmax) - dmin
-        print(f'test distance: {absolut_distance}')
-        tick_amount = best[4]
-        if dmin < 0:
-            dmin = 0
-            tick_amount = int(abs(dmax) / absolut_distance * tick_amount) + 1
-        if dmax < 0:
-            dmax = 0
-        else:
-            print(f'tock_amount: {best[4]},  tick_amount: {tick_amount}')
+        
+        approx_to_find_timestamp = absolut_distance * deltatime_in_seconds / best[4] * 4
 
-            first_axis_mapping = mapping[int(dmin)]
-            second_axis_mapping = mapping[int(dmin) + 1]
+        nearest_time_step = timesteps[min(range(len(timesteps)), key = lambda i: abs(timesteps[i][0] - approx_to_find_timestamp))]
 
-            sec = [[0.000001*3, relativedelta(microseconds=+1), 'ms', 1], [0.000002*3, relativedelta(microseconds=+2), 'ms', 2], [0.000005*3, relativedelta(microseconds=+5), 'ms', 5],
-                 [0.00001*3, relativedelta(microseconds=+10), 'ms', 10], [0.00002*3, relativedelta(microseconds=+20), 'ms', 20], [0.00005*3, relativedelta(microseconds=+50), 'ms', 50], 
-                 [0.0001*3, relativedelta(microseconds=+100), 'ms', 100], [0.0002*3, relativedelta(microseconds=+200), 'ms', 200], [0.0005*3, relativedelta(microseconds=+500), 'ms', 500], 
-                 [0.001*3, relativedelta(microseconds=+1_000), 'ms', 1_000], [0.002*3, relativedelta(microseconds=+2_000), 'ms', 2_000], [0.005*3, relativedelta(microseconds=+5_000), 'ms', 5_000], 
-                 [0.01*3, relativedelta(microseconds=+10_000), 'ms', 10_000], [0.02*3, relativedelta(microseconds=+20_000), 'ms', 20_000], [0.05*3, relativedelta(microseconds=+50_000), 'ms', 50_000], 
-                 [0.1*3, relativedelta(microseconds=+100_000), 'ms', 100_000], [0.2*3, relativedelta(microseconds=+200_000), 'ms', 200_000], [0.5*3, relativedelta(microseconds=+500_000), 'ms', 500_000],
-                 
-                 [3*1, relativedelta(seconds=+1), 's', 1], 
-                 
-                 [3*2, relativedelta(seconds=+2), 's', 2], [3*5, relativedelta(seconds=+5), 's', 5], 
-                 [3*10, relativedelta(seconds=+10), 's', 10], [3*15, relativedelta(seconds=+15), 's', 15], 
-                 [3*30, relativedelta(seconds=+30), 's', 30], 
-                 
-                 [2*60, relativedelta(minutes=+1), 'm', 1], 
-                 
-                 [4*120, relativedelta(minutes=+2), 'm', 2], [2*300, relativedelta(minutes=+5), 'm', 5], 
-                 [3*600, relativedelta(minutes=+10), 'm', 10], [3*900, relativedelta(minutes=+15), 'm', 15], 
-                 [2*1200, relativedelta(minutes=+20), 'm', 20], [3*1800, relativedelta(minutes=+30), 'm', 30], 
-                 
-                 [3*3600, relativedelta(hours=+1), 'h', 1], 
-                 
-                 [3*7200, relativedelta(hours=+2), 'h', 2], 
-                 [3*10800, relativedelta(hours=+3), 'h', 3], [3*14400, relativedelta(hours=+4), 'h', 4], 
-                 [3*21600, relativedelta(hours=+6), 'h', 6], [3*28800, relativedelta(hours=+8), 'h', 8], 
-                 [3*43200, relativedelta(hours=+12), 'h', 12], 
-                 
-                 [3*86400, relativedelta(days=+1), 'd', 1], 
-                 
-                 [6*86400, relativedelta(days=+2), 'd', 2], [9*86400, relativedelta(days=+3), 'd', 3],  [15 * 86400, relativedelta(days=+5), 'd', 5],
-                 
-                 [21*86400, relativedelta(weeks=+1), 'W', 1], 
-                 [3*14*86400, relativedelta(weeks=+2), 'W', 2], 
+        date_at_dmin = _convert_float_to_pydate(dmin_adj_mapping, dmin_plus_one_adj_mapping, lower)
 
-                 [93*86400, relativedelta(months=+1), 'M', 1], 
+        if nearest_time_step[2] == 'ms':
+            round_date_to_n_microsecond = _round_pydate_to_nearest_n_mircosecond(date_at_dmin, nearest_time_step[3])
+            calculated_first_tick_current_view_in_date_format = round_date_to_n_microsecond
 
-                 [3*2*31*86400, relativedelta(months=+2), 'M', 2], [3*3*31*86400, relativedelta(months=+3), 'M', 3], 
-                 [3*4*31*86400, relativedelta(months=+4), 'M', 4], [3*6*31*86400, relativedelta(months=+6), 'M', 6],  
-                 
-                 [4*365*86400, relativedelta(years=+1), 'Y', 1],
-                 
-                 [4*2*365*86400, relativedelta(years=+2), 'Y', 2], [4*3*365*86400, relativedelta(years=+3), 'Y', 3], [4*5*365*86400, relativedelta(years=+5), 'Y', 5],
-                 [4*10*365*86400, relativedelta(years=+10), 'Y', 10], [4*25*365*86400, relativedelta(years=+25), 'Y', 25], [4*50*365*86400, relativedelta(years=+50), 'Y', 50],
-                 [4*100*365*86400, relativedelta(years=+1), 'Y', 100]]
-            
-            seconds_between_axis_mapping = (second_axis_mapping-first_axis_mapping).total_seconds()
+        elif nearest_time_step[2] == 's':
+            round_date_to_n_second = _round_pydate_to_nearest_n_second(date_at_dmin, nearest_time_step[3])
+            calculated_first_tick_current_view_in_date_format = round_date_to_n_second
 
-            delta = best[4] * (second_axis_mapping-first_axis_mapping).total_seconds()
+        elif nearest_time_step[2] == 'm':
+            round_date_to_n_minute = _round_pydate_to_nearest_n_minute(date_at_dmin, nearest_time_step[3])
+            calculated_first_tick_current_view_in_date_format = round_date_to_n_minute
 
-            delta = absolut_distance * (second_axis_mapping-first_axis_mapping).total_seconds() / best[4] * 4
+        elif nearest_time_step[2] == 'h':
+            round_date_to_n_hour = _round_pydate_to_nearest_n_hour(date_at_dmin, nearest_time_step[3])
+            calculated_first_tick_current_view_in_date_format = round_date_to_n_hour
 
-            closest_min = sec[min(range(len(sec)), key = lambda i: abs(sec[i][0]-delta))]
+        elif nearest_time_step[2] == 'd':
+            round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
+            calculated_first_tick_current_view_in_date_format = round_date_to_full_day
+        
+        elif nearest_time_step[2] == 'W':
+            round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
+            calculated_first_tick_current_view_in_date_format = _calc_first_specified_weekday_in_view(round_date_to_full_day, MO)
 
-            print(f'secounds: {seconds_between_axis_mapping}, delta: {delta}, closest_min: {closest_min}')
+        elif nearest_time_step[2] == 'M':
+            round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
+            calculated_first_tick_current_view_in_date_format = _calc_first_month_in_view(round_date_to_full_day, nearest_time_step[3])
 
-            step_distance = closest_min[0] / seconds_between_axis_mapping
-            
-            step = int((dmax - dmin) / step_distance) + 2
+        elif nearest_time_step[2] == 'Y':
+            round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
+            calculated_first_tick_current_view_in_date_format = _calc_first_year_in_view(round_date_to_full_day, nearest_time_step[3])
 
-            DMIN = None
+        calculated_first_tick_current_view_in_float_format = _convert_pydate_to_float(lower, calculated_first_tick_current_view_in_date_format, date_at_dmin, deltatime_in_seconds)
 
-            a = mapping[int(dmin)]
-            b = mapping[int(dmin) + 1]
+        date_list = [calculated_first_tick_current_view_in_date_format + j * nearest_time_step[1] for j in range(int(tick_amount + 2))]
+        return_list = []
+        return_list.append(calculated_first_tick_current_view_in_float_format)
+        for i in range(len(date_list) - 1):
+            return_list.append((calculated_first_tick_current_view_in_float_format + ((date_list[i+1] - date_list[0]).total_seconds() / deltatime_in_seconds)))
 
-            multiplier = 1
-            
-            print(f'best: {best}')
-            if closest_min[2] == 'ms':
-
-                pydate_at_dmin = (b - (b - a) / (1 - (dmin - int(dmin))) ** -1).to_pydatetime()
-
-                print(f'dmin: {dmin}, pydate_at_dmin: {pydate_at_dmin}')
-
-                date_calculated_first_tick_current_view = pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(microseconds=int(closest_min[1].microseconds)))
-                
-                # print(f'\n\n')
-
-                # print(f'date_calculated_first_tick_current_view: {date_calculated_first_tick_current_view}')
-
-                # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                print(f'd reverse calc: {(b - (b - a) / (1 - (dmin - int(dmin))) ** -1)}')
-
-                print(f'fp to date: {_fp_to_date(a, b, dmin)}')
-
-                deltasec = date_calculated_first_tick_current_view
-
-
-            elif closest_min[2] == 's':
-
-                pydate_at_dmin = (b - (b - a) / (1 - (dmin - int(dmin))) ** -1).to_pydatetime()
-
-                print(f'dmin: {dmin}, pydate_at_dmin: {pydate_at_dmin}')
-
-                date_calculated_first_tick_current_view = pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(seconds=int(closest_min[1].seconds)))
-                
-                # print(f'\n\n')
-
-                # print(f'date_calculated_first_tick_current_view: {date_calculated_first_tick_current_view}')
-
-                # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                print(f'd reverse calc: {(b - (b - a) / (1 - (dmin - int(dmin))) ** -1)}')
-
-                print(f'fp to date: {_fp_to_date(a, b, dmin)}')
-
-                deltasec = date_calculated_first_tick_current_view
-
-
-            elif closest_min[2] == 'm':
-
-                pydate_at_dmin = (b - (b - a) / (1 - (dmin - int(dmin))) ** -1).to_pydatetime()
-
-                print(f'dmin: {dmin}, pydate_at_dmin: {pydate_at_dmin}')
-
-                date_calculated_first_tick_current_view = pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(minutes=int(closest_min[1].minutes)))
-                
-                # print(f'\n\n')
-
-                # print(f'date_calculated_first_tick_current_view: {date_calculated_first_tick_current_view}')
-
-                # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                print(f'd reverse calc: {(b - (b - a) / (1 - (dmin - int(dmin))) ** -1)}')
-
-                print(f'fp to date: {_fp_to_date(a, b, dmin)}')
-
-                deltasec = date_calculated_first_tick_current_view
-                
-
-            elif closest_min[2] == 'h':
-
-                pydate_at_dmin = (b - (b - a) / (1 - (dmin - int(dmin))) ** -1).to_pydatetime()
-
-                date_calculated_first_tick_current_view = pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(hours=int(closest_min[1].hours)))
-                
-                print(f'\n\n')
-
-                print(f'date_calculated_first_tick_current_view: {date_calculated_first_tick_current_view}')
-
-                # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                print(f'd reverse calc: {(b - (b - a) / (1 - (dmin - int(dmin))) ** -1)}')
-
-                print(f'fp to date: {_fp_to_date(a, b, dmin)}')
-
-                deltasec = date_calculated_first_tick_current_view
-
-            elif closest_min[2] == 'd':
-
-
-                date_at_dmin = _convert_float_to_pydate(a, b, dmin)
-
-                round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
-
-                date_calculated_first_tick_current_view = round_date_to_full_day
-
-                # print(f'\n\n')
-                
-
-                # pydate_at_dmin = (b - (b - a) / (1 - (dmin - int(dmin))) ** -1).to_pydatetime()
-                
-                # date_calculated_first_tick_current_view = (pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(days=1))) + timedelta( (pydate_at_dmin.day % closest_min[1].days))
-                
-
-                # print(f'pydate_at_dmin: {pydate_at_dmin}')
-
-                # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - date_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                # print(f'd reverse calc: {(b - (b - a) / (1 - (dmin - int(dmin))) ** -1)}')
-
-                # print(f'fp to date: {_fp_to_date(a, b, dmin)}')
-
-                deltasec = date_calculated_first_tick_current_view
-
-                print(f'\n\n')
-
-            elif closest_min[2] == 'W':
-
-                date_at_dmin = _convert_float_to_pydate(a, b, dmin)
-
-                round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
-
-                date_calculated_first_tick_current_view = _calc_first_specified_weekday_in_view(round_date_to_full_day, MO)
-
-                # print(f'\n\n')
-
-                # pydate_at_dmin = (b - (b - a) / (1 - (dmin - int(dmin))) ** -1).to_pydatetime()
-                
-                # date_calculated_first_tick_current_view = (pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(days=1))) + relativedelta(weekday=MO, hour=0, minute=0, second=0, microsecond=0)
-
-                # print(f'pydate_at_dmin: {pydate_at_dmin}')
-
-                # print(f'date_calculated_first_tick_current_view: {date_calculated_first_tick_current_view}')
-
-                # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - date_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                # print(f'd reverse calc: {(b - (b - a) / (1 - (dmin - int(dmin))) ** -1)}')
-
-                # print(f'fp to date: {_fp_to_date(a, b, dmin)}')
-
-                deltasec = date_calculated_first_tick_current_view
-
-                print(f'\n\n')
-
-                
-            elif closest_min[2] == 'M':
-
-                print(f'\n\n')
-
-                date_at_dmin = _convert_float_to_pydate(a, b, dmin)
-
-                round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
-
-                date_calculated_first_tick_current_view = _calc_first_month_in_view(round_date_to_full_day, closest_min[3])
-
-                # pydate_at_dmin = (b - (b - a) / (1 - (dmin - int(dmin))) ** -1).to_pydatetime()
-
-                # pydate_day_at_dmin = (pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(days=1)))
-
-                # potential_first_mounths = []
-
-                # for i in range(int(12 / closest_min[3]) + 1):
-                #     if (1 + closest_min[3] * i) > 12:
-                #         test1 = datetime.datetime(pydate_day_at_dmin.year + 1, ((1 + closest_min[3] * i) - 12), 1)
-                #     else:
-                #         test1 = datetime.datetime(pydate_day_at_dmin.year, ((1 + closest_min[3] * i)), 1)
-                #     potential_first_mounths.append(test1)
-
-                # round_date_to_full_day = (pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(days=1))) 
-                
-                # delta_days_to_potential_first_mounths = []
-
-                # for i in potential_first_mounths:
-                #     delta_days = (i - round_date_to_full_day).days
-                #     if delta_days >= 0:
-                #         delta_days_to_potential_first_mounths.append(delta_days) 
-
-                # date_calculated_first_tick_current_view = round_date_to_full_day + timedelta(days=min(delta_days_to_potential_first_mounths))
-
-                # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - date_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                print(f'fp to date: {_fp_to_date(a, b, dmin)}')
-
-                deltasec = date_calculated_first_tick_current_view
-
-                print(f'\n\n')
-
-
-            elif closest_min[2] == 'Y':
-                print(f'\n\n')
-
-                date_at_dmin = _convert_float_to_pydate(a, b, dmin)
-
-                round_date_to_full_day = _round_pydate_to_nearest_day(date_at_dmin)
-
-                date_calculated_first_tick_current_view = _calc_first_year_in_view(round_date_to_full_day, closest_min[3])
-
-                # pydate_day_at_dmin = (pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(days=1)))
-
-                # round_date_to_full_day = (pydate_at_dmin + (datetime.datetime.min - pydate_at_dmin) % (timedelta(days=1))) 
-
-                # print(f'calc: {datetime.datetime(round_date_to_full_day.year + 1, 1, 1) - round_date_to_full_day}')
-
-                # add_days = datetime.datetime(round_date_to_full_day.year + 1, 1, 1) - round_date_to_full_day
-
-                # if add_days.days >= 365:
-                #     add_days = 0
-                # else:
-                #     add_days = add_days.days
-
-                # print(f'round_date_to_full_day: {round_date_to_full_day}')
-
-                # pre_date_calculated_first_tick_current_view = round_date_to_full_day + timedelta(days=add_days)
-
-                # date_calculated_first_tick_current_view = datetime.datetime(pre_date_calculated_first_tick_current_view.year - (pre_date_calculated_first_tick_current_view.year % closest_min[3]) + (closest_min[3] if add_days != 0 and closest_min[3] != 1 else 0), 1, 1)
-
-                # # fp_calculated_first_tick_current_view = dmin + (date_calculated_first_tick_current_view - pydate_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                DMIN = dmin + (date_calculated_first_tick_current_view - date_at_dmin).total_seconds() / seconds_between_axis_mapping
-
-                deltasec = date_calculated_first_tick_current_view
-
-                print(f'\n\n')
-
-                
-
-            print(f'deeltasec: {deltasec}, multiplier: {multiplier}, closest_min: {closest_min[1]}, test: {multiplier * closest_min[1]}')
-            
-
-            date_list = [deltasec + jk * multiplier * closest_min[1] for jk in range(int(tick_amount + 2))]
-            return_list = []
-            return_list.append(DMIN)
-            for i in range(len(date_list)-1):
-                # print((date_list[i+1] - date_list[0]))
-                # print((b - (b - a) / (1 - (DMIN - int(DMIN))) ** -1) + (date_list[i+1] - date_list[0]))
-                # print(f'a: {a}, b: {b}, DMIN: {(DMIN + ((date_list[i+1] - date_list[0]).total_seconds() / secounds))}, int dmin: {int((DMIN + ((date_list[i+1] - date_list[0]).total_seconds() / secounds)))}')
-
-                # print(f'reverse calc: {(b - (b - a) / (1 - ((DMIN + ((date_list[i+1] - date_list[0]).total_seconds() / secounds)) - int((DMIN + ((date_list[i+1] - date_list[0]).total_seconds() / secounds))))) ** -1)}')
-                return_list.append((DMIN + ((date_list[i+1] - date_list[0]).total_seconds() / seconds_between_axis_mapping)))
-            #     print(f'count: {((date_list[i+1] - date_list[0]).total_seconds() / secounds)} delta: {(date_list[i+1] - date_list[i]).total_seconds() / secounds}')
-
-            # print(f'DMIN: {DMIN}, steps: {step}, step_distance: {step_distance}, closest_sec_value: {closest_sec_value}, delta: {delta}')
-            # print(f'dmin: {dmin}, dmax: {dmax}, delta1: {(best[1] - best[0])}, step: {step}')
-            # print(f'best[0]: {best[0]}, best[1]: {best[1]}, best[2]: {best[2]}, best[3]: {best[3]}, best[4]: {best[4]}')
-            # print(f'date_list: {date_list}')
-            # print(np.arange(step, dtype=np.float64) * step_distance + DMIN)
-
-            print(f'date_list: {date_list}')
-
-            # print(f'return_list: {return_list}')
-
-            # if step > 3:
-            # return np.arange(step, dtype=np.float64) * step_distance + DMIN, None, None
-
-            # if closest_sec_value == 86400:
-            #     step_distance = step_distance * (int((((dmax - dmin) / (sec[-1] / secounds) + 1) / best[4])) + 1)
-
-            print('\n\n\n')
-            return return_list, None, None
-
-
-    return np.arange(best[4], dtype=np.int32) * best[2] + best[0], None, None
+        return return_list
 
 def _calc_first_specified_weekday_in_view(rounded_to_full_day, weekday=MO):
     return rounded_to_full_day + relativedelta(weekday=weekday, hour=0, minute=0, second=0, microsecond=0)
-
 
 def _calc_first_month_in_view(rounded_to_full_day, multiple_month):
     potential_first_mounths = []
@@ -1393,13 +1158,26 @@ def _calc_first_year_in_view(rounded_to_full_day, multiple_year):
 
     return datetime.datetime(pre_alculated_first_tick_current_view.year - (pre_alculated_first_tick_current_view.year % multiple_year) + (multiple_year if add_days != 0 and multiple_year != 1 else 0), 1, 1)
 
-
 def _convert_float_to_pydate(start_date, next_date, fp):
     return (next_date - (next_date - start_date) / (1 - (fp - int(fp))) ** -1).to_pydatetime()
 
+def _convert_pydate_to_float(dmin, date, date_at_dmin, deltatime_between_dates_from_mapping_in_seconds):
+    return dmin + (date - date_at_dmin).total_seconds() / deltatime_between_dates_from_mapping_in_seconds
+
 def _round_pydate_to_nearest_day(pydate):
     return (pydate + (datetime.datetime.min - pydate) % (timedelta(days=1)))
-    
+
+def _round_pydate_to_nearest_n_hour(pydate, n):
+    return pydate + (datetime.datetime.min - pydate) % (timedelta(hours=n)) 
+
+def _round_pydate_to_nearest_n_minute(pydate, n):
+    return pydate + (datetime.datetime.min - pydate) % (timedelta(minutes=n))
+
+def _round_pydate_to_nearest_n_second(pydate, n):
+    return pydate + (datetime.datetime.min - pydate) % (timedelta(seconds=n))
+
+def _round_pydate_to_nearest_n_mircosecond(pydate, n):
+    return pydate + (datetime.datetime.min - pydate) % (timedelta(microseconds=n))
 
 def _label_string_for_datetime(tick_integer, axis_label, strftime_string, verbose):
     if strftime_string is not None:
