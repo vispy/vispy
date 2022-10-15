@@ -37,13 +37,14 @@ def convert_dtype_and_clip(data, dtype, copy=False):
         return new_data
 
 
-def downcast_to_32bit_if_needed(data, copy=False):
+def downcast_to_32bit_if_needed(data, copy=False, _stacklevel_increment=0):
     """Downcast to 32bit dtype if necessary."""
     dtype = np.dtype(data.dtype)
     if dtype.itemsize > 4:
         warnings.warn(
             f"GPUs can't support dtypes bigger than 32-bit, but got '{dtype}'. "
-            "Precision will be lost due to downcasting to 32-bit."
+            "Precision will be lost due to downcasting to 32-bit.",
+            stacklevel=2 + _stacklevel_increment
         )
 
     size = min(dtype.itemsize, 4)
@@ -126,7 +127,8 @@ class BaseTexture(GLObject):
 
     def __init__(self, data=None, format=None, resizable=True,
                  interpolation=None, wrapping=None, shape=None,
-                 internalformat=None, resizeable=None):
+                 internalformat=None, resizeable=None,
+                 _stacklevel_increment=0):
         GLObject.__init__(self)
         if resizeable is not None:
             resizable = resizeable
@@ -156,7 +158,9 @@ class BaseTexture(GLObject):
             data = np.array(data, copy=False)
             # So we can test the combination
             self._resize(data.shape, format, internalformat)
-            self._set_data(data)
+            self._set_data(
+                data,
+                _stacklevel_increment=1 + _stacklevel_increment)
         elif shape is not None:
             self._resize(shape, format, internalformat)
         else:
@@ -350,12 +354,14 @@ class BaseTexture(GLObject):
         This operation implicitly resizes the texture to the shape of
         the data if given offset is None.
         """
-        return self._set_data(data, offset, copy)
+        return self._set_data(data, offset, copy, _stacklevel_increment=1)
 
-    def _set_data(self, data, offset=None, copy=False):
+    def _set_data(self, data, offset=None, copy=False, _stacklevel_increment=0):
         """Internal method for set_data."""
         # Copy if needed, check/normalize shape
-        data = downcast_to_32bit_if_needed(data, copy=copy)
+        data = downcast_to_32bit_if_needed(
+            data, copy=copy,
+            _stacklevel_increment=1 + _stacklevel_increment)
         data = self._normalize_shape(data)
 
         # Maybe resize to purge DATA commands?
@@ -472,9 +478,11 @@ class Texture1D(BaseTexture):
 
     def __init__(self, data=None, format=None, resizable=True,
                  interpolation=None, wrapping=None, shape=None,
-                 internalformat=None, resizeable=None):
+                 internalformat=None, resizeable=None,
+                 _stacklevel_increment=0):
         BaseTexture.__init__(self, data, format, resizable, interpolation,
-                             wrapping, shape, internalformat, resizeable)
+                             wrapping, shape, internalformat, resizeable,
+                             _stacklevel_increment=1 + _stacklevel_increment)
 
     @property
     def width(self):
@@ -533,9 +541,11 @@ class Texture2D(BaseTexture):
 
     def __init__(self, data=None, format=None, resizable=True,
                  interpolation=None, wrapping=None, shape=None,
-                 internalformat=None, resizeable=None):
+                 internalformat=None, resizeable=None,
+                 _stacklevel_increment=0):
         BaseTexture.__init__(self, data, format, resizable, interpolation,
-                             wrapping, shape, internalformat, resizeable)
+                             wrapping, shape, internalformat, resizeable,
+                             _stacklevel_increment=1 + _stacklevel_increment)
 
     @property
     def height(self):
@@ -600,9 +610,11 @@ class Texture3D(BaseTexture):
 
     def __init__(self, data=None, format=None, resizable=True,
                  interpolation=None, wrapping=None, shape=None,
-                 internalformat=None, resizeable=None):
+                 internalformat=None, resizeable=None,
+                 _stacklevel_increment=0):
         BaseTexture.__init__(self, data, format, resizable, interpolation,
-                             wrapping, shape, internalformat, resizeable)
+                             wrapping, shape, internalformat, resizeable,
+                             _stacklevel_increment=1 + _stacklevel_increment)
 
     @property
     def width(self):
@@ -672,9 +684,11 @@ class TextureCube(BaseTexture):
 
     def __init__(self, data=None, format=None, resizable=True,
                  interpolation=None, wrapping=None, shape=None,
-                 internalformat=None, resizeable=None):
+                 internalformat=None, resizeable=None,
+                 _stacklevel_increment=0):
         BaseTexture.__init__(self, data, format, resizable, interpolation,
-                             wrapping, shape, internalformat, resizeable)
+                             wrapping, shape, internalformat, resizeable,
+                             _stacklevel_increment=1 + _stacklevel_increment)
         if self._shape[0] != 6:
             raise ValueError("Texture cube require arrays first dimension to be 6 :"
                              " {} was given.".format(self._shape[0]))
