@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from vispy.util import use_log_level
 
@@ -14,7 +14,7 @@ def has_matplotlib(version='1.2'):
     except Exception:
         has_mpl = False
     else:
-        if LooseVersion(matplotlib.__version__) >= LooseVersion(version):
+        if Version(matplotlib.__version__) >= Version(version):
             has_mpl = True
         else:
             has_mpl = False
@@ -27,8 +27,8 @@ def has_skimage(version='0.11'):
         import skimage
     except ImportError:
         return False
-    sk_version = LooseVersion(skimage.__version__)
-    return sk_version >= LooseVersion(version)
+    sk_version = Version(skimage.__version__)
+    return sk_version >= Version(version)
 
 
 def has_backend(backend, has=(), capable=(), out=()):

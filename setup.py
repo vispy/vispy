@@ -93,8 +93,8 @@ setup(
     platforms='any',
     provides=['vispy'],
     python_requires='>=3.6',
-    install_requires=['numpy', 'freetype-py', 'hsluv', 'kiwisolver'],
-    setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive'],
+    install_requires=['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging'],
+    setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive', 'packaging'],
     extras_require={
         'ipython-static': ['ipython'],
         'pyglet': ['pyglet>=1.2'],

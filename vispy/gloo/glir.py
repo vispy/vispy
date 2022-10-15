@@ -362,7 +362,7 @@ import sys
 import re
 import json
 import weakref
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 
@@ -850,7 +850,7 @@ class GlirParser(BaseGlirParser):
             if not this_version:
                 logger.warning("OpenGL version could not be determined, which "
                                "might be a sign that OpenGL is not loaded correctly.")
-            elif LooseVersion(this_version) < '2.1':
+            elif Version(this_version) < Version('2.1'):
                 if os.getenv('VISPY_IGNORE_OLD_VERSION', '').lower() != 'true':
                     logger.warning('OpenGL version 2.1 or higher recommended, '
                                    'got %s. Some functionality may fail.'
