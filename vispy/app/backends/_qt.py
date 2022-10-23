@@ -191,7 +191,7 @@ KEYMAP = {
     qt_keys.Key_Return: keys.ENTER,
     qt_keys.Key_Tab: keys.TAB,
 }
-if PYQT6_API:
+if PYQT6_API or PYSIDE6_API:
     BUTTONMAP = {
         QtCore.Qt.MouseButton.NoButton: 0,
         QtCore.Qt.MouseButton.LeftButton: 1,
