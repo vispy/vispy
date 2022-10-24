@@ -17,8 +17,8 @@ def test_context_properties():
         return  # cannot set more than once on Pyglet
     if a.backend_name.lower() == 'osmesa':
         return  # cannot set config on OSMesa
-    if 'pyqt5' in a.backend_name.lower() or 'pyqt6' in a.backend_name.lower() or 'pyside6' in a.backend_name.lower():
-        pytest.xfail("Context sharing is not supported in PyQt5, PyQt6, PySide6 at this time.")
+    if 'pyqt5' in a.backend_name.lower() or 'pyqt6' in a.backend_name.lower() or 'pyside2' in a.backend_name.lower() or 'pyside6' in a.backend_name.lower():
+        pytest.xfail("Context sharing is not supported in PyQt5, PyQt6, PySide2, or PySide6 at this time.")
 
     # stereo, double buffer won't work on every sys
     configs = [dict(samples=4), dict(stencil_size=8),
@@ -71,8 +71,8 @@ def test_context_sharing():
         check()
 
         # pyqt5 does not currently support context sharing, pyside6 seg faults on app tests
-        if 'pyqt5' in c1.app.backend_name.lower() or 'pyqt6' in c1.app.backend_name.lower() or 'pyside6' in c1.app.backend_name.lower():
-            pytest.xfail("Context sharing is not supported in PyQt5, PyQt6, PySide6 at this time.")
+        if 'pyqt5' in c1.app.backend_name.lower() or 'pyqt6' in c1.app.backend_name.lower() or 'pyside2' in c1.app.backend_name.lower() or 'pyside6' in c1.app.backend_name.lower():
+            pytest.xfail("Context sharing is not supported in PyQt5, PyQt6, PySide2, or PySide6 at this time.")
 
         # Tkinter does not currently support context sharing
         if 'tk' in c1.app.backend_name.lower():
