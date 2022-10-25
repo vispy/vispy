@@ -254,6 +254,13 @@ class ProgramTest(unittest.TestCase):
         # And anything else also fails
         self.assertRaises(KeyError, program.__getitem__, 'fooo')
 
+    def test_type_aliases(self):
+        program = Program("in bool A; out float B;", "foo")
+
+        # in aliased to attribute, out to varying
+        assert ('attribute', 'bool', 'A') in program.variables
+        assert ('varying', 'float', 'B') in program.variables
+
     def test_draw(self):
         # Init
         program = Program("attribute float A;", "uniform float foo")

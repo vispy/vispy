@@ -173,11 +173,13 @@ DRAW
 
 ::
 
-   ('DRAW', <program_id>, <mode:str>, <selection:tuple>)
-   # Example: Draw 100 lines
-   ('DRAW', 4, 'lines', (0, 100))
+   ('DRAW', <program_id>, <mode:str>, <selection:tuple>, <instances:int>)
+   # Example: Draw 100 lines with non-instanced rendering
+   ('DRAW', 4, 'lines', (0, 100), 1)
    # Example: Draw 100 lines using index buffer with id 5
-   ('DRAW', 4, 'points', (5, 'unsigned_int', 100))
+   ('DRAW', 4, 'points', (5, 'unsigned_int', 100), 1)
+   # Example: Draw a mesh with 10 vertices 20 times using instanced rendering
+   ('DRAW', 2, 'mesh', (0, 10), 20)
 
 Applies to: Program
 
