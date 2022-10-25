@@ -274,7 +274,6 @@ class ProgramTest(unittest.TestCase):
             program.draw('triangles')
             glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
-            print(glir_cmd)
             assert len(glir_cmd[-2]) == 2
 
             # Draw elements
