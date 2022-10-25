@@ -24,7 +24,8 @@ class TurntableCamera(Base3DRotationCamera):
     Parameters
     ----------
     fov : float
-        Field of view. Zero (default) means orthographic projection.
+        Field of view. 0.0 means orthographic projection,
+        default is 45.0 (some perspective)
     elevation : float
         Elevation angle in degrees. The elevation angle represents a
         rotation of the camera around the current scene x-axis. The
