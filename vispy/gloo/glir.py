@@ -1315,7 +1315,7 @@ class GlirProgram(GlirObject):
         # apps it would not even make sense.
         # self.deactivate()
 
-    def draw(self, mode, selection, instances):
+    def draw(self, mode, selection, instances=1):
         """Draw program in given mode, with given selection (IndexBuffer or
         first, count).
         """
