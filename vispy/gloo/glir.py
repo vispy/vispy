@@ -1225,7 +1225,7 @@ class GlirProgram(GlirObject):
             # Regular uniform
             func(handle, count, value)
 
-    def set_attribute(self, name, type_, value, divisor):
+    def set_attribute(self, name, type_, value, divisor=None):
         """Set an attribute value. Value is assumed to have been checked."""
         if not self._linked:
             raise RuntimeError('Cannot set attribute when program has no code')
