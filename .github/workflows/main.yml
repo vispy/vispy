@@ -169,22 +169,22 @@ jobs:
       matrix:
         include:
           - test_number: 1
-            python_version: "3.7"
+            python_version: "3.8"
             deps: "min"
             test: "standard"
             new_qt: false
           - test_number: 2
-            python_version: "3.7"
+            python_version: "3.8"
             deps: "full"
             test: "standard"
             new_qt: false
           - test_number: 3
-            python_version: "3.7"
+            python_version: "3.8"
             deps: "osmesa"
             test: "osmesa"
             new_qt: false
           - test_number: 4
-            python_version: "3.9"
+            python_version: "3.10"
             deps: "full"
             test: "standard"
             new_qt: true
