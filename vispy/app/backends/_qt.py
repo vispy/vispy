@@ -191,7 +191,7 @@ KEYMAP = {
     qt_keys.Key_Return: keys.ENTER,
     qt_keys.Key_Tab: keys.TAB,
 }
-if PYQT6_API:
+if PYQT6_API or PYSIDE6_API:
     BUTTONMAP = {
         QtCore.Qt.MouseButton.NoButton: 0,
         QtCore.Qt.MouseButton.LeftButton: 1,
@@ -278,11 +278,11 @@ def _set_config(c):
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
     glformat.setAlphaBufferSize(c['alpha_size'])
-    if QT5_NEW_API or PYSIDE6_API:
+    if QT5_NEW_API:
         # Qt5 >= 5.4.0 - below options automatically enabled if nonzero.
         glformat.setSwapBehavior(glformat.DoubleBuffer if c['double_buffer']
                                  else glformat.SingleBuffer)
-    elif PYQT6_API:
+    elif PYQT6_API or PYSIDE6_API:
         glformat.setSwapBehavior(glformat.SwapBehavior.DoubleBuffer if c['double_buffer']
                                  else glformat.SwapBehavior.SingleBuffer)
     else:
