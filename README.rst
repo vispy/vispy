@@ -100,13 +100,15 @@ Governance
 ----------
 
 The VisPy project maintainers make decisions about the project based on a
-simple consensus model. This is described in more detail on
-`our website <https://vispy.org/governance/GOVERNANCE.html>`_ as well as the
+simple consensus model. This is described in more detail on the
+`governance page <https://vispy.org/governance/GOVERNANCE.html>`_ of the vispy
+website as well as the
 `list of maintainers <https://vispy.org/governance/MAINTAINERS.html>`_.
 
 In addition to decisions about the VisPy project, there is also a steering
 committee for the overall VisPy organization. More information about this
-committee can also be found on `our website <https://vispy.org/org/STEERING-COMMITTEE.html>`_,
+committee can also be found on the `steering committee page <https://vispy.org/org/STEERING-COMMITTEE.html>`_
+of the vispy website,
 along with the organization's `charter <https://vispy.org/org/CHARTER.html>`_ and
 other related documents (linked in the charter).
 
