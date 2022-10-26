@@ -39,13 +39,16 @@ class EllipseVisual(PolygonVisual):
     num_segments : int
         Number of segments to be used to draw the ellipse
         Defaults to 100
+    z : float
+        The coordinate in z of the ellipse in the scene.
     **kwargs : dict
         Keyword arguments to pass to `PolygonVisual`.
     """
 
     def __init__(self, center=None, color='black', border_color=None,
                  border_width=1, radius=(0.1, 0.1), start_angle=0.,
-                 span_angle=360., num_segments=100, **kwargs):
+                 span_angle=360., num_segments=100, z=0., **kwargs):
+        self._z = z
         self._center = center
         self._radius = radius
         self._start_angle = start_angle
@@ -64,7 +67,7 @@ class EllipseVisual(PolygonVisual):
 
     @staticmethod
     def _generate_vertices(center, radius, start_angle, span_angle,
-                           num_segments):
+                           num_segments, z):
         if isinstance(radius, (list, tuple)):
             if len(radius) == 2:
                 xr, yr = radius
@@ -77,7 +80,8 @@ class EllipseVisual(PolygonVisual):
 
         start_angle = np.deg2rad(start_angle)
 
-        vertices = np.empty([num_segments + 2, 2], dtype=np.float32)
+        vertices = np.empty([num_segments + 2, 3], dtype=np.float32)
+        vertices[:, 2] = z
 
         # split the total angle into num_segments intances
         theta = np.linspace(start_angle,
@@ -89,7 +93,7 @@ class EllipseVisual(PolygonVisual):
         vertices[1:, 1] = center[1] + yr * np.sin(theta)
 
         # specify center point (not used in border)
-        vertices[0] = np.float32([center[0], center[1]])
+        vertices[0, :2] = np.float32([center[0], center[1]])
 
         return vertices
 
@@ -158,6 +162,7 @@ class EllipseVisual(PolygonVisual):
                                            radius=self._radius,
                                            start_angle=self._start_angle,
                                            span_angle=self._span_angle,
-                                           num_segments=self._num_segments)
+                                           num_segments=self._num_segments,
+                                           z=self._z)
         # don't use the center point
         self._pos = vertices[1:]
