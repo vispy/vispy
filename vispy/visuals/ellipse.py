@@ -83,7 +83,7 @@ class EllipseVisual(PolygonVisual):
         vertices = np.empty([num_segments + 2, 3], dtype=np.float32)
         vertices[:, 2] = z
 
-        # split the total angle into num_segments intances
+        # split the total angle into num_segments instances
         theta = np.linspace(start_angle,
                             start_angle + np.deg2rad(span_angle),
                             num_segments + 1)
