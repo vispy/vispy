@@ -411,7 +411,10 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
         """,
     in_loop="""
-        sumval = sumval + val;
+        // Scale accumulation in `sumval` by contrast limits so that:
+        // * attenuation value does not depend on data values
+        // * negative values do not amplify instead of attenuate
+        sumval = sumval + (val - clim.x) / (clim.y - clim.x);
         scaled = val * exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
         if( scaled > maxval ) {
             maxval = scaled;
