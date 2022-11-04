@@ -420,11 +420,12 @@ class Program(GLObject):
                             raise ValueError('data.shape[-1] must be %s '
                                              'not %s for %s'
                                              % (numel, data._last_dim, name))
+                    divisor = getattr(data, 'divisor', None)
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
                     self.glir.associate(data.glir)
                     self._glir.command('ATTRIBUTE', self._id,
-                                       name, type_, value)
+                                       name, type_, value, divisor)
                 else:
                     # Single-value attribute; convert to array and check size
                     dtype, numel = self._gtypes[type_]
@@ -434,11 +435,12 @@ class Program(GLObject):
                     if data.size != numel:
                         raise ValueError('Attribute %r needs %i elements, '
                                          'not %i.' % (name, numel, data.size))
+                    divisor = getattr(data, 'divisor', None)
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     value = tuple([0] + [i for i in data])
                     self._glir.command('ATTRIBUTE', self._id,
-                                       name, type_, value)
+                                       name, type_, value, divisor)
             else:
                 raise KeyError('Cannot set data for a %s.' % kind)
         else:
@@ -493,13 +495,25 @@ class Program(GLObject):
         # Check attribute sizes
         attributes = [vbo for vbo in self._user_variables.values()
                       if isinstance(vbo, DataBuffer)]
-        sizes = [a.size for a in attributes]
-        if len(attributes) < 1:
+
+        attrs = [a for a in attributes if getattr(a, 'divisor', None) is None]
+        if len(attrs) < 1:
             raise RuntimeError('Must have at least one attribute')
+        sizes = [a.size for a in attrs]
         if not all(s == sizes[0] for s in sizes[1:]):
-            msg = '\n'.join(['%s: %s' % (str(a), a.size) for a in attributes])
-            raise RuntimeError('All attributes must have the same size, got:\n'
-                               '%s' % msg)
+            msg = '\n'.join([f'{str(a)}: {a.size}' for a in attrs])
+            raise RuntimeError('All attributes must have the same size, got:\n{msg}')
+
+        attrs_with_div = [a for a in attributes if a not in attrs]
+        if attrs_with_div:
+            sizes = [a.size for a in attrs_with_div]
+            divs = [a.divisor for a in attrs_with_div]
+            instances = sizes[0] * divs[0]
+            if not all(s * d == instances for s, d in zip(sizes, divs)):
+                msg = '\n'.join([f'{str(a)}: {a.size} * {a.divisor} = {a.size * a.divisor}' for a in attrs_with_div])
+                raise RuntimeError(f'All attributes with divisors must have the same size as the number of instances, got:\n{msg}')
+        else:
+            instances = 1
 
         # Get the glir queue that we need now
         canvas = get_current_canvas()
@@ -516,11 +530,11 @@ class Program(GLObject):
                        np.dtype(np.uint16): 'UNSIGNED_SHORT',
                        np.dtype(np.uint32): 'UNSIGNED_INT'}
             selection = indices.id, gltypes[indices.dtype], indices.size
-            canvas.context.glir.command('DRAW', self._id, mode, selection)
+            canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
         elif indices is None:
             selection = 0, attributes[0].size
             logger.debug("Program drawing %r with %r" % (mode, selection))
-            canvas.context.glir.command('DRAW', self._id, mode, selection)
+            canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
         else:
             raise TypeError("Invalid index: %r (must be IndexBuffer)" %
                             indices)
