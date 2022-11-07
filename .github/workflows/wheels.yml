@@ -41,7 +41,7 @@ jobs:
         CIBW_ENVIRONMENT_WINDOWS: "FREETYPEPY_BUNDLE_FT=1"
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         path: ./wheelhouse/*.whl
 
@@ -61,7 +61,7 @@ jobs:
         python -m pip install --upgrade pip setuptools build wheel
         python -m pip install numpy Cython
         python -m build -s -o dist/
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         path: dist/*.tar.gz
 
