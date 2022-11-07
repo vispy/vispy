@@ -49,9 +49,9 @@ jobs:
     name: lint and style checks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -81,11 +81,11 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: cache-vispy-data-website
         test-version: 1
@@ -110,8 +110,8 @@ jobs:
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
         sleep 5
         # export python_version
-        echo ::set-output name=python_version::310
-    - uses: mamba-org/provision-with-micromamba@v7
+        echo "python_version=310" >> $GITHUB_OUTPUT
+    - uses: mamba-org/provision-with-micromamba@v14
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
@@ -137,7 +137,7 @@ jobs:
         export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
     - name: Upload website HTML artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Sphinx Website
         path: |
@@ -189,11 +189,11 @@ jobs:
             test: "standard"
             new_qt: true
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: cache-vispy-data-${{ matrix.test }}
         test-version: 2
@@ -224,8 +224,8 @@ jobs:
         sleep 5
         # export python_version
         PY_VER=${{ matrix.python_version }}
-        echo ::set-output name=python_version::${PY_VER//.}
-    - uses: mamba-org/provision-with-micromamba@v7
+        echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
+    - uses: mamba-org/provision-with-micromamba@v14
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
@@ -254,7 +254,7 @@ jobs:
           export DISPLAY=:99.0
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so;
+          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa32.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
         micromamba list
@@ -267,7 +267,7 @@ jobs:
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so
+          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa32.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi

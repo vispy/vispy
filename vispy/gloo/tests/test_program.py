@@ -274,14 +274,14 @@ class ProgramTest(unittest.TestCase):
             program.draw('triangles')
             glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
-            assert len(glir_cmd[-1]) == 2
+            assert len(glir_cmd[-2]) == 2
 
             # Draw elements
             indices = gloo.IndexBuffer(np.zeros(10, dtype=np.uint8))
             program.draw('triangles', indices)
             glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
-            assert len(glir_cmd[-1]) == 3
+            assert len(glir_cmd[-2]) == 3
 
             # Invalid mode
             self.assertRaises(ValueError, program.draw, 'nogeometricshape')

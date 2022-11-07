@@ -173,11 +173,13 @@ DRAW
 
 ::
 
-   ('DRAW', <program_id>, <mode:str>, <selection:tuple>)
-   # Example: Draw 100 lines
-   ('DRAW', 4, 'lines', (0, 100))
+   ('DRAW', <program_id>, <mode:str>, <selection:tuple>, <instances:int>)
+   # Example: Draw 100 lines with non-instanced rendering
+   ('DRAW', 4, 'lines', (0, 100), 1)
    # Example: Draw 100 lines using index buffer with id 5
-   ('DRAW', 4, 'points', (5, 'unsigned_int', 100))
+   ('DRAW', 4, 'points', (5, 'unsigned_int', 100), 1)
+   # Example: Draw a mesh with 10 vertices 20 times using instanced rendering
+   ('DRAW', 2, 'mesh', (0, 10), 20)
 
 Applies to: Program
 
@@ -1223,7 +1225,7 @@ class GlirProgram(GlirObject):
             # Regular uniform
             func(handle, count, value)
 
-    def set_attribute(self, name, type_, value):
+    def set_attribute(self, name, type_, value, divisor=None):
         """Set an attribute value. Value is assumed to have been checked."""
         if not self._linked:
             raise RuntimeError('Cannot set attribute when program has no code')
@@ -1250,7 +1252,7 @@ class GlirProgram(GlirObject):
             funcname = self.ATYPEMAP[type_]
             func = getattr(gl, funcname)
             # Set data
-            self._attributes[name] = 0, handle, func, value[1:]
+            self._attributes[name] = 0, handle, func, value[1:], divisor
         else:
             # Get meta data
             vbo_id, stride, offset = value
@@ -1264,7 +1266,7 @@ class GlirProgram(GlirObject):
             # Set data
             func = gl.glVertexAttribPointer
             args = size, gtype, gl.GL_FALSE, stride, offset
-            self._attributes[name] = vbo.handle, handle, func, args
+            self._attributes[name] = vbo.handle, handle, func, args, divisor
 
     def _pre_draw(self):
         self.activate()
@@ -1273,11 +1275,13 @@ class GlirProgram(GlirObject):
             gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
             gl.glBindTexture(tex_target, tex_handle)
         # Activate attributes
-        for vbo_handle, attr_handle, func, args in self._attributes.values():
+        for vbo_handle, attr_handle, func, args, divisor in self._attributes.values():
             if vbo_handle:
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo_handle)
                 gl.glEnableVertexAttribArray(attr_handle)
                 func(attr_handle, *args)
+                if divisor is not None:
+                    gl.glVertexAttribDivisor(attr_handle, divisor)
             else:
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
                 gl.glDisableVertexAttribArray(attr_handle)
@@ -1311,7 +1315,7 @@ class GlirProgram(GlirObject):
         # apps it would not even make sense.
         # self.deactivate()
 
-    def draw(self, mode, selection):
+    def draw(self, mode, selection, instances=1):
         """Draw program in given mode, with given selection (IndexBuffer or
         first, count).
         """
@@ -1337,14 +1341,20 @@ class GlirProgram(GlirObject):
                 self._pre_draw()
                 ibuf = self._parser.get_object(id_)
                 ibuf.activate()
-                gl.glDrawElements(mode, count, as_enum(gtype), None)
+                if instances > 1:
+                    gl.glDrawElementsInstanced(mode, count, as_enum(gtype), None, instances)
+                else:
+                    gl.glDrawElements(mode, count, as_enum(gtype), None)
                 ibuf.deactivate()
         else:
             # Selection based on start and count
             first, count = selection
             if count:
                 self._pre_draw()
-                gl.glDrawArrays(mode, first, count)
+                if instances > 1:
+                    gl.glDrawArraysInstanced(mode, first, count, instances)
+                else:
+                    gl.glDrawArrays(mode, first, count)
         # Wrap up
         gl.check_error('Check after draw')
         self._post_draw()
