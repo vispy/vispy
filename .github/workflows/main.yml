@@ -193,7 +193,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: cache-vispy-data-${{ matrix.test }}
         test-version: 2
