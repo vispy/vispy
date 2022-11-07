@@ -85,7 +85,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: cache-vispy-data-website
         test-version: 1
@@ -110,7 +110,7 @@ jobs:
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
         sleep 5
         # export python_version
-        echo ::set-output name=python_version::39
+        echo "python_version=39" >> $GITHUB_OUTPUT
     - uses: mamba-org/provision-with-micromamba@v7
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
@@ -193,7 +193,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: cache-vispy-data-${{ matrix.test }}
         test-version: 2
