@@ -254,7 +254,7 @@ jobs:
           export DISPLAY=:99.0
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so;
+          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa32.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
         micromamba list
@@ -267,7 +267,7 @@ jobs:
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa32.so
+          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa32.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi
