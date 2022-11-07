@@ -224,7 +224,7 @@ jobs:
         sleep 5
         # export python_version
         PY_VER=${{ matrix.python_version }}
-        echo ::set-output name=python_version::${PY_VER//.}
+        echo "python_version=${PY_VER//.}"
     - uses: mamba-org/provision-with-micromamba@v7
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
