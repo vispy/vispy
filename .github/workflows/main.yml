@@ -110,7 +110,7 @@ jobs:
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
         sleep 5
         # export python_version
-        echo "python_version=39" >> $GITHUB_OUTPUT
+        echo "python_version=310" >> $GITHUB_OUTPUT
     - uses: mamba-org/provision-with-micromamba@v14
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
@@ -169,22 +169,22 @@ jobs:
       matrix:
         include:
           - test_number: 1
-            python_version: "3.7"
+            python_version: "3.8"
             deps: "min"
             test: "standard"
             new_qt: false
           - test_number: 2
-            python_version: "3.7"
+            python_version: "3.8"
             deps: "full"
             test: "standard"
             new_qt: false
           - test_number: 3
-            python_version: "3.7"
+            python_version: "3.8"
             deps: "osmesa"
             test: "osmesa"
             new_qt: false
           - test_number: 4
-            python_version: "3.9"
+            python_version: "3.10"
             deps: "full"
             test: "standard"
             new_qt: true
