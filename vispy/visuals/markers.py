@@ -653,15 +653,18 @@ class MarkersVisual(Visual):
 
     @symbol.setter
     def symbol(self, value):
-        rec_to_kw = {
-            'a_position': 'pos',
-            'a_fg_color': 'edge_color',
-            'a_bg_color': 'face_color',
-            'a_size': 'size',
-            'a_edgewidth': 'edge_width',
-            'a_symbol': 'symbol',
-        }
-        kwargs = {kw: self._data[rec] for rec, kw in rec_to_kw.items()}
+        if self._data is not None:
+            rec_to_kw = {
+                'a_position': 'pos',
+                'a_fg_color': 'edge_color',
+                'a_bg_color': 'face_color',
+                'a_size': 'size',
+                'a_edgewidth': 'edge_width',
+                'a_symbol': 'symbol',
+            }
+            kwargs = {kw: self._data[rec] for rec, kw in rec_to_kw.items()}
+        else:
+            kwargs = {}
         kwargs['symbol'] = value
         self.set_data(**kwargs)
 
