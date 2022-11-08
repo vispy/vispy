@@ -646,6 +646,8 @@ class MarkersVisual(Visual):
 
     @property
     def symbol(self):
+        if self._data is None:
+            return None
         value_to_symbol = {v: k for k, v in self._symbol_shader_values.items()}
         return np.vectorize(value_to_symbol.get)(self._data['a_symbol'])
 
