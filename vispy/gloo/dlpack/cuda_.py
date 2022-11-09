@@ -18,7 +18,7 @@ class CudaBuffer:
         def __init__(self, buffer, stream):
             self.buffer = buffer
             self.stream = stream
-            self.resource = cuda_check(cudart.cudaGraphicsGLRegisterBuffer(buffer._glir_object.handle, buffer.flags))
+            self.resource = cuda_check(cudart.cudaGraphicsGLRegisterBuffer(buffer._glir_object.handle, buffer._flags))
             cuda_check(cudart.cudaGraphicsMapResources(1, self.resource, self.stream))
             self.ptr, self.size = cuda_check(cudart.cudaGraphicsResourceGetMappedPointer(self.resource))
         def capsule(self):
@@ -37,13 +37,14 @@ class CudaBuffer:
         self._dtype = dlpack.DLDataType.TYPE_MAP[str(dtype)]
         self._strides = strides
         self._byte_offset = byte_offset
-        assert read or write
-        if not read:
-            self.flags = cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsReadOnly
-        elif not write:
-            self.flags = cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsWriteDiscard
+        if read and write:
+            self._flags = cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsNone
+        elif read:
+            self._flags = cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsReadOnly
+        elif write:
+            self._flags = cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsWriteDiscard
         else:
-            self.flags = cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsNone
+            raise ValueError('neither read nor write set')
             
     def __dlpack__(self, stream=None):
         return self._Mapping(self, stream).capsule()
