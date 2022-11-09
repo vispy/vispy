@@ -1,4 +1,4 @@
-import dlpack
+from . import dlpack
 
 import ctypes
 

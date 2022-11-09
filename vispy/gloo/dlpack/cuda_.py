@@ -1,7 +1,6 @@
 from cuda import cudart
 
-#from . import dlpack, util
-import dlpack, util
+from . import dlpack, util
 
 
 def cuda_check(ret):
