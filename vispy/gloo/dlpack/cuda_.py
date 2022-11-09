@@ -18,23 +18,25 @@ class CudaBuffer:
         def __init__(self, buffer, stream):
             self.buffer = buffer
             self.stream = stream
-            self.resource = cuda_check(cudart.cudaGraphicsGLRegisterBuffer(buffer.glir_object.handle, buffer.flags))
+            self.resource = cuda_check(cudart.cudaGraphicsGLRegisterBuffer(buffer._glir_object.handle, buffer.flags))
             cuda_check(cudart.cudaGraphicsMapResources(1, self.resource, self.stream))
             self.ptr, self.size = cuda_check(cudart.cudaGraphicsResourceGetMappedPointer(self.resource))
         def capsule(self):
             buffer = self.buffer
-            return util.create_dlpack_capsule(self, self.ptr, buffer.device, buffer.dtype, buffer.shape, buffer.strides, buffer.byte_offset)
+            return util.create_dlpack_capsule(self, self.ptr, buffer._device, buffer._dtype, buffer._shape, buffer._strides, buffer._byte_offset)
         def __del__(self):
             cuda_check(cudart.cudaGraphicsUnmapResources(1, self.resource, self.stream))
             cuda_check(cudart.cudaGraphicsUnregisterResource(self.resource))
             
     def __init__(self, glir_object, shape, dtype, strides = None, byte_offset = 0, read = False, write = True):
-        self.device = dlpack.DLDevice(dlpack.DLDeviceType.kDLCUDA, 0) # warning: harcoded to device id 0
-        self.glir_object = glir_object
-        self.shape = shape
-        self.dtype = dlpack.DLDataType.TYPE_MAP[str(dtype)]
-        self.strides = strides
-        self.byte_offset = byte_offset
+        self._device_type = dlpack.DLDeviceType.kDLCUDA
+        self._device_id = 0 # WARNING: hardcoded to device id 0
+        self._device = dlpack.DLDevice(self._device_type, self._device_id)
+        self._glir_object = glir_object
+        self._shape = shape
+        self._dtype = dlpack.DLDataType.TYPE_MAP[str(dtype)]
+        self._strides = strides
+        self._byte_offset = byte_offset
         assert read or write
         if not read:
             self.flags = cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsReadOnly
@@ -47,7 +49,7 @@ class CudaBuffer:
         return self._Mapping(self, stream).capsule()
 
     def __dlpack_device__(self):
-        return self.device.device_type, self.device.device_id
+        return self._device_type, self._device_id
 
 if __name__ == '__main__':
     import vispy.app
@@ -88,13 +90,21 @@ if __name__ == '__main__':
             self.program['position'] = [(-1, -1), (-1, +1),
                                         (+1, -1), (+1, +1)]
             self.program['theta'] = 0.0
+    
+            self.timer = vispy.app.Timer('auto', self.on_timer)
+            self.clock = 0
+            self.timer.start()
 
+            vispy.gloo.set_viewport(0, 0, *self.physical_size)
+            vispy.gloo.set_clear_color('white')
+    
             np_program_buf = self.program._buffer
             np_position_buf = np_program_buf['position']
             print('position buffer =', np_position_buf)
 
-            self.context.glir.associate(self.program.glir)
-            self.context.glir.flush(self.context.shared.parser)
+            #self.context.glir.associate(self.program.glir)
+            #self.context.glir.flush(self.context.shared.parser)
+            self.show()
 
             byte_offset = np_position_buf.__array_interface__['data'][0] - np_program_buf.__array_interface__['data'][0]
             strides = [stride // np_position_buf.dtype.itemsize for stride in np_position_buf.strides]
@@ -108,15 +118,6 @@ if __name__ == '__main__':
             print('position cupy array = ', cupy.from_dlpack(dlpack_buf))
     
 
-            vispy.gloo.set_viewport(0, 0, *self.physical_size)
-            vispy.gloo.set_clear_color('white')
-    
-            self.timer = vispy.app.Timer('auto', self.on_timer)
-            self.clock = 0
-            self.timer.start()
-    
-            self.show()
-    
         def on_draw(self, event):
             vispy.gloo.clear()
             self.program.draw('triangle_strip')
