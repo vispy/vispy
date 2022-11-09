@@ -23,16 +23,17 @@ class CudaBuffer:
             self.ptr, self.size = cuda_check(cudart.cudaGraphicsResourceGetMappedPointer(self.resource))
         def capsule(self):
             buffer = self.buffer
-            return util.create_dlpack_capsule(self, self.ptr, buffer.device, buffer.dtype, buffer.shape, None, buffer.byte_offset)
+            return util.create_dlpack_capsule(self, self.ptr, buffer.device, buffer.dtype, buffer.shape, buffer.strides, buffer.byte_offset)
         def __del__(self):
             cuda_check(cudart.cudaGraphicsUnmapResources(1, self.resource, self.stream))
             cuda_check(cudart.cudaGraphicsUnregisterResource(self.resource))
             
-    def __init__(self, glir_object, shape, dtype, byte_offset = 0, read = False, write = True):
+    def __init__(self, glir_object, shape, dtype, strides = None, byte_offset = 0, read = False, write = True):
         self.device = dlpack.DLDevice(dlpack.DLDeviceType.kDLCUDA, 0) # warning: harcoded to device id 0
         self.glir_object = glir_object
         self.shape = shape
         self.dtype = dlpack.DLDataType.TYPE_MAP[str(dtype)]
+        self.strides = strides
         self.byte_offset = byte_offset
         assert read or write
         if not read:
@@ -79,28 +80,34 @@ if __name__ == '__main__':
             super().__init__(size=(512, 512), title='Rotating quad',
                              keys='interactive')
             # Build program & data
+            print('Sending position buffer to vispy:')
+
             self.program = vispy.gloo.Program(vertex, fragment, count=4)
             self.program['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
                                      (0, 0, 1, 1), (1, 1, 0, 1)]
-
-            position =  np.array([(-1, -1), (-1, +1),
-                                  (+1, -1), (+1, +1)], dtype=np.float32)
-            print('Sending position to vispy as a numpy array:')
-            print('position =', position)
-            self.program['position'] = position
-            self.context.glir.associate(self.program.glir)
-            self.context.glir.flush(self.context.shared.parser)
-            position_vb = self.context.shared.parser.get_object(self.program['position'].base.id)
-            print('Pulling position out:')
-            position_dlpack = CudaBuffer(position_vb, position.shape, position.dtype)
-            import torch
-            print('position torch tensor = ', torch.from_dlpack(position_dlpack))
-            import cupy
-            print('position cupy array = ', cupy.from_dlpack(position_dlpack))
-
+            self.program['position'] = [(-1, -1), (-1, +1),
+                                        (+1, -1), (+1, +1)]
             self.program['theta'] = 0.0
 
+            np_program_buf = self.program._buffer
+            np_position_buf = np_program_buf['position']
+            print('position buffer =', np_position_buf)
+
+            self.context.glir.associate(self.program.glir)
+            self.context.glir.flush(self.context.shared.parser)
+
+            byte_offset = np_position_buf.__array_interface__['data'][0] - np_program_buf.__array_interface__['data'][0]
+            strides = [stride // np_position_buf.dtype.itemsize for stride in np_position_buf.strides]
+            gl_handle = self.context.shared.parser.get_object(self.program['position'].base.id)
+
+            print('Pulling position out:')
+            dlpack_buf = CudaBuffer(gl_handle, np_position_buf.shape, np_position_buf.dtype, strides, byte_offset, read = True)
+            import torch
+            print('position torch tensor = ', torch.from_dlpack(dlpack_buf))
+            import cupy
+            print('position cupy array = ', cupy.from_dlpack(dlpack_buf))
     
+
             vispy.gloo.set_viewport(0, 0, *self.physical_size)
             vispy.gloo.set_clear_color('white')
     

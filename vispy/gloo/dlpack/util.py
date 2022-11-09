@@ -33,7 +33,7 @@ def _pycapsule_deleter(handle: ctypes.c_void_p) -> None:
     pycapsule: ctypes.py_object = ctypes.cast(handle, ctypes.py_object)
     if ctypes.pythonapi.PyCapsule_IsValid(pycapsule, dlpack._c_str_dltensor):
         dl_managed = ctypes.pythonapi.PyCapsule_GetPointer(
-            pycapsule, _c_str_dltensor
+            pycapsule, dlpack._c_str_dltensor
         )
         _manager_ctx_deleter(dl_managed)
         ctypes.pythonapi.PyCapsule_SetDestructor(pycapsule, None)
@@ -41,13 +41,13 @@ def _pycapsule_deleter(handle: ctypes.c_void_p) -> None:
 def create_dlpack_capsule(obj, ptr, device, dtype, shape, strides = None, byte_offset = 0):
     ndim = len(shape)
     dl_managed = dlpack.DLManagedTensor.from_address(ctypes.pythonapi.PyMem_RawMalloc(DLManagedTensor_size))
-    dl_managed.dl_tensor.data = ptr
+    dl_managed.dl_tensor.data = ptr + byte_offset
     dl_managed.dl_tensor.device = device
     dl_managed.dl_tensor.dtype = dtype
     dl_managed.dl_tensor.ndim = ndim
     dl_managed.dl_tensor.shape = (ctypes.c_int64 * ndim)(*shape)
-    dl_managed.dl_tensor.strides = strides
-    dl_managed.dl_tensor.byte_offset = 0
+    dl_managed.dl_tensor.strides = (ctypes.c_int64 * ndim)(*strides)
+    dl_managed.dl_tensor.byte_offset = byte_offset
     dl_managed.manager_ctx = _manager_ctx(obj)
     dl_managed.deleter = _manager_ctx_deleter
     pycapsule = ctypes.pythonapi.PyCapsule_New(
