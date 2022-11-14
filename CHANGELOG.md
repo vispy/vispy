@@ -1,5 +1,11 @@
 # Release Notes
 
+## [v0.12.1](https://github.com/vispy/vispy/tree/v0.12.1) (2022-11-14)
+
+**Fixed bugs:**
+
+- Fix: bug with new Markers.symbol and empty data [\#2428](https://github.com/vispy/vispy/pull/2428) ([brisvag](https://github.com/brisvag))
+
 ## [v0.12.0](https://github.com/vispy/vispy/tree/v0.12.0) (2022-11-08)
 
 **Enhancements:**
