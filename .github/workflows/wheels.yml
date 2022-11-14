@@ -25,7 +25,7 @@ jobs:
         fetch-depth: 0
     - name: Set up QEMU
       if: ${{ matrix.arch == 'aarch64' }}
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v2
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.1.1
       env:
