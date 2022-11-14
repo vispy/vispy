@@ -36,7 +36,7 @@ jobs:
         CIBW_BUILD_VERBOSITY: "2"
         CIBW_BEFORE_BUILD: "pip install -U numpy Cython"
         CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
-        CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig || apk add fontconfig; pip install -U pip setuptools; pip install freetype-py"
+        CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig || apk add fontconfig jpeg-dev; pip install -U pip setuptools; pip install freetype-py"
         # If freetype-py is installed from source (no wheel found), include bundled freetype library
         CIBW_ENVIRONMENT_WINDOWS: "FREETYPEPY_BUNDLE_FT=1"
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
