@@ -327,21 +327,18 @@ class MeshData(object):
             The normals.
         """
         if self._vertex_normals is None:
-            faceNorms = self.get_face_normals()
-            vertFaces = self.get_vertex_faces()
-            self._vertex_normals = np.empty(self._vertices.shape,
+            faceNorms = self.get_face_normals().astype(np.float32)
+            _vertex_normals = np.zeros(self._vertices.shape,
                                             dtype=np.float32)
-            for vindex in range(self._vertices.shape[0]):
-                faces = vertFaces[vindex]
-                if len(faces) == 0:
-                    self._vertex_normals[vindex] = (0, 0, 0)
-                    continue
-                norms = faceNorms[faces]  # get all face normals
-                norm = norms.sum(axis=0)  # sum normals
-                renorm = (norm**2).sum()**0.5
-                if renorm > 0:
-                    norm /= renorm
-                self._vertex_normals[vindex] = norm
+
+            # cannot use the following as it is buffered and does not work with repearted indices
+            # _vertex_normals[self._faces.ravel()] += np.repeat(faceNorms, 3, axis=0)
+            np.add.at(_vertex_normals, self._faces.ravel(), np.repeat(faceNorms, 3, axis=0))
+
+            renorm = (_vertex_normals**2).sum(axis=1) ** 0.5
+            _renorm_mask = renorm > 0
+            _vertex_normals[_renorm_mask] /= renorm[_renorm_mask][:, None]
+            self._vertex_normals = _vertex_normals
 
         if indexed is None:
             return self._vertex_normals
