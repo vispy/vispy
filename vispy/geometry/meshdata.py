@@ -327,18 +327,25 @@ class MeshData(object):
             The normals.
         """
         if self._vertex_normals is None:
-            faceNorms = self.get_face_normals().astype(np.float32)
-            _vertex_normals = np.zeros(self._vertices.shape,
-                                            dtype=np.float32)
+            face_normals = self.get_face_normals().astype(np.float32)
+            vertex_normals = np.zeros(self._vertices.shape, dtype=np.float32)
 
-            # cannot use the following as it is buffered and does not work with repearted indices
-            # _vertex_normals[self._faces.ravel()] += np.repeat(faceNorms, 3, axis=0)
-            np.add.at(_vertex_normals, self._faces.ravel(), np.repeat(faceNorms, 3, axis=0))
+            face_normals_repeated_on_face_vertices = np.repeat(face_normals,
+                                                               3,
+                                                               axis=0)
+            # NOTE: Cannot use the following intuitive code as it does not
+            # accumulate the values from the right hand side at repeated
+            # indices on the left hand side (instead, the value is overwritten
+            # at each occurence of an index):
+            #  vertex_normals[self._faces.ravel()] += face_normals_repeated_on_face_vertices
+            # The following does the desired accumulation at repeated indices:
+            np.add.at(vertex_normals, self._faces.ravel(),
+                      face_normals_repeated_on_face_vertices)
 
-            renorm = (_vertex_normals**2).sum(axis=1) ** 0.5
-            _renorm_mask = renorm > 0
-            _vertex_normals[_renorm_mask] /= renorm[_renorm_mask][:, None]
-            self._vertex_normals = _vertex_normals
+            norms = (vertex_normals**2).sum(axis=1)**0.5
+            nonzero_norms = norms > 0
+            vertex_normals[nonzero_norms] /= norms[nonzero_norms][:, None]
+            self._vertex_normals = vertex_normals
 
         if indexed is None:
             return self._vertex_normals
