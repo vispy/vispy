@@ -39,6 +39,7 @@ jobs:
         CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev; pip install -U pip setuptools; pip install freetype-py"
         # If freetype-py is installed from source (no wheel found), include bundled freetype library
         CIBW_ENVIRONMENT_WINDOWS: "FREETYPEPY_BUNDLE_FT=1"
+        CIBW_ENVIRONMENT: "GITHUB_ACTIONS=true"
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
     - uses: actions/upload-artifact@v3
