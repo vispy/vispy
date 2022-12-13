@@ -32,7 +32,7 @@ jobs:
         CIBW_SKIP: "cp36-* pp* *-win32 *-manylinux_i686"
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
         CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
-        CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
+        CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test('nobackend')\""
         CIBW_BUILD_VERBOSITY: "2"
         CIBW_BEFORE_BUILD: "pip install -U numpy Cython"
         CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
