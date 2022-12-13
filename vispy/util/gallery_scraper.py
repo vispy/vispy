@@ -89,6 +89,7 @@ class VisPyGalleryScraper:
             frame_grabber.save_animation(image_path)
         else:
             frame_grabber.save_frame(image_path)
+        frame_grabber.cleanup()
         if 'images' in gallery_conf['compress_images']:
             optipng(image_path, gallery_conf['compress_images_args'])
         return [image_path]
@@ -175,6 +176,13 @@ class FrameGrabber:
         self._current_frame = -1
         self._collected_images = []
         self._frames_to_grab = frame_grab_list[:]  # copy so original list is preserved
+
+    def cleanup(self):
+        from PyQt5.QtWidgets import QApplication
+        for child_widget in QApplication.allWidgets():
+            if hasattr(child_widget, 'close'):
+                child_widget.close()
+        QApplication.processEvents()
 
     def on_draw(self, _):
         if self._done:
