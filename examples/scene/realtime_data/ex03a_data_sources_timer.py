@@ -217,5 +217,9 @@ if __name__ == "__main__":
     # Change "1.0" to "auto" to run connected function as quickly as possible
     timer = Timer("1.0", connect=data_source.run_data_creation, start=True)
 
+    # stop the timer when the window is closed and destroyed
+    # not always needed, but needed for vispy gallery creation
+    win.destroyed.connect(timer.stop)
+
     win.show()
     app.run()
