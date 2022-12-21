@@ -13,7 +13,7 @@ import numpy as np
 
 # arg( e^(1/z) )
 def exp_z_inv(x, y):
-    z = np.complex_(x, y)
+    z = complex(x, y)
     f = np.exp(1.0 / z)
     return np.angle(f, deg=True)
 
