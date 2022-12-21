@@ -163,6 +163,13 @@ class ColorArray(object):
         """Helper to get the class name once it's been created"""
         return cls.__name__
 
+    def __array__(self, dtype=None):
+        """Get a standard numpy array representing RGBA."""
+        rgba = self.rgba
+        if dtype is not None:
+            rgba = rgba.astype(dtype)
+        return rgba
+
     def __len__(self):
         return self._rgba.shape[0]
 
