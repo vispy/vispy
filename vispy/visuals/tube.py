@@ -89,7 +89,6 @@ class TubeVisual(MeshVisual):
                 tube_points=8, shading='smooth', 
                 vertex_colors=None, face_colors=None, 
                 mode='triangles'):
-        print("Setting Tube")
         points = np.array(points).astype(float)
         # if single radius, convert to list of radii
         if not isinstance(radius, collections.abc.Iterable):
