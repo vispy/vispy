@@ -60,9 +60,63 @@ class TubeVisual(MeshVisual):
         # make sure we are working with floats
         points = np.array(points).astype(float)
 
-        tangents, normals, binormals = _frenet_frames(points, closed)
+        # if single radius, convert to list of radii
+        if not isinstance(radius, collections.abc.Iterable):
+            radius = [radius] * len(points)
+        elif len(radius) != len(points):
+            raise ValueError('Length of radii list must match points.')
 
-        segments = len(points) - 1
+        # get the positions of each vertex
+        vertices = _getVertices(points=points, closed=closed, tube_points=tube_points, radius=radius)
+
+        # construct the mesh
+        indices = _getIndices(points=points, closed=closed, tube_points=tube_points)
+
+        color = ColorArray(color)
+        if vertex_colors is None:
+            point_colors = np.resize(color.rgba,
+                                     (len(points), 4))
+            vertex_colors = np.repeat(point_colors, tube_points, axis=0)
+
+        MeshVisual.__init__(self, vertices, indices,
+                            vertex_colors=vertex_colors,
+                            face_colors=face_colors,
+                            shading=shading,
+                            mode=mode)
+
+    def set_data(self, points, radius=1.0, 
+                closed=False, color='purple', 
+                tube_points=8, shading='smooth', 
+                vertex_colors=None, face_colors=None, 
+                mode='triangles'):
+        print("Setting Tube")
+        points = np.array(points).astype(float)
+        # if single radius, convert to list of radii
+        if not isinstance(radius, collections.abc.Iterable):
+            radius = [radius] * len(points)
+        elif len(radius) != len(points):
+            raise ValueError('Length of radii list must match points.')
+
+        # get the positions of each vertex
+        vertices = _getVertices(points=points, closed=closed, tube_points=tube_points, radius=radius)
+
+        # construct the mesh
+        indices = _getIndices(points=points, closed=closed, tube_points=tube_points)
+
+        color = ColorArray(color)
+        if vertex_colors is None:
+            point_colors = np.resize(color.rgba,
+                                     (len(points), 4))
+            vertex_colors = np.repeat(point_colors, tube_points, axis=0)  
+
+        super().set_data(vertices, indices,
+                        vertex_colors=vertex_colors,
+                        face_colors=face_colors)
+
+
+def _getVertices(points, closed, tube_points, radius): 
+        points = np.array(points).astype(float)
+        tangents, normals, binormals = _frenet_frames(points, closed)
 
         # if single radius, convert to list of radii
         if not isinstance(radius, collections.abc.Iterable):
@@ -80,14 +134,19 @@ class TubeVisual(MeshVisual):
 
             # Add a vertex for each point on the circle
             v = np.arange(tube_points,
-                          dtype=np.float32) / tube_points * 2 * np.pi
+                        dtype=float) / tube_points * 2 * np.pi
             cx = -1. * r * np.cos(v)
             cy = r * np.sin(v)
             grid[i] = (pos + cx[:, np.newaxis]*normal +
-                       cy[:, np.newaxis]*binormal)
+                    cy[:, np.newaxis]*binormal)
 
-        # construct the mesh
+        vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
+        return vertices 
+
+def _getIndices(points, closed, tube_points): 
+            # construct the mesh
         indices = []
+        segments = len(points) - 1 
         for i in range(segments):
             for j in range(tube_points):
                 ip = (i+1) % segments if closed else i+1
@@ -101,22 +160,8 @@ class TubeVisual(MeshVisual):
                 indices.append([index_a, index_b, index_d])
                 indices.append([index_b, index_c, index_d])
 
-        vertices = grid.reshape(grid.shape[0]*grid.shape[1], 3)
-
-        color = ColorArray(color)
-        if vertex_colors is None:
-            point_colors = np.resize(color.rgba,
-                                     (len(points), 4))
-            vertex_colors = np.repeat(point_colors, tube_points, axis=0)
-
         indices = np.array(indices, dtype=np.uint32)
-
-        MeshVisual.__init__(self, vertices, indices,
-                            vertex_colors=vertex_colors,
-                            face_colors=face_colors,
-                            shading=shading,
-                            mode=mode)
-
+        return indices 
 
 def _frenet_frames(points, closed):
     """Calculates and returns the tangents, normals and binormals for
