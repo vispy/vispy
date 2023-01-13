@@ -327,21 +327,25 @@ class MeshData(object):
             The normals.
         """
         if self._vertex_normals is None:
-            faceNorms = self.get_face_normals()
-            vertFaces = self.get_vertex_faces()
-            self._vertex_normals = np.empty(self._vertices.shape,
-                                            dtype=np.float32)
-            for vindex in range(self._vertices.shape[0]):
-                faces = vertFaces[vindex]
-                if len(faces) == 0:
-                    self._vertex_normals[vindex] = (0, 0, 0)
-                    continue
-                norms = faceNorms[faces]  # get all face normals
-                norm = norms.sum(axis=0)  # sum normals
-                renorm = (norm**2).sum()**0.5
-                if renorm > 0:
-                    norm /= renorm
-                self._vertex_normals[vindex] = norm
+            face_normals = self.get_face_normals().astype(np.float32)
+            vertex_normals = np.zeros(self._vertices.shape, dtype=np.float32)
+
+            face_normals_repeated_on_face_vertices = np.repeat(face_normals,
+                                                               3,
+                                                               axis=0)
+            # NOTE: Cannot use the following intuitive code as it does not
+            # accumulate the values from the right hand side at repeated
+            # indices on the left hand side (instead, the value is overwritten
+            # at each occurence of an index):
+            #  vertex_normals[self._faces.ravel()] += face_normals_repeated_on_face_vertices
+            # The following does the desired accumulation at repeated indices:
+            np.add.at(vertex_normals, self._faces.ravel(),
+                      face_normals_repeated_on_face_vertices)
+
+            norms = (vertex_normals**2).sum(axis=1)**0.5
+            nonzero_norms = norms > 0
+            vertex_normals[nonzero_norms] /= norms[nonzero_norms][:, None]
+            self._vertex_normals = vertex_normals
 
         if indexed is None:
             return self._vertex_normals
