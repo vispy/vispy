@@ -19,6 +19,21 @@ def _fix_colors(colors):
     return colors
 
 
+def _compute_face_normals(vertices):
+    assert vertices.shape[1:] == (3, 3), \
+            "Require Nx3x3 array of vertices repeated on the triangle corners."
+    edges1 = vertices[:, 1] - vertices[:, 0]
+    edges2 = vertices[:, 2] - vertices[:, 0]
+    return np.cross(edges1, edges2)
+
+
+def _repeat_face_normals_on_corners(normals):
+    assert normals.shape[1:] == (3,), "Require Fx3 array of face normals."
+    n_corners_in_face = 3
+    new_shape = (normals.shape[0], n_corners_in_face, normals.shape[1])
+    return np.repeat(normals, n_corners_in_face, axis=0).reshape(new_shape)
+
+
 class MeshData(object):
     """
     Class for storing and operating on 3D mesh data.
@@ -293,22 +308,19 @@ class MeshData(object):
         normals : ndarray
             The normals.
         """
-        if self._face_normals is None:
-            v = self.get_vertices(indexed='faces')
-            self._face_normals = np.cross(v[:, 1] - v[:, 0],
-                                          v[:, 2] - v[:, 0])
-
-        if indexed is None:
-            return self._face_normals
-        elif indexed == 'faces':
-            if self._face_normals_indexed_by_faces is None:
-                norms = np.empty((self._face_normals.shape[0], 3, 3),
-                                 dtype=np.float32)
-                norms[:] = self._face_normals[:, np.newaxis, :]
-                self._face_normals_indexed_by_faces = norms
-            return self._face_normals_indexed_by_faces
-        else:
+        if indexed not in (None, 'faces'):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+
+        if self._face_normals is None:
+            face_corner_vertices = self.get_vertices(indexed='faces')
+            self._face_normals = _compute_face_normals(face_corner_vertices)
+
+        if indexed == 'faces' and self._face_normals_indexed_by_faces is None:
+            self._face_normals_indexed_by_faces = \
+                _repeat_face_normals_on_corners(self._face_normals)
+
+        return (self._face_normals if indexed is None
+                else self._face_normals_indexed_by_faces)
 
     def get_vertex_normals(self, indexed=None):
         """Get vertex normals
