@@ -34,6 +34,32 @@ def _repeat_face_normals_on_corners(normals):
     return np.repeat(normals, n_corners_in_face, axis=0).reshape(new_shape)
 
 
+def _compute_vertex_normals(face_normals, faces, vertices):
+    assert face_normals.shape[1:] == (3,), "Require Fx3 array of face normals."
+
+    vertex_normals = np.zeros_like(vertices)
+    n_corners_in_triangle = 3
+    face_normals_repeated_on_face_vertices = np.repeat(face_normals,
+                                                       n_corners_in_triangle,
+                                                       axis=0)
+    # NOTE: Cannot use the simpler operation
+    #
+    #   vertex_normals[self._faces.ravel()] += face_normals_repeated_on_face_vertices
+    #
+    # as this does not accumulate the values from the right hand side at
+    # repeated indices on the left hand side (the values are overwritten
+    # instead).
+    # This below accumulates at the indices occuring multiple times:
+    np.add.at(vertex_normals, faces.ravel(),
+              face_normals_repeated_on_face_vertices)
+
+    norms = np.sqrt((vertex_normals**2).sum(axis=1))
+    nonzero_norms = norms > 0
+    vertex_normals[nonzero_norms] /= norms[nonzero_norms][:, None]
+
+    return vertex_normals
+
+
 class MeshData(object):
     """
     Class for storing and operating on 3D mesh data.
@@ -338,33 +364,20 @@ class MeshData(object):
         normals : ndarray
             The normals.
         """
+        if indexed not in (None, 'faces'):
+            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+
         if self._vertex_normals is None:
-            face_normals = self.get_face_normals().astype(np.float32)
-            vertex_normals = np.zeros(self._vertices.shape, dtype=np.float32)
-
-            face_normals_repeated_on_face_vertices = np.repeat(face_normals,
-                                                               3,
-                                                               axis=0)
-            # NOTE: Cannot use the following intuitive code as it does not
-            # accumulate the values from the right hand side at repeated
-            # indices on the left hand side (instead, the value is overwritten
-            # at each occurence of an index):
-            #  vertex_normals[self._faces.ravel()] += face_normals_repeated_on_face_vertices
-            # The following does the desired accumulation at repeated indices:
-            np.add.at(vertex_normals, self._faces.ravel(),
-                      face_normals_repeated_on_face_vertices)
-
-            norms = (vertex_normals**2).sum(axis=1)**0.5
-            nonzero_norms = norms > 0
-            vertex_normals[nonzero_norms] /= norms[nonzero_norms][:, None]
-            self._vertex_normals = vertex_normals
+            face_normals = self.get_face_normals()
+            faces = self.get_faces()
+            vertices = self.get_vertices()
+            self._vertex_normals = _compute_vertex_normals(face_normals, faces,
+                                                           vertices)
 
         if indexed is None:
             return self._vertex_normals
         elif indexed == 'faces':
             return self._vertex_normals[self.get_faces()]
-        else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def get_vertex_colors(self, indexed=None):
         """Get vertex colors
