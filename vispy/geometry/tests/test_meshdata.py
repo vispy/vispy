@@ -70,4 +70,37 @@ def test_vertex_normals_indexed_faces():
     assert_array_equal(expected_vertex_normals, computed_vertex_normals)
 
 
+def test_face_normals_indexed_none():
+    dtype_float = np.float32
+    dtype_int = np.int64
+    vertices = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                        dtype=dtype_float)
+    faces = np.array([[0, 2, 1], [0, 3, 2], [0, 1, 3]], dtype=dtype_int)
+    mesh = MeshData(vertices=vertices, faces=faces)
+    expected_face_normals = np.array([[0, 0, -1], [-1, 0, 0], [0, -1, 0]],
+                                     dtype=dtype_float)
+
+    computed_face_normals = mesh.get_face_normals(indexed=None)
+
+    assert_array_equal(expected_face_normals, computed_face_normals)
+
+
+def test_face_normals_indexed_faces():
+    dtype_float = np.float32
+    dtype_int = np.int64
+    vertices = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                        dtype=dtype_float)
+    faces = np.array([[0, 2, 1], [0, 3, 2], [0, 1, 3]], dtype=dtype_int)
+    mesh = MeshData(vertices=vertices, faces=faces)
+    expected_face_normals = np.array([
+        [[0, 0, -1], [0, 0, -1], [0, 0, -1]],
+        [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0]],
+        [[0, -1, 0], [0, -1, 0], [0, -1, 0]]],
+        dtype=dtype_float)
+
+    computed_face_normals = mesh.get_face_normals(indexed="faces")
+
+    assert_array_equal(expected_face_normals, computed_face_normals)
+
+
 run_tests_if_main()
