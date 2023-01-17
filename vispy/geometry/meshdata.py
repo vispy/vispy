@@ -50,19 +50,17 @@ def _compute_vertex_normals(face_normals, faces, vertices):
 
     vertex_normals = np.zeros_like(vertices)
     n_corners_in_triangle = 3
-    face_normals_repeated_on_face_vertices = np.repeat(face_normals,
-                                                       n_corners_in_triangle,
-                                                       axis=0)
-    # NOTE: Cannot use the simpler operation
+    face_normals_repeated_on_corners = np.repeat(face_normals,
+                                                 n_corners_in_triangle,
+                                                 axis=0)
+    # NOTE: The next line is equivalent to
     #
-    #   vertex_normals[self._faces.ravel()] += face_normals_repeated_on_face_vertices
+    #   vertex_normals[self._faces.ravel()] += face_normals_repeated_on_corners
     #
-    # as this does not accumulate the values from the right hand side at
-    # repeated indices on the left hand side (the values are overwritten
-    # instead).
-    # This below accumulates at the indices occuring multiple times:
-    np.add.at(vertex_normals, faces.ravel(),
-              face_normals_repeated_on_face_vertices)
+    # except that it accumulates the values from the right hand side at
+    # repeated indices on the left hand side, instead of overwritting them,
+    # like in the above.
+    np.add.at(vertex_normals, faces.ravel(), face_normals_repeated_on_corners)
 
     norms = np.sqrt((vertex_normals**2).sum(axis=1))
     nonzero_norms = norms > 0
@@ -349,8 +347,8 @@ class MeshData(object):
             raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
         if self._face_normals is None:
-            face_corner_vertices = self.get_vertices(indexed='faces')
-            self._face_normals = _compute_face_normals(face_corner_vertices)
+            vertices = self.get_vertices(indexed='faces')
+            self._face_normals = _compute_face_normals(vertices)
 
         if indexed == 'faces' and self._face_normals_indexed_by_faces is None:
             self._face_normals_indexed_by_faces = \
