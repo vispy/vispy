@@ -20,22 +20,33 @@ def _fix_colors(colors):
 
 
 def _compute_face_normals(vertices):
-    assert vertices.shape[1:] == (3, 3), \
-            "Require Nx3x3 array of vertices repeated on the triangle corners."
+    if vertices.shape[1:] != (3, 3):
+        raise ValueError("Expected (N, 3, 3) array of vertices repeated on"
+                         f" the triangle corners, got {vertices.shape}.")
     edges1 = vertices[:, 1] - vertices[:, 0]
     edges2 = vertices[:, 2] - vertices[:, 0]
     return np.cross(edges1, edges2)
 
 
 def _repeat_face_normals_on_corners(normals):
-    assert normals.shape[1:] == (3,), "Require Fx3 array of face normals."
+    if normals.shape[1:] != (3,):
+        raise ValueError("Expected (F, 3) array of face normals, got"
+                         f" {normals.shape}.")
     n_corners_in_face = 3
     new_shape = (normals.shape[0], n_corners_in_face, normals.shape[1])
     return np.repeat(normals, n_corners_in_face, axis=0).reshape(new_shape)
 
 
 def _compute_vertex_normals(face_normals, faces, vertices):
-    assert face_normals.shape[1:] == (3,), "Require Fx3 array of face normals."
+    if face_normals.shape[1:] != (3,):
+        raise ValueError("Expected (F, 3) array of face normals, got"
+                         f" {face_normals.shape}.")
+    if faces.shape[1:] != (3,):
+        raise ValueError("Expected (F, 3) array of face vertex indices, got"
+                         f" {faces.shape}.")
+    if vertices.shape[1:] != (3,):
+        raise ValueError("Expected (N, 3) array of vertices, got"
+                         f" {vertices.shape}.")
 
     vertex_normals = np.zeros_like(vertices)
     n_corners_in_triangle = 3
@@ -182,7 +193,7 @@ class MeshData(object):
                 self._compute_edges(indexed='faces')
             return self._edges_indexed_by_faces
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_faces(self, faces):
         """Set the faces
@@ -232,7 +243,7 @@ class MeshData(object):
                     self._vertices[self.get_faces()]
             return self._vertices_indexed_by_faces
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
     def get_bounds(self):
         """Get the mesh bounds
@@ -275,7 +286,7 @@ class MeshData(object):
             if verts is not None:
                 self._vertices_indexed_by_faces = verts
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
         if reset_normals:
             self.reset_normals()
@@ -335,7 +346,7 @@ class MeshData(object):
             The normals.
         """
         if indexed not in (None, 'faces'):
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
         if self._face_normals is None:
             face_corner_vertices = self.get_vertices(indexed='faces')
@@ -365,7 +376,7 @@ class MeshData(object):
             The normals.
         """
         if indexed not in (None, 'faces'):
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
         if self._vertex_normals is None:
             face_normals = self.get_face_normals()
@@ -402,7 +413,7 @@ class MeshData(object):
                     self._vertex_colors[self.get_faces()]
             return self._vertex_colors_indexed_by_faces
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
     def get_vertex_values(self, indexed=None):
         """Get vertex colors
@@ -427,7 +438,7 @@ class MeshData(object):
                     self._vertex_values[self.get_faces()]
             return self._vertex_values_indexed_by_faces
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_vertex_colors(self, colors, indexed=None):
         """Set the vertex color array
@@ -517,7 +528,7 @@ class MeshData(object):
                     self._face_colors.reshape(Nf, 1, 4)
             return self._face_colors_indexed_by_faces
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_face_colors(self, colors, indexed=None):
         """Set the face color array
@@ -640,7 +651,7 @@ class MeshData(object):
                 raise Exception("MeshData cannot generate edges--no faces in "
                                 "this data.")
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError("Invalid indexing mode. Accepts: None, 'faces'")
 
     def save(self):
         """Serialize this mesh to a string appropriate for disk storage
