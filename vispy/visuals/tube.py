@@ -91,16 +91,12 @@ class TubeVisual(MeshVisual):
 
     def set_data(self, points, radius=1.0,
                  closed=False, color='purple',
-                 tube_points=8, shading='smooth',
-                 vertex_colors=None, face_colors=None,
-                 mode='triangles'):
+                 tube_points=8, vertex_colors=None, 
+                 face_colors=None):
 
         points = np.array(points).astype(float)
-        # if single radius, convert to list of radii
-        if not isinstance(radius, collections.abc.Iterable):
-            radius = [radius] * len(points)
-        elif len(radius) != len(points):
-            raise ValueError('Length of radii list must match points.')
+        
+        radius = _get_radius(radius, len(points))
 
         # get the positions of each vertex
         vertices = _get_vertices(
@@ -131,12 +127,6 @@ def _get_vertices(points, closed, tube_points, radius):
     points = np.array(points).astype(float)
     tangents, normals, binormals = _frenet_frames(points, closed)
 
-    # if single radius, convert to list of radii
-    if not isinstance(radius, collections.abc.Iterable):
-        radius = [radius] * len(points)
-    elif len(radius) != len(points):
-        raise ValueError('Length of radii list must match points.')
-
     # get the positions of each vertex
     grid = np.zeros((len(points), tube_points, 3))
     for i in range(len(points)):
@@ -156,7 +146,14 @@ def _get_vertices(points, closed, tube_points, radius):
     vertices = grid.reshape(grid.shape[0] * grid.shape[1], 3)
     return vertices
 
-
+def _get_radius(radius, length):
+    """Converts radius to list of radii to match length of points."""
+    # if single radius, convert to list of radii
+    if not isinstance(radius, collections.abc.Iterable):
+        return radius = [radius] * length
+    elif len(radius) != length:
+        raise ValueError('Length of radii list must match points.')
+        
 def _get_indices(points, closed, tube_points):
     """Calculates and returns the faces for the tube mesh."""
     indices = []
