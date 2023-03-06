@@ -502,7 +502,7 @@ class Program(GLObject):
         sizes = [a.size for a in attrs]
         if not all(s == sizes[0] for s in sizes[1:]):
             msg = '\n'.join([f'{str(a)}: {a.size}' for a in attrs])
-            raise RuntimeError('All attributes must have the same size, got:\n{msg}')
+            raise RuntimeError(f'All attributes must have the same size, got:\n{msg}')
 
         attrs_with_div = [a for a in attributes if a not in attrs]
         if attrs_with_div:
