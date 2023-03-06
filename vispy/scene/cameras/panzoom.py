@@ -207,7 +207,10 @@ class PanZoomCamera(BaseCamera):
             center = self._scene_transform.imap(event.pos)
             self.zoom((1 + self.zoom_factor)**(-event.delta[1] * 30), center)
             event.handled = True
-
+        elif event.type == 'gesture_zoom':
+            center = self._scene_transform.imap(event.pos)
+            self.zoom(1 - event.mouse_event.scale, center)
+            event.handled = True
         elif event.type == 'mouse_move':
             if event.press_event is None:
                 return
