@@ -21,7 +21,7 @@ def _string_to_rgb(color):
     if not color.startswith('#'):
         if color.lower() not in _color_dict:
             raise ValueError('Color "%s" unknown' % color)
-        color = _color_dict[color]
+        color = _color_dict[color.lower()]
         assert color[0] == '#'
     # hex color
     color = color[1:]
