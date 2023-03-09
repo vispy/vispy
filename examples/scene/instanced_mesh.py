@@ -16,7 +16,7 @@ from scipy.spatial.transform import Rotation
 from vispy import app, scene, use
 from vispy.io import read_mesh, load_data_file
 from vispy.scene.visuals import InstancedMesh
-from vispy.visuals.filters import ShadingFilter, WireframeFilter
+from vispy.visuals.filters import InstancedShadingFilter, WireframeFilter
 
 # needed for instanced rendering to work
 use(gl='gl+')
@@ -43,7 +43,7 @@ mesh = InstancedMesh(
 )
 
 wireframe_filter = WireframeFilter(width=1)
-shading_filter = ShadingFilter('smooth', shininess=100)
+shading_filter = InstancedShadingFilter('smooth', shininess=100)
 mesh.attach(wireframe_filter)
 mesh.attach(shading_filter)
 

@@ -12,7 +12,8 @@ import numpy as np
 
 from ..gloo import VertexBuffer
 from ..gloo.texture import downcast_to_32bit_if_needed
-from ..color import Color, ColorArray
+from ..color import ColorArray
+from .filters import InstancedShadingFilter
 
 from .mesh import MeshVisual
 
@@ -111,6 +112,8 @@ class InstancedMeshVisual(MeshVisual):
         'vertex': _VERTEX_SHADER,
         'fragment': MeshVisual._shaders['fragment'],
     }
+
+    _shading_filter_class = InstancedShadingFilter
 
     def __init__(self, *args, instance_positions=None, instance_transforms=None, instance_colors=None, **kwargs):
         self._instance_positions = None
