@@ -29,6 +29,8 @@ varying vec4 v_color;
 
 void main() {
     v_color = color;
+    // transform is generated from column vectors (new basis vectors)
+    // https://en.wikibooks.org/wiki/GLSL_Programming/Vector_and_Matrix_Operations#Constructors
     mat3 instance_transform = mat3(transform_x, transform_y, transform_z);
     vec3 pos_rotated = instance_transform * $position;
     vec4 pos_shifted = vec4(pos_rotated + shift, 1);
@@ -65,7 +67,7 @@ class InstancedMeshVisual(visuals.Visual):
         self.shared_program['shift'] = self.shifts
 
         # vispy does not handle matrix attributes (likely requires some big changes in GLIR)
-        # so we decompose it into three vec3
+        # so we decompose it into three vec3; (column vectors of the matrix)
         transforms = transforms.astype(np.float32)
         self.transforms_x = gloo.VertexBuffer(transforms[..., 0], divisor=1)
         self.transforms_y = gloo.VertexBuffer(transforms[..., 1], divisor=1)
