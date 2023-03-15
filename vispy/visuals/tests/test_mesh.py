@@ -33,7 +33,7 @@ def test_mesh_color():
 
 @requires_pyopengl()
 @requires_application()
-def test_mesh_with_values():
+def test_mesh_with_vertex_values():
     size = (45, 40)
     with TestingCanvas(size=size) as c:
         v = c.central_widget.add_view(border_width=0)
