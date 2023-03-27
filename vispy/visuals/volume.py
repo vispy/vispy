@@ -366,12 +366,17 @@ _RAYCASTING_SETUP_PLANE = """
 _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
-        int maxi = -1;  // Where the maximum value was encountered
+        int maxi = -2;  // Where the maximum value was encountered
         """,
     in_loop="""
-        if( val > maxval ) {
+        if ( val > maxval ) {
             maxval = val;
             maxi = iter;
+            if ( maxval >= clim.y ) {
+                // stop if no chance of finding a higher maxval
+                iter = nsteps;
+                maxi = -1;
+            }
         }
         """,
     after_loop="""
@@ -395,8 +400,11 @@ _MIP_SNIPPETS = dict(
             }
             frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
-        }
-        else {
+        } else if ( maxi == -1 ) {
+            // skip refinement if already minimum wrt contrast
+            frag_depth_point = start_loc + step * float(maxi);
+            gl_FragColor = applyColormap(maxval);
+        } else {
             discard;
         }
         """,
@@ -439,12 +447,17 @@ _ATTENUATED_MIP_SNIPPETS = dict(
 _MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = u_minip_cutoff; // The minimum encountered value
-        int mini = -1;  // Where the minimum value was encountered
+        int mini = -2;  // Where the minimum value was encountered
         """,
     in_loop="""
-        if( val < minval ) {
+        if ( val < minval ) {
             minval = val;
             mini = iter;
+            if ( minval <= clim.x ) {
+                // stop if no chance of finding a lower minval
+                iter = nsteps;
+                mini = -1;
+            }
         }
         """,
     after_loop="""
@@ -469,7 +482,11 @@ _MINIP_SNIPPETS = dict(
             frag_depth_point = min_loc_tex * u_shape;
             gl_FragColor = applyColormap(minval);
         }
-        else {
+        else if ( mini == -1 ) {
+            // skip refinement if already minimum wrt contrast
+            frag_depth_point = start_loc + step * float(mini);
+            gl_FragColor = applyColormap(minval);
+        } else {
             discard;
         }
         """,
