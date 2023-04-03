@@ -42,6 +42,8 @@ jobs:
         CIBW_ENVIRONMENT: "GITHUB_ACTIONS=true"
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+        CIBW_ARCHS_MACOS: 'x86_64 arm64'
+        CIBW_TEST_SKIP: '*-macosx_arm64'
     - uses: actions/upload-artifact@v3
       with:
         path: ./wheelhouse/*.whl
