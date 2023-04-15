@@ -16,7 +16,7 @@ from .visual import Visual
 _VERTEX_SHADER = """
 uniform float u_antialias;
 uniform float u_px_scale;
-uniform bool u_scaling;
+uniform int u_scaling;
 uniform bool u_spherical;
 
 attribute vec3 a_position;
@@ -43,28 +43,38 @@ void main (void) {
 
     vec4 pos = vec4(a_position, 1);
     vec4 fb_pos = $visual_to_framebuffer(pos);
+    vec4 x;
+    vec4 size_vec;
     gl_Position = $framebuffer_to_render(fb_pos);
 
     // NOTE: gl_stuff uses framebuffer coords!
-
-    if (u_scaling == true) {
-        // calculate point size from visual to framebuffer coords to determine size
+    if (u_scaling == 1) {
+        // scaling == "scene": scale marker using entire visual -> framebuffer set of transforms
+        x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
+        x = (x - pos);
+        size_vec = $visual_to_framebuffer(pos + normalize(x) * a_size);
+        $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
+        v_edgewidth = ($v_size / a_size) * a_edgewidth;
+    }
+    else if (u_scaling == 2) {
+        // scaling == "visual": scale marker using only the Visual's transform
         // move horizontally in framebuffer space
         // then go to scene coordinates (not visual, so scaling is accounted for)
-        vec4 x = $framebuffer_to_scene(fb_pos + vec4(big_float, 0, 0, 0));
+        x = $framebuffer_to_scene(fb_pos + vec4(big_float, 0, 0, 0));
         // subtract position, so we get the scene-coordinate vector describing
         // an "horizontal direction parallel to the screen"
         vec4 scene_pos = $framebuffer_to_scene(fb_pos);
         x = (x - scene_pos);
         // multiply that direction by the size (in scene space) and add it to the position
         // this gives us the position of the edge of the point, which we convert in screen space
-        vec4 size_vec = $scene_to_framebuffer(scene_pos + normalize(x) * a_size);
+        size_vec = $scene_to_framebuffer(scene_pos + normalize(x) * a_size);
         // divide by `w` for perspective, and subtract pos
         // this gives us the actual screen-space size of the point
         $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
         v_edgewidth = ($v_size / a_size) * a_edgewidth;
     }
     else {
+        // scaling == "fixed": marker is always the same number of pixels
         $v_size = a_size * u_px_scale;
         v_edgewidth = a_edgewidth * u_px_scale;
     }
@@ -505,8 +515,20 @@ class MarkersVisual(Visual):
         The color used to draw each symbol interior.
     symbol : str or array
         The style of symbol used to draw each marker (see Notes).
-    scaling : bool
-        If set to True, marker scales when rezooming.
+    scaling : str | bool
+        Scaling method of individual markers. If set to "fixed" (default) then
+        no scaling is done and markers will always be the same number of
+        pixels on the screen. If set to "scene" then the chain of transforms
+        from the Visual's transform to the transform mapping to the OpenGL
+        framebuffer are used to scaling the marker. This has the effect of the
+        marker staying the same size in the "scene" coordinate space and
+        changing size as the visualization is zoomed in and out. If set to
+        "visual" the marker is scaled only using the transform of the Visual
+        and not the rest of the scene/camera. This means that something like
+        a camera changing the view will not affect the size of the marker, but
+        the user can still scale it using the Visual's transform. For
+        backwards compatibility this can be set to the boolean ``False`` for
+        "fixed" or ``True`` for "scene".
     alpha : float
         The opacity level of the visual.
     antialias : float
@@ -534,7 +556,7 @@ class MarkersVisual(Visual):
     _symbol_shader_values = symbol_shader_values
     _symbol_shader = symbol_func
 
-    def __init__(self, scaling=False, alpha=1, antialias=1, spherical=False,
+    def __init__(self, scaling="fixed", alpha=1, antialias=1, spherical=False,
                  light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
@@ -554,6 +576,8 @@ class MarkersVisual(Visual):
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
+        self._scaling = "fixed"
+        self._scaling_int = 0
         self.scaling = scaling
         self.antialias = antialias
         self.light_color = light_color
@@ -677,9 +701,16 @@ class MarkersVisual(Visual):
 
     @scaling.setter
     def scaling(self, value):
-        value = bool(value)
-        self.shared_program['u_scaling'] = value
+        scaling_int = {
+            False: 0,
+            True: 1,
+            "fixed": 0,
+            "scene": 1,
+            "visual": 2,
+        }.get(value, value)
+        self.shared_program['u_scaling'] = scaling_int
         self._scaling = value
+        self._scaling_int = scaling_int
         self.update()
 
     @property
@@ -773,7 +804,7 @@ class MarkersVisual(Visual):
         if self._data is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        view.view_program['u_scaling'] = self.scaling
+        view.view_program['u_scaling'] = self._scaling_int
 
     def _compute_bounds(self, axis, view):
         pos = self._data['a_position']
