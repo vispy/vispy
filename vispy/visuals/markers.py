@@ -701,13 +701,17 @@ class MarkersVisual(Visual):
 
     @scaling.setter
     def scaling(self, value):
-        scaling_int = {
+        scaling_modes = {
             False: 0,
             True: 1,
             "fixed": 0,
             "scene": 1,
             "visual": 2,
-        }.get(value, value)
+        }
+        if value not in scaling_modes:
+            possible_options = ", ".join(repr(opt) for opt in scaling_modes)
+            raise ValueError(f"Unknown scaling option {value!r}, expected one of: {possible_options}")
+        scaling_int = scaling_modes[value]
         self.shared_program['u_scaling'] = scaling_int
         self._scaling = value
         self._scaling_int = scaling_int
