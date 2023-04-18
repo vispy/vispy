@@ -69,9 +69,9 @@ class InstancedMeshVisual(visuals.Visual):
         # vispy does not handle matrix attributes (likely requires some big changes in GLIR)
         # so we decompose it into three vec3; (column vectors of the matrix)
         transforms = transforms.astype(np.float32)
-        self.transforms_x = gloo.VertexBuffer(transforms[..., 0], divisor=1)
-        self.transforms_y = gloo.VertexBuffer(transforms[..., 1], divisor=1)
-        self.transforms_z = gloo.VertexBuffer(transforms[..., 2], divisor=1)
+        self.transforms_x = gloo.VertexBuffer(transforms[..., 0].copy(), divisor=1)
+        self.transforms_y = gloo.VertexBuffer(transforms[..., 1].copy(), divisor=1)
+        self.transforms_z = gloo.VertexBuffer(transforms[..., 2].copy(), divisor=1)
         self.shared_program['transform_x'] = self.transforms_x
         self.shared_program['transform_y'] = self.transforms_y
         self.shared_program['transform_z'] = self.transforms_z
