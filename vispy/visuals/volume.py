@@ -367,7 +367,6 @@ _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
-        bool refine = true; // Whether to refine the frag with smaller steps
         """,
     in_loop="""
         if ( val > maxval ) {
@@ -376,13 +375,12 @@ _MIP_SNIPPETS = dict(
             if ( maxval >= clim.y ) {
                 // stop if no chance of finding a higher maxval
                 iter = nsteps;
-                refine = false;
             }
         }
         """,
     after_loop="""
         // Refine search for max value, but only if anything was found
-        if ( maxi > -1 && refine) {
+        if ( maxi > -1 ) {
             // Calculate starting location of ray for sampling
             vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
             loc = start_loc_refine;
@@ -400,10 +398,6 @@ _MIP_SNIPPETS = dict(
                 loc += small_step;
             }
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
-        } else if ( maxi > -1 ) {
-            // skip refinement if already minimum wrt contrast
-            frag_depth_point = (start_loc + step * float(maxi)) * u_shape;
             gl_FragColor = applyColormap(maxval);
         } else {
             discard;
@@ -449,7 +443,6 @@ _MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = u_minip_cutoff; // The minimum encountered value
         int mini = -1;  // Where the minimum value was encountered
-        bool refine = true;
         """,
     in_loop="""
         if ( val < minval ) {
@@ -458,13 +451,12 @@ _MINIP_SNIPPETS = dict(
             if ( minval <= clim.x ) {
                 // stop if no chance of finding a lower minval
                 iter = nsteps;
-                refine = false;
             }
         }
         """,
     after_loop="""
         // Refine search for min value, but only if anything was found
-        if ( mini > -1 && refine ) {
+        if ( mini > -1 ) {
             // Calculate starting location of ray for sampling
             vec3 start_loc_refine = start_loc + step * (float(mini) - 0.5);
             loc = start_loc_refine;
@@ -482,11 +474,6 @@ _MINIP_SNIPPETS = dict(
                 loc += small_step;
             }
             frag_depth_point = min_loc_tex * u_shape;
-            gl_FragColor = applyColormap(minval);
-        }
-        else if ( mini > -1 ) {
-            // skip refinement if already minimum wrt contrast
-            frag_depth_point = (start_loc + step * float(mini)) * u_shape;
             gl_FragColor = applyColormap(minval);
         } else {
             discard;
