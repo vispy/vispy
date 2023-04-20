@@ -66,9 +66,9 @@ class InstancedMeshVisual(MeshVisual):
     instance_colors : ColorArray
         Matrices of colors for each instance. Colors
     *args : list
-        Positional arguments to pass to `MeshVisual`.
+        Positional arguments to pass to :class:`MeshVisual`.
     **kwargs : dict
-        Keyword arguments to pass to `MeshVisual`.
+        Keyword arguments to pass to :class:`MeshVisual`.
 
     Examples
     --------
