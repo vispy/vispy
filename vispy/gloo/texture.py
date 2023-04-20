@@ -43,7 +43,8 @@ def downcast_to_32bit_if_needed(data, copy=False):
     if dtype.itemsize > 4:
         warnings.warn(
             f"GPUs can't support dtypes bigger than 32-bit, but got '{dtype}'. "
-            "Precision will be lost due to downcasting to 32-bit."
+            "Precision will be lost due to downcasting to 32-bit.",
+            stacklevel=2,
         )
 
     size = min(dtype.itemsize, 4)

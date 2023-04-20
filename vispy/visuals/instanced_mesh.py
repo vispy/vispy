@@ -150,10 +150,11 @@ class InstancedMeshVisual(MeshVisual):
         if matrix.ndim != 3 or matrix.shape[1:] != (3, 3):
             raise ValueError(f'transforms must be an array of 3x3 matrices, but provided data has shape {matrix.shape}')
         self._instance_transforms = downcast_to_32bit_if_needed(matrix)
+        # copy if not c contiguous
         self._instance_transforms_vbos = (
-            VertexBuffer(self._instance_transforms[..., 0], divisor=1),
-            VertexBuffer(self._instance_transforms[..., 1], divisor=1),
-            VertexBuffer(self._instance_transforms[..., 2], divisor=1),
+            VertexBuffer(np.ascontiguousarray(self._instance_transforms[..., 0]), divisor=1),
+            VertexBuffer(np.ascontiguousarray(self._instance_transforms[..., 1]), divisor=1),
+            VertexBuffer(np.ascontiguousarray(self._instance_transforms[..., 2]), divisor=1),
         )
         self.mesh_data_changed()
 

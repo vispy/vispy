@@ -37,10 +37,10 @@ view.camera.depth_value = 10 * (vertices.max() - vertices.min())
 
 n_instances = 100
 
-instance_colors = np.random.rand(n_instances, 3)
-instance_positions = (np.random.rand(n_instances, 3) - 0.5) * 10
+instance_colors = np.random.rand(n_instances, 3).astype(np.float32)
+instance_positions = ((np.random.rand(n_instances, 3) - 0.5) * 10).astype(np.float32)
 face_colors = np.random.rand(len(faces), 3)
-instance_transforms = Rotation.random(n_instances).as_matrix()
+instance_transforms = Rotation.random(n_instances).as_matrix().astype(np.float32)
 
 # Create a colored `MeshVisual`.
 mesh = InstancedMesh(
