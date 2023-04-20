@@ -583,8 +583,7 @@ instanced_shading_vertex_template = shading_vertex_template.replace(
 
 
 class InstancedShadingFilter(ShadingFilter):
-    """
-    Shading filter modified for use with InstancedMeshVisual.
+    """Shading filter modified for use with :class:`~vispy.visuals.InstancedMeshVisual`.
 
     See :class:`ShadingFilter` for details and usage.
     """
