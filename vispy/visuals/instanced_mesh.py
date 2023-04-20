@@ -57,6 +57,11 @@ class InstancedMeshVisual(MeshVisual):
     of positions and transforms (optionally colors) to create multiple
     instances of the mesh.
 
+    Instancing is a rendering technique that re-uses the same mesh data
+    by applying transformations to vertices and vertex data or textures,
+    wich can drastically improve performance compared to having many
+    simple MeshVisuals.
+
     Parameters
     ----------
     instance_positions : (I, 3) array
