@@ -283,8 +283,8 @@ class MeshVisual(Visual):
         clim_func = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
         if colors.ndim == 2 and colors.shape[1] == 1:
             fun = Function(clim_func)
-            fun['cmin'] = self.clim[0]
-            fun['cmax'] = self.clim[1]
+            fun['cmin'] = self._clim_values[0]
+            fun['cmax'] = self._clim_values[1]
             fun = FunctionChain(None, [fun, Function(self.cmap.glsl_map)])
         else:
             fun = Function(null_color_transform)

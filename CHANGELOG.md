@@ -1,5 +1,29 @@
 # Release Notes
 
+## [v0.12.2](https://github.com/vispy/vispy/tree/v0.12.2) (2023-03-20)
+
+**Enhancements:**
+
+- Clean up and test computation of normals in MeshData [\#2444](https://github.com/vispy/vispy/pull/2444) ([asnt](https://github.com/asnt))
+- Vectorize MeshData vertex normals computation [\#2434](https://github.com/vispy/vispy/pull/2434) ([asnt](https://github.com/asnt))
+
+**Fixed bugs:**
+
+- Fix shader compilation error for MeshVisual when mesh.clim = 'auto' [\#2463](https://github.com/vispy/vispy/pull/2463) ([aganders3](https://github.com/aganders3))
+- Bugfix: Use color.lower\(\) for \_color\_dict keys [\#2459](https://github.com/vispy/vispy/pull/2459) ([psobolewskiPhD](https://github.com/psobolewskiPhD))
+- Fix f-string missing prefix in gloo/program.py error message [\#2457](https://github.com/vispy/vispy/pull/2457) ([aganders3](https://github.com/aganders3))
+- Fix character codec error on Windows Python \<3.10 [\#2437](https://github.com/vispy/vispy/pull/2437) ([haesleinhuepf](https://github.com/haesleinhuepf))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.12.0 to 2.12.1 [\#2462](https://github.com/vispy/vispy/pull/2462) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.11.4 to 2.12.0 [\#2447](https://github.com/vispy/vispy/pull/2447) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump mamba-org/provision-with-micromamba from 14 to 15 [\#2446](https://github.com/vispy/vispy/pull/2446) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.11.3 to 2.11.4 [\#2441](https://github.com/vispy/vispy/pull/2441) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.11.2 to 2.11.3 [\#2438](https://github.com/vispy/vispy/pull/2438) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump docker/setup-qemu-action from 1 to 2 [\#2432](https://github.com/vispy/vispy/pull/2432) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.1.1 to 2.11.2 [\#2431](https://github.com/vispy/vispy/pull/2431) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v0.12.1](https://github.com/vispy/vispy/tree/v0.12.1) (2022-11-14)
 
 **Fixed bugs:**
