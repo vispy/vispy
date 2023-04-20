@@ -5,10 +5,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Shading a Mesh
-==============
+Instanced Mesh Visual
+=====================
 
-Show mesh filter usage for shading (lighting) a mesh and displaying a wireframe.
+Show usage of the InstancedMesh visual and its filters.
 """
 
 from itertools import cycle

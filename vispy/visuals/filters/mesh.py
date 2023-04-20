@@ -583,13 +583,15 @@ instanced_shading_vertex_template = shading_vertex_template.replace(
 
 
 class InstancedShadingFilter(ShadingFilter):
+    """
+    Shading filter modified for use with InstancedMeshVisual.
+
+    See :class:`ShadingFilter` for details and usage.
+    """
     _shaders = {
         'vertex': instanced_shading_vertex_template,
         'fragment': ShadingFilter._shaders['fragment'],
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def _attach(self, visual):
         super()._attach(visual)

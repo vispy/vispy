@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-"""A MeshVisual Visual that uses the new shader Function."""
+"""An instanced version of MeshVisual with arbitrary shifts, transforms, and colors."""
 
 from __future__ import division
 
@@ -59,53 +59,20 @@ class InstancedMeshVisual(MeshVisual):
 
     Parameters
     ----------
-    vertices : array-like | None
-        The vertices.
-    faces : array-like | None
-        The faces.
-    vertex_colors : array-like | None
-        Colors to use for each vertex.
-    face_colors : array-like | None
-        Colors to use for each face.
-    color : instance of Color or ColorArray
-        The color to use.
-    vertex_values : array-like | None
-        The values to use for each vertex (for colormapping).
-    meshdata : instance of MeshData | None
-        The meshdata.
-    shading : str | None
-        Shading to use. This uses the
-        :class:`~vispy.visuals.filters.mesh.ShadingFilter`
-        filter introduced in VisPy 0.7. This class provides additional
-        features that are available when the filter is attached manually.
-        See 'examples/basics/scene/mesh_shading.py' for an example.
-    mode : str
-        The drawing mode.
+    instance_positions : (I, 3) array
+        Coordinates for each instance of the mesh.
+    instance_transforms : (I, 3, 3) array
+        Matrices for the transforms to apply to each instance.
+    instance_colors : ColorArray
+        Matrices of colors for each instance. Colors
+    *args : list
+        Positional arguments to pass to `MeshVisual`.
     **kwargs : dict
-        Keyword arguments to pass to `Visual`.
-
-    Notes
-    -----
-    Additional functionality is available through filters. Mesh-specific
-    filters can be found in the :mod:`vispy.visuals.filters.mesh` module.
-
-    This class emits a `data_updated` event when the mesh data is updated. This
-    is used for example by filters for synchronization.
+        Keyword arguments to pass to `MeshVisual`.
 
     Examples
     --------
-    Create a primitive shape from a helper function:
-
-    >>> from vispy.geometry import create_sphere
-    >>> meshdata = create_sphere()
-    >>> mesh = MeshVisual(meshdata=meshdata)
-
-    Create a custom shape:
-
-    >>> # A rectangle made out of two triangles.
-    >>> vertices = [(0, 0, 0), (1, 0, 1), (1, 1, 1), (0, 1, 0)]
-    >>> faces = [(0, 1, 2), (0, 2, 3)]
-    >>> mesh = MeshVisual(vertices=vertices, faces=faces)
+    See example `scene/instanced_mesh_visual.py` in the gallery.
     """
 
     _shaders = {
