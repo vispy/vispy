@@ -37,9 +37,11 @@ def convert_dtype_and_clip(data, dtype, copy=False):
         return new_data
 
 
-def downcast_to_32bit_if_needed(data, copy=False):
+def downcast_to_32bit_if_needed(data, copy=False, dtype=None):
     """Downcast to 32bit dtype if necessary."""
-    dtype = np.dtype(data.dtype)
+    if dtype is None:
+        dtype = data.dtype
+    dtype = np.dtype(dtype)
     if dtype.itemsize > 4:
         warnings.warn(
             f"GPUs can't support dtypes bigger than 32-bit, but got '{dtype}'. "
