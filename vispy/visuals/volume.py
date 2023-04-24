@@ -369,9 +369,13 @@ _MIP_SNIPPETS = dict(
         int maxi = -1;  // Where the maximum value was encountered
         """,
     in_loop="""
-        if( val > maxval ) {
+        if ( val > maxval ) {
             maxval = val;
             maxi = iter;
+            if ( maxval >= clim.y ) {
+                // stop if no chance of finding a higher maxval
+                iter = nsteps;
+            }
         }
         """,
     after_loop="""
@@ -395,8 +399,7 @@ _MIP_SNIPPETS = dict(
             }
             frag_depth_point = max_loc_tex * u_shape;
             gl_FragColor = applyColormap(maxval);
-        }
-        else {
+        } else {
             discard;
         }
         """,
@@ -406,7 +409,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
         float sumval = 0.0; // The sum of the encountered values
-        float scaled = 0.0; // The scaled value
+        float scale = 0.0; // The cumulative attenuation
         int maxi = -1;  // Where the maximum value was encountered
         vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
         """,
@@ -415,9 +418,12 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         // * attenuation value does not depend on data values
         // * negative values do not amplify instead of attenuate
         sumval = sumval + clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0);
-        scaled = val * exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
-        if( scaled > maxval ) {
-            maxval = scaled;
+        scale = exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
+        if( maxval > scale * clim.y ) {
+            // stop if no chance of finding a higher maxval
+            iter = nsteps;
+        } else if( val * scale > maxval ) {
+            maxval = val * scale;
             maxi = iter;
             max_loc_tex = loc;
         }
@@ -439,9 +445,13 @@ _MINIP_SNIPPETS = dict(
         int mini = -1;  // Where the minimum value was encountered
         """,
     in_loop="""
-        if( val < minval ) {
+        if ( val < minval ) {
             minval = val;
             mini = iter;
+            if ( minval <= clim.x ) {
+                // stop if no chance of finding a lower minval
+                iter = nsteps;
+            }
         }
         """,
     after_loop="""
@@ -465,8 +475,7 @@ _MINIP_SNIPPETS = dict(
             }
             frag_depth_point = min_loc_tex * u_shape;
             gl_FragColor = applyColormap(minval);
-        }
-        else {
+        } else {
             discard;
         }
         """,
