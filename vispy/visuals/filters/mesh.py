@@ -387,6 +387,10 @@ class ShadingFilter(Filter):
     <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
     example script.
     """
+    _shaders = {
+        'vertex': shading_vertex_template,
+        'fragment': shading_fragment_template,
+    }
 
     def __init__(self, shading='flat',
                  ambient_coefficient=(1, 1, 1, 1),
@@ -412,8 +416,8 @@ class ShadingFilter(Filter):
 
         self._enabled = enabled
 
-        vfunc = Function(shading_vertex_template)
-        ffunc = Function(shading_fragment_template)
+        vfunc = Function(self._shaders['vertex'])
+        ffunc = Function(self._shaders['fragment'])
 
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         vfunc['normal'] = self._normals
@@ -570,6 +574,29 @@ class ShadingFilter(Filter):
     def _detach(self, visual):
         visual.events.data_updated.disconnect(self.on_mesh_data_updated)
         super()._detach(visual)
+
+
+instanced_shading_vertex_template = shading_vertex_template.replace(
+    "$normal",
+    "mat3($instance_transform_x, $instance_transform_y, $instance_transform_z) * $normal"
+)
+
+
+class InstancedShadingFilter(ShadingFilter):
+    """Shading filter modified for use with :class:`~vispy.visuals.InstancedMeshVisual`.
+
+    See :class:`ShadingFilter` for details and usage.
+    """
+    _shaders = {
+        'vertex': instanced_shading_vertex_template,
+        'fragment': ShadingFilter._shaders['fragment'],
+    }
+
+    def _attach(self, visual):
+        super()._attach(visual)
+        self.vshader['instance_transform_x'] = visual._instance_transforms_vbos[0]
+        self.vshader['instance_transform_y'] = visual._instance_transforms_vbos[1]
+        self.vshader['instance_transform_z'] = visual._instance_transforms_vbos[2]
 
 
 wireframe_vertex_template = """
