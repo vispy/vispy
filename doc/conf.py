@@ -186,6 +186,7 @@ html_theme_options = {
     "use_edit_page_button": True,
     "github_url": "https://github.com/vispy/vispy",
     "twitter_url": "https://twitter.com/vispyproject",
+    "header_links_before_dropdown": 7,
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
