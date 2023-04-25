@@ -254,6 +254,13 @@ class ProgramTest(unittest.TestCase):
         # And anything else also fails
         self.assertRaises(KeyError, program.__getitem__, 'fooo')
 
+    def test_type_aliases(self):
+        program = Program("in bool A; out float B;", "foo")
+
+        # in aliased to attribute, out to varying
+        assert ('attribute', 'bool', 'A') in program.variables
+        assert ('varying', 'float', 'B') in program.variables
+
     def test_draw(self):
         # Init
         program = Program("attribute float A;", "uniform float foo")
@@ -267,14 +274,14 @@ class ProgramTest(unittest.TestCase):
             program.draw('triangles')
             glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
-            assert len(glir_cmd[-1]) == 2
+            assert len(glir_cmd[-2]) == 2
 
             # Draw elements
             indices = gloo.IndexBuffer(np.zeros(10, dtype=np.uint8))
             program.draw('triangles', indices)
             glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
-            assert len(glir_cmd[-1]) == 3
+            assert len(glir_cmd[-2]) == 3
 
             # Invalid mode
             self.assertRaises(ValueError, program.draw, 'nogeometricshape')

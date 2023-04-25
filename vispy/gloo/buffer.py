@@ -414,6 +414,10 @@ class VertexBuffer(DataBuffer):
         Buffer data (optional)
     """
 
+    def __init__(self, data=None, divisor=None):
+        super().__init__(data)
+        self.divisor = divisor
+
     _GLIR_TYPE = 'VertexBuffer'
 
     def _prepare_data(self, data, convert=False):
@@ -448,6 +452,14 @@ class VertexBuffer(DataBuffer):
             data = data.view(dtype=[dtype_def])
             self._last_dim = c
         return data
+
+    @property
+    def divisor(self):
+        return self._divisor
+
+    @divisor.setter
+    def divisor(self, value):
+        self._divisor = max(1, int(value)) if value else None
 
 
 def _last_stack_str():

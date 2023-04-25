@@ -6,6 +6,10 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
+"""
+Drawing a simple quad
+=====================
+"""
 import numpy as np
 
 from vispy import app

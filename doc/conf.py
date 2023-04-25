@@ -347,11 +347,11 @@ numpydoc_show_class_members = False
 # -----------------------------------------------------------------------------
 # intersphinx
 # -----------------------------------------------------------------------------
-_python_doc_base = 'https://docs.python.org/3.9'
+_python_doc_base = "https://docs.python.org/3"
 intersphinx_mapping = {
-    _python_doc_base: None,
-    'https://numpy.org/doc/stable/': None,
-    'https://scipy.github.io/devdocs/': None,
+    "python": (_python_doc_base, None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://scipy.github.io/devdocs/", None),
 }
 
 

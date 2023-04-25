@@ -1,5 +1,73 @@
 # Release Notes
 
+## [v0.12.2](https://github.com/vispy/vispy/tree/v0.12.2) (2023-03-20)
+
+**Enhancements:**
+
+- Clean up and test computation of normals in MeshData [\#2444](https://github.com/vispy/vispy/pull/2444) ([asnt](https://github.com/asnt))
+- Vectorize MeshData vertex normals computation [\#2434](https://github.com/vispy/vispy/pull/2434) ([asnt](https://github.com/asnt))
+
+**Fixed bugs:**
+
+- Fix shader compilation error for MeshVisual when mesh.clim = 'auto' [\#2463](https://github.com/vispy/vispy/pull/2463) ([aganders3](https://github.com/aganders3))
+- Bugfix: Use color.lower\(\) for \_color\_dict keys [\#2459](https://github.com/vispy/vispy/pull/2459) ([psobolewskiPhD](https://github.com/psobolewskiPhD))
+- Fix f-string missing prefix in gloo/program.py error message [\#2457](https://github.com/vispy/vispy/pull/2457) ([aganders3](https://github.com/aganders3))
+- Fix character codec error on Windows Python \<3.10 [\#2437](https://github.com/vispy/vispy/pull/2437) ([haesleinhuepf](https://github.com/haesleinhuepf))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.12.0 to 2.12.1 [\#2462](https://github.com/vispy/vispy/pull/2462) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.11.4 to 2.12.0 [\#2447](https://github.com/vispy/vispy/pull/2447) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump mamba-org/provision-with-micromamba from 14 to 15 [\#2446](https://github.com/vispy/vispy/pull/2446) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.11.3 to 2.11.4 [\#2441](https://github.com/vispy/vispy/pull/2441) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.11.2 to 2.11.3 [\#2438](https://github.com/vispy/vispy/pull/2438) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump docker/setup-qemu-action from 1 to 2 [\#2432](https://github.com/vispy/vispy/pull/2432) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.1.1 to 2.11.2 [\#2431](https://github.com/vispy/vispy/pull/2431) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+## [v0.12.1](https://github.com/vispy/vispy/tree/v0.12.1) (2022-11-14)
+
+**Fixed bugs:**
+
+- Fix: bug with new Markers.symbol and empty data [\#2428](https://github.com/vispy/vispy/pull/2428) ([brisvag](https://github.com/brisvag))
+
+## [v0.12.0](https://github.com/vispy/vispy/tree/v0.12.0) (2022-11-08)
+
+**Enhancements:**
+
+- Scale values when calculating attenuation in attenuated\_mip shader [\#2417](https://github.com/vispy/vispy/pull/2417) ([aganders3](https://github.com/aganders3))
+- clipping planes performance: do not create a new function willy nilly [\#2383](https://github.com/vispy/vispy/pull/2383) ([brisvag](https://github.com/brisvag))
+- Instance rendering in gloo. [\#2378](https://github.com/vispy/vispy/pull/2378) ([brisvag](https://github.com/brisvag))
+- Allow setting array to `symbol` in `MarkersVisual` [\#2361](https://github.com/vispy/vispy/pull/2361) ([brisvag](https://github.com/brisvag))
+
+**Fixed bugs:**
+
+- Improve PySide6 Support: swapBehavior for DoubleBuffer, BUTTONMAP as pyqt6, xfail test\_context [\#2411](https://github.com/vispy/vispy/pull/2411) ([psobolewskiPhD](https://github.com/psobolewskiPhD))
+- fix: wx timer from float to int [\#2396](https://github.com/vispy/vispy/pull/2396) ([Bliss3d](https://github.com/Bliss3d))
+- Fix custom image interpolation kernels to work with negative numbers [\#2382](https://github.com/vispy/vispy/pull/2382) ([brisvag](https://github.com/brisvag))
+- Use correct regex when parsing variables [\#2380](https://github.com/vispy/vispy/pull/2380) ([brisvag](https://github.com/brisvag))
+- Update tube.py to support Python 3.10 and higher. [\#2370](https://github.com/vispy/vispy/pull/2370) ([tralfaz](https://github.com/tralfaz))
+- Fix marker size with anisotropic scaling [\#2359](https://github.com/vispy/vispy/pull/2359) ([brisvag](https://github.com/brisvag))
+- Fix MouseEvent `.buttons` not including triggering mouse button [\#2355](https://github.com/vispy/vispy/pull/2355) ([tushar5526](https://github.com/tushar5526))
+- Implement turntable camera `roll` programmatically and clarify transformation docstrings [\#2352](https://github.com/vispy/vispy/pull/2352) ([harripj](https://github.com/harripj))
+- Fix dtype casting for Texture objects [\#2350](https://github.com/vispy/vispy/pull/2350) ([brisvag](https://github.com/brisvag))
+
+**Merged pull requests:**
+
+- Bump mamba-org/provision-with-micromamba from 7 to 14 [\#2425](https://github.com/vispy/vispy/pull/2425) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/setup-python from 2 to 4 [\#2424](https://github.com/vispy/vispy/pull/2424) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/checkout from 2 to 3 [\#2423](https://github.com/vispy/vispy/pull/2423) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/download-artifact from 2 to 3 [\#2422](https://github.com/vispy/vispy/pull/2422) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/upload-artifact from 2 to 3 [\#2421](https://github.com/vispy/vispy/pull/2421) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Allow 180 fov and clarify docstring [\#2412](https://github.com/vispy/vispy/pull/2412) ([brisvag](https://github.com/brisvag))
+- Address deprecation warnings with the usage of distuilts for LooseVersion [\#2404](https://github.com/vispy/vispy/pull/2404) ([hmaarrfk](https://github.com/hmaarrfk))
+- Add governance and steering committee information to README [\#2397](https://github.com/vispy/vispy/pull/2397) ([djhoese](https://github.com/djhoese))
+- New instanced rendering example [\#2376](https://github.com/vispy/vispy/pull/2376) ([brisvag](https://github.com/brisvag))
+- Add initial organization charter and project governance [\#2367](https://github.com/vispy/vispy/pull/2367) ([djhoese](https://github.com/djhoese))
+- Fix a few comment and docstring typos [\#2353](https://github.com/vispy/vispy/pull/2353) ([timgates42](https://github.com/timgates42))
+- Use `cubic` instead of `bicubic` as name for interpolation [\#2348](https://github.com/vispy/vispy/pull/2348) ([brisvag](https://github.com/brisvag))
+- Fix test for `Image` custom interpolation [\#2347](https://github.com/vispy/vispy/pull/2347) ([brisvag](https://github.com/brisvag))
+- Add realtime data visualization tutorial examples [\#2339](https://github.com/vispy/vispy/pull/2339) ([djhoese](https://github.com/djhoese))
+
 ## [v0.11.0](https://github.com/vispy/vispy/tree/v0.11.0) (2022-07-04)
 
 **Enhancements:**

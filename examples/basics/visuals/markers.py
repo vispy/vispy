@@ -4,7 +4,13 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Display markers at different sizes and line thicknessess.
+"""Display markers at different sizes and line thicknesses.
+
+Keyboard options:
+* spacebar: Cycle through possible marker symbols.
+* "s": Switch between "fixed" marker scaling (initial setting) and "scene"
+  scaling.
+
 """
 
 import numpy as np
@@ -60,10 +66,11 @@ class Canvas(app.Canvas):
             self.markers.symbol = self.markers.symbols[self.index]
             self.update()
         elif event.text == 's':
-            self.markers.scaling = not self.markers.scaling
+            self.markers.scaling = "fixed" if self.markers.scaling != "fixed" else "scene"
             self.update()
 
 
 if __name__ == '__main__':
+    print(__doc__)
     canvas = Canvas()
     app.run()

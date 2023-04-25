@@ -26,7 +26,7 @@ import os
 import sys
 import atexit
 import ctypes
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from ...util import logger
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -90,7 +90,7 @@ elif qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
         from PyQt5.QtCore import QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '5.4.0':
+        if Version(QT_VERSION_STR) >= Version('5.4.0'):
             from PyQt5.QtWidgets import QOpenGLWidget as QGLWidget
             from PyQt5.QtGui import QSurfaceFormat as QGLFormat
             QT5_NEW_API = True
@@ -102,7 +102,7 @@ elif qt_lib == 'pyqt6':
     _check_imports('PyQt6')
     if not USE_EGL:
         from PyQt6.QtCore import QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '6.0.0':
+        if Version(QT_VERSION_STR) >= Version('6.0.0'):
             from PyQt6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
             from PyQt6.QtGui import QSurfaceFormat as QGLFormat
             PYQT6_API = True
@@ -114,7 +114,7 @@ elif qt_lib == 'pyside6':
     _check_imports('PySide6')
     if not USE_EGL:
         from PySide6.QtCore import __version__ as QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '6.0.0':
+        if Version(QT_VERSION_STR) >= Version('6.0.0'):
             from PySide6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
             from PySide6.QtGui import QSurfaceFormat as QGLFormat
             PYSIDE6_API = True
@@ -126,7 +126,7 @@ elif qt_lib == 'pyside2':
     _check_imports('PySide2')
     if not USE_EGL:
         from PySide2.QtCore import __version__ as QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '5.4.0':
+        if Version(QT_VERSION_STR) >= Version('5.4.0'):
             from PySide2.QtWidgets import QOpenGLWidget as QGLWidget
             from PySide2.QtGui import QSurfaceFormat as QGLFormat
             QT5_NEW_API = True
@@ -191,7 +191,7 @@ KEYMAP = {
     qt_keys.Key_Return: keys.ENTER,
     qt_keys.Key_Tab: keys.TAB,
 }
-if PYQT6_API:
+if PYQT6_API or PYSIDE6_API:
     BUTTONMAP = {
         QtCore.Qt.MouseButton.NoButton: 0,
         QtCore.Qt.MouseButton.LeftButton: 1,
@@ -278,11 +278,11 @@ def _set_config(c):
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
     glformat.setAlphaBufferSize(c['alpha_size'])
-    if QT5_NEW_API or PYSIDE6_API:
+    if QT5_NEW_API:
         # Qt5 >= 5.4.0 - below options automatically enabled if nonzero.
         glformat.setSwapBehavior(glformat.DoubleBuffer if c['double_buffer']
                                  else glformat.SingleBuffer)
-    elif PYQT6_API:
+    elif PYQT6_API or PYSIDE6_API:
         glformat.setSwapBehavior(glformat.SwapBehavior.DoubleBuffer if c['double_buffer']
                                  else glformat.SwapBehavior.SingleBuffer)
     else:

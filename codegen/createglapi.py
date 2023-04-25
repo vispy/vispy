@@ -116,10 +116,10 @@ class Enum(int):
 
 DEFINE_CONST_MAP = '''
 ENUM_MAP = {}
-for ob in list(globals().values()):
-    if repr(ob).startswith('GL_'):
+for var_name, ob in list(globals().items()):
+    if var_name.startswith('GL_'):
         ENUM_MAP[int(ob)] = ob
-del ob
+del ob, var_name
 '''
 
 

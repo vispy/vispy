@@ -45,4 +45,10 @@ def test_markers_edge_width():
     with pytest.raises(ValueError):
         marker.set_data(pos=data, edge_width_rel=edge_width - 1, edge_width=None)
 
+
+def test_empty_markers_symbol():
+    markers = Markers()
+    markers.symbol = 'o'
+
+
 run_tests_if_main()

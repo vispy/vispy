@@ -21,6 +21,7 @@ from .image_complex import ComplexImageVisual  # noqa
 from .gridmesh import GridMeshVisual  # noqa
 from .histogram import HistogramVisual  # noqa
 from .infinite_line import InfiniteLineVisual  # noqa
+from .instanced_mesh import InstancedMeshVisual  # noqa
 from .isocurve import IsocurveVisual  # noqa
 from .isoline import IsolineVisual  # noqa
 from .isosurface import IsosurfaceVisual  # noqa

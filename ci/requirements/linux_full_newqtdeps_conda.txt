@@ -2,7 +2,6 @@ cmake
 cython
 coveralls
 decorator
-freetype<2.10.0
 freetype-py
 imageio
 # Do NOT include jupyter as it depends on qtconsole which pulls in PyQt5
