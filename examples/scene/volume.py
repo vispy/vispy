@@ -50,27 +50,6 @@ canvas.measure_fps()
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
-# Create the volume visuals, only one is visible
-volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.225)
-volume1.transform = scene.STTransform(translate=(64, 64, 0))
-volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.2)
-volume2.visible = False
-
-# Create three cameras (Fly, Turntable and Arcball)
-fov = 60.
-cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name='Fly')
-cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
-                                     name='Turntable')
-cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov, name='Arcball')
-view.camera = cam2  # Select turntable at first
-
-# Create an XYZAxis visual
-axis = scene.visuals.XYZAxis(parent=view)
-s = STTransform(translate=(50, 50), scale=(50, 50, 50, 1))
-affine = s.as_matrix()
-axis.transform = affine
-
-
 # create colormaps that work well for translucent and additive volume rendering
 class TransFire(BaseColormap):
     glsl_map = """
@@ -87,11 +66,44 @@ class TransGrays(BaseColormap):
     }
     """
 
+
+class TransFire2D(BaseColormap):
+    glsl_map = """
+    vec4 translucent_fire(float t, float g) {
+        return vec4(pow(t, g), t, t*t, g);
+    }
+    """
+
+
 # Setup colormap iterators
 opaque_cmaps = cycle(get_colormaps())
 translucent_cmaps = cycle([TransFire(), TransGrays()])
 opaque_cmap = next(opaque_cmaps)
 translucent_cmap = next(translucent_cmaps)
+
+# Create the volume visuals, only one is visible
+volume1 = scene.visuals.Volume(vol1, parent=view.scene, threshold=0.225, method="translucent", cmap=translucent_cmap)
+volume1.transform = scene.STTransform(translate=(64, 64, 0))
+volume1.unfreeze()
+volume1.transfer_function = TransFire2D()
+volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.2, method="translucent", cmap=translucent_cmap)
+volume2.unfreeze()
+volume2.transfer_function = TransFire2D()
+volume2.visible = False
+
+# Create three cameras (Fly, Turntable and Arcball)
+fov = 60.
+cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name='Fly')
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
+                                     name='Turntable')
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov, name='Arcball')
+view.camera = cam2  # Select turntable at first
+
+# Create an XYZAxis visual
+axis = scene.visuals.XYZAxis(parent=view)
+s = STTransform(translate=(50, 50), scale=(50, 50, 50, 1))
+affine = s.as_matrix()
+axis.transform = affine
 
 interp_methods = cycle(volume1.interpolation_methods)
 interp = next(interp_methods)
@@ -125,8 +137,8 @@ def on_key_press(event):
         else:
             axis.visible = False
     elif event.text == '2':
-        methods = ['mip', 'translucent', 'iso', 'additive']
-        method = methods[(methods.index(volume1.method) + 1) % 4]
+        methods = ['translucent', 'translucent_2d']
+        method = methods[(methods.index(volume1.method) + 1) % len(methods)]
         print("Volume render method: %s" % method)
         cmap = opaque_cmap if method in ['mip', 'iso'] else translucent_cmap
         volume1.method = method

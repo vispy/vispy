@@ -133,6 +133,31 @@ vec4 applyColormap(float data) {
     return color;
 }
 
+vec4 applyTransferFunction(float data, vec3 loc, vec3 step) {
+    vec4 prev;
+    vec4 next;
+    // calculate normal vector from gradient
+    vec3 N; // normal
+    prev = $get_data(loc+vec3(-step[0],0.0,0.0) );
+    next = $get_data(loc+vec3(step[0],0.0,0.0) );
+    N[0] = colorToVal(prev) - colorToVal(next);
+    prev = $get_data(loc+vec3(0.0,-step[1],0.0) );
+    next = $get_data(loc+vec3(0.0,step[1],0.0) );
+    N[1] = colorToVal(prev) - colorToVal(next);
+    prev = $get_data(loc+vec3(0.0,0.0,-step[2]) );
+    next = $get_data(loc+vec3(0.0,0.0,step[2]) );
+    N[2] = colorToVal(prev) - colorToVal(next);
+    float gm = length(N); // gradient magnitude
+
+    gm = clamp(gm, min(clim.x, clim.y), max(clim.x, clim.y));
+    gm = (gm - clim.x) / (clim.y - clim.x);
+
+    data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
+    data = (data - clim.x) / (clim.y - clim.x);
+    vec4 color = $trans(pow(data, gamma), gm);
+    // vec4 color = $cmap(pow(gm, gamma));
+    return color;
+}
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 {   
@@ -481,6 +506,35 @@ _MINIP_SNIPPETS = dict(
         """,
 )
 
+_TRANSLUCENT_2D_SNIPPETS = dict(
+    before_loop="""
+        vec4 integrated_color = vec4(0., 0., 0., 0.);
+        """,
+    in_loop="""
+        color = applyTransferFunction(val, loc, step);
+        float a1 = integrated_color.a;
+        float a2 = color.a * (1 - a1);
+        float alpha = max(a1 + a2, 0.001);
+
+        // Doesn't work.. GLSL optimizer bug?
+        //integrated_color = (integrated_color * a1 / alpha) +
+        //                   (color * a2 / alpha);
+        // This should be identical but does work correctly:
+        integrated_color *= a1 / alpha;
+        integrated_color += color * a2 / alpha;
+
+        integrated_color.a = alpha;
+
+        if( alpha > 0.99 ){
+            // stop integrating if the fragment becomes opaque
+            iter = nsteps;
+        }
+        """,
+    after_loop="""
+        gl_FragColor = integrated_color;
+        """,
+)
+
 _TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
@@ -684,6 +738,7 @@ class VolumeVisual(Visual):
         'attenuated_mip': _ATTENUATED_MIP_SNIPPETS,
         'iso': _ISO_SNIPPETS,
         'translucent': _TRANSLUCENT_SNIPPETS,
+        'translucent_2d': _TRANSLUCENT_2D_SNIPPETS,
         'additive': _ADDITIVE_SNIPPETS,
         'average': _AVG_SNIPPETS
     }
@@ -924,6 +979,17 @@ class VolumeVisual(Visual):
         self._cmap = get_colormap(cmap)
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
+        self.update()
+
+    @property
+    def transfer_function(self):
+        return self._transfer_function
+
+    @transfer_function.setter
+    def transfer_function(self, transfer_function):
+        self._transfer_function = transfer_function
+        self.shared_program.frag['trans'] = Function(self._transfer_function.glsl_map)
+        self.shared_program['texture2D_LUT'] = self.transfer_function.texture_lut()
         self.update()
 
     @property
