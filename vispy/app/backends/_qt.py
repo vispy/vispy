@@ -577,7 +577,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                 pos=_get_event_xy(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.EndNativeGesture:
-            # TODO: need to track corresponding begin/end? not sure how in Qt5
             self._native_touch_total_rotation = []
             self._native_touch_total_scale = []
             self._vispy_canvas.events.touch(
@@ -596,7 +595,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.touch(
                 type="gesture_rotate",
                 pos=pos,
-                last_pos=None,  # TODO: is this needed?
                 rotation=angle,
                 last_rotation=last_angle,
                 total_rotation_angle=total_rotation_angle,
@@ -613,24 +611,26 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.touch(
                 type="gesture_zoom",
                 pos=pos,
-                last_pos=None,  # TODO: is this needed?
                 last_scale=last_scale,
                 scale=scale,
                 total_scale_factor=total_scale_factor,
             )
-        # TODO: do we need or will we ever get pan events?
-        # With two fingers they are anyway converted to scroll/wheel events.
+        # QtCore.Qt.NativeGestureType.PanNativeGesture
+        # Qt6 docs seem to imply this is only supported on Wayland but I have
+        # not been able to test it.
+        # Two finger pan events are anyway converted to scroll/wheel events.
         # On macOS, more fingers are usually swallowed by the OS (by spaces,
         # mission control, etc.).
-        # elif t == QtCore.Qt.NativeGestureType.PanNativeGesture:
 
     def event(self, ev):
         out = super(QtBaseCanvasBackend, self).event(ev)
 
         # QNativeGestureEvent is Qt 5+
-        if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
-            if isinstance(ev, QtGui.QNativeGestureEvent):
-                self._handle_native_gesture_event(ev)
+        if (
+            (QT5_NEW_API or PYSIDE6_API or PYQT6_API)
+            and isinstance(ev, QtGui.QNativeGestureEvent)
+        ):
+            self._handle_native_gesture_event(ev)
 
         return out
 
