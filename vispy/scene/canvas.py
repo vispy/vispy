@@ -140,6 +140,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
+        self.events.touch.connect(self._process_mouse_event)
 
         self.scene = SubScene()
         self.freeze()
@@ -344,7 +345,12 @@ class SceneCanvas(app.Canvas, Frozen):
 
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
-        deliver_types = ['mouse_press', 'mouse_wheel']
+        deliver_types = [
+            'mouse_press',
+            'mouse_wheel',
+            'gesture_zoom',
+            'gesture_rotate',
+        ]
         if self._send_hover_events:
             deliver_types += ['mouse_move']
 
@@ -524,6 +530,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self.events.mouse_move.disconnect(self._process_mouse_event)
         self.events.mouse_release.disconnect(self._process_mouse_event)
         self.events.mouse_wheel.disconnect(self._process_mouse_event)
+        self.events.touch.disconnect(self._process_mouse_event)
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):

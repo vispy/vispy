@@ -63,7 +63,8 @@ class Node(object):
         # Add some events to the emitter groups:
         events = ['canvas_change', 'parent_change', 'children_change', 
                   'transform_change', 'mouse_press', 'mouse_move',
-                  'mouse_release', 'mouse_wheel', 'key_press', 'key_release']
+                  'mouse_release', 'mouse_wheel', 'key_press', 'key_release',
+                  'gesture_zoom', 'gesture_rotate']
         # Create event emitter if needed (in subclasses that inherit from
         # Visual, we already have an emitter to share)
         if not hasattr(self, 'events'):

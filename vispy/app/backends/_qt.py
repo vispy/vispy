@@ -22,6 +22,7 @@ known to cause unpredictable behavior and segfaults.
 from __future__ import division
 
 from time import sleep, time
+import math
 import os
 import sys
 import atexit
@@ -410,17 +411,10 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             # either not PyQt5 backend or no parent window available
             pass
 
-        # Activate touch and gesture.
-        # NOTE: we only activate touch on OS X because there seems to be
-        # problems on Ubuntu computers with touchscreen.
-        # See https://github.com/vispy/vispy/pull/1143
-        if sys.platform == 'darwin':
-            if PYQT6_API:
-                self.setAttribute(QtCore.Qt.WidgetAttribute.WA_AcceptTouchEvents)
-                self.grabGesture(QtCore.Qt.GestureType.PinchGesture)
-            else:
-                self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
-                self.grabGesture(QtCore.Qt.PinchGesture)
+        # QNativeGestureEvent does not keep track of last or total
+        # values like QGestureEvent does
+        self._native_gesture_scale_values = []
+        self._native_gesture_rotation_values = []
 
     def screen_changed(self, new_screen):
         """Window moved from one display to another, resize canvas.
@@ -563,50 +557,81 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def keyReleaseEvent(self, ev):
         self._keyEvent(self._vispy_canvas.events.key_release, ev)
 
+    def _handle_native_gesture_event(self, ev):
+        if self._vispy_canvas is None:
+            return
+        t = ev.gestureType()
+        # this is a workaround for what looks like a Qt bug where
+        # QNativeGestureEvent gives the wrong local position.
+        # See: https://bugreports.qt.io/browse/QTBUG-59595
+        try:
+            pos = self.mapFromGlobal(ev.globalPosition())
+        except AttributeError:
+            # globalPos is deprecated in Qt6
+            pos = self.mapFromGlobal(ev.globalPos())
+        pos = pos.x(), pos.y()
+
+        if t == QtCore.Qt.NativeGestureType.BeginNativeGesture:
+            self._vispy_canvas.events.touch(
+                type='gesture_begin',
+                pos=_get_event_xy(ev),
+            )
+        elif t == QtCore.Qt.NativeGestureType.EndNativeGesture:
+            self._native_touch_total_rotation = []
+            self._native_touch_total_scale = []
+            self._vispy_canvas.events.touch(
+                type='gesture_end',
+                pos=_get_event_xy(ev),
+            )
+        elif t == QtCore.Qt.NativeGestureType.RotateNativeGesture:
+            angle = ev.value()
+            last_angle = (
+                self._native_gesture_rotation_values[-1]
+                if self._native_gesture_rotation_values
+                else None
+            )
+            self._native_gesture_rotation_values.append(angle)
+            total_rotation_angle = math.fsum(self._native_gesture_rotation_values)
+            self._vispy_canvas.events.touch(
+                type="gesture_rotate",
+                pos=pos,
+                rotation=angle,
+                last_rotation=last_angle,
+                total_rotation_angle=total_rotation_angle,
+            )
+        elif t == QtCore.Qt.NativeGestureType.ZoomNativeGesture:
+            scale = ev.value()
+            last_scale = (
+                self._native_gesture_scale_values[-1]
+                if self._native_gesture_scale_values
+                else None
+            )
+            self._native_gesture_scale_values.append(scale)
+            total_scale_factor = math.fsum(self._native_gesture_scale_values)
+            self._vispy_canvas.events.touch(
+                type="gesture_zoom",
+                pos=pos,
+                last_scale=last_scale,
+                scale=scale,
+                total_scale_factor=total_scale_factor,
+            )
+        # QtCore.Qt.NativeGestureType.PanNativeGesture
+        # Qt6 docs seem to imply this is only supported on Wayland but I have
+        # not been able to test it.
+        # Two finger pan events are anyway converted to scroll/wheel events.
+        # On macOS, more fingers are usually swallowed by the OS (by spaces,
+        # mission control, etc.).
+
     def event(self, ev):
         out = super(QtBaseCanvasBackend, self).event(ev)
-        t = ev.type()
 
-        qt_event_types = QtCore.QEvent.Type if PYQT6_API else QtCore.QEvent
-        # Two-finger pinch.
-        if t == qt_event_types.TouchBegin:
-            self._vispy_canvas.events.touch(type='begin')
-        if t == qt_event_types.TouchEnd:
-            self._vispy_canvas.events.touch(type='end')
-        if t == qt_event_types.Gesture:
-            pinch_gesture = QtCore.Qt.GestureType.PinchGesture if PYQT6_API else QtCore.Qt.PinchGesture
-            gesture = ev.gesture(pinch_gesture)
-            if gesture:
-                (x, y) = _get_qpoint_pos(gesture.centerPoint())
-                scale = gesture.scaleFactor()
-                last_scale = gesture.lastScaleFactor()
-                rotation = gesture.rotationAngle()
-                self._vispy_canvas.events.touch(
-                    type="pinch",
-                    pos=(x, y),
-                    last_pos=None,
-                    scale=scale,
-                    last_scale=last_scale,
-                    rotation=rotation,
-                    total_rotation_angle=gesture.totalRotationAngle(),
-                    total_scale_factor=gesture.totalScaleFactor(),
-                )
-        # General touch event.
-        elif t == qt_event_types.TouchUpdate:
-            if qt_lib == 'pyqt6' or qt_lib == 'pyside6':
-                points = ev.points()
-                # These variables are lists of (x, y) coordinates.
-                pos = [_get_qpoint_pos(p.position()) for p in points]
-                lpos = [_get_qpoint_pos(p.lastPosition()) for p in points]
-            else:
-                points = ev.touchPoints()
-                # These variables are lists of (x, y) coordinates.
-                pos = [_get_qpoint_pos(p.pos()) for p in points]
-                lpos = [_get_qpoint_pos(p.lastPos()) for p in points]
-            self._vispy_canvas.events.touch(type='touch',
-                                            pos=pos,
-                                            last_pos=lpos,
-                                            )
+        # QNativeGestureEvent is Qt 5+
+        if (
+            (QT5_NEW_API or PYSIDE6_API or PYQT6_API)
+            and isinstance(ev, QtGui.QNativeGestureEvent)
+        ):
+            self._handle_native_gesture_event(ev)
+
         return out
 
     def _keyEvent(self, func, ev):
