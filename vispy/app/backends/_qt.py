@@ -565,7 +565,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # QNativeGestureEvent gives the wrong local position.
         # See: https://bugreports.qt.io/browse/QTBUG-59595
         try:
-            pos = self.mapFromGlobal(ev.globalPosition())
+            pos = self.mapFromGlobal(ev.globalPosition().toPoint())
         except AttributeError:
             # globalPos is deprecated in Qt6
             pos = self.mapFromGlobal(ev.globalPos())
