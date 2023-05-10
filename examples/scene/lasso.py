@@ -13,7 +13,6 @@ Demonstrate the use of lasso selection.
 The lasso selection is done on a 2D scatter but could be extended further by user.
 """
 import sys
-import time
 import numpy as np
 from vispy import app, scene
 from vispy.geometry import curves
@@ -25,7 +24,7 @@ FILTERED_COLOR            = (1, 1, 1, 0.3)
 SELECTED_COLOR            = (0.3, 0, 1, 1.0)
 PEN_RADIUS                = 2
 MIN_MOVE_UPDATE_THRESHOLD = 5
-NUMBER_POINT              = 200000
+NUMBER_POINT              = 2000000
 SCATTER_SIZE              = 5
 
 canvas = scene.SceneCanvas(keys='interactive', show=True)
@@ -64,9 +63,20 @@ def points_in_polygon(polygon, pts):
     to add other dependencies, and your performance needs one of the other answers
     on the above question would serve you better (ex. shapely, etc).
     """
+    # Filter vertices out of the polygon's bounding box, this serve as an early optimization whenever number of vertices
+    # to filter out is huge.
+    x1, x2, y1, y2 = min(polygon[:, 0]), max(polygon[:, 0]), min(polygon[:, 1]), max(polygon[:, 1])
+    selection_mask = (x1 < pts[:, 0]) & (pts[:, 0] < x2) & (y1 < pts[:, 1]) & (pts[:, 1] < y2)
+    pts_in_bbox = pts[selection_mask]
+
+    # Select vertices inside the polygon.
     polygon = path.Path(polygon[:, :2], closed = True)
-    mask = polygon.contains_points(pts[:, :2])
-    return mask
+    polygon_mask    = polygon.contains_points(pts_in_bbox[:, :2]) 
+    
+    # Return the full selection mask based on bounding box & polygon selection.
+    selection_mask[np.where(selection_mask == True)] &= polygon_mask
+
+    return selection_mask
 
 def select(polygon_vertices, points):
     # Set default mask to filter everything since user selection
