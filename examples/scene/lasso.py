@@ -51,6 +51,7 @@ pos += centers[indexes]
 # create scatter object and fill in the data
 scatter = visuals.Markers()
 point_color = np.full((NUMBER_POINT, 4), FILTERED_COLOR)
+selected_mask = np.full(NUMBER_POINT, False)
 scatter.set_data(pos, edge_width=0, face_color=point_color, size=SCATTER_SIZE)
 
 view.add(scatter)
@@ -82,14 +83,15 @@ def select(polygon_vertices, points):
 
 @canvas.connect
 def on_mouse_press(event):
-    global point_color
+    global point_color, selected_mask
     
     if event.button == 1:
-        # Reset state.
+        # Reset lasso state.
         lasso.set_data(pos=np.empty((1, 2)))
-
-        # Reset every vertices to the filtered color
-        point_color[:] = FILTERED_COLOR
+        
+        # Reset selected vertices to the filtered color, this would earn some time in case
+        # scene contains a lot of vertices.
+        point_color[selected_mask] = FILTERED_COLOR
 
         scatter.set_data(pos, edge_width=0, face_color=point_color, size=SCATTER_SIZE)
         
@@ -106,12 +108,11 @@ def on_mouse_move(event):
         if event.button == 1:            
             polygon_vertices = event.trail()
             lasso.set_data(pos = np.insert(polygon_vertices, len(polygon_vertices), polygon_vertices[0], axis=0))
-            scatter.set_data(pos, edge_width=0, face_color=point_color, size=SCATTER_SIZE)
             px, py = pp
 
 @canvas.connect
 def on_mouse_release(event):
-    global point_color
+    global point_color, selected_mask
 
     if event.button == 1:
         selected_mask = select(event.trail(), pos)
