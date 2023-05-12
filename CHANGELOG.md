@@ -1,5 +1,24 @@
 # Release Notes
 
+## [v0.13.0](https://github.com/vispy/vispy/tree/v0.13.0) (2023-05-12)
+
+**Enhancements:**
+
+- Switch MarkersVisual scaling option to string "fixed", "scene", or "visual" [\#2470](https://github.com/vispy/vispy/pull/2470) ([djhoese](https://github.com/djhoese))
+- Add early-termination optimization to attenuated mip [\#2465](https://github.com/vispy/vispy/pull/2465) ([aganders3](https://github.com/aganders3))
+- Add `InstancedMeshVisual` for faster and easier rendering of repeated meshes [\#2461](https://github.com/vispy/vispy/pull/2461) ([brisvag](https://github.com/brisvag))
+- Instanced mesh example [\#2460](https://github.com/vispy/vispy/pull/2460) ([brisvag](https://github.com/brisvag))
+- Use QNativeEventGesture for touchpad gesture input [\#2456](https://github.com/vispy/vispy/pull/2456) ([aganders3](https://github.com/aganders3))
+
+**Fixed bugs:**
+
+- Fix TypeError with pinch-to-zoom [\#2483](https://github.com/vispy/vispy/pull/2483) ([aganders3](https://github.com/aganders3))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.12.1 to 2.12.3 [\#2472](https://github.com/vispy/vispy/pull/2472) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Cleanup site navbar with pydata-sphinx-theme 0.10+ [\#2371](https://github.com/vispy/vispy/pull/2371) ([djhoese](https://github.com/djhoese))
+
 ## [v0.12.2](https://github.com/vispy/vispy/tree/v0.12.2) (2023-03-20)
 
 **Enhancements:**
