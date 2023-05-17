@@ -6,18 +6,24 @@
 # -----------------------------------------------------------------------------
 """
 Vispy Lasso
-=============
+===========
 
 Demonstrate the use of lasso selection.
 
 The lasso selection is done on a 2D scatter but could be extended further by user.
 """
 import sys
+import warnings
 import numpy as np
 from vispy import app, scene
 from vispy.geometry import curves
 from vispy.scene import visuals
-from matplotlib import path
+
+try:
+    from matplotlib import path
+except ImportError:
+    warnings.warn("Lasso example requires matplotlib for more accurate selection. Falling back to numpy based selection.")
+    path = None
 
 LASSO_COLOR               = (1, .1, .1)
 FILTERED_COLOR            = (1, 1, 1, 0.3)
@@ -59,6 +65,9 @@ def points_in_polygon(polygon, pts):
     """
     Get boolean mask of points in a polygon reusing matplotlib implementation.
     
+    The fallback code is based from StackOverflow answer by ``Ta946`` in this question:
+    https://stackoverflow.com/questions/36399381/whats-the-fastest-way-of-checking-if-a-point-is-inside-a-polygon-in-python
+
     This is a proof of concept and depending on your use case, willingness
     to add other dependencies, and your performance needs one of the other answers
     on the above question would serve you better (ex. shapely, etc).
@@ -70,9 +79,22 @@ def points_in_polygon(polygon, pts):
     pts_in_bbox = pts[selection_mask]
 
     # Select vertices inside the polygon.
-    polygon = path.Path(polygon[:, :2], closed = True)
-    polygon_mask    = polygon.contains_points(pts_in_bbox[:, :2]) 
-    
+    if path is not None:
+        polygon = path.Path(polygon[:, :2], closed = True)
+        polygon_mask = polygon.contains_points(pts_in_bbox[:, :2]) 
+    else:
+        contour2 = np.vstack((polygon[1:], polygon[:1]))
+        test_diff = contour2-polygon
+        m1 = (polygon[:,1] > pts_in_bbox[:,None,1]) != (contour2[:,1] > pts_in_bbox[:,None,1])
+        slope = ((pts_in_bbox[:,None,0]-polygon[:,0])*test_diff[:,1])-(test_diff[:,0]*(pts_in_bbox[:,None,1]-polygon[:,1]))
+        m2 = slope == 0
+        mask2 = (m1 & m2).any(-1)
+        m3 = (slope < 0) != (contour2[:,1] < polygon[:,1])
+        m4 = m1 & m3
+        count = np.count_nonzero(m4, axis=-1)
+        mask3 = ~(count%2==0)
+        polygon_mask = mask2 | mask3
+
     # Return the full selection mask based on bounding box & polygon selection.
     selection_mask[np.where(selection_mask == True)] &= polygon_mask
 
@@ -129,7 +151,6 @@ def on_mouse_release(event):
 
         # Set selected points with selection color
         point_color[selected_mask] = SELECTED_COLOR
-        point_color[~selected_mask] = FILTERED_COLOR
         scatter.set_data(pos, edge_width=0, face_color=point_color, size=SCATTER_SIZE)
 
 if __name__ == '__main__':
