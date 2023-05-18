@@ -62,8 +62,7 @@ scatter.set_data(pos, edge_width=0, face_color=point_color, size=SCATTER_SIZE)
 view.add(scatter)
 
 def points_in_polygon(polygon, pts):
-    """
-    Get boolean mask of points in a polygon reusing matplotlib implementation.
+    """Get boolean mask of points in a polygon reusing matplotlib implementation.
     
     The fallback code is based from StackOverflow answer by ``Ta946`` in this question:
     https://stackoverflow.com/questions/36399381/whats-the-fastest-way-of-checking-if-a-point-is-inside-a-polygon-in-python
