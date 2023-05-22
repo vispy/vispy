@@ -111,7 +111,7 @@ jobs:
         sleep 5
         # export python_version
         echo "python_version=310" >> $GITHUB_OUTPUT
-    - uses: mamba-org/provision-with-micromamba@v15
+    - uses: mamba-org/provision-with-micromamba@v16
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
@@ -225,7 +225,7 @@ jobs:
         # export python_version
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
-    - uses: mamba-org/provision-with-micromamba@v15
+    - uses: mamba-org/provision-with-micromamba@v16
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
