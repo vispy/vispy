@@ -177,6 +177,7 @@ void shade() {
         vec3 u = dFdx(v_pos_scene.xyz);
         vec3 v = dFdy(v_pos_scene.xyz);
         normal = cross(u, v);
+    } else {
         // Note(asnt): The normal calculated above always points in the
         // direction of the camera. Reintroduce the original orientation of the
         // face.
