@@ -136,16 +136,17 @@ vec4 applyColormap(float data) {
 vec4 applyTransferFunction(float data, vec3 loc, vec3 step) {
     vec4 prev;
     vec4 next;
+    // TODO: factor gradient calc for use in other shaders
     // calculate normal vector from gradient
     vec3 N; // normal
-    prev = $get_data(loc+vec3(-step[0],0.0,0.0) );
-    next = $get_data(loc+vec3(step[0],0.0,0.0) );
+    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
+    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
     N[0] = colorToVal(prev) - colorToVal(next);
-    prev = $get_data(loc+vec3(0.0,-step[1],0.0) );
-    next = $get_data(loc+vec3(0.0,step[1],0.0) );
+    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
+    next = $get_data(loc + vec3(0.0, step.y, 0.0));
     N[1] = colorToVal(prev) - colorToVal(next);
-    prev = $get_data(loc+vec3(0.0,0.0,-step[2]) );
-    next = $get_data(loc+vec3(0.0,0.0,step[2]) );
+    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
+    next = $get_data(loc + vec3(0.0, 0.0, step.z));
     N[2] = colorToVal(prev) - colorToVal(next);
     float gm = length(N); // gradient magnitude
 
@@ -155,7 +156,6 @@ vec4 applyTransferFunction(float data, vec3 loc, vec3 step) {
     data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
     data = (data - clim.x) / (clim.y - clim.x);
     vec4 color = $trans(pow(data, gamma), gm);
-    // vec4 color = $cmap(pow(gm, gamma));
     return color;
 }
 
@@ -512,9 +512,10 @@ _TRANSLUCENT_2D_SNIPPETS = dict(
         """,
     in_loop="""
         color = applyTransferFunction(val, loc, step);
+
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
-        float alpha = max(a1 + a2, 0.001);
+        float alpha = min(1.0, max(a1 + a2, 0.001));
 
         // Doesn't work.. GLSL optimizer bug?
         //integrated_color = (integrated_color * a1 / alpha) +
