@@ -766,3 +766,85 @@ class WireframeFilter(Filter):
     def _detach(self, visual):
         visual.events.data_updated.disconnect(self.on_mesh_data_updated)
         super()._detach(visual)
+
+
+class FacePickingFilter(Filter):
+    """Filter used to color mesh faces by a picking ID.
+
+    Note that the ID color uses the alpha channel, so this may not be used
+    with blending enabled.
+
+    Examples
+    --------
+    See
+    `examples/scene/face_picking.py
+    <https://github.com/vispy/vispy/blob/main/examples/scene/face_picking.py>`_
+    example script.
+    """
+
+    def __init__(self):
+        vfunc = Function("""\
+            varying vec4 v_face_picking_color;
+            void prepare_face_picking() {
+                v_face_picking_color = $ids;
+            }
+        """)
+        ffunc = Function("""\
+            varying vec4 v_face_picking_color;
+            void draw_face_picking() {
+                if ($enabled != 1) {
+                    return;
+                }
+                gl_FragColor = v_face_picking_color;
+            }
+        """)
+
+        self._ids = VertexBuffer(np.zeros((0, 4), dtype=np.float32))
+        vfunc['ids'] = self._ids
+        super().__init__(vcode=vfunc, fcode=ffunc)
+        self._n_faces = 0
+        self.enabled = False
+
+    @property
+    def enabled(self):
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, e):
+        self._enabled = bool(e)
+        self.fshader['enabled'] = int(self._enabled)
+        self._update_data()
+
+    def _update_data(self):
+        if not self.attached:
+            return
+        if self._visual.mesh_data.is_empty():
+            n_faces = 0
+        else:
+            n_faces = len(self._visual.mesh_data.get_faces())
+
+        # we only care about the number of faces changing
+        if self._n_faces == n_faces:
+            return
+        self._n_faces = n_faces
+
+        # pack the face ids into a color buffer
+        # TODO: consider doing the bit-packing in the shader
+        ids = np.arange(
+            1, n_faces + 1,
+            dtype=np.uint32
+        ).view(np.uint8).reshape(n_faces, 4)
+        ids = np.divide(ids, 255, dtype=np.float32)
+        self._ids.set_data(np.repeat(ids, 3, axis=0), convert=True)
+
+    def on_mesh_data_updated(self, event):
+        self._update_data()
+
+    def _attach(self, visual):
+        super()._attach(visual)
+        visual.events.data_updated.connect(self.on_mesh_data_updated)
+        self._update_data()
+
+    def _detach(self, visual):
+        visual.events.data_updated.disconnect(self.on_mesh_data_updated)
+        super()._detach(visual)
