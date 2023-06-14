@@ -16,7 +16,8 @@ Arguments:
 Controls:
 * s  - Cycle shading modes (None, 'flat', 'smooth')
 * w  - Toggle wireframe
-* p  - Toggle face picking view
+* p  - Toggle face picking view - shows the colors encoding face ID
+* c  - Clear painted faces
 """
 import argparse
 import itertools
@@ -48,7 +49,7 @@ face_colors = np.tile((0.5, 0.0, 0.5, 1.0), (len(faces), 1))
 mesh = Mesh(
     vertices,
     faces,
-    face_colors=face_colors
+    face_colors=face_colors.copy()
 )
 mesh.transform = transforms.MatrixTransform()
 mesh.transform.rotate(90, (1, 0, 0))
@@ -94,26 +95,24 @@ def on_mouse_move(event):
 
     mesh.update_gl_state(blend=not face_picking_filter.enabled)
 
-    id = picking_render.view(np.uint32) - 1
+    ids = picking_render.view(np.uint32) - 1
     # account for hidpi screens - canvas and render may have different size
     cols, rows = canvas.size
     col, row = event.pos
-    col = int(col / cols * id.shape[1])
-    row = int(row / rows * id.shape[0])
+    col = int(col / cols * (ids.shape[1] - 1))
+    row = int(row / rows * (ids.shape[0] - 1))
 
     # color the hovered face on the mesh
-    meshdata = mesh.mesh_data
-    if id[row, col] in range(1, len(face_colors)):
-        face_colors[id[row, col], :] = (0, 1, 0, 1)
-        # meshdata.set_face_colors(face_colors)
-        # mesh.set_data(meshdata=meshdata)
+    if ids[row, col] in range(1, len(face_colors)):
         # this may be less safe, but it's faster
-        meshdata._face_colors_indexed_by_faces[id[row, col]] = (0, 1, 0, 1)
+        mesh.mesh_data._face_colors_indexed_by_faces[ids[row, col]] = (0, 1, 0, 1)
         mesh.mesh_data_changed()
 
 
 @canvas.events.key_press.connect
 def on_key_press(event):
+    if event.key == 'c':
+        mesh.set_data(vertices, faces, face_colors=face_colors)
     if event.key == 's':
         shading_filter.shading = next(shading)
         mesh.update()
