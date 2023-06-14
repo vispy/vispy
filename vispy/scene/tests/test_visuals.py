@@ -26,3 +26,20 @@ def test_visual_node_generation():
             vis_node = getattr(visuals, name[:-6])
             assert issubclass(vis_node, Node)
             assert issubclass(vis_node, obj)
+
+
+def test_push_pop_gl_state():
+    node = vispy.visuals.MeshVisual()
+    og_gl_state = node._vshare.gl_state.copy()
+    node.push_gl_state(blend=not og_gl_state.get("blend"))
+    assert node._vshare.gl_state != og_gl_state
+    node.pop_gl_state()
+    assert node._vshare.gl_state == og_gl_state
+
+
+def test_pop_empty_gl_state():
+    node = vispy.visuals.MeshVisual()
+    assert node._prev_gl_state == []
+    og_gl_state = node._vshare.gl_state.copy()
+    node.pop_gl_state()
+    assert node._vshare.gl_state == og_gl_state
