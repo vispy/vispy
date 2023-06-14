@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 
 from vispy.geometry import create_plane
 from vispy.scene.visuals import Mesh
-from vispy.testing import TestingCanvas
+from vispy.testing import requires_application, TestingCanvas
 from vispy.visuals.filters import FacePickingFilter
 
 
@@ -16,6 +16,7 @@ def test_empty_mesh_face_picking():
     filter.enabled = True
 
 
+@requires_application()
 def test_face_picking():
     vertices, faces, _ = create_plane(125, 125)
     vertices = vertices["position"]
