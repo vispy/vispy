@@ -71,7 +71,10 @@ class VisualNode(Node):
             return
         self._picking = p
         self._picking_filter.enabled = p
-        self.update_gl_state(blend=not p)
+        if p:
+            self.push_gl_state(blend=False)
+        else:
+            self.pop_gl_state()
 
     def _update_trsys(self, event):
         """Transform object(s) have changed for this Node; assign these to the

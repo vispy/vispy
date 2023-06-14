@@ -337,6 +337,7 @@ class Visual(BaseVisual):
                     raise ValueError("Cannot specify both program and "
                                      "vcode/fcode arguments.")
 
+        self._prev_gl_state = []
         self._program = self._vshare.program.add_program()
         self._prepare_transforms(self)
         self._filters = []
@@ -356,6 +357,29 @@ class Visual(BaseVisual):
         """
         self._vshare.gl_state = kwargs
         self._vshare.gl_state['preset'] = preset
+
+    def push_gl_state(self, *args, **kwargs):
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.update_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        self._prev_gl_state.append(self._vshare.gl_state.copy())
+        self.update_gl_state(*args, **kwargs)
+
+    def pop_gl_state(self):
+        """Restore a previous set of GL state parameters if available."""
+        if self._prev_gl_state:
+            self.set_gl_state(**self._prev_gl_state.pop())
 
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
@@ -625,6 +649,29 @@ class CompoundVisual(BaseVisual):
         """
         for v in self._subvisuals:
             v.set_gl_state(preset=preset, **kwargs)
+
+    def push_gl_state(self, *args, **kwargs):
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.update_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        for v in self._subvisuals:
+            v.push_gl_state(*args, **kwargs)
+
+    def pop_gl_state(self):
+        """Restore a previous set of GL state parameters if available."""
+        for v in self._subvisuals:
+            v.pop_gl_state()
 
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
