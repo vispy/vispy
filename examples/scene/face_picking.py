@@ -21,6 +21,7 @@ Controls:
 """
 import argparse
 import itertools
+import time
 
 import numpy as np
 
@@ -82,30 +83,42 @@ shading = itertools.cycle(("flat", "smooth", None))
 shading_filter.shading = next(shading)
 
 
+throttle = time.monotonic()
+
+
 @canvas.events.mouse_move.connect
 def on_mouse_move(event):
-    restore_state = not face_picking_filter.enabled
+    global throttle
+    # throttle mouse events to 50ms
+    if time.monotonic() - throttle < 0.05:
+        return
+    throttle = time.monotonic()
 
+    # adjust the event position for hidpi screens
+    render_size = tuple(d * canvas.pixel_scale for d in canvas.size)
+    x_pos = event.pos[0] * canvas.pixel_scale
+    y_pos = render_size[1] - (event.pos[1] * canvas.pixel_scale)
+
+    # render a small patch around the mouse cursor
+    restore_state = not face_picking_filter.enabled
     face_picking_filter.enabled = True
     mesh.update_gl_state(blend=False)
-    picking_render = canvas.render(bgcolor=(0, 0, 0, 0), alpha=True)
-
+    picking_render = canvas.render(
+        region=(x_pos - 1, y_pos - 1, 3, 3),
+        size=(3, 3),
+        bgcolor=(0, 0, 0, 0),
+        alpha=True,
+    )
     if restore_state:
         face_picking_filter.enabled = False
-
     mesh.update_gl_state(blend=not face_picking_filter.enabled)
 
-    ids = picking_render.view(np.uint32) - 1
-    # account for hidpi screens - canvas and render may have different size
-    cols, rows = canvas.size
-    col, row = event.pos
-    col = int(col / cols * (ids.shape[1] - 1))
-    row = int(row / rows * (ids.shape[0] - 1))
+    # unpack the face index from the color in the center pixel
+    face_idx = (picking_render.view(np.uint32) - 1)[1, 1]
 
-    # color the hovered face on the mesh
-    if ids[row, col] in range(1, len(face_colors)):
-        # this may be less safe, but it's faster
-        mesh.mesh_data._face_colors_indexed_by_faces[ids[row, col]] = (0, 1, 0, 1)
+    if face_idx > 0 and face_idx < len(face_colors):
+        # this may be less safe, but it's faster than set_data
+        mesh.mesh_data._face_colors_indexed_by_faces[face_idx] = (0, 1, 0, 1)
         mesh.mesh_data_changed()
 
 
