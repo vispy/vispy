@@ -791,7 +791,7 @@ class FacePickingFilter(Filter):
         """)
         ffunc = Function("""\
             varying vec4 v_face_picking_color;
-            void draw_face_picking() {
+            void face_picking_filter() {
                 if ($enabled != 1) {
                     return;
                 }
@@ -835,7 +835,7 @@ class FacePickingFilter(Filter):
             dtype=np.uint32
         ).view(np.uint8).reshape(n_faces, 4)
         ids = np.divide(ids, 255, dtype=np.float32)
-        self._ids.set_data(np.repeat(ids, 3, axis=0), convert=True)
+        self._ids.set_data(np.repeat(ids, 3, axis=0))
 
     def on_mesh_data_updated(self, event):
         self._update_data()
