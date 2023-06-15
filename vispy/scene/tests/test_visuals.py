@@ -43,3 +43,26 @@ def test_pop_empty_gl_state():
     og_gl_state = node._vshare.gl_state.copy()
     node.pop_gl_state()
     assert node._vshare.gl_state == og_gl_state
+
+
+def test_temp_gl_state():
+    node = vispy.visuals.MeshVisual()
+    og_gl_state = node._vshare.gl_state.copy()
+    with node.temp_gl_state(blend=not og_gl_state.get("blend")):
+        assert node._vshare.gl_state != og_gl_state
+    assert node._vshare.gl_state == og_gl_state
+
+
+def test_picking_context():
+    canvas = vispy.scene.SceneCanvas()
+    view = canvas.central_widget.add_view()
+    mesh = visuals.Mesh()
+    view.add(mesh)
+
+    assert not view.picking
+    assert not mesh.picking
+    with canvas._scene.picking_context():
+        assert view.picking
+        assert mesh.picking
+    assert not view.picking
+    assert not mesh.picking

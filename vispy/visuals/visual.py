@@ -83,9 +83,10 @@ A compound visual will automatically handle forwarding transform system changes
 and filter attachments to its internally-wrapped visuals. To the user, this
 will appear to behave as a single visual.
 """
-
 from __future__ import division
 import weakref
+from contextlib import contextmanager
+
 import numpy as np
 
 from .. import gloo
@@ -265,6 +266,28 @@ class BaseVisual(Frozen):
 
     def _transform_changed(self, event=None):
         self.update()
+
+    def push_gl_state(self, *args, **kwargs):
+        raise NotImplementedError(self)
+
+    def pop_gl_state(self):
+        raise NotImplementedError(self)
+
+    def set_gl_state(self, *args, **kwargs):
+        raise NotImplementedError(self)
+
+    def update_gl_state(self, *args, **kwargs):
+        raise NotImplementedError(self)
+
+    @contextmanager
+    def temp_gl_state(self, *args, **kwargs):
+        """Context manager for temporarily modifying GL state.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+        """
+        self.push_gl_state(*args, **kwargs)
+        yield
+        self.pop_gl_state()
 
 
 class BaseVisualView(object):
