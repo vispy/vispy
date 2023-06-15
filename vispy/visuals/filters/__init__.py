@@ -6,4 +6,5 @@ from .base_filter import Filter  # noqa
 from .clipper import Clipper  # noqa
 from .color import Alpha, ColorFilter, IsolineFilter, ZColormapFilter  # noqa
 from .picking import PickingFilter  # noqa
+from .markers import MarkerPickingFilter  # noqa
 from .mesh import TextureFilter, ShadingFilter, InstancedShadingFilter, WireframeFilter, FacePickingFilter  # noqa
