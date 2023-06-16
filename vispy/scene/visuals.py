@@ -72,7 +72,7 @@ class VisualNode(Node):
         self._picking = p
         self._picking_filter.enabled = p
         if p:
-            self.push_gl_state(blend=False)
+            self.push_gl_state_update(blend=False)
         else:
             self.pop_gl_state()
 

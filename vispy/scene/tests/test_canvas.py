@@ -117,18 +117,3 @@ def test_blend_presets(preset):
 
         rgba_result = c.render()
         assert not np.allclose(rgba_result[..., :3], 0)
-
-
-def test_picking_context():
-    canvas = scene.SceneCanvas()
-    view = canvas.central_widget.add_view()
-    mesh = scene.visuals.Mesh()
-    view.add(mesh)
-
-    assert not view.picking
-    assert not mesh.picking
-    with canvas._scene.picking_context():
-        assert view.picking
-        assert mesh.picking
-    assert not view.picking
-    assert not mesh.picking

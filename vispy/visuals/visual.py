@@ -267,28 +267,6 @@ class BaseVisual(Frozen):
     def _transform_changed(self, event=None):
         self.update()
 
-    def push_gl_state(self, *args, **kwargs):
-        raise NotImplementedError(self)
-
-    def pop_gl_state(self):
-        raise NotImplementedError(self)
-
-    def set_gl_state(self, *args, **kwargs):
-        raise NotImplementedError(self)
-
-    def update_gl_state(self, *args, **kwargs):
-        raise NotImplementedError(self)
-
-    @contextmanager
-    def temp_gl_state(self, *args, **kwargs):
-        """Context manager for temporarily modifying GL state.
-
-        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
-        """
-        self.push_gl_state(*args, **kwargs)
-        yield
-        self.pop_gl_state()
-
 
 class BaseVisualView(object):
     """Base class for a view on a visual.
@@ -371,6 +349,9 @@ class Visual(BaseVisual):
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
+        This can also be used as a context manager that will revert the
+        gl_state on exit.
+
         Parameters
         ----------
         preset : str
@@ -378,10 +359,73 @@ class Visual(BaseVisual):
         **kwargs : dict
             Keyword arguments.
         """
+        prev_gl_state = self._vshare.gl_state.copy()
+
         self._vshare.gl_state = kwargs
         self._vshare.gl_state['preset'] = preset
 
+        @contextmanager
+        def _context():
+            self._prev_gl_state.append(prev_gl_state)
+            try:
+                yield self._vshare.gl_state
+            finally:
+                self.pop_gl_state()
+
+        return _context()
+
+    def update_gl_state(self, *args, **kwargs):
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This can also be used as a context manager that will revert the
+        gl_state on exit.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        prev_gl_state = self._vshare.gl_state.copy()
+
+        if len(args) == 1:
+            self._vshare.gl_state['preset'] = args[0]
+        elif len(args) != 0:
+            raise TypeError("Only one positional argument allowed.")
+        self._vshare.gl_state.update(kwargs)
+
+        @contextmanager
+        def _context():
+            self._prev_gl_state.append(prev_gl_state)
+            try:
+                yield self._vshare.gl_state
+            finally:
+                self.pop_gl_state()
+
+        return _context()
+
     def push_gl_state(self, *args, **kwargs):
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.set_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        self._prev_gl_state.append(self._vshare.gl_state.copy())
+        self.set_gl_state(*args, **kwargs)
+
+    def push_gl_state_update(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
@@ -397,30 +441,16 @@ class Visual(BaseVisual):
             Keyword arguments.
         """
         self._prev_gl_state.append(self._vshare.gl_state.copy())
-        self.update_gl_state(*args, **kwargs)
+        self.set_gl_state(*args, **kwargs)
 
     def pop_gl_state(self):
-        """Restore a previous set of GL state parameters if available."""
+        """Restore a previous set of GL state parameters if available.
+
+        If no previous GL state is available (see :py:meth:`.push_gl_state`),
+        this has no effect.
+        """
         if self._prev_gl_state:
             self.set_gl_state(**self._prev_gl_state.pop())
-
-    def update_gl_state(self, *args, **kwargs):
-        """Modify the set of GL state parameters to use when drawing.
-
-        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
-
-        Parameters
-        ----------
-        *args : tuple
-            Arguments.
-        **kwargs : dict
-            Keyword arguments.
-        """
-        if len(args) == 1:
-            self._vshare.gl_state['preset'] = args[0]
-        elif len(args) != 0:
-            raise TypeError("Only one positional argument allowed.")
-        self._vshare.gl_state.update(kwargs)
 
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
@@ -663,6 +693,9 @@ class CompoundVisual(BaseVisual):
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
+        This can also be used as a context manager that will revert the
+        gl_state on exit.
+
         Parameters
         ----------
         preset : str
@@ -670,10 +703,74 @@ class CompoundVisual(BaseVisual):
         **kwargs : dict
             Keyword arguments.
         """
+        prev_gl_state = []
         for v in self._subvisuals:
+            prev_gl_state.append((v, v._vshare.gl_state))
             v.set_gl_state(preset=preset, **kwargs)
 
+        @contextmanager
+        def _context():
+            for v, state in prev_gl_state:
+                v._prev_gl_state.append(state)
+            try:
+                yield
+            finally:
+                for v, _ in prev_gl_state:
+                    v.pop_gl_state()
+
+        return _context()
+
+    def update_gl_state(self, *args, **kwargs):
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This can also be used as a context manager that will revert the
+        gl_state on exit.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        prev_gl_state = []
+        for v in self._subvisuals:
+            prev_gl_state.append((v, v._vshare.gl_state))
+            v.update_gl_state(*args, **kwargs)
+
+        @contextmanager
+        def _context():
+            for v, state in prev_gl_state:
+                v._prev_gl_state.append(state)
+            try:
+                yield
+            finally:
+                for v, _ in prev_gl_state:
+                    v.pop_gl_state()
+
+        return _context()
+
     def push_gl_state(self, *args, **kwargs):
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.set_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        for v in self._subvisuals:
+            v.push_gl_state(*args, **kwargs)
+
+    def push_gl_state_update(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
@@ -689,27 +786,16 @@ class CompoundVisual(BaseVisual):
             Keyword arguments.
         """
         for v in self._subvisuals:
-            v.push_gl_state(*args, **kwargs)
+            v.push_gl_state_update(*args, **kwargs)
 
     def pop_gl_state(self):
-        """Restore a previous set of GL state parameters if available."""
-        for v in self._subvisuals:
-            v.pop_gl_state()
+        """Restore a previous set of GL state parameters if available.
 
-    def update_gl_state(self, *args, **kwargs):
-        """Modify the set of GL state parameters to use when drawing.
-
-        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
-
-        Parameters
-        ----------
-        *args : tuple
-            Arguments.
-        **kwargs : dict
-            Keyword arguments.
+        If no previous GL state is available (see :py:meth:`.push_gl_state`),
+        this has no effect.
         """
         for v in self._subvisuals:
-            v.update_gl_state(*args, **kwargs)
+            v.pop_gl_state()
 
     def attach(self, filt, view=None):
         """Attach a Filter to this visual

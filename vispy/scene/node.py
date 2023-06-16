@@ -7,7 +7,6 @@ from __future__ import division
 import weakref
 from contextlib import contextmanager
 
-
 from ..util.event import Event, EmitterGroup
 from ..visuals.transforms import (NullTransform, BaseTransform, 
                                   ChainTransform, create_transform,
@@ -589,7 +588,7 @@ class Node(object):
             A list of Transform instances.
         """
         a, b = self.node_path(node)
-        return ([n.transform for n in a[:-1]] +
+        return ([n.transform for n in a[:-1]] + 
                 [n.transform.inverse for n in b])[::-1]
 
     def node_transform(self, node):
@@ -630,11 +629,13 @@ class Node(object):
         self._picking = p
 
     @contextmanager
-    def picking_context(self):
-        """Context manager to temporarily enable picking for this node and its
+    def picking_context(self, *, picking=True):
+        """Context manager to temporarily set picking for this node and its
         children.
         """
-        picking = self.picking
-        self.picking = True
-        yield
-        self.picking = picking
+        old_picking = self.picking
+        try:
+            self.picking = picking
+            yield self.picking
+        finally:
+            self.picking = old_picking
