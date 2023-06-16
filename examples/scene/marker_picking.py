@@ -117,7 +117,6 @@ def on_mouse_move(event):
         new_symbols[marker_idx] = new_symbol
 
         colors[marker_idx] = random.choice(COLORS)
-        colors[marker_idx, -1] = 1  # alpha
         markers.set_data(
             pos=pos,
             edge_color=EDGE_COLOR,
@@ -130,6 +129,7 @@ def on_mouse_move(event):
 
 @canvas.events.key_press.connect
 def on_key_press(event):
+    global colors
     if event.key == 'p':
         # toggle face picking view
         picking_filter.enabled = not picking_filter.enabled
@@ -137,7 +137,7 @@ def on_key_press(event):
         markers.update()
     if event.key == 'r':
         # reset marker symbols
-        colors = _colors
+        colors = _colors.copy()
         markers.set_data(
             pos=pos,
             edge_color=EDGE_COLOR,
