@@ -8,16 +8,15 @@
 Picking Markers
 ===============
 
-Demonstrates how to identify (pick) markers. Click markers to change their edge
-color.
+Demonstrates how to identify (pick) markers. Hover markers to change their
+symbol and color.
 
 Controls:
 * p  - Toggle picking view - shows the colors encoding marker ID
-* s  - Cycle marker symbols
-* c  - Clear picked markers
+* r  - Reset marker symbols and colors
 """
-import itertools
-
+import random
+import time
 import numpy as np
 from scipy.constants import golden as GOLDEN
 
@@ -25,29 +24,46 @@ from vispy import app, scene
 from vispy.scene.visuals import Markers
 from vispy.visuals.filters import MarkerPickingFilter
 
-symbols = itertools.cycle(Markers._symbol_shader_values.keys())
-
-
-MARKER_SIZE = 0.0125
-EDGE_WDITH = MARKER_SIZE / 10
-
 canvas = scene.SceneCanvas(keys='interactive', bgcolor='black')
 view = canvas.central_widget.add_view(camera="panzoom")
 view.camera.rect = (-1, -1, 2, 2)
+
+# floret pattern
 n = 10_000
-radius = np.linspace(0, 0.9, n)**0.6
-theta = np.arange(n) * GOLDEN * np.pi
+radius = np.linspace(0, 0.9, n)**0.6  # prevent extreme density at center
+theta = np.arange(n) * GOLDEN
 pos = np.column_stack([radius * np.cos(theta), radius * np.sin(theta)])
-edge_color = np.ones((len(pos), 4), dtype=np.float32)
+
+COLORS = [
+    (1, 0, 0, 1),  # red
+    (1, 0.5, 0, 1),  # orange
+    (1, 1, 0, 1),  # yellow
+    (0, 1, 0, 1),  # green
+    (0, 0, 1, 1),  # blue
+    (0.29, 0, 0.51, 1),  # indigo
+    (0.93, 0.51, 0.93, 1),  # violet
+]
+
+colors = np.zeros((n, 4), dtype=np.float32)
+colors[:, 0] = 1  # red
+colors[:, -1] = 1  # alpha
+_colors = colors.copy()
+
+symbols = list(Markers._symbol_shader_values.keys())
+symbols_ring = dict(zip(symbols, symbols[1:]))
+symbols_ring[symbols[-1]] = symbols[0]
+
+EDGE_COLOR = "white"
+MARKER_SIZE = 0.0125
+EDGE_WDITH = MARKER_SIZE / 10
 
 markers = Markers(
     pos=pos,
-    edge_color=edge_color,
-    face_color="red",
+    edge_color=EDGE_COLOR,
+    face_color=colors,
     size=MARKER_SIZE,
     edge_width=EDGE_WDITH,
     scaling="scene",
-    symbol=next(symbols),
 )
 markers.update_gl_state(depth_test=True)
 view.add(markers)
@@ -63,8 +79,17 @@ def on_viewbox_change(event):
     markers.update_gl_state(blend=not picking_filter.enabled)
 
 
-@canvas.events.mouse_press.connect
-def on_mouse_press(event):
+throttle = time.monotonic()
+
+
+@canvas.events.mouse_move.connect
+def on_mouse_move(event):
+    global throttle
+    # throttle mouse events to 50ms
+    if time.monotonic() - throttle < 0.05:
+        return
+    throttle = time.monotonic()
+
     # adjust the event position for hidpi screens
     render_size = tuple(d * canvas.pixel_scale for d in canvas.size)
     x_pos = event.pos[0] * canvas.pixel_scale
@@ -84,40 +109,42 @@ def on_mouse_press(event):
     markers.update_gl_state(blend=not picking_filter.enabled)
 
     # unpack the face index from the color in the center pixel
-    face_idx = (picking_render.view(np.uint32) - 1)[2, 2]
+    marker_idx = (picking_render.view(np.uint32) - 1)[2, 2, 0]
 
-    if face_idx >= 0 and face_idx < len(pos):
-        edge_color[face_idx] = (0, 1, 0, 1)
+    if marker_idx >= 0 and marker_idx < len(pos):
+        new_symbols = list(markers.symbol)
+        new_symbol = symbols_ring[new_symbols[marker_idx]]
+        new_symbols[marker_idx] = new_symbol
+
+        colors[marker_idx] = random.choice(COLORS)
+        colors[marker_idx, -1] = 1  # alpha
         markers.set_data(
             pos=pos,
-            edge_color=edge_color,
-            face_color="red",
+            edge_color=EDGE_COLOR,
+            face_color=colors,
             size=MARKER_SIZE,
             edge_width=EDGE_WDITH,
-            symbol=markers.symbol,
+            symbol=new_symbols,
         )
 
 
 @canvas.events.key_press.connect
 def on_key_press(event):
-    if event.key == 'c':
-        edge_color = np.ones((len(pos), 4), dtype=np.float32)
-        markers.set_data(
-            pos=pos,
-            edge_color=edge_color,
-            face_color="red",
-            size=MARKER_SIZE,
-            edge_width=EDGE_WDITH,
-            symbol=markers.symbol,
-        )
     if event.key == 'p':
         # toggle face picking view
         picking_filter.enabled = not picking_filter.enabled
         markers.update_gl_state(blend=not picking_filter.enabled)
         markers.update()
-    if event.key == 's':
-        markers.symbol = next(symbols)
-        markers.update()
+    if event.key == 'r':
+        # reset marker symbols
+        colors = _colors
+        markers.set_data(
+            pos=pos,
+            edge_color=EDGE_COLOR,
+            face_color=colors,
+            size=MARKER_SIZE,
+            edge_width=EDGE_WDITH,
+        )
 
 
 canvas.show()

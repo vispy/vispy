@@ -14,10 +14,10 @@ Arguments:
 * --mesh - Path to a mesh file (OBJ/OBJ.GZ) [optional]
 
 Controls:
+* p  - Toggle face picking view - shows the colors encoding face ID
+* r  - Clear painted faces
 * s  - Cycle shading modes (None, 'flat', 'smooth')
 * w  - Toggle wireframe
-* p  - Toggle face picking view - shows the colors encoding face ID
-* c  - Clear painted faces
 """
 import argparse
 import itertools
@@ -114,7 +114,7 @@ def on_mouse_move(event):
     mesh.update_gl_state(blend=not face_picking_filter.enabled)
 
     # unpack the face index from the color in the center pixel
-    face_idx = (picking_render.view(np.uint32) - 1)[1, 1]
+    face_idx = (picking_render.view(np.uint32) - 1)[1, 1, 0]
 
     if face_idx > 0 and face_idx < len(face_colors):
         # this may be less safe, but it's faster than set_data
@@ -124,18 +124,20 @@ def on_mouse_move(event):
 
 @canvas.events.key_press.connect
 def on_key_press(event):
-    if event.key == 'c':
+    if event.key == 'p':
+        face_picking_filter.enabled = not face_picking_filter.enabled
+        mesh.update_gl_state(blend=not face_picking_filter.enabled)
+        mesh.update()
+
+    if event.key == 'r':
         mesh.set_data(vertices, faces, face_colors=face_colors)
+
     if event.key == 's':
         shading_filter.shading = next(shading)
         mesh.update()
-    elif event.key == 'w':
+
+    if event.key == 'w':
         wireframe_filter.enabled = not wireframe_filter.enabled
-        mesh.update()
-    elif event.key == 'p':
-        # toggle face picking view
-        face_picking_filter.enabled = not face_picking_filter.enabled
-        mesh.update_gl_state(blend=not face_picking_filter.enabled)
         mesh.update()
 
 
