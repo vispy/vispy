@@ -441,7 +441,7 @@ class Visual(BaseVisual):
             Keyword arguments.
         """
         self._prev_gl_state.append(self._vshare.gl_state.copy())
-        self.set_gl_state(*args, **kwargs)
+        self.update_gl_state(*args, **kwargs)
 
     def pop_gl_state(self):
         """Restore a previous set of GL state parameters if available.
