@@ -138,7 +138,7 @@ def test_picking_context(enable_picking):
 
     assert mesh.picking != enable_picking
 
-    with mesh.picking_context(picking=enable_picking) as p:
+    with mesh.set_picking(picking=enable_picking) as p:
         assert p == enable_picking
         assert mesh.picking == enable_picking
 

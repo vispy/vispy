@@ -629,9 +629,12 @@ class Node(object):
         self._picking = p
 
     @contextmanager
-    def picking_context(self, *, picking=True):
-        """Context manager to temporarily set picking for this node and its
-        children.
+    def set_picking(self, *, picking=True):
+        """Context manager to temporarily set picking for this node and its children.
+
+        Note that this function will not alter the picking mode unless/until
+        the context manager is entered (using the `with` statement). Use
+        :py:attr:`~picking` for setting the picking mode directly.
         """
         old_picking = self.picking
         try:

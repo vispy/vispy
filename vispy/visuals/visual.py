@@ -350,7 +350,9 @@ class Visual(BaseVisual):
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
         This can also be used as a context manager that will revert the
-        gl_state on exit.
+        gl_state on exit. When used as a context manager, this function is
+        designed to be constructed directly in the header of the `with`
+        statement to avoid confusion about what state will be restored on exit.
 
         Parameters
         ----------

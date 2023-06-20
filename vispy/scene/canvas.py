@@ -493,7 +493,7 @@ class SceneCanvas(app.Canvas, Frozen):
             than triggering transform updates across the scene with every
             click.
         """
-        with self._scene.picking_context():
+        with self._scene.set_picking():
             img = self.render(bgcolor=(0, 0, 0, 0), crop=crop)
         img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
         id_ = img.sum(axis=2).astype('int32')
