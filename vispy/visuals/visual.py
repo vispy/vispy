@@ -366,15 +366,7 @@ class Visual(BaseVisual):
         self._vshare.gl_state = kwargs
         self._vshare.gl_state['preset'] = preset
 
-        @contextmanager
-        def _context():
-            self._prev_gl_state.append(prev_gl_state)
-            try:
-                yield self._vshare.gl_state
-            finally:
-                self.pop_gl_state()
-
-        return _context()
+        return _revert_gl_state([(self, prev_gl_state)])
 
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
@@ -399,15 +391,7 @@ class Visual(BaseVisual):
             raise TypeError("Only one positional argument allowed.")
         self._vshare.gl_state.update(kwargs)
 
-        @contextmanager
-        def _context():
-            self._prev_gl_state.append(prev_gl_state)
-            try:
-                yield self._vshare.gl_state
-            finally:
-                self.pop_gl_state()
-
-        return _context()
+        return _revert_gl_state([(self, prev_gl_state)])
 
     def push_gl_state(self, *args, **kwargs):
         """Define the set of GL state parameters to use when drawing.
@@ -710,17 +694,7 @@ class CompoundVisual(BaseVisual):
             prev_gl_state.append((v, v._vshare.gl_state))
             v.set_gl_state(preset=preset, **kwargs)
 
-        @contextmanager
-        def _context():
-            for v, state in prev_gl_state:
-                v._prev_gl_state.append(state)
-            try:
-                yield
-            finally:
-                for v, _ in prev_gl_state:
-                    v.pop_gl_state()
-
-        return _context()
+        return _revert_gl_state(prev_gl_state)
 
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
@@ -742,17 +716,7 @@ class CompoundVisual(BaseVisual):
             prev_gl_state.append((v, v._vshare.gl_state))
             v.update_gl_state(*args, **kwargs)
 
-        @contextmanager
-        def _context():
-            for v, state in prev_gl_state:
-                v._prev_gl_state.append(state)
-            try:
-                yield
-            finally:
-                for v, _ in prev_gl_state:
-                    v.pop_gl_state()
-
-        return _context()
+        return _revert_gl_state(prev_gl_state)
 
     def push_gl_state(self, *args, **kwargs):
         """Define the set of GL state parameters to use when drawing.
@@ -837,6 +801,25 @@ class CompoundVisual(BaseVisual):
                 elif vb is not None:
                     bounds = [min(bounds[0], vb[0]), max(bounds[1], vb[1])]
         return bounds
+
+
+@contextmanager
+def _revert_gl_state(prev_gl_state):
+    """Context manager to store and revert GL state for a list of visuals.
+
+    Parameters
+    ----------
+    prev_gl_state : list
+        A list of (Visual, gl_state) tuples, where gl_state is a dictionary of
+        `gl_state` params as would be passed to :py:func:`set_gl_state`.
+    """
+    for v, state in prev_gl_state:
+        v._prev_gl_state.append(state)
+    try:
+        yield
+    finally:
+        for v, _ in prev_gl_state:
+            v.pop_gl_state()
 
 
 class CompoundVisualView(BaseVisualView, CompoundVisual):

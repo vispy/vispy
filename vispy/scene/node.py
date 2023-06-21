@@ -634,7 +634,7 @@ class Node(object):
 
         Note that this function will not alter the picking mode unless/until
         the context manager is entered (using the `with` statement). Use
-        :py:attr:`~picking` for setting the picking mode directly.
+        :py:attr:`~.picking` for setting the picking mode directly.
         """
         old_picking = self.picking
         try:

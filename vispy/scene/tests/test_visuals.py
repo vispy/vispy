@@ -89,11 +89,9 @@ def test_update_gl_state_context_manager():
     node.set_gl_state(blend=False)
     og_gl_state = node._vshare.gl_state.copy()
 
-    with node.update_gl_state(blend=True) as state:
+    with node.update_gl_state(blend=True):
         # check that the state was updated
-        assert state == {**og_gl_state, "blend": True}
-        # check that the state returned is the current state
-        assert state == node._vshare.gl_state
+        assert node._vshare.gl_state == {**og_gl_state, "blend": True}
 
     # the update should be reverted once out of the context
     assert node._vshare.gl_state == og_gl_state
@@ -121,11 +119,9 @@ def test_set_gl_state_context_manager():
     node.set_gl_state(blend=False)
     og_gl_state = node._vshare.gl_state.copy()
 
-    with node.set_gl_state(blend=True) as state:
+    with node.set_gl_state(blend=True):
         # preset is always set, unset kwargs should be absent
         assert node._vshare.gl_state == {"preset": None, "blend": True}
-        # check that the state returned is the current state
-        assert state == node._vshare.gl_state
 
     # the update should be reverted once out of the context
     assert node._vshare.gl_state == og_gl_state
