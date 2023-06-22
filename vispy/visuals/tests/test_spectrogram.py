@@ -2,8 +2,7 @@
 import numpy as np
 
 from vispy.scene.visuals import Spectrogram
-from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, raises)
+from vispy.testing import requires_application, TestingCanvas, run_tests_if_main, raises
 from vispy.testing.image_tester import assert_image_approved
 
 
@@ -16,8 +15,9 @@ def test_spectrogram():
     with TestingCanvas(size=size) as c:
         np.random.seed(67853498)
         data = np.random.normal(size=n_fft * 100)
-        spec = Spectrogram(data, n_fft=n_fft, step=n_fft, window=None,
-                           color_scale='linear', cmap='grays')
+        spec = Spectrogram(
+            data, n_fft=n_fft, step=n_fft, window=None, color_scale="linear", cmap="grays"
+        )
         c.draw_visual(spec)
         # expected = np.zeros(size[::-1] + (3,))
         # expected[0] = 1.
@@ -31,12 +31,13 @@ def test_spectrogram():
         spec.n_fft = 128
         spec.step = 128
         spec.fs = 2
-        spec.window = 'hann'
+        spec.window = "hann"
         spec.normalize = True
-        spec.color_scale = 'log'
+        spec.color_scale = "log"
 
         # Check color scale can be only 'log' or 'linear'
         with raises(ValueError):
-            spec.color_scale = 'line_log'
+            spec.color_scale = "line_log"
+
 
 run_tests_if_main()

@@ -5,7 +5,7 @@
 import numpy as np
 
 
-def stft(x, n_fft=1024, step=512, fs=2*np.pi, window='hann'):
+def stft(x, n_fft=1024, step=512, fs=2 * np.pi, window="hann"):
     """Compute the STFT
 
     Parameters
@@ -35,9 +35,9 @@ def stft(x, n_fft=1024, step=512, fs=2*np.pi, window='hann'):
     """
     x = np.asarray(x, float)
     if x.ndim != 1:
-        raise ValueError('x must be 1D')
+        raise ValueError("x must be 1D")
     if window is not None:
-        if window not in ('hann',):
+        if window not in ("hann",):
             raise ValueError('window must be "hann" or None')
         w = np.hanning(n_fft)
     else:
@@ -52,7 +52,7 @@ def stft(x, n_fft=1024, step=512, fs=2*np.pi, window='hann'):
     n_estimates = (len(x) - n_fft) // step + 1
     result = np.empty((n_freqs, n_estimates), np.complex128)
     for ii in range(n_estimates):
-        result[:, ii] = np.fft.rfft(w * x[ii * step:ii * step + n_fft]) / n_fft
+        result[:, ii] = np.fft.rfft(w * x[ii * step : ii * step + n_fft]) / n_fft
     return result
 
 

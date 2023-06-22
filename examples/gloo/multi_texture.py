@@ -30,10 +30,9 @@ im2[:, 10:20, 1] = 1.0
 im1[:, 20:, 2] = 1.0
 
 # A simple texture quad
-data = np.zeros(4, dtype=[('a_position', np.float32, 2),
-                          ('a_texcoord', np.float32, 2)])
-data['a_position'] = np.array([[-1, -1], [+1, -1], [-1, +1], [+1, +1]])
-data['a_texcoord'] = np.array([[1, 0], [1, 1.2], [0, 0], [0, 1.2]])
+data = np.zeros(4, dtype=[("a_position", np.float32, 2), ("a_texcoord", np.float32, 2)])
+data["a_position"] = np.array([[-1, -1], [+1, -1], [-1, +1], [+1, +1]])
+data["a_texcoord"] = np.array([[1, 0], [1, 1.2], [0, 0], [0, 1.2]])
 
 
 VERT_SHADER = """
@@ -64,16 +63,15 @@ void main()
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, size=(500, 500), keys='interactive')
+        app.Canvas.__init__(self, size=(500, 500), keys="interactive")
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.program['u_tex1'] = gloo.Texture2D(im1, interpolation='linear')
-        self.program['u_tex2'] = gloo.Texture2D(im2, interpolation='linear')
+        self.program["u_tex1"] = gloo.Texture2D(im1, interpolation="linear")
+        self.program["u_tex2"] = gloo.Texture2D(im2, interpolation="linear")
         self.program.bind(gloo.VertexBuffer(data))
 
-        gloo.set_clear_color('white')
+        gloo.set_clear_color("white")
 
         self.show()
 
@@ -83,9 +81,9 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
-        self.program.draw('triangle_strip')
+        self.program.draw("triangle_strip")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

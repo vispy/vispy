@@ -75,17 +75,17 @@ class GridLinesVisual(ImageVisual):
         channel modified.
     """
 
-    def __init__(self, scale=(1, 1), color='w'):
+    def __init__(self, scale=(1, 1), color="w"):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
         self._grid_color_fn = Function(_GRID_COLOR)
-        self._grid_color_fn['color'] = Color(color).rgba
-        self._grid_color_fn['scale'] = scale
-        ImageVisual.__init__(self, method='impostor')
-        self.set_gl_state('additive', cull_face=False)
-        self.shared_program.frag['get_data'] = self._grid_color_fn
-        cfun = Function('vec4 null(vec4 x) { return x; }')
-        self.shared_program.frag['color_transform'] = cfun
+        self._grid_color_fn["color"] = Color(color).rgba
+        self._grid_color_fn["scale"] = scale
+        ImageVisual.__init__(self, method="impostor")
+        self.set_gl_state("additive", cull_face=False)
+        self.shared_program.frag["get_data"] = self._grid_color_fn
+        cfun = Function("vec4 null(vec4 x) { return x; }")
+        self.shared_program.frag["color_transform"] = cfun
 
     @property
     def size(self):
@@ -93,8 +93,8 @@ class GridLinesVisual(ImageVisual):
 
     def _prepare_transforms(self, view):
         fn = self._grid_color_fn
-        fn['map_to_doc'] = self.get_transform('visual', 'document')
-        fn['map_doc_to_local'] = self.get_transform('document', 'visual')
+        fn["map_to_doc"] = self.get_transform("visual", "document")
+        fn["map_doc_to_local"] = self.get_transform("document", "visual")
         ImageVisual._prepare_transforms(self, view)
 
     def _prepare_draw(self, view):

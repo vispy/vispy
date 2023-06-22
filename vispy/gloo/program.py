@@ -40,16 +40,18 @@ from .preprocessor import preprocess
 
 # ------------------------------------------------------------ Constants ---
 REGEX_VAR = {}
-for kind in ('uniform', 'attribute', 'varying', 'const', 'in', 'out'):
-    REGEX_VAR[kind] = re.compile(fr"\s*{kind}\s+"  # kind of variable
-                                 r"((highp|mediump|lowp)\s+)?"  # Precision (optional)
-                                 r"(?P<type>\w+)\s+"  # type
-                                 r"(?P<name>\w+)\s*"  # name
-                                 r"(\[(?P<size>\d+)\])?"  # size (optional)
-                                 r"(\s*\=\s*[0-9.]+)?"  # default value (optional)
-                                 r"\s*;",  # end
-                                 flags=re.MULTILINE)
-    
+for kind in ("uniform", "attribute", "varying", "const", "in", "out"):
+    REGEX_VAR[kind] = re.compile(
+        rf"\s*{kind}\s+"  # kind of variable
+        r"((highp|mediump|lowp)\s+)?"  # Precision (optional)
+        r"(?P<type>\w+)\s+"  # type
+        r"(?P<name>\w+)\s*"  # name
+        r"(\[(?P<size>\d+)\])?"  # size (optional)
+        r"(\s*\=\s*[0-9.]+)?"  # default value (optional)
+        r"\s*;",  # end
+        flags=re.MULTILINE,
+    )
+
 
 # ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
@@ -66,19 +68,19 @@ class Shader(GLObject):
     def code(self, code):
         self._code = preprocess(code)
         # use hardcoded offset of 0 to match other GLIR DATA commands
-        self._glir.command('DATA', self._id, 0, self._code)
+        self._glir.command("DATA", self._id, 0, self._code)
 
 
 class VertexShader(Shader):
-    _GLIR_TYPE = 'VertexShader'
+    _GLIR_TYPE = "VertexShader"
 
 
 class FragmentShader(Shader):
-    _GLIR_TYPE = 'FragmentShader'
+    _GLIR_TYPE = "FragmentShader"
 
 
 class GeometryShader(Shader):
-    _GLIR_TYPE = 'GeometryShader'
+    _GLIR_TYPE = "GeometryShader"
 
 
 # ----------------------------------------------------------- Program class ---
@@ -109,28 +111,28 @@ class Program(GLObject):
     function. OpenGL ES 2.0 does not support a list of shaders.
     """
 
-    _GLIR_TYPE = 'Program'
+    _GLIR_TYPE = "Program"
 
     _gtypes = {  # DTYPE, NUMEL
-        'float': (np.float32, 1),
-        'vec2': (np.float32, 2),
-        'vec3': (np.float32, 3),
-        'vec4': (np.float32, 4),
-        'int': (np.int32, 1),
-        'ivec2': (np.int32, 2),
-        'ivec3': (np.int32, 3),
-        'ivec4': (np.int32, 4),
-        'bool': (np.int32, 1),
-        'bvec2': (bool, 2),
-        'bvec3': (bool, 3),
-        'bvec4': (bool, 4),
-        'mat2': (np.float32, 4),
-        'mat3': (np.float32, 9), 
-        'mat4': (np.float32, 16),
-        'sampler1D': (np.uint32, 1),
-        'sampler2D': (np.uint32, 1),
-        'sampler3D': (np.uint32, 1),
-        'samplerCube': (np.uint32, 1),
+        "float": (np.float32, 1),
+        "vec2": (np.float32, 2),
+        "vec3": (np.float32, 3),
+        "vec4": (np.float32, 4),
+        "int": (np.int32, 1),
+        "ivec2": (np.int32, 2),
+        "ivec3": (np.int32, 3),
+        "ivec4": (np.int32, 4),
+        "bool": (np.int32, 1),
+        "bvec2": (bool, 2),
+        "bvec3": (bool, 3),
+        "bvec4": (bool, 4),
+        "mat2": (np.float32, 4),
+        "mat3": (np.float32, 9),
+        "mat4": (np.float32, 16),
+        "sampler1D": (np.uint32, 1),
+        "sampler2D": (np.uint32, 1),
+        "sampler3D": (np.uint32, 1),
+        "samplerCube": (np.uint32, 1),
     }
 
     # ---------------------------------
@@ -155,7 +157,7 @@ class Program(GLObject):
         if isinstance(vert, str) and isinstance(frag, str):
             self.set_shaders(vert, frag)
         elif not (vert is None and frag is None):
-            raise ValueError('Vert and frag must either both be str or None')
+            raise ValueError("Vert and frag must either both be str or None")
 
         # Build associated structured vertex buffer if count is given.
         # This makes it easy to create a structured vertex buffer
@@ -167,7 +169,7 @@ class Program(GLObject):
         if self._count > 0:
             dtype = []
             for kind, type_, name, size in self._code_variables.values():
-                if kind == 'attribute':
+                if kind == "attribute":
                     dt, numel = self._gtypes[type_]
                     dtype.append((name, dt, numel) if numel != 1 else (name, dt))
             self._buffer = np.zeros(self._count, dtype=dtype)
@@ -189,7 +191,7 @@ class Program(GLObject):
             setting shader code. Default is True.
         """
         if not vert or not frag:
-            raise ValueError('Vertex and fragment code must both be non-empty')
+            raise ValueError("Vertex and fragment code must both be non-empty")
 
         # pre-process shader code for #include directives
         shaders = [VertexShader(vert), FragmentShader(frag)]
@@ -198,14 +200,14 @@ class Program(GLObject):
 
         for shader in shaders:
             self.glir.associate(shader.glir)
-            self._glir.command('ATTACH', self._id, shader.id)
+            self._glir.command("ATTACH", self._id, shader.id)
 
         # Store source code, send it to glir, parse the code for variables
         self._shaders = shaders
 
         # Link all shaders into one program. All shaders are detached after
         # linking is complete.
-        self._glir.command('LINK', self._id)
+        self._glir.command("LINK", self._id)
 
         # Delete shaders. We no longer need them and it frees up precious GPU
         # memory: http://gamedev.stackexchange.com/questions/47910
@@ -244,33 +246,32 @@ class Program(GLObject):
     def _parse_variables_from_code(self, update_variables=True):
         """Parse uniforms, attributes and varyings from the source code."""
         # Get one string of code with comments removed
-        code = '\n\n'.join([sh.code for sh in self._shaders])
-        code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
+        code = "\n\n".join([sh.code for sh in self._shaders])
+        code = re.sub(r"(.*)(//.*)", r"\1", code, re.M)
 
         # Parse uniforms, attributes and varyings
         self._code_variables = {}
-        for kind in ('uniform', 'attribute', 'varying', 'const', 'in', 'out'):
-
+        for kind in ("uniform", "attribute", "varying", "const", "in", "out"):
             # pick regex for the correct kind of var
             reg = REGEX_VAR[kind]
 
             # treat *in* like attribute, *out* like varying
-            if kind == 'in':
-                kind = 'attribute'
-            elif kind == 'out':
-                kind = 'varying'
+            if kind == "in":
+                kind = "attribute"
+            elif kind == "out":
+                kind = "varying"
 
             for m in re.finditer(reg, code):
-                gtype = m.group('type')
-                size = int(m.group('size')) if m.group('size') else -1
+                gtype = m.group("type")
+                size = int(m.group("size")) if m.group("size") else -1
                 this_kind = kind
                 if size >= 1:
                     # uniform arrays get added both as individuals and full
                     for i in range(size):
-                        name = '%s[%d]' % (m.group('name'), i)
+                        name = "%s[%d]" % (m.group("name"), i)
                         self._code_variables[name] = kind, gtype, name, -1
-                    this_kind = 'uniform_array'
-                name = m.group('name')
+                    this_kind = "uniform_array"
+                name = m.group("name")
                 self._code_variables[name] = this_kind, gtype, name, size
 
         # Now that our code variables are up-to date, we can process
@@ -289,7 +290,7 @@ class Program(GLObject):
         """
         # Check
         if not isinstance(data, VertexBuffer):
-            raise ValueError('Program.bind() requires a VertexBuffer.')
+            raise ValueError("Program.bind() requires a VertexBuffer.")
         # Apply
         for name in data.dtype.names:
             self[name] = data[name]
@@ -343,55 +344,57 @@ class Program(GLObject):
         if name in self._code_variables:
             kind, type_, name, size = self._code_variables[name]
 
-            if kind == 'uniform':
-                if type_.startswith('sampler'):
+            if kind == "uniform":
+                if type_.startswith("sampler"):
                     # Texture data; overwrite or update
                     tex = self._user_variables.get(name, None)
                     if isinstance(data, BaseTexture):
                         pass
-                    elif tex and hasattr(tex, 'set_data'):
+                    elif tex and hasattr(tex, "set_data"):
                         tex.set_data(data)
                         return
-                    elif type_ == 'sampler1D':
+                    elif type_ == "sampler1D":
                         data = Texture1D(data)
-                    elif type_ == 'sampler2D':
+                    elif type_ == "sampler2D":
                         data = Texture2D(data)
-                    elif type_ == 'sampler3D':
+                    elif type_ == "sampler3D":
                         data = Texture3D(data)
-                    elif type_ == 'samplerCube':
+                    elif type_ == "samplerCube":
                         data = TextureCube(data)
                     else:
                         # This should not happen
-                        raise RuntimeError('Unknown type %s' % type_)
+                        raise RuntimeError("Unknown type %s" % type_)
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     self.glir.associate(data.glir)
-                    self._glir.command('TEXTURE', self._id, name, data.id)
+                    self._glir.command("TEXTURE", self._id, name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
                     dtype, numel = self._gtypes[type_]
                     data = np.array(data, dtype=dtype).ravel()
                     if data.size != numel:
-                        raise ValueError('Uniform %r needs %i elements, '
-                                         'not %i.' % (name, numel, data.size))
+                        raise ValueError(
+                            "Uniform %r needs %i elements, " "not %i." % (name, numel, data.size)
+                        )
                     # Store and send GLIR command
                     self._user_variables[name] = data
-                    self._glir.command('UNIFORM', self._id, name, type_, data)
+                    self._glir.command("UNIFORM", self._id, name, type_, data)
 
-            elif kind == 'uniform_array':
+            elif kind == "uniform_array":
                 # Normal uniform; convert to np array and check size
                 dtype, numel = self._gtypes[type_]
                 data = np.atleast_2d(data).astype(dtype)
                 need_shape = (size, numel)
                 if data.shape != need_shape:
-                    raise ValueError('Uniform array %r needs shape %s not %s'
-                                     % (name, need_shape, data.shape))
+                    raise ValueError(
+                        "Uniform array %r needs shape %s not %s" % (name, need_shape, data.shape)
+                    )
                 data = data.ravel()
                 # Store and send GLIR command
                 self._user_variables[name] = data
-                self._glir.command('UNIFORM', self._id, name, type_, data)
+                self._glir.command("UNIFORM", self._id, name, type_, data)
 
-            elif kind == 'attribute':
+            elif kind == "attribute":
                 # Is this a constant value per vertex
                 is_constant = False
 
@@ -408,7 +411,7 @@ class Program(GLObject):
                     vbo = self._user_variables.get(name, None)
                     if isinstance(data, DataBuffer):
                         pass
-                    elif vbo is not None and hasattr(vbo, 'set_data'):
+                    elif vbo is not None and hasattr(vbo, "set_data"):
                         vbo.set_data(data)
                         return
                     else:
@@ -417,15 +420,15 @@ class Program(GLObject):
                     if data.dtype is not None:
                         numel = self._gtypes[type_][1]
                         if data._last_dim and data._last_dim != numel:
-                            raise ValueError('data.shape[-1] must be %s '
-                                             'not %s for %s'
-                                             % (numel, data._last_dim, name))
-                    divisor = getattr(data, 'divisor', None)
+                            raise ValueError(
+                                "data.shape[-1] must be %s "
+                                "not %s for %s" % (numel, data._last_dim, name)
+                            )
+                    divisor = getattr(data, "divisor", None)
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
                     self.glir.associate(data.glir)
-                    self._glir.command('ATTRIBUTE', self._id,
-                                       name, type_, value, divisor)
+                    self._glir.command("ATTRIBUTE", self._id, name, type_, value, divisor)
                 else:
                     # Single-value attribute; convert to array and check size
                     dtype, numel = self._gtypes[type_]
@@ -433,16 +436,16 @@ class Program(GLObject):
                     if data.ndim == 0:
                         data.shape = data.size
                     if data.size != numel:
-                        raise ValueError('Attribute %r needs %i elements, '
-                                         'not %i.' % (name, numel, data.size))
-                    divisor = getattr(data, 'divisor', None)
+                        raise ValueError(
+                            "Attribute %r needs %i elements, " "not %i." % (name, numel, data.size)
+                        )
+                    divisor = getattr(data, "divisor", None)
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     value = tuple([0] + [i for i in data])
-                    self._glir.command('ATTRIBUTE', self._id,
-                                       name, type_, value, divisor)
+                    self._glir.command("ATTRIBUTE", self._id, name, type_, value, divisor)
             else:
-                raise KeyError('Cannot set data for a %s.' % kind)
+                raise KeyError("Cannot set data for a %s." % kind)
         else:
             # This variable is not defined in the current source code,
             # so we cannot establish whether this is a uniform or
@@ -461,7 +464,7 @@ class Program(GLObject):
         else:
             raise KeyError("Unknown uniform or attribute %s" % name)
 
-    def draw(self, mode='triangles', indices=None, check_error=True):
+    def draw(self, mode="triangles", indices=None, check_error=True):
         """Draw the attribute arrays in the specified mode.
 
         Parameters
@@ -480,29 +483,38 @@ class Program(GLObject):
 
         # Check if mode is valid
         mode = check_enum(mode)
-        if mode not in ['points', 'lines', 'line_strip', 'line_loop',
-                        'lines_adjacency', 'line_strip_adjacency', 'triangles',
-                        'triangle_strip', 'triangle_fan']:
-            raise ValueError('Invalid draw mode: %r' % mode)
+        if mode not in [
+            "points",
+            "lines",
+            "line_strip",
+            "line_loop",
+            "lines_adjacency",
+            "line_strip_adjacency",
+            "triangles",
+            "triangle_strip",
+            "triangle_fan",
+        ]:
+            raise ValueError("Invalid draw mode: %r" % mode)
 
         # Check leftover variables, warn, discard them
         # In GLIR we check whether all attributes are indeed set
         for name in self._pending_variables:
-            logger.warn('Value provided for %r, but this variable was not '
-                        'found in the shader program.' % name)
+            logger.warn(
+                "Value provided for %r, but this variable was not "
+                "found in the shader program." % name
+            )
         self._pending_variables = {}
 
         # Check attribute sizes
-        attributes = [vbo for vbo in self._user_variables.values()
-                      if isinstance(vbo, DataBuffer)]
+        attributes = [vbo for vbo in self._user_variables.values() if isinstance(vbo, DataBuffer)]
 
-        attrs = [a for a in attributes if getattr(a, 'divisor', None) is None]
+        attrs = [a for a in attributes if getattr(a, "divisor", None) is None]
         if len(attrs) < 1:
-            raise RuntimeError('Must have at least one attribute')
+            raise RuntimeError("Must have at least one attribute")
         sizes = [a.size for a in attrs]
         if not all(s == sizes[0] for s in sizes[1:]):
-            msg = '\n'.join([f'{str(a)}: {a.size}' for a in attrs])
-            raise RuntimeError(f'All attributes must have the same size, got:\n{msg}')
+            msg = "\n".join([f"{str(a)}: {a.size}" for a in attrs])
+            raise RuntimeError(f"All attributes must have the same size, got:\n{msg}")
 
         attrs_with_div = [a for a in attributes if a not in attrs]
         if attrs_with_div:
@@ -510,8 +522,16 @@ class Program(GLObject):
             divs = [a.divisor for a in attrs_with_div]
             instances = sizes[0] * divs[0]
             if not all(s * d == instances for s, d in zip(sizes, divs)):
-                msg = '\n'.join([f'{str(a)}: {a.size} * {a.divisor} = {a.size * a.divisor}' for a in attrs_with_div])
-                raise RuntimeError(f'All attributes with divisors must have the same size as the number of instances, got:\n{msg}')
+                msg = "\n".join(
+                    [
+                        f"{str(a)}: {a.size} * {a.divisor} = {a.size * a.divisor}"
+                        for a in attrs_with_div
+                    ]
+                )
+                raise RuntimeError(
+                    "All attributes with divisors must have the same size as "
+                    f"the number of instances, got:\n{msg}"
+                )
         else:
             instances = 1
 
@@ -526,18 +546,19 @@ class Program(GLObject):
         if isinstance(indices, IndexBuffer):
             canvas.context.glir.associate(indices.glir)
             logger.debug("Program drawing %r with index buffer" % mode)
-            gltypes = {np.dtype(np.uint8): 'UNSIGNED_BYTE',
-                       np.dtype(np.uint16): 'UNSIGNED_SHORT',
-                       np.dtype(np.uint32): 'UNSIGNED_INT'}
+            gltypes = {
+                np.dtype(np.uint8): "UNSIGNED_BYTE",
+                np.dtype(np.uint16): "UNSIGNED_SHORT",
+                np.dtype(np.uint32): "UNSIGNED_INT",
+            }
             selection = indices.id, gltypes[indices.dtype], indices.size
-            canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
+            canvas.context.glir.command("DRAW", self._id, mode, selection, instances)
         elif indices is None:
             selection = 0, attributes[0].size
             logger.debug("Program drawing %r with %r" % (mode, selection))
-            canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
+            canvas.context.glir.command("DRAW", self._id, mode, selection, instances)
         else:
-            raise TypeError("Invalid index: %r (must be IndexBuffer)" %
-                            indices)
+            raise TypeError("Invalid index: %r (must be IndexBuffer)" % indices)
 
         # Process GLIR commands
         canvas.context.flush_commands()

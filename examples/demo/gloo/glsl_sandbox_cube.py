@@ -12,11 +12,24 @@ from vispy.util.transforms import perspective, translate, rotate
 
 try:
     from PyQt5.QtGui import QFont
-    from PyQt5.QtWidgets import (QWidget, QPlainTextEdit, QLabel, QPushButton,
-                                 QHBoxLayout, QVBoxLayout)
+    from PyQt5.QtWidgets import (
+        QWidget,
+        QPlainTextEdit,
+        QLabel,
+        QPushButton,
+        QHBoxLayout,
+        QVBoxLayout,
+    )
 except ImportError:
-    from PyQt4.QtGui import (QWidget, QPlainTextEdit, QFont, QLabel,
-                             QPushButton, QHBoxLayout, QVBoxLayout)
+    from PyQt4.QtGui import (
+        QWidget,
+        QPlainTextEdit,
+        QFont,
+        QLabel,
+        QPushButton,
+        QHBoxLayout,
+        QVBoxLayout,
+    )
 
 VERT_CODE = """
 uniform   mat4 u_model;
@@ -51,25 +64,23 @@ void main()
 
 
 # Read cube data
-positions, faces, normals, texcoords = \
-    read_mesh(load_data_file('orig/cube.obj'))
-colors = np.random.uniform(0, 1, positions.shape).astype('float32')
+positions, faces, normals, texcoords = read_mesh(load_data_file("orig/cube.obj"))
+colors = np.random.uniform(0, 1, positions.shape).astype("float32")
 
 faces_buffer = gloo.IndexBuffer(faces.astype(np.uint16))
 
 
 class Canvas(app.Canvas):
-
     def __init__(self, **kwargs):
         app.Canvas.__init__(self, size=(400, 400), **kwargs)
 
         self.program = gloo.Program(VERT_CODE, FRAG_CODE)
 
         # Set attributes
-        self.program['a_position'] = gloo.VertexBuffer(positions)
-        self.program['a_texcoord'] = gloo.VertexBuffer(texcoords)
+        self.program["a_position"] = gloo.VertexBuffer(positions)
+        self.program["a_texcoord"] = gloo.VertexBuffer(texcoords)
 
-        self.program['u_texture'] = gloo.Texture2D(load_crate())
+        self.program["u_texture"] = gloo.Texture2D(load_crate())
 
         # Handle transformations
         self.init_transforms()
@@ -79,7 +90,7 @@ class Canvas(app.Canvas):
         gloo.set_clear_color((1, 1, 1, 1))
         gloo.set_state(depth_test=True)
 
-        self._timer = app.Timer('auto', connect=self.update_transforms)
+        self._timer = app.Timer("auto", connect=self.update_transforms)
         self._timer.start()
 
         self.show()
@@ -89,7 +100,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear()
-        self.program.draw('triangles', faces_buffer)
+        self.program.draw("triangles", faces_buffer)
 
     def init_transforms(self):
         self.theta = 0
@@ -98,37 +109,33 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
+        self.program["u_model"] = self.model
+        self.program["u_view"] = self.view
 
     def update_transforms(self, event):
-        self.theta += .5
-        self.phi += .5
-        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
-                            rotate(self.phi, (0, 1, 0)))
-        self.program['u_model'] = self.model
+        self.theta += 0.5
+        self.phi += 0.5
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)), rotate(self.phi, (0, 1, 0)))
+        self.program["u_model"] = self.model
         self.update()
 
     def apply_zoom(self):
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
-        self.projection = perspective(45.0, self.size[0] /
-                                      float(self.size[1]), 2.0, 10.0)
-        self.program['u_projection'] = self.projection
+        self.projection = perspective(45.0, self.size[0] / float(self.size[1]), 2.0, 10.0)
+        self.program["u_projection"] = self.projection
 
 
 class TextField(QPlainTextEdit):
-
     def __init__(self, parent):
         QPlainTextEdit.__init__(self, parent)
         # Set font to monospaced (TypeWriter)
-        font = QFont('')
+        font = QFont("")
         font.setStyleHint(font.TypeWriter, font.PreferDefault)
         font.setPointSize(8)
         self.setFont(font)
 
 
 class MainWindow(QWidget):
-
     def __init__(self):
         QWidget.__init__(self, None)
 
@@ -173,7 +180,7 @@ class MainWindow(QWidget):
         # re-set automatically (by gloo)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.create()
     m = MainWindow()
     app.run()

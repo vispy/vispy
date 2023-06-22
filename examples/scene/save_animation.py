@@ -16,33 +16,30 @@ import imageio
 from vispy import scene
 from vispy.visuals.transforms import STTransform
 
-output_filename = 'animation.gif'
+output_filename = "animation.gif"
 n_steps = 18
-step_angle = 10.
+step_angle = 10.0
 axis = [0, 0.707, 0.707]
 
-canvas = scene.SceneCanvas(keys='interactive', bgcolor='white',
-                           size=(800, 600), show=True)
+canvas = scene.SceneCanvas(keys="interactive", bgcolor="white", size=(800, 600), show=True)
 
 view = canvas.central_widget.add_view()
-view.camera = 'arcball'
+view.camera = "arcball"
 
-sphere1 = scene.visuals.Sphere(radius=1, method='latitude', parent=view.scene,
-                               edge_color='black')
+sphere1 = scene.visuals.Sphere(radius=1, method="latitude", parent=view.scene, edge_color="black")
 
-sphere2 = scene.visuals.Sphere(radius=1, method='ico', parent=view.scene,
-                               edge_color='black')
+sphere2 = scene.visuals.Sphere(radius=1, method="ico", parent=view.scene, edge_color="black")
 
-sphere3 = scene.visuals.Sphere(radius=1, rows=10, cols=10, depth=10,
-                               method='cube', parent=view.scene,
-                               edge_color='black')
+sphere3 = scene.visuals.Sphere(
+    radius=1, rows=10, cols=10, depth=10, method="cube", parent=view.scene, edge_color="black"
+)
 
 sphere1.transform = STTransform(translate=[-2.5, 0, 0])
 sphere3.transform = STTransform(translate=[2.5, 0, 0])
 
 view.camera.set_range(x=[-3, 3])
 
-writer = imageio.get_writer('animation.gif')
+writer = imageio.get_writer("animation.gif")
 for i in range(n_steps * 2):
     im = canvas.render(alpha=True)
     writer.append_data(im)

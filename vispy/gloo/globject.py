@@ -30,9 +30,9 @@ Example:
     canvas.context.glir.associate(prog1.glir)
     # and now all objects share a single queue
     canvas.context.glir.associate(prog2.glir)
- 
+
 Now, when the canvas flushes its queue, it takes all the pending commands
-from prog1, prog2, tex1, and tex2. 
+from prog1, prog2, tex1, and tex2.
 """
 
 from .glir import GlirQueue
@@ -46,7 +46,7 @@ class GLObject(object):
     """
 
     # Type of GLIR object, reset in subclasses
-    _GLIR_TYPE = 'DummyGlirType'
+    _GLIR_TYPE = "DummyGlirType"
 
     # Internal id counter to keep track of GPU objects
     _idcount = 0
@@ -57,12 +57,12 @@ class GLObject(object):
         GLObject._idcount += 1
         self._id = GLObject._idcount
 
-        # Create the GLIR queue in which we queue our commands. 
+        # Create the GLIR queue in which we queue our commands.
         # See docs above for details.
         self._glir = GlirQueue()
 
         # Give glir command to create GL representation of this object
-        self._glir.command('CREATE', self._id, self._GLIR_TYPE)
+        self._glir.command("CREATE", self._id, self._GLIR_TYPE)
 
     def __del__(self):
         # You never know when this is goint to happen. The window might
@@ -73,18 +73,19 @@ class GLObject(object):
         self.delete()
 
     def delete(self):
-        """Delete the object from GPU memory. 
+        """Delete the object from GPU memory.
 
         Note that the GPU object will also be deleted when this gloo
-        object is about to be deleted. However, sometimes you want to explicitly delete the GPU object explicitly.
+        object is about to be deleted. However, sometimes you want to
+        explicitly delete the GPU object explicitly.
         """
         # We only allow the object from being deleted once, otherwise
         # we might be deleting another GPU object that got our gl-id
         # after our GPU object was deleted. Also note that e.g.
         # DataBufferView does not have the _glir attribute.
-        if hasattr(self, '_glir'):
+        if hasattr(self, "_glir"):
             # Send our final command into the queue
-            self._glir.command('DELETE', self._id)
+            self._glir.command("DELETE", self._id)
             # Tell main glir queue that this queue is no longer being used
             self._glir._deletable = True
             # Detach the queue
@@ -92,7 +93,10 @@ class GLObject(object):
 
     @property
     def id(self):
-        """The id of this GL object used to reference the GL object in GLIR. id's are unique within a process."""
+        """The id of this GL object used to reference the GL object in GLIR.
+
+        id's are unique within a process.
+        """
         return self._id
 
     @property

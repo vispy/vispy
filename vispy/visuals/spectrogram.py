@@ -40,9 +40,18 @@ class SpectrogramVisual(ImageVisual):
         min and max values.
     """
 
-    def __init__(self, x=None, n_fft=256, step=None, fs=1., window='hann',
-                 normalize=False, color_scale='log', cmap='cubehelix',
-                 clim='auto'):
+    def __init__(
+        self,
+        x=None,
+        n_fft=256,
+        step=None,
+        fs=1.0,
+        window="hann",
+        normalize=False,
+        color_scale="log",
+        cmap="cubehelix",
+        clim="auto",
+    ):
         self._x = np.asarray(x)
         self._n_fft = int(n_fft)
         self._step = step
@@ -51,13 +60,12 @@ class SpectrogramVisual(ImageVisual):
         self._normalize = normalize
         self._color_scale = color_scale
 
-        if clim == 'auto':
+        if clim == "auto":
             self._clim_auto = True
         else:
             self._clim_auto = False
 
-        if not isinstance(self._color_scale, str) or \
-                self._color_scale not in ('log', 'linear'):
+        if not isinstance(self._color_scale, str) or self._color_scale not in ("log", "linear"):
             raise ValueError('color_scale must be "linear" or "log"')
 
         data = self._calculate_spectrogram()
@@ -128,8 +136,7 @@ class SpectrogramVisual(ImageVisual):
 
     @color_scale.setter
     def color_scale(self, color_scale):
-        if not isinstance(color_scale, str) or \
-                color_scale not in ('log', 'linear'):
+        if not isinstance(color_scale, str) or color_scale not in ("log", "linear"):
             raise ValueError('color_scale must be "linear" or "log"')
         self._color_scale = color_scale
         self._update_image()
@@ -152,7 +159,7 @@ class SpectrogramVisual(ImageVisual):
             x[idx] = nan_mean
             data = stft(x, self._n_fft, self._step, self._fs, self._window)
             data = np.abs(data)
-            data = 20 * np.log10(data) if self._color_scale == 'log' else data
+            data = 20 * np.log10(data) if self._color_scale == "log" else data
             if self._normalize:
                 for i in range(data.shape[0]):
                     data[i, :] -= np.mean(data[i, :])
@@ -166,4 +173,4 @@ class SpectrogramVisual(ImageVisual):
         self.set_data(data)
         self.update()
         if self._clim_auto:
-            self.clim = 'auto'
+            self.clim = "auto"

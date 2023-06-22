@@ -3,6 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 available = False
-why_not = 'test backend should be skipped'
+why_not = "test backend should be skipped"
 testable = False
 which = None

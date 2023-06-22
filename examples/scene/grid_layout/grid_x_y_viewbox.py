@@ -22,7 +22,7 @@ import sys
 
 from vispy import scene, app
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys="interactive")
 canvas.size = 600, 600
 canvas.show()
 
@@ -45,5 +45,5 @@ widget_y_axis.width_max = 50
 widget_x_axis.height_min = 50
 widget_x_axis.height_max = 50
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()

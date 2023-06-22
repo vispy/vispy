@@ -32,8 +32,7 @@ class TorusKnot(object):
 
     """
 
-    def __init__(self, p=3, q=2, num_points=100, major_radius=10.,
-                 minor_radius=5.):
+    def __init__(self, p=3, q=2, num_points=100, major_radius=10.0, minor_radius=5.0):
         self._p = p
         self._q = q
         self._num_points = num_points
@@ -43,15 +42,12 @@ class TorusKnot(object):
         self._calculate_vertices()
 
     def _calculate_vertices(self):
-        angles = np.linspace(0, 2*np.pi, self._num_points)
+        angles = np.linspace(0, 2 * np.pi, self._num_points)
 
         num_components = self.num_components
 
-        divisions = (np.max([self._q, self._p]) *
-                     np.min([self._q, self._p]) // self.num_components)
-        starting_angles = np.linspace(
-            0, 2*np.pi, divisions + 1)[
-            :num_components]
+        divisions = np.max([self._q, self._p]) * np.min([self._q, self._p]) // self.num_components
+        starting_angles = np.linspace(0, 2 * np.pi, divisions + 1)[:num_components]
         q = self._q / num_components
         p = self._p / num_components
 
@@ -59,12 +55,10 @@ class TorusKnot(object):
         for starting_angle in starting_angles:
             vertices = np.zeros((self._num_points, 3))
             local_angles = angles + starting_angle
-            radii = (self._minor_radius * np.cos(q * angles) +
-                     self._major_radius)
+            radii = self._minor_radius * np.cos(q * angles) + self._major_radius
             vertices[:, 0] = radii * np.cos(p * local_angles)
             vertices[:, 1] = radii * np.sin(p * local_angles)
-            vertices[:, 2] = (self._minor_radius * -1 *
-                              np.sin(q * angles))
+            vertices[:, 2] = self._minor_radius * -1 * np.sin(q * angles)
             components.append(vertices)
 
         self._components = components

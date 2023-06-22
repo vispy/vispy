@@ -39,13 +39,55 @@ testing modes that use e.g. full dependencies, minimal dependencies, etc.
 See ``.github/workflows/main.yml`` to determine what automatic tests are run.
 """
 
-from ._testing import (SkipTest, requires_application, requires_ipython,  # noqa
-                       requires_img_lib,  # noqa
-                       requires_pyopengl,  # noqa
-                       requires_scipy,  # noqa
-                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
-                       run_tests_if_main, requires_ssl,  # noqa
-                       assert_is, assert_in, assert_not_in, assert_equal,
-                       assert_not_equal, assert_raises, assert_true,  # noqa
-                       raises, requires_numpydoc, IS_TRAVIS_CI, IS_CI)  # noqa
-from ._runners import test  # noqa
+from ._testing import (
+    SkipTest,
+    requires_application,
+    requires_ipython,
+    requires_img_lib,
+    requires_pyopengl,
+    requires_scipy,
+    save_testing_image,
+    TestingCanvas,
+    has_pyopengl,
+    run_tests_if_main,
+    requires_ssl,
+    assert_is,
+    assert_in,
+    assert_not_in,
+    assert_equal,
+    assert_not_equal,
+    assert_raises,
+    assert_true,
+    raises,
+    requires_numpydoc,
+    IS_TRAVIS_CI,
+    IS_CI,
+)
+from ._runners import test
+
+
+__all__ = (
+    "SkipTest",
+    "requires_application",
+    "requires_ipython",
+    "requires_img_lib",
+    "requires_pyopengl",
+    "requires_scipy",
+    "save_testing_image",
+    "TestingCanvas",
+    "has_pyopengl",
+    "run_tests_if_main",
+    "requires_ssl",
+    "assert_is",
+    "assert_in",
+    "assert_not_in",
+    "assert_equal",
+    "assert_not_equal",
+    "assert_raises",
+    "assert_true",
+    "raises",
+    "requires_numpydoc",
+    "IS_TRAVIS_CI",
+    "IS_CI",
+    "test",
+)

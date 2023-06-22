@@ -19,8 +19,7 @@ class Rect(object):
         if len(args) == 1 and isinstance(args[0], Rect):
             self._pos = args[0]._pos[:]
             self._size = args[0]._size[:]
-        elif (len(args) == 1 and isinstance(args[0], (list, tuple)) and
-              len(args[0]) == 4):
+        elif len(args) == 1 and isinstance(args[0], (list, tuple)) and len(args[0]) == 4:
             self._pos = args[0][:2]
             self._size = args[0][2:]
         elif len(args) == 2:
@@ -30,15 +29,15 @@ class Rect(object):
             self._pos = tuple(args[:2])
             self._size = tuple(args[2:])
         elif len(args) != 0:
-            raise TypeError("Rect must be instantiated with 0, 1, 2, or 4 "
-                            "non-keyword arguments.")
+            raise TypeError(
+                "Rect must be instantiated with 0, 1, 2, or 4 " "non-keyword arguments."
+            )
 
-        self._pos = kwargs.get('pos', self._pos)
-        self._size = kwargs.get('size', self._size)
+        self._pos = kwargs.get("pos", self._pos)
+        self._size = kwargs.get("size", self._size)
 
         if len(self._pos) != 2 or len(self._size) != 2:
-            raise ValueError("Rect pos and size arguments must have 2 "
-                             "elements.")
+            raise ValueError("Rect pos and size arguments must have 2 " "elements.")
 
     @property
     def pos(self):
@@ -110,8 +109,7 @@ class Rect(object):
 
     @property
     def center(self):
-        return (self.pos[0] + self.size[0] * 0.5,
-                self.pos[1] + self.size[1] * 0.5)
+        return (self.pos[0] + self.size[0] * 0.5, self.pos[1] + self.size[1] * 0.5)
 
     @center.setter
     def center(self, value):
@@ -132,16 +130,19 @@ class Rect(object):
         rect : instance of Rect
             The padded rectangle.
         """
-        return Rect(pos=(self.pos[0]+padding, self.pos[1]+padding),
-                    size=(self.size[0]-2*padding, self.size[1]-2*padding))
+        return Rect(
+            pos=(self.pos[0] + padding, self.pos[1] + padding),
+            size=(self.size[0] - 2 * padding, self.size[1] - 2 * padding),
+        )
 
     def normalized(self):
         """Return a Rect covering the same area, but with height and width
         guaranteed to be positive.
         """
-        return Rect(pos=(min(self.left, self.right),
-                         min(self.top, self.bottom)),
-                    size=(abs(self.width), abs(self.height)))
+        return Rect(
+            pos=(min(self.left, self.right), min(self.top, self.bottom)),
+            size=(abs(self.width), abs(self.height)),
+        )
 
     def flipped(self, x=False, y=True):
         """Return a Rect with the same bounds but with axes inverted
@@ -169,8 +170,7 @@ class Rect(object):
     def __eq__(self, r):
         if not isinstance(r, Rect):
             return False
-        return (np.all(np.equal(r.pos, self.pos)) and
-                np.all(np.equal(r.size, self.size)))
+        return np.all(np.equal(r.pos, self.pos)) and np.all(np.equal(r.size, self.size))
 
     def __add__(self, a):
         """Return this Rect translated by *a*."""
@@ -191,8 +191,7 @@ class Rect(object):
         contains : bool
             True if the point is within the rectangle.
         """
-        return (x >= self.left and x <= self.right and
-                y >= self.bottom and y <= self.top)
+        return x >= self.left and x <= self.right and y >= self.bottom and y <= self.top
 
     def __repr__(self):
         return "<Rect (%g, %g) (%g, %g)>" % (self.pos + self.size)
@@ -201,10 +200,8 @@ class Rect(object):
         """Return array of coordinates that can be mapped by Transform
         classes.
         """
-        return np.array([
-            [self.left, self.bottom, 0, 1],
-            [self.right, self.top, 0, 1]])
+        return np.array([[self.left, self.bottom, 0, 1], [self.right, self.top, 0, 1]])
 
     def _transform_out(self, coords):
         """Return a new Rect from coordinates mapped after _transform_in()."""
-        return Rect(pos=coords[0, :2], size=coords[1, :2]-coords[0, :2])
+        return Rect(pos=coords[0, :2], size=coords[1, :2] - coords[0, :2])

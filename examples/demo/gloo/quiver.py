@@ -50,16 +50,16 @@ void main()
 """
 
 
-canvas = app.Canvas(size=(2*512, 2*512), keys='interactive')
-canvas.context.set_state(blend=True, 
-                         blend_func=('src_alpha', 'one_minus_src_alpha'),
-                         blend_equation='func_add')
+canvas = app.Canvas(size=(2 * 512, 2 * 512), keys="interactive")
+canvas.context.set_state(
+    blend=True, blend_func=("src_alpha", "one_minus_src_alpha"), blend_equation="func_add"
+)
 
 
 @canvas.connect
 def on_draw(event):
-    gloo.clear('white')
-    program.draw('triangle_strip')
+    gloo.clear("white")
+    program.draw("triangle_strip")
 
 
 @canvas.connect
@@ -77,10 +77,10 @@ def on_mouse_move(event):
 
 program = gloo.Program(vertex, fragment, count=4)
 dx, dy = 1, 1
-program['position'] = (-dx, -dy), (-dx, +dy), (+dx, -dy), (+dx, +dy)
+program["position"] = (-dx, -dy), (-dx, +dy), (+dx, -dy), (+dx, +dy)
 program["iResolution"] = (2 * 512, 2 * 512)
-program["iMouse"] = (0., 0.)
+program["iMouse"] = (0.0, 0.0)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas.show()
     app.run()

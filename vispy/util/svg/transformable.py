@@ -3,8 +3,8 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
-from . element import Element
-from . transform import Transform
+from .element import Element
+from .transform import Transform
 
 
 class Transformable(Element):
@@ -20,8 +20,7 @@ class Transformable(Element):
             self._transform = Transform(content.get("transform", None))
             self._computed_transform = self._transform
             if parent:
-                self._computed_transform = self._transform + \
-                    self.parent.transform
+                self._computed_transform = self._transform + self.parent.transform
 
     @property
     def transform(self):

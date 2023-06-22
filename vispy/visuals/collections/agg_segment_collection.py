@@ -12,7 +12,7 @@ of the output is worth the cost.
 """
 import numpy as np
 from ... import glsl
-from . collection import Collection
+from .collection import Collection
 from ..transforms import NullTransform
 
 
@@ -25,8 +25,7 @@ class AggSegmentCollection(Collection):
     quality of the output is worth the cost.
     """
 
-    def __init__(self, user_dtype=None, transform=None,
-                 vertex=None, fragment=None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None, vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -57,30 +56,38 @@ class AggSegmentCollection(Collection):
         antialias : string
             'local', 'shared' or 'global'
         """
-        base_dtype = [('P0', (np.float32, 3), '!local', (0, 0, 0)),
-                      ('P1', (np.float32, 3), '!local', (0, 0, 0)),
-                      ('index', (np.float32, 1), '!local', 0),
-                      ('color', (np.float32, 4), 'shared', (0, 0, 0, 1)),
-                      ('linewidth', (np.float32, 1), 'shared', 1),
-                      ('antialias', (np.float32, 1), 'shared', 1),
-                      ('viewport', (np.float32, 4), 'global', (0, 0, 512, 512))]  # noqa
+        base_dtype = [
+            ("P0", (np.float32, 3), "!local", (0, 0, 0)),
+            ("P1", (np.float32, 3), "!local", (0, 0, 0)),
+            ("index", (np.float32, 1), "!local", 0),
+            ("color", (np.float32, 4), "shared", (0, 0, 0, 1)),
+            ("linewidth", (np.float32, 1), "shared", 1),
+            ("antialias", (np.float32, 1), "shared", 1),
+            ("viewport", (np.float32, 4), "global", (0, 0, 512, 512)),
+        ]  # noqa
 
         dtype = base_dtype
         if user_dtype:
             dtype.extend(user_dtype)
 
         if vertex is None:
-            vertex = glsl.get('collections/agg-segment.vert')
+            vertex = glsl.get("collections/agg-segment.vert")
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
-            fragment = glsl.get('collections/agg-segment.frag')
+            fragment = glsl.get("collections/agg-segment.frag")
 
-        Collection.__init__(self, dtype=dtype, itype=np.uint32,
-                            mode="triangles",
-                            vertex=vertex, fragment=fragment, **kwargs)
-        self._programs[0].vert['transform'] = self.transform
+        Collection.__init__(
+            self,
+            dtype=dtype,
+            itype=np.uint32,
+            mode="triangles",
+            vertex=vertex,
+            fragment=fragment,
+            **kwargs,
+        )
+        self._programs[0].vert["transform"] = self.transform
 
     def append(self, P0, P1, itemsize=None, **kwargs):
         """
@@ -116,13 +123,13 @@ class AggSegmentCollection(Collection):
 
         # Apply default values on vertices
         for name in self.vtype.names:
-            if name not in ['collection_index', 'P0', 'P1', 'index']:
+            if name not in ["collection_index", "P0", "P1", "index"]:
                 V[name] = kwargs.get(name, self._defaults[name])
 
-        V['P0'] = P0
-        V['P1'] = P1
+        V["P0"] = P0
+        V["P1"] = P1
         V = V.repeat(4, axis=0)
-        V['index'] = np.resize([0, 1, 2, 3], 4 * itemcount * itemsize)
+        V["index"] = np.resize([0, 1, 2, 3], 4 * itemcount * itemsize)
 
         idxs = np.ones((itemcount, 6), dtype=int)
         idxs[:] = 0, 1, 2, 0, 2, 3
@@ -138,5 +145,4 @@ class AggSegmentCollection(Collection):
         else:
             U = None
 
-        Collection.append(
-            self, vertices=V, uniforms=U, indices=idxs, itemsize=4 * itemcount)
+        Collection.append(self, vertices=V, uniforms=U, indices=idxs, itemsize=4 * itemcount)

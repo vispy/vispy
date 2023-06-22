@@ -89,19 +89,19 @@ void main()
 
     float size = $v_size + 4.*(edgewidth + 1.5*v_antialias);
     // factor 6 for acute edge angles that need room as for star marker
-    
+
     vec2 wind = v_wind;
-    
+
     if (v_trig > 0.)
     {
         float u = wind.x * cos(radians(wind.y));
         float v = wind.x * sin(radians(wind.y));
         wind = vec2(u, v);
     }
-    
+
     // knots to m/s
     wind *= 2.;
-    
+
     // normalized distance
     float dx = 0.5;
     // normalized center point
@@ -184,28 +184,37 @@ class WindbarbVisual(Visual):
     """Visual displaying windbarbs."""
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
     def __init__(self, **kwargs):
         self._vbo = VertexBuffer()
-        self._v_size_var = Variable('varying float v_size')
+        self._v_size_var = Variable("varying float v_size")
         self._marker_fun = None
         self._data = None
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
-        self.shared_program.vert['v_size'] = self._v_size_var
-        self.shared_program.frag['v_size'] = self._v_size_var
-        self.set_gl_state(depth_test=True, blend=True,
-                          blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._draw_mode = 'points'
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
+        self.shared_program.vert["v_size"] = self._v_size_var
+        self.shared_program.frag["v_size"] = self._v_size_var
+        self.set_gl_state(
+            depth_test=True, blend=True, blend_func=("src_alpha", "one_minus_src_alpha")
+        )
+        self._draw_mode = "points"
         if len(kwargs) > 0:
             self.set_data(**kwargs)
         self.freeze()
 
-    def set_data(self, pos=None, wind=None, trig=True, size=50.,
-                 antialias=1., edge_width=1., edge_color='black',
-                 face_color='white'):
+    def set_data(
+        self,
+        pos=None,
+        wind=None,
+        trig=True,
+        size=50.0,
+        antialias=1.0,
+        edge_width=1.0,
+        edge_color="black",
+        face_color="white",
+    ):
         """Set the data used to display this visual.
 
         Parameters
@@ -230,12 +239,10 @@ class WindbarbVisual(Visual):
         face_color : Color | ColorArray
             The color used to draw each symbol interior.
         """
-        assert (isinstance(pos, np.ndarray) and
-                pos.ndim == 2 and pos.shape[1] in (2, 3))
-        assert (isinstance(wind, np.ndarray) and
-                pos.ndim == 2 and pos.shape[1] == 2)
+        assert isinstance(pos, np.ndarray) and pos.ndim == 2 and pos.shape[1] in (2, 3)
+        assert isinstance(wind, np.ndarray) and pos.ndim == 2 and pos.shape[1] == 2
         if edge_width < 0:
-            raise ValueError('edge_width cannot be negative')
+            raise ValueError("edge_width cannot be negative")
 
         # since the windbarb starts in the fragment center,
         # we need to multiply by 2 for correct length
@@ -250,24 +257,29 @@ class WindbarbVisual(Visual):
             face_color = face_color[0]
 
         n = len(pos)
-        data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                                  ('a_wind', np.float32, 2),
-                                  ('a_trig', np.float32, 0),
-                                  ('a_fg_color', np.float32, 4),
-                                  ('a_bg_color', np.float32, 4),
-                                  ('a_size', np.float32),
-                                  ('a_edgewidth', np.float32)])
-        data['a_fg_color'] = edge_color
-        data['a_bg_color'] = face_color
-        data['a_edgewidth'] = edge_width
-        data['a_position'][:, :pos.shape[1]] = pos
-        data['a_wind'][:, :wind.shape[1]] = wind
+        data = np.zeros(
+            n,
+            dtype=[
+                ("a_position", np.float32, 3),
+                ("a_wind", np.float32, 2),
+                ("a_trig", np.float32, 0),
+                ("a_fg_color", np.float32, 4),
+                ("a_bg_color", np.float32, 4),
+                ("a_size", np.float32),
+                ("a_edgewidth", np.float32),
+            ],
+        )
+        data["a_fg_color"] = edge_color
+        data["a_bg_color"] = face_color
+        data["a_edgewidth"] = edge_width
+        data["a_position"][:, : pos.shape[1]] = pos
+        data["a_wind"][:, : wind.shape[1]] = wind
         if trig:
-            data['a_trig'] = 1.
+            data["a_trig"] = 1.0
         else:
-            data['a_trig'] = 0.
-        data['a_size'] = size
-        self.shared_program['u_antialias'] = antialias
+            data["a_trig"] = 0.0
+        data["a_size"] = size
+        self.shared_program["u_antialias"] = antialias
         self._data = data
         self._vbo.set_data(data)
         self.shared_program.bind(self._vbo)
@@ -275,14 +287,14 @@ class WindbarbVisual(Visual):
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
-        view.view_program.vert['transform'] = xform
+        view.view_program.vert["transform"] = xform
 
     def _prepare_draw(self, view):
-        view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        view.view_program['u_scale'] = 1
+        view.view_program["u_px_scale"] = view.transforms.pixel_scale
+        view.view_program["u_scale"] = 1
 
     def _compute_bounds(self, axis, view):
-        pos = self._data['a_position']
+        pos = self._data["a_position"]
         if pos is None:
             return None
         if pos.shape[1] > axis:

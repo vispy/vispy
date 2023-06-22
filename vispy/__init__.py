@@ -16,7 +16,7 @@ For more information, see http://vispy.org.
 
 from __future__ import division
 
-__all__ = ['use', 'sys_info', 'set_log_level', 'test']
+__all__ = ["use", "sys_info", "set_log_level", "test"]
 
 try:
     from .version import version as __version__  # noqa
@@ -30,4 +30,5 @@ from .util.wrappers import use, test  # noqa
 
 def _get_sg_image_scraper():
     from .util.gallery_scraper import VisPyGalleryScraper
+
     return VisPyGalleryScraper()

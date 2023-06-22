@@ -39,12 +39,12 @@ from vispy.color import get_colormaps, BaseColormap
 from vispy.visuals.transforms import STTransform
 
 # Read volume
-vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
-vol2 = np.load(io.load_data_file('brain/mri.npz'))['data']
+vol1 = np.load(io.load_data_file("volume/stent.npz"))["arr_0"]
+vol2 = np.load(io.load_data_file("brain/mri.npz"))["data"]
 vol2 = np.flipud(np.rollaxis(vol2, 1))
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
+canvas = scene.SceneCanvas(keys="interactive", size=(800, 600), show=True)
 canvas.measure_fps()
 
 # Set up a viewbox to display the image with interactive pan/zoom
@@ -57,11 +57,10 @@ volume2 = scene.visuals.Volume(vol2, parent=view.scene, threshold=0.2)
 volume2.visible = False
 
 # Create three cameras (Fly, Turntable and Arcball)
-fov = 60.
-cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name='Fly')
-cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov,
-                                     name='Turntable')
-cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov, name='Arcball')
+fov = 60.0
+cam1 = scene.cameras.FlyCamera(parent=view.scene, fov=fov, name="Fly")
+cam2 = scene.cameras.TurntableCamera(parent=view.scene, fov=fov, name="Turntable")
+cam3 = scene.cameras.ArcballCamera(parent=view.scene, fov=fov, name="Arcball")
 view.camera = cam2  # Select turntable at first
 
 # Create an XYZAxis visual
@@ -87,6 +86,7 @@ class TransGrays(BaseColormap):
     }
     """
 
+
 # Setup colormap iterators
 opaque_cmaps = cycle(get_colormaps())
 translucent_cmaps = cycle([TransFire(), TransGrays()])
@@ -108,7 +108,7 @@ def on_mouse_move(event):
         axis.transform.rotate(cam2.azimuth, (0, 1, 0))
 
         axis.transform.scale((50, 50, 0.001))
-        axis.transform.translate((50., 50.))
+        axis.transform.translate((50.0, 50.0))
         axis.update()
 
 
@@ -116,53 +116,54 @@ def on_mouse_move(event):
 @canvas.events.key_press.connect
 def on_key_press(event):
     global opaque_cmap, translucent_cmap
-    if event.text == '1':
+    if event.text == "1":
         cam_toggle = {cam1: cam2, cam2: cam3, cam3: cam1}
         view.camera = cam_toggle.get(view.camera, cam2)
-        print(view.camera.name + ' camera')
+        print(view.camera.name + " camera")
         if view.camera is cam2:
             axis.visible = True
         else:
             axis.visible = False
-    elif event.text == '2':
-        methods = ['mip', 'translucent', 'iso', 'additive']
+    elif event.text == "2":
+        methods = ["mip", "translucent", "iso", "additive"]
         method = methods[(methods.index(volume1.method) + 1) % 4]
         print("Volume render method: %s" % method)
-        cmap = opaque_cmap if method in ['mip', 'iso'] else translucent_cmap
+        cmap = opaque_cmap if method in ["mip", "iso"] else translucent_cmap
         volume1.method = method
         volume1.cmap = cmap
         volume2.method = method
         volume2.cmap = cmap
-    elif event.text == '3':
+    elif event.text == "3":
         volume1.visible = not volume1.visible
         volume2.visible = not volume1.visible
-    elif event.text == '4':
-        if volume1.method in ['mip', 'iso']:
+    elif event.text == "4":
+        if volume1.method in ["mip", "iso"]:
             cmap = opaque_cmap = next(opaque_cmaps)
         else:
             cmap = translucent_cmap = next(translucent_cmaps)
         volume1.cmap = cmap
         volume2.cmap = cmap
-    elif event.text == '5':
+    elif event.text == "5":
         interp = next(interp_methods)
         volume1.interpolation = interp
         volume2.interpolation = interp
         print(f"Interpolation method: {interp}")
-    elif event.text == '0':
+    elif event.text == "0":
         cam1.set_range()
         cam3.set_range()
-    elif event.text != '' and event.text in '[]':
-        s = -0.025 if event.text == '[' else 0.025
+    elif event.text != "" and event.text in "[]":
+        s = -0.025 if event.text == "[" else 0.025
         volume1.threshold += s
         volume2.threshold += s
         th = volume1.threshold if volume1.visible else volume2.threshold
         print("Isosurface threshold: %0.3f" % th)
+
 
 # for testing performance
 # @canvas.connect
 # def on_draw(ev):
 # canvas.update()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(__doc__)
     app.run()

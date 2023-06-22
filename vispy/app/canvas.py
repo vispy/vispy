@@ -13,7 +13,7 @@ from ..util.ptime import time
 from ..util.dpi import get_dpi
 from ..util import config as util_config, logger
 from . import Application, use_app
-from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
+from ..gloo.context import GLContext, set_current_canvas, forget_canvas
 from ..gloo import FrameBuffer, RenderBuffer
 
 
@@ -112,18 +112,34 @@ class Canvas(object):
     argument.
     """
 
-    def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
-                 show=False, autoswap=True, app=None, create_native=True,
-                 vsync=False, resizable=True, decorate=True, fullscreen=False,
-                 config=None, shared=None, keys=None, parent=None, dpi=None,
-                 always_on_top=False, px_scale=1, backend_kwargs=None):
-
+    def __init__(
+        self,
+        title="VisPy canvas",
+        size=(800, 600),
+        position=None,
+        show=False,
+        autoswap=True,
+        app=None,
+        create_native=True,
+        vsync=False,
+        resizable=True,
+        decorate=True,
+        fullscreen=False,
+        config=None,
+        shared=None,
+        keys=None,
+        parent=None,
+        dpi=None,
+        always_on_top=False,
+        px_scale=1,
+        backend_kwargs=None,
+    ):
         size = tuple(int(s) * px_scale for s in size)
         if len(size) != 2:
-            raise ValueError('size must be a 2-element list')
+            raise ValueError("size must be a 2-element list")
         title = str(title)
         if not isinstance(fullscreen, (bool, int)):
-            raise TypeError('fullscreen must be bool or int')
+            raise TypeError("fullscreen must be bool or int")
 
         # Initialize some values
         self._autoswap = autoswap
@@ -134,37 +150,42 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
-        self._fps_window = 0.
+        self._fps_window = 0.0
         self._px_scale = int(px_scale)
 
         if dpi is None:
-            dpi = util_config['dpi']
+            dpi = util_config["dpi"]
         if dpi is None:
             dpi = get_dpi(raise_error=False)
         self.dpi = dpi
 
         # Create events
-        self.events = EmitterGroup(source=self,
-                                   initialize=Event,
-                                   resize=ResizeEvent,
-                                   draw=DrawEvent,
-                                   mouse_press=MouseEvent,
-                                   mouse_release=MouseEvent,
-                                   mouse_double_click=MouseEvent,
-                                   mouse_move=MouseEvent,
-                                   mouse_wheel=MouseEvent,
-                                   key_press=KeyEvent,
-                                   key_release=KeyEvent,
-                                   stylus=Event,
-                                   touch=Event,
-                                   close=Event)
+        self.events = EmitterGroup(
+            source=self,
+            initialize=Event,
+            resize=ResizeEvent,
+            draw=DrawEvent,
+            mouse_press=MouseEvent,
+            mouse_release=MouseEvent,
+            mouse_double_click=MouseEvent,
+            mouse_move=MouseEvent,
+            mouse_wheel=MouseEvent,
+            key_press=KeyEvent,
+            key_release=KeyEvent,
+            stylus=Event,
+            touch=Event,
+            close=Event,
+        )
 
         # Deprecated paint emitter
-        emitter = WarningEmitter('Canvas.events.paint and Canvas.on_paint are '
-                                 'deprecated; use Canvas.events.draw and '
-                                 'Canvas.on_draw instead.',
-                                 source=self, type='draw',
-                                 event_class=DrawEvent)
+        emitter = WarningEmitter(
+            "Canvas.events.paint and Canvas.on_paint are "
+            "deprecated; use Canvas.events.draw and "
+            "Canvas.on_draw instead.",
+            source=self,
+            type="draw",
+            event_class=DrawEvent,
+        )
         self.events.add(paint=emitter)
         self.events.draw.connect(self.events.paint)
 
@@ -176,7 +197,7 @@ class Canvas(object):
         elif isinstance(app, str):
             self._app = Application(app)
         else:
-            raise ValueError('Invalid value for app %r' % app)
+            raise ValueError("Invalid value for app %r" % app)
 
         # Check shared and context
         if shared is None:
@@ -186,10 +207,10 @@ class Canvas(object):
         elif isinstance(shared, GLContext):
             shared = shared.shared
         else:
-            raise TypeError('shared must be a Canvas, not %s' % type(shared))
+            raise TypeError("shared must be a Canvas, not %s" % type(shared))
         config = config or {}
         if not isinstance(config, dict):
-            raise TypeError('config must be a dict, not %s' % type(config))
+            raise TypeError("config must be a dict, not %s" % type(config))
 
         # Create new context
         self._context = GLContext(config, shared)
@@ -199,10 +220,18 @@ class Canvas(object):
 
         # store arguments that get set on Canvas init
         self._backend_kwargs = dict(
-            title=title, size=size, position=position, show=show,
-            vsync=vsync, resizable=resizable, decorate=decorate,
-            fullscreen=fullscreen, context=self._context,
-            parent=parent, always_on_top=always_on_top)
+            title=title,
+            size=size,
+            position=position,
+            show=show,
+            vsync=vsync,
+            resizable=resizable,
+            decorate=decorate,
+            fullscreen=fullscreen,
+            context=self._context,
+            parent=parent,
+            always_on_top=always_on_top,
+        )
         if backend_kwargs is not None:
             self._backend_kwargs.update(**backend_kwargs)
 
@@ -213,7 +242,7 @@ class Canvas(object):
             # Now we're ready to become current
             self.set_current()
 
-        if '--vispy-fps' in sys.argv:
+        if "--vispy-fps" in sys.argv:
             self.measure_fps()
 
     def create_native(self):
@@ -231,25 +260,24 @@ class Canvas(object):
 
         # Connect to draw event (append to the end)
         # Process GLIR commands at each paint event
-        self.events.draw.connect(self.context.flush_commands, position='last')
+        self.events.draw.connect(self.context.flush_commands, position="last")
         if self._autoswap:
-            self.events.draw.connect((self, 'swap_buffers'),
-                                     ref=True, position='last')
+            self.events.draw.connect((self, "swap_buffers"), ref=True, position="last")
 
     def _set_keys(self, keys):
         if keys is not None:
             if isinstance(keys, str):
-                if keys != 'interactive':
-                    raise ValueError('keys, if string, must be "interactive", '
-                                     'not %s' % (keys,))
+                if keys != "interactive":
+                    raise ValueError('keys, if string, must be "interactive", ' "not %s" % (keys,))
 
                 def toggle_fs():
                     self.fullscreen = not self.fullscreen
-                keys = dict(escape='close', F11=toggle_fs)
+
+                keys = dict(escape="close", F11=toggle_fs)
         else:
             keys = {}
         if not isinstance(keys, dict):
-            raise TypeError('keys must be a dict, str, or None')
+            raise TypeError("keys must be a dict, str, or None")
         if len(keys) > 0:
             lower_keys = {}
             # ensure all are callable
@@ -257,11 +285,10 @@ class Canvas(object):
                 if isinstance(val, str):
                     new_val = getattr(self, val, None)
                     if new_val is None:
-                        raise ValueError('value %s is not an attribute of '
-                                         'Canvas' % val)
+                        raise ValueError("value %s is not an attribute of " "Canvas" % val)
                     val = new_val
-                if not hasattr(val, '__call__'):
-                    raise TypeError('Entry for key %s is not callable' % key)
+                if not hasattr(val, "__call__"):
+                    raise TypeError("Entry for key %s is not callable" % key)
                 # convert to lower-case representation
                 lower_keys[key.lower()] = val
             self._keys_check = lower_keys
@@ -271,6 +298,7 @@ class Canvas(object):
                     use_name = event.key.name.lower()
                     if use_name in self._keys_check:
                         self._keys_check[use_name]()
+
             self.events.key_press.connect(keys_check, ref=True)
 
     @property
@@ -318,17 +346,16 @@ class Canvas(object):
         """
         # Get and check name
         name = fun.__name__
-        if not name.startswith('on_'):
-            raise ValueError('When connecting a function based on its name, '
-                             'the name should start with "on_"')
+        if not name.startswith("on_"):
+            raise ValueError(
+                "When connecting a function based on its name, " 'the name should start with "on_"'
+            )
         eventname = name[3:]
         # Get emitter
         try:
             emitter = self.events[eventname]
         except KeyError:
-            raise ValueError(
-                'Event "%s" not available on this canvas.' %
-                eventname)
+            raise ValueError('Event "%s" not available on this canvas.' % eventname)
         # Connect
         emitter.connect(fun)
 
@@ -343,8 +370,7 @@ class Canvas(object):
 
     @size.setter
     def size(self, size):
-        return self._backend._vispy_set_size(size[0] * self._px_scale,
-                                             size[1] * self._px_scale)
+        return self._backend._vispy_set_size(size[0] * self._px_scale, size[1] * self._px_scale)
 
     @property
     def physical_size(self):
@@ -458,7 +484,7 @@ class Canvas(object):
         behavior), consider making the widget a sub-widget.
         """
         if self._backend is not None and not self._closed:
-            logger.debug('Closing canvas %s' % (self,))
+            logger.debug("Closing canvas %s" % (self,))
             self._closed = True
             self.events.close()
             self._backend._vispy_close()
@@ -468,13 +494,13 @@ class Canvas(object):
         """Update the fps after every window"""
         self._frame_count += 1
         diff = time() - self._basetime
-        if (diff > self._fps_window):
+        if diff > self._fps_window:
             self._fps = self._frame_count / diff
             self._basetime = time()
             self._frame_count = 0
             self._fps_callback(self.fps)
 
-    def measure_fps(self, window=1, callback='%1.1f FPS'):
+    def measure_fps(self, window=1, callback="%1.1f FPS"):
         """Measure the current FPS
 
         Sets the update window, connects the draw event to update_fps
@@ -507,13 +533,10 @@ class Canvas(object):
 
     # ---------------------------------------------------------------- misc ---
     def __repr__(self):
-        return ('<%s (%s) at %s>'
-                % (self.__class__.__name__,
-                   self.app.backend_name, hex(id(self))))
+        return "<%s (%s) at %s>" % (self.__class__.__name__, self.app.backend_name, hex(id(self)))
 
     def _repr_mimebundle_(self, *args, **kwargs):
-        """If the backend implements _repr_mimebundle_, we proxy it here.
-        """
+        """If the backend implements _repr_mimebundle_, we proxy it here."""
         # See https://ipython.readthedocs.io/en/stable/config/integrating.html
         f = getattr(self._backend, "_repr_mimebundle_", None)
         if f is not None:
@@ -523,8 +546,7 @@ class Canvas(object):
             raise NotImplementedError()
 
     def _ipython_display_(self):
-        """If the backend implements _ipython_display_, we proxy it here.
-        """
+        """If the backend implements _ipython_display_, we proxy it here."""
         # See https://ipython.readthedocs.io/en/stable/config/integrating.html
         f = getattr(self._backend, "_ipython_display_", None)
         if f is not None:
@@ -534,20 +556,20 @@ class Canvas(object):
             raise NotImplementedError()
 
     def __enter__(self):
-        logger.debug('Context manager enter starting for %s' % (self,))
+        logger.debug("Context manager enter starting for %s" % (self,))
         self.show()
         self._backend._vispy_warmup()
         return self
 
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
-        logger.debug('Context manager exit starting for %s' % (self,))
+        logger.debug("Context manager exit starting for %s" % (self,))
         if not self._closed:
             self._backend._vispy_set_current()
             self.context.finish()
             self.close()
         sleep(0.1)  # ensure window is really closed/destroyed
-        logger.debug('Context manager exit complete for %s' % (self,))
+        logger.debug("Context manager exit complete for %s" % (self,))
 
     def render(self, alpha=True):
         """Render the canvas to an offscreen buffer and return the image array.
@@ -571,8 +593,7 @@ class Canvas(object):
         """
         self.set_current()
         size = self.physical_size
-        fbo = FrameBuffer(color=RenderBuffer(size[::-1]),
-                          depth=RenderBuffer(size[::-1]))
+        fbo = FrameBuffer(color=RenderBuffer(size[::-1]), depth=RenderBuffer(size[::-1]))
 
         try:
             fbo.activate()
@@ -626,14 +647,23 @@ class MouseEvent(Event):
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, pos=None, button=None, buttons=None,
-                 modifiers=None, delta=None, last_event=None, press_event=None,
-                 **kwargs):
+    def __init__(
+        self,
+        type,
+        pos=None,
+        button=None,
+        buttons=None,
+        modifiers=None,
+        delta=None,
+        last_event=None,
+        press_event=None,
+        **kwargs,
+    ):
         Event.__init__(self, type, **kwargs)
         self._pos = np.array([0, 0]) if (pos is None) else np.array(pos)
         self._button = int(button) if (button is not None) else None
         # Explicitly add button to buttons if newly pressed, check #2344 for more reference
-        newly_pressed_buttons = [button] if button is not None and type == 'mouse_press' else []
+        newly_pressed_buttons = [button] if button is not None and type == "mouse_press" else []
         self._buttons = [] if (buttons is None) else buttons + newly_pressed_buttons
         self._modifiers = tuple(modifiers or ())
         self._delta = np.zeros(2) if (delta is None) else np.array(delta)
@@ -694,7 +724,7 @@ class MouseEvent(Event):
         events = []
         while True:
             # mouse_press events can only be the start of a trail
-            if event is None or event.type == 'mouse_press':
+            if event is None or event.type == "mouse_press":
                 break
             events.append(event)
             event = event.last_event
@@ -741,7 +771,7 @@ class KeyEvent(Event):
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, key=None, text='', modifiers=None, **kwargs):
+    def __init__(self, type, key=None, text="", modifiers=None, **kwargs):
         Event.__init__(self, type, **kwargs)
         self._key = key
         self._text = text

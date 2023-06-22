@@ -31,14 +31,14 @@ void main() {
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys="interactive")
 
         ps = self.pixel_scale
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         data = np.random.uniform(-0.5, 0.5, size=(20, 2))
-        self.program['a_position'] = data.astype(np.float32)
-        self.program['u_size'] = 20.*ps
+        self.program["a_position"] = data.astype(np.float32)
+        self.program["u_size"] = 20.0 * ps
 
         self.show()
 
@@ -47,11 +47,11 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-        gloo.clear('white')
-        self.program.draw('points')
+        gloo.clear("white")
+        self.program.draw("points")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     if sys.flags.interactive != 1:
         app.run()

@@ -40,26 +40,28 @@ class TextureFilter(Filter):
 
     def __init__(self, texture, texcoords, enabled=True):
         """Apply a texture on a mesh."""
-        vfunc = Function("""
+        vfunc = Function(
+            """
             void pass_coords() {
                 $v_texcoords = $texcoords;
             }
-        """)
-        ffunc = Function("""
+        """
+        )
+        ffunc = Function(
+            """
             void apply_texture() {
                 if ($enabled == 1) {
                     gl_FragColor *= texture2D($u_texture, $texcoords);
                 }
             }
-        """)
-        self._texcoord_varying = Varying('v_texcoord', 'vec2')
-        vfunc['v_texcoords'] = self._texcoord_varying
-        ffunc['texcoords'] = self._texcoord_varying
-        self._texcoords_buffer = VertexBuffer(
-            np.zeros((0, 2), dtype=np.float32)
+        """
         )
-        vfunc['texcoords'] = self._texcoords_buffer
-        super().__init__(vcode=vfunc, vhook='pre', fcode=ffunc)
+        self._texcoord_varying = Varying("v_texcoord", "vec2")
+        vfunc["v_texcoords"] = self._texcoord_varying
+        ffunc["texcoords"] = self._texcoord_varying
+        self._texcoords_buffer = VertexBuffer(np.zeros((0, 2), dtype=np.float32))
+        vfunc["texcoords"] = self._texcoords_buffer
+        super().__init__(vcode=vfunc, vhook="pre", fcode=ffunc)
 
         self.enabled = enabled
         self.texture = texture
@@ -73,7 +75,7 @@ class TextureFilter(Filter):
     @enabled.setter
     def enabled(self, enabled):
         self._enabled = enabled
-        self.fshader['enabled'] = 1 if enabled else 0
+        self.fshader["enabled"] = 1 if enabled else 0
 
     @property
     def texture(self):
@@ -83,7 +85,7 @@ class TextureFilter(Filter):
     @texture.setter
     def texture(self, texture):
         self._texture = texture
-        self.fshader['u_texture'] = Texture2D(texture)
+        self.fshader["u_texture"] = Texture2D(texture)
 
     @property
     def texcoords(self):
@@ -388,21 +390,25 @@ class ShadingFilter(Filter):
     <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
     example script.
     """
+
     _shaders = {
-        'vertex': shading_vertex_template,
-        'fragment': shading_fragment_template,
+        "vertex": shading_vertex_template,
+        "fragment": shading_fragment_template,
     }
 
-    def __init__(self, shading='flat',
-                 ambient_coefficient=(1, 1, 1, 1),
-                 diffuse_coefficient=(1, 1, 1, 1),
-                 specular_coefficient=(1, 1, 1, 1),
-                 shininess=100,
-                 light_dir=(10, 5, -5),
-                 ambient_light=(1, 1, 1, .25),
-                 diffuse_light=(1, 1, 1, 0.7),
-                 specular_light=(1, 1, 1, .25),
-                 enabled=True):
+    def __init__(
+        self,
+        shading="flat",
+        ambient_coefficient=(1, 1, 1, 1),
+        diffuse_coefficient=(1, 1, 1, 1),
+        specular_coefficient=(1, 1, 1, 1),
+        shininess=100,
+        light_dir=(10, 5, -5),
+        ambient_light=(1, 1, 1, 0.25),
+        diffuse_light=(1, 1, 1, 0.7),
+        specular_light=(1, 1, 1, 0.25),
+        enabled=True,
+    ):
         self._shading = shading
 
         self._ambient_coefficient = _as_rgba(ambient_coefficient)
@@ -417,11 +423,11 @@ class ShadingFilter(Filter):
 
         self._enabled = enabled
 
-        vfunc = Function(self._shaders['vertex'])
-        ffunc = Function(self._shaders['fragment'])
+        vfunc = Function(self._shaders["vertex"])
+        ffunc = Function(self._shaders["fragment"])
 
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        vfunc['normal'] = self._normals
+        vfunc["normal"] = self._normals
 
         super().__init__(vcode=vfunc, fcode=ffunc)
 
@@ -442,7 +448,7 @@ class ShadingFilter(Filter):
 
     @shading.setter
     def shading(self, shading):
-        assert shading in (None, 'flat', 'smooth')
+        assert shading in (None, "flat", "smooth")
         self._shading = shading
         self._update_data()
 
@@ -455,7 +461,7 @@ class ShadingFilter(Filter):
     def light_dir(self, direction):
         direction = np.array(direction, float).ravel()
         if direction.size != 3 or not np.isfinite(direction).all():
-            raise ValueError('Invalid direction %s' % direction)
+            raise ValueError("Invalid direction %s" % direction)
         self._light_dir = tuple(direction)
         self._update_data()
 
@@ -533,23 +539,21 @@ class ShadingFilter(Filter):
         if not self._attached:
             return
 
-        self.vshader['light_dir'] = self._light_dir
+        self.vshader["light_dir"] = self._light_dir
 
-        self.fshader['ambient_light'] = self._ambient_light.rgba
-        self.fshader['diffuse_light'] = self._diffuse_light.rgba
-        self.fshader['specular_light'] = self._specular_light.rgba
+        self.fshader["ambient_light"] = self._ambient_light.rgba
+        self.fshader["diffuse_light"] = self._diffuse_light.rgba
+        self.fshader["specular_light"] = self._specular_light.rgba
 
-        self.fshader['ambient_coefficient'] = self._ambient_coefficient.rgba
-        self.fshader['diffuse_coefficient'] = self._diffuse_coefficient.rgba
-        self.fshader['specular_coefficient'] = self._specular_coefficient.rgba
-        self.fshader['shininess'] = self._shininess
+        self.fshader["ambient_coefficient"] = self._ambient_coefficient.rgba
+        self.fshader["diffuse_coefficient"] = self._diffuse_coefficient.rgba
+        self.fshader["specular_coefficient"] = self._specular_coefficient.rgba
+        self.fshader["shininess"] = self._shininess
 
-        self.fshader['flat_shading'] = 1 if self._shading == 'flat' else 0
-        self.fshader['shading_enabled'] = (
-            1 if self._enabled and self._shading is not None else 0
-        )
+        self.fshader["flat_shading"] = 1 if self._shading == "flat" else 0
+        self.fshader["shading_enabled"] = 1 if self._enabled and self._shading is not None else 0
 
-        normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
+        normals = self._visual.mesh_data.get_vertex_normals(indexed="faces")
         self._normals.set_data(normals, convert=True)
 
     def on_mesh_data_updated(self, event):
@@ -558,14 +562,14 @@ class ShadingFilter(Filter):
     def _attach(self, visual):
         super()._attach(visual)
 
-        render2scene = visual.transforms.get_transform('render', 'scene')
-        visual2scene = visual.transforms.get_transform('visual', 'scene')
-        scene2doc = visual.transforms.get_transform('scene', 'document')
-        doc2scene = visual.transforms.get_transform('document', 'scene')
-        self.vshader['render2scene'] = render2scene
-        self.vshader['visual2scene'] = visual2scene
-        self.vshader['scene2doc'] = scene2doc
-        self.vshader['doc2scene'] = doc2scene
+        render2scene = visual.transforms.get_transform("render", "scene")
+        visual2scene = visual.transforms.get_transform("visual", "scene")
+        scene2doc = visual.transforms.get_transform("scene", "document")
+        doc2scene = visual.transforms.get_transform("document", "scene")
+        self.vshader["render2scene"] = render2scene
+        self.vshader["visual2scene"] = visual2scene
+        self.vshader["scene2doc"] = scene2doc
+        self.vshader["doc2scene"] = doc2scene
 
         if self._visual.mesh_data is not None:
             self._update_data()
@@ -578,8 +582,7 @@ class ShadingFilter(Filter):
 
 
 instanced_shading_vertex_template = shading_vertex_template.replace(
-    "$normal",
-    "mat3($instance_transform_x, $instance_transform_y, $instance_transform_z) * $normal"
+    "$normal", "mat3($instance_transform_x, $instance_transform_y, $instance_transform_z) * $normal"
 )
 
 
@@ -588,16 +591,17 @@ class InstancedShadingFilter(ShadingFilter):
 
     See :class:`ShadingFilter` for details and usage.
     """
+
     _shaders = {
-        'vertex': instanced_shading_vertex_template,
-        'fragment': ShadingFilter._shaders['fragment'],
+        "vertex": instanced_shading_vertex_template,
+        "fragment": ShadingFilter._shaders["fragment"],
     }
 
     def _attach(self, visual):
         super()._attach(visual)
-        self.vshader['instance_transform_x'] = visual._instance_transforms_vbos[0]
-        self.vshader['instance_transform_y'] = visual._instance_transforms_vbos[1]
-        self.vshader['instance_transform_z'] = visual._instance_transforms_vbos[2]
+        self.vshader["instance_transform_x"] = visual._instance_transforms_vbos[0]
+        self.vshader["instance_transform_y"] = visual._instance_transforms_vbos[1]
+        self.vshader["instance_transform_z"] = visual._instance_transforms_vbos[2]
 
 
 wireframe_vertex_template = """
@@ -668,8 +672,9 @@ class WireframeFilter(Filter):
 
     """
 
-    def __init__(self, enabled=True, color='black', width=1.0,
-                 wireframe_only=False, faces_only=False):
+    def __init__(
+        self, enabled=True, color="black", width=1.0, wireframe_only=False, faces_only=False
+    ):
         self._attached = False
         self._color = Color(color)
         self._width = width
@@ -681,7 +686,7 @@ class WireframeFilter(Filter):
         ffunc = Function(wireframe_fragment_template)
 
         self._bc = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        vfunc['bc'] = self._bc
+        vfunc["bc"] = self._bc
 
         super().__init__(vcode=vfunc, fcode=ffunc)
         self.enabled = enabled
@@ -694,7 +699,7 @@ class WireframeFilter(Filter):
     @enabled.setter
     def enabled(self, enabled):
         self._enabled = enabled
-        self.fshader['enabled'] = 1 if enabled else 0
+        self.fshader["enabled"] = 1 if enabled else 0
         self._update_data()
 
     @property
@@ -745,15 +750,15 @@ class WireframeFilter(Filter):
     def _update_data(self):
         if not self.attached:
             return
-        self.fshader['color'] = self._color.rgba
-        self.fshader['width'] = self._width
-        self.fshader['wireframe_only'] = 1 if self._wireframe_only else 0
-        self.fshader['faces_only'] = 1 if self._faces_only else 0
+        self.fshader["color"] = self._color.rgba
+        self.fshader["width"] = self._width
+        self.fshader["wireframe_only"] = 1 if self._wireframe_only else 0
+        self.fshader["faces_only"] = 1 if self._faces_only else 0
         if self._visual.mesh_data.is_empty():
             n_faces = 0
         else:
             n_faces = len(self._visual.mesh_data.get_faces())
-        bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
+        bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype="float")
         bc = np.tile(bc[None, ...], (n_faces, 1, 1))
         self._bc.set_data(bc, convert=True)
 

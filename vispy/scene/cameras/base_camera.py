@@ -6,8 +6,7 @@ from __future__ import division
 
 from ...util import keys
 from ..node import Node
-from ...visuals.transforms import (STTransform, MatrixTransform,
-                                   NullTransform, TransformCache)
+from ...visuals.transforms import STTransform, MatrixTransform, NullTransform, TransformCache
 
 
 def nested_getattr(obj, names):
@@ -52,8 +51,7 @@ class BaseCamera(Node):
     # The fractional zoom to apply for a single pixel of mouse motion
     zoom_factor = 0.007
 
-    def __init__(self, interactive=True, flip=None, up='+z', parent=None,
-                 name=None):
+    def __init__(self, interactive=True, flip=None, up="+z", parent=None, name=None):
         super(BaseCamera, self).__init__(parent, name)
 
         # The viewbox for which this camera is active
@@ -116,7 +114,7 @@ class BaseCamera(Node):
     def depth_value(self, value):
         value = float(value)
         if value <= 0:
-            raise ValueError('depth value must be positive')
+            raise ValueError("depth value must be positive")
         self._depth_value = value
         self.view_changed()
 
@@ -175,14 +173,14 @@ class BaseCamera(Node):
     @flip.setter
     def flip(self, value):
         if not isinstance(value, (list, tuple)):
-            raise ValueError('Flip must be a tuple or list.')
+            raise ValueError("Flip must be a tuple or list.")
         if len(value) == 2:
             self._flip = bool(value[0]), bool(value[1]), False
         elif len(value) == 3:
             self._flip = bool(value[0]), bool(value[1]), bool(value[2])
         else:
-            raise ValueError('Flip must have 2 or 3 elements.')
-        self._flip_factors = tuple([(1-x*2) for x in self._flip])
+            raise ValueError("Flip must have 2 or 3 elements.")
+        self._flip_factors = tuple([(1 - x * 2) for x in self._flip])
         self.view_changed()
 
     @property
@@ -193,9 +191,9 @@ class BaseCamera(Node):
     @up.setter
     def up(self, value):
         value = value.lower()
-        value = ('+' + value) if value in 'zyx' else value
-        if value not in ('+z', '-z', '+y', '-y', '+x', '-x'):
-            raise ValueError('Invalid value for up.')
+        value = ("+" + value) if value in "zyx" else value
+        if value not in ("+z", "-z", "+y", "-y", "+x", "-x"):
+            raise ValueError("Invalid value for up.")
         self._up = value
         self.view_changed()
 
@@ -215,7 +213,7 @@ class BaseCamera(Node):
         elif len(val) == 3:
             self._center = float(val[0]), float(val[1]), float(val[2])
         else:
-            raise ValueError('Center must be a 2 or 3 element tuple')
+            raise ValueError("Center must be a 2 or 3 element tuple")
         self.view_changed()
 
     @property
@@ -288,9 +286,9 @@ class BaseCamera(Node):
 
         # Calculate ranges and margins
         ranges = [b[1] - b[0] for b in bounds]
-        margins = [(r*margin or 0.1) for r in ranges]
+        margins = [(r * margin or 0.1) for r in ranges]
         # Assign limits for this camera
-        bounds_margins = [(b[0]-m, b[1]+m) for b, m in zip(bounds, margins)]
+        bounds_margins = [(b[0] - m, b[1] + m) for b, m in zip(bounds, margins)]
         self._xlim, self._ylim, self._zlim = bounds_margins
         # Store center location
         if (not init) or (self._center is None):
@@ -381,7 +379,7 @@ class BaseCamera(Node):
             if isinstance(key, tuple):
                 continue
             if key not in self._state_props:
-                raise KeyError('Not a valid camera state property %r' % key)
+                raise KeyError("Not a valid camera state property %r" % key)
             setattr(self, key, val)
 
     def link(self, camera, props=None, axis=None):
@@ -470,7 +468,7 @@ class BaseCamera(Node):
         event : instance of Event
             The event.
         """
-        # Connect key events from canvas to camera. 
+        # Connect key events from canvas to camera.
         # TODO: canvas should keep track of a single node with keyboard focus.
         if event.old is not None:
             event.old.events.key_press.disconnect(self.viewbox_key_event)
@@ -518,7 +516,7 @@ class BaseCamera(Node):
             self._scene_transform = self._transform_cache.get([pre_tr, tr])
 
         # Mark the transform dynamic so that it will not be collapsed with
-        # others 
+        # others
         self._scene_transform.dynamic = True
 
         # Update scene

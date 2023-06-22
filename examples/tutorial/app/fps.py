@@ -16,17 +16,17 @@ from vispy import app
 
 
 class Canvas(app.Canvas):
-
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
         self.show()
 
     def on_draw(self, event):
-        c = 0.5 + math.sin(math.pi * time.time()) / 2.
+        c = 0.5 + math.sin(math.pi * time.time()) / 2.0
         self.context.clear([c] * 3)
         self.update()
 
-if __name__ == '__main__':
-    canvas = Canvas(keys='interactive', vsync=False)
+
+if __name__ == "__main__":
+    canvas = Canvas(keys="interactive", vsync=False)
     canvas.measure_fps()
     app.run()

@@ -8,7 +8,7 @@ from vispy.testing import run_tests_if_main
 
 
 def test_turntable_camera_link():
-    vbs = [ViewBox(camera='turntable') for _ in range(3)]
+    vbs = [ViewBox(camera="turntable") for _ in range(3)]
     cams = [vb.camera for vb in vbs]
 
     for cam in cams:
@@ -17,7 +17,7 @@ def test_turntable_camera_link():
         cam.scale_factor = 4.0
 
     cams[0].link(cams[1])
-    cams[0].link(cams[2], props=['azimuth', 'elevation'])
+    cams[0].link(cams[2], props=["azimuth", "elevation"])
 
     cams[1].elevation = 30.0
     cams[1].azimuth = 90.0
@@ -33,15 +33,15 @@ def test_turntable_camera_link():
 
 
 def test_panzoom_link():
-    vbs = [ViewBox(camera='panzoom') for _ in range(4)]
+    vbs = [ViewBox(camera="panzoom") for _ in range(4)]
     cams = [vb.camera for vb in vbs]
 
     for cam in cams:
         cam.rect = (0, 0, 100, 100)
 
     cams[0].link(cams[1])
-    cams[0].link(cams[2], axis='x')
-    cams[0].link(cams[3], axis='y')
+    cams[0].link(cams[2], axis="x")
+    cams[0].link(cams[3], axis="y")
 
     cams[1].rect = (-20, -20, 130, 130)
 

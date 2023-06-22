@@ -22,15 +22,15 @@ import sys
 
 from vispy import app, scene, io
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys="interactive")
 canvas.size = 800, 600
 canvas.show()
 
 # Create four ViewBoxes
-vb1 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
-vb2 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
-vb3 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
-vb4 = scene.widgets.ViewBox(border_color='white', parent=canvas.scene)
+vb1 = scene.widgets.ViewBox(border_color="white", parent=canvas.scene)
+vb2 = scene.widgets.ViewBox(border_color="white", parent=canvas.scene)
+vb3 = scene.widgets.ViewBox(border_color="white", parent=canvas.scene)
+vb4 = scene.widgets.ViewBox(border_color="white", parent=canvas.scene)
 scenes = vb1.scene, vb2.scene, vb3.scene, vb4.scene
 
 # Put viewboxes in a grid
@@ -42,7 +42,7 @@ grid.add_widget(vb3, 1, 0)
 grid.add_widget(vb4, 1, 1)
 
 # Create some visuals to show
-im1 = io.load_crate().astype('float32') / 255
+im1 = io.load_crate().astype("float32") / 255
 for par in scenes:
     image = scene.visuals.Image(im1, grid=(20, 20), parent=par)
 
@@ -52,6 +52,6 @@ vb2.camera = scene.PanZoomCamera()
 vb3.camera = scene.TurntableCamera()
 vb4.camera = scene.FlyCamera()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if sys.flags.interactive != 1:
         app.run()

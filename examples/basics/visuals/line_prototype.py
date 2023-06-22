@@ -19,7 +19,7 @@ from vispy.scene.visuals import create_visual_node
 class LineVisual(visuals.Visual):
     """Example of a very simple GL-line visual.
 
-    This shows the minimal set of methods that need to be reimplemented to 
+    This shows the minimal set of methods that need to be reimplemented to
     make a new visual class.
 
     """
@@ -27,9 +27,9 @@ class LineVisual(visuals.Visual):
     def __init__(self, pos=None, color=(1, 1, 1, 1)):
         vcode = """
         attribute vec2 a_pos;
-        
+
         void main() {
-            gl_Position = $transform(vec4(a_pos, 0., 1.)); 
+            gl_Position = $transform(vec4(a_pos, 0., 1.));
             gl_PointSize = 10.;
         }
         """
@@ -50,17 +50,17 @@ class LineVisual(visuals.Visual):
         # manages multiple ModularProgram instances, one per view.
 
         # The MultiProgram is accessed via the `shared_program` property, so
-        # the following modifications to the program will be applied to all 
+        # the following modifications to the program will be applied to all
         # views:
-        self.shared_program['a_pos'] = self.pos_buf
-        self.shared_program.frag['color'] = color
+        self.shared_program["a_pos"] = self.pos_buf
+        self.shared_program.frag["color"] = color
 
         self._need_upload = False
 
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
-        self._draw_mode = 'line_strip'
-        self.set_gl_state('translucent', depth_test=False)
+        self._draw_mode = "line_strip"
+        self.set_gl_state("translucent", depth_test=False)
 
         if pos is not None:
             self.set_data(pos)
@@ -70,7 +70,7 @@ class LineVisual(visuals.Visual):
         self._need_upload = True
 
     def _prepare_transforms(self, view=None):
-        view.view_program.vert['transform'] = view.transforms.get_transform()
+        view.view_program.vert["transform"] = view.transforms.get_transform()
 
     def _prepare_draw(self, view=None):
         """This method is called immediately before each draw.
@@ -86,7 +86,7 @@ class LineVisual(visuals.Visual):
 
 
 class PointVisual(LineVisual):
-    """Another simple visual class. 
+    """Another simple visual class.
 
     Due to the simplicity of these example classes, it was only necessary to
     subclass from LineVisual and set the draw mode to 'points'. A more
@@ -95,7 +95,7 @@ class PointVisual(LineVisual):
 
     def __init__(self, pos=None, color=(1, 1, 1, 1)):
         LineVisual.__init__(self, pos, color)
-        self._draw_mode = 'points'
+        self._draw_mode = "points"
 
 
 class PlotLineVisual(visuals.CompoundVisual):
@@ -107,8 +107,7 @@ class PlotLineVisual(visuals.CompoundVisual):
     to its sub-visuals.
     """
 
-    def __init__(self, pos=None, line_color=(1, 1, 1, 1),
-                 point_color=(1, 1, 1, 1)):
+    def __init__(self, pos=None, line_color=(1, 1, 1, 1), point_color=(1, 1, 1, 1)):
         self._line = LineVisual(pos, color=line_color)
         self._point = PointVisual(pos, color=point_color)
         visuals.CompoundVisual.__init__(self, [self._line, self._point])
@@ -121,7 +120,7 @@ class PointCollectionVisual(visuals.Visual):
     """
 
     def __init__(self):
-        prog = MultiProgram(vcode='', fcode='')
+        prog = MultiProgram(vcode="", fcode="")
         self.points = PointCollection("agg", color="shared", program=prog)
         visuals.Visual.__init__(self, program=prog)
 
@@ -139,11 +138,11 @@ class PointCollectionVisual(visuals.Visual):
 
     @property
     def color(self):
-        return self.points['color']
+        return self.points["color"]
 
     @color.setter
     def color(self, c):
-        self.points['color'] = c
+        self.points["color"] = c
 
 
 class PanZoomTransform(STTransform):
@@ -153,7 +152,7 @@ class PanZoomTransform(STTransform):
         STTransform.__init__(self, **kwargs)
 
     def attach(self, canvas):
-        """ Attach this tranform to a canvas """
+        """Attach this tranform to a canvas"""
         self._canvas = canvas
         canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
         canvas.events.mouse_move.connect(self.on_mouse_move)
@@ -177,9 +176,8 @@ class PanZoomTransform(STTransform):
         self.zoom(np.exp(event.delta * (0.01, -0.01)), event.pos)
 
 
-canvas = app.Canvas(keys='interactive', size=(900, 600), show=True, 
-                    title="Visual Canvas")
-pos = np.random.normal(size=(1000, 2), loc=0, scale=50).astype('float32')
+canvas = app.Canvas(keys="interactive", size=(900, 600), show=True, title="Visual Canvas")
+pos = np.random.normal(size=(1000, 2), loc=0, scale=50).astype("float32")
 pos[0] = [0, 0]
 
 # Make a line visual
@@ -194,9 +192,9 @@ panzoom.changed.connect(lambda ev: canvas.update())
 line.attach(ColorFilter((1, 1, 0.5, 0.7)))
 
 # Attach a clipper just to this view. The Clipper filter requires a
-# transform that maps from the framebuffer coordinate system to the 
+# transform that maps from the framebuffer coordinate system to the
 # clipping coordinates.
-tr = line.transforms.get_transform('framebuffer', 'canvas')
+tr = line.transforms.get_transform("framebuffer", "canvas")
 line.attach(Clipper((20, 20, 260, 260), transform=tr), view=line)
 
 # Make a view of the line that will draw its shadow
@@ -205,28 +203,28 @@ shadow.transforms.canvas = canvas
 shadow.transform = STTransform(scale=(2, 1), translate=(25, 25))
 shadow.transforms.scene_transform = panzoom
 shadow.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow)
-tr = shadow.transforms.get_transform('framebuffer', 'canvas')
+tr = shadow.transforms.get_transform("framebuffer", "canvas")
 shadow.attach(Clipper((20, 20, 260, 260), transform=tr), view=shadow)
 
 # And make a second view of the line with different clipping bounds
 view = line.view()
 view.transforms.canvas = canvas
 view.transform = STTransform(scale=(2, 0.5), translate=(450, 150))
-tr = view.transforms.get_transform('framebuffer', 'canvas')
+tr = view.transforms.get_transform("framebuffer", "canvas")
 view.attach(Clipper((320, 20, 260, 260), transform=tr), view=view)
 
 # Make a compound visual
 plot = PlotLineVisual(pos, (0.5, 1, 0.5, 0.2), (0.5, 1, 1, 0.3))
 plot.transforms.canvas = canvas
 plot.transform = STTransform(translate=(80, 450), scale=(1.5, 1))
-tr = plot.transforms.get_transform('framebuffer', 'canvas')
+tr = plot.transforms.get_transform("framebuffer", "canvas")
 plot.attach(Clipper((20, 320, 260, 260), transform=tr), view=plot)
 
-# And make a view on the compound 
+# And make a view on the compound
 view2 = plot.view()
 view2.transforms.canvas = canvas
 view2.transform = STTransform(scale=(1.5, 1), translate=(450, 400))
-tr = view2.transforms.get_transform('framebuffer', 'canvas')
+tr = view2.transforms.get_transform("framebuffer", "canvas")
 view2.attach(Clipper((320, 320, 260, 260), transform=tr), view=view2)
 
 # And a shadow for the view
@@ -234,15 +232,14 @@ shadow2 = plot.view()
 shadow2.transforms.canvas = canvas
 shadow2.transform = STTransform(scale=(1.5, 1), translate=(455, 405))
 shadow2.attach(ColorFilter((0, 0, 0, 0.6)), view=shadow2)
-tr = shadow2.transforms.get_transform('framebuffer', 'canvas')
+tr = shadow2.transforms.get_transform("framebuffer", "canvas")
 shadow2.attach(Clipper((320, 320, 260, 260), transform=tr), view=shadow2)
 
 # Example of a collection visual
 collection = PointCollectionVisual()
 collection.transforms.canvas = canvas
 collection.transform = STTransform(translate=(750, 150))
-collection.append(np.random.normal(loc=0, scale=20, size=(10000, 3)), 
-                  itemsize=5000)
+collection.append(np.random.normal(loc=0, scale=20, size=(10000, 3)), itemsize=5000)
 collection.color = (1, 0.5, 0.5, 1), (0.5, 0.5, 1, 1)
 
 shadow3 = collection.view()
@@ -268,23 +265,26 @@ def on_resize(event):
     canvas.context.set_viewport(*vp)
     for v in order:
         v.transforms.configure(canvas=canvas, viewport=vp)
+
+
 canvas.events.resize.connect(on_resize)
 on_resize(None)
 
 Line = create_visual_node(LineVisual)
-canvas2 = SceneCanvas(keys='interactive', title='Scene Canvas', show=True)
+canvas2 = SceneCanvas(keys="interactive", title="Scene Canvas", show=True)
 v = canvas2.central_widget.add_view(margin=10)
 v.border_color = (1, 1, 1, 1)
 v.bgcolor = (0.3, 0.3, 0.3, 1)
-v.camera = 'panzoom'
+v.camera = "panzoom"
 line2 = Line(pos, parent=v.scene)
 
 
 def mouse(ev):
     print(ev)
 
+
 v.events.mouse_press.connect(mouse)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if sys.flags.interactive != 1:
         app.run()

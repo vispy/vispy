@@ -9,7 +9,7 @@ import sys
 
 from vispy import app, gloo
 
-canvas = app.Canvas(keys='interactive')
+canvas = app.Canvas(keys="interactive")
 
 
 @canvas.connect
@@ -20,5 +20,5 @@ def on_draw(event):
 
 canvas.show()
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()

@@ -20,8 +20,17 @@ from vispy import app
 
 from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
-                        FrameBuffer, RenderBuffer, set_viewport, set_state)
+from vispy.gloo import (
+    Program,
+    VertexBuffer,
+    IndexBuffer,
+    Texture2D,
+    clear,
+    FrameBuffer,
+    RenderBuffer,
+    set_viewport,
+    set_state,
+)
 
 
 cube_vertex = """
@@ -86,10 +95,10 @@ def checkerboard(grid_num=8, grid_size=32):
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, title='Framebuffer post-processing',
-                            keys='interactive', size=(512, 512))
+        app.Canvas.__init__(
+            self, title="Framebuffer post-processing", keys="interactive", size=(512, 512)
+        )
 
         # Build cube data
         # --------------------------------------
@@ -106,22 +115,22 @@ class Canvas(app.Canvas):
         self.cube = Program(cube_vertex, cube_fragment)
         self.cube.bind(vertices)
         self.cube["texture"] = checkerboard()
-        self.cube["texture"].interpolation = 'linear'
-        self.cube['model'] = model
-        self.cube['view'] = view
+        self.cube["texture"].interpolation = "linear"
+        self.cube["model"] = model
+        self.cube["view"] = view
 
-        color = Texture2D((512, 512, 3), interpolation='linear')
+        color = Texture2D((512, 512, 3), interpolation="linear")
         self.framebuffer = FrameBuffer(color, RenderBuffer((512, 512)))
 
         self.quad = Program(quad_vertex, quad_fragment, count=4)
-        self.quad['texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-        self.quad['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-        self.quad['texture'] = color
+        self.quad["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        self.quad["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.quad["texture"] = color
 
         # OpenGL and Timer initalization
         # --------------------------------------
-        set_state(clear_color=(.3, .3, .35, 1), depth_test=True)
-        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+        set_state(clear_color=(0.3, 0.3, 0.35, 1), depth_test=True)
+        self.timer = app.Timer("auto", connect=self.on_timer, start=True)
         self._set_projection(self.physical_size)
 
         self.show()
@@ -131,11 +140,11 @@ class Canvas(app.Canvas):
             set_viewport(0, 0, 512, 512)
             clear(color=True, depth=True)
             set_state(depth_test=True)
-            self.cube.draw('triangles', self.indices)
+            self.cube.draw("triangles", self.indices)
         set_viewport(0, 0, *self.physical_size)
         clear(color=True)
         set_state(depth_test=False)
-        self.quad.draw('triangle_strip')
+        self.quad.draw("triangle_strip")
 
     def on_resize(self, event):
         self._set_projection(event.physical_size)
@@ -144,16 +153,16 @@ class Canvas(app.Canvas):
         width, height = size
         set_viewport(0, 0, width, height)
         projection = perspective(30.0, width / float(height), 2.0, 10.0)
-        self.cube['projection'] = projection
+        self.cube["projection"] = projection
 
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
+        self.theta += 0.5
+        self.phi += 0.5
         model = rotate(self.theta, (0, 0, 1)).dot(rotate(self.phi, (0, 1, 0)))
-        self.cube['model'] = model
+        self.cube["model"] = model
         self.update()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

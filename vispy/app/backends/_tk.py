@@ -9,8 +9,7 @@ from __future__ import division
 from time import sleep
 import warnings
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 from ...util.ptime import time
 from ...gloo import gl
@@ -21,15 +20,20 @@ from ...gloo import gl
 try:
     import sys
 
-    _tk_on_linux, _tk_on_darwin, _tk_on_windows = \
-        map(sys.platform.startswith, ("linux", "darwin", "win"))
+    _tk_on_linux, _tk_on_darwin, _tk_on_windows = map(
+        sys.platform.startswith, ("linux", "darwin", "win")
+    )
     _tk_pyopengltk_imported = False
 
     import tkinter as tk
     import pyopengltk
 except (ModuleNotFoundError, ImportError):
-    available, testable, why_not, which = \
-        False, False, "Could not import Tkinter or pyopengltk, module(s) not found.", None
+    available, testable, why_not, which = (
+        False,
+        False,
+        "Could not import Tkinter or pyopengltk, module(s) not found.",
+        None,
+    )
 else:
     which_pyopengltk = getattr(pyopengltk, "__version__", "???")
     which = f"Tkinter {tk.TkVersion} (with pyopengltk {which_pyopengltk})"
@@ -39,8 +43,11 @@ else:
         available, testable, why_not = True, True, None
     else:
         # pyopengltk does not provide an implementation for this platform
-        available, testable, why_not = \
-            False, False, f"pyopengltk {which_pyopengltk} is not supported on this platform ({sys.platform})!"
+        available, testable, why_not = (
+            False,
+            False,
+            f"pyopengltk {which_pyopengltk} is not supported on this platform ({sys.platform})!",
+        )
 
 if _tk_pyopengltk_imported:
     # Put OpenGLFrame class in global namespace
@@ -49,6 +56,7 @@ else:
     # Create empty placeholder class
     class OpenGLFrame(object):
         pass
+
 
 # Map native keys to vispy keys
 # e.keysym_num -> vispy
@@ -61,26 +69,21 @@ KEYMAP = {
     65514: keys.ALT,
     65371: keys.META,
     65372: keys.META,
-
     65361: keys.LEFT,
     65362: keys.UP,
     65363: keys.RIGHT,
     65364: keys.DOWN,
     65365: keys.PAGEUP,
     65366: keys.PAGEDOWN,
-
     65379: keys.INSERT,
     65535: keys.DELETE,
     65360: keys.HOME,
     65367: keys.END,
-
     65307: keys.ESCAPE,
     65288: keys.BACKSPACE,
-
     32: keys.SPACE,
     65293: keys.ENTER,
     65289: keys.TAB,
-
     65470: keys.F1,
     65471: keys.F2,
     65472: keys.F3,
@@ -107,7 +110,7 @@ KEY_STATE_MAP = {
     # 0x0100: ?,  # Mouse button 1.
     # 0x0200: ?,  # Mouse button 2.
     # 0x0400: ?,  # Mouse button 3.
-    0x20000: keys.ALT  # LEFT_ALT ?
+    0x20000: keys.ALT,  # LEFT_ALT ?
 }
 
 # e.num -> vispy
@@ -115,7 +118,6 @@ MOUSE_BUTTON_MAP = {
     1: 1,  # Mouse Left   == 1 -> Mouse Left
     2: 3,  # Mouse Middle == 2 -> Mouse Middle
     3: 2,  # Mouse Right  == 3 -> Mouse Right
-
     # TODO: If other mouse buttons are needed
     # and they differ from the Tkinter numbering, add them here.
     # e.g. BACK/FORWARD buttons or other custom mouse buttons
@@ -127,19 +129,19 @@ MOUSE_BUTTON_MAP = {
 # the initialization of the Canvas class.
 capability = dict(
     # if True they mean:
-    title=True,           # can set title on the fly
-    size=True,            # can set size on the fly
-    position=True,        # can set position on the fly
-    show=True,            # can show/hide window
-    vsync=False,          # can set window to sync to blank
-    resizable=True,       # can toggle resizability (e.g., no user resizing)
-    decorate=True,        # can toggle decorations
-    fullscreen=True,      # fullscreen window support
-    context=False,        # can share contexts between windows
-    multi_window=True,    # can use multiple windows at once
-    scroll=True,          # scroll-wheel events are supported
-    parent=True,          # can pass native widget backend parent
-    always_on_top=True,   # can be made always-on-top
+    title=True,  # can set title on the fly
+    size=True,  # can set size on the fly
+    position=True,  # can set position on the fly
+    show=True,  # can show/hide window
+    vsync=False,  # can set window to sync to blank
+    resizable=True,  # can toggle resizability (e.g., no user resizing)
+    decorate=True,  # can toggle decorations
+    fullscreen=True,  # fullscreen window support
+    context=False,  # can share contexts between windows
+    multi_window=True,  # can use multiple windows at once
+    scroll=True,  # scroll-wheel events are supported
+    parent=True,  # can pass native widget backend parent
+    always_on_top=True,  # can be made always-on-top
 )
 
 
@@ -153,10 +155,11 @@ def _set_config(c):
 
 # ------------------------------------------------------------- application ---
 
+
 class _TkInstanceManager:
-    _tk_inst = None         # Reference to tk.Tk instance
+    _tk_inst = None  # Reference to tk.Tk instance
     _tk_inst_owned = False  # Whether we created the Tk instance or not
-    _canvasses = []         # References to created CanvasBackends
+    _canvasses = []  # References to created CanvasBackends
 
     @classmethod
     def get_tk_instance(cls):
@@ -313,7 +316,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         # Deal with config
         # ... use context.config
         # Deal with context
-        p.context.shared.add_ref('tk', self)
+        p.context.shared.add_ref("tk", self)
         if p.context.shared.ref is self:
             self._native_context = None
         else:
@@ -388,7 +391,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         self.bind("<Any-Button>", self._on_mouse_button_press)
         self.bind("<Double-Any-Button>", self._on_mouse_double_button_press)
         self.bind("<Any-ButtonRelease>", self._on_mouse_button_release)
-        self.bind("<Configure>", self._on_configure, add='+')
+        self.bind("<Configure>", self._on_configure, add="+")
 
         self._vispy_set_visible(p.show)
         self.focus_force()
@@ -507,8 +510,10 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
             char = self._dynamic_keymap[e.keycode]
             return keys.Key(char), char
 
-        warnings.warn("The key you typed is not supported by the tkinter backend."
-                      "Please map your functionality to a different key")
+        warnings.warn(
+            "The key you typed is not supported by the tkinter backend."
+            "Please map your functionality to a different key"
+        )
         return None, None
 
     def _on_mouse_enter(self, e):
@@ -530,8 +535,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
             # FIXME: What to do on Darwin?
             self.bind_all("<MouseWheel>", self._on_mouse_wheel)
 
-        self._vispy_mouse_move(
-            pos=(e.x, e.y), modifiers=self._parse_state(e))
+        self._vispy_mouse_move(pos=(e.x, e.y), modifiers=self._parse_state(e))
 
     def _on_mouse_leave(self, e):
         """Event callback when the mouse leaves the canvas.
@@ -560,8 +564,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         """
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_move(
-            pos=(e.x, e.y), modifiers=self._parse_state(e))
+        self._vispy_mouse_move(pos=(e.x, e.y), modifiers=self._parse_state(e))
 
     def _on_mouse_wheel(self, e):
         """Event callback when the mouse wheel changes within the canvas.
@@ -577,8 +580,8 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
             # Fix mouse wheel delta
             e.delta = {4: 120, 5: -120}.get(e.num, 0)
         self._vispy_canvas.events.mouse_wheel(
-            delta=(0.0, float(e.delta / 120)),
-            pos=(e.x, e.y), modifiers=self._parse_state(e))
+            delta=(0.0, float(e.delta / 120)), pos=(e.x, e.y), modifiers=self._parse_state(e)
+        )
 
     def _on_mouse_button_press(self, e):
         """Event callback when a mouse button is pressed within the canvas.
@@ -594,7 +597,10 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if _tk_on_linux and e.num in (4, 5):
             return
         self._vispy_mouse_press(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            button=MOUSE_BUTTON_MAP.get(e.num, e.num),
+            modifiers=self._parse_state(e),
+        )
 
     def _vispy_detect_double_click(self, e):
         """Override base class function
@@ -616,7 +622,10 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if _tk_on_linux and e.num in (4, 5):
             return
         self._vispy_mouse_double_click(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            button=MOUSE_BUTTON_MAP.get(e.num, e.num),
+            modifiers=self._parse_state(e),
+        )
 
     def _on_mouse_button_release(self, e):
         """Event callback when a mouse button is released within the canvas.
@@ -632,7 +641,10 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if _tk_on_linux and e.num in (4, 5):
             return
         self._vispy_mouse_release(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            button=MOUSE_BUTTON_MAP.get(e.num, e.num),
+            modifiers=self._parse_state(e),
+        )
 
     def _on_key_down(self, e):
         """Event callback when a key is pressed within the canvas or window.
@@ -651,8 +663,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         key, text = self._parse_keys(e)
         if not self.top and key == keys.ESCAPE:
             return
-        self._vispy_canvas.events.key_press(
-            key=key, text=text, modifiers=self._parse_state(e))
+        self._vispy_canvas.events.key_press(key=key, text=text, modifiers=self._parse_state(e))
 
     def _on_key_up(self, e):
         """Event callback when a key is released within the canvas or window.
@@ -671,8 +682,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         key, text = self._parse_keys(e)
         if not self.top and key == keys.ESCAPE:
             return
-        self._vispy_canvas.events.key_release(
-            key=key, text=text, modifiers=self._parse_state(e))
+        self._vispy_canvas.events.key_release(key=key, text=text, modifiers=self._parse_state(e))
 
     def _vispy_set_current(self):
         """Make this the current context."""
@@ -704,7 +714,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
             if visible:
                 self.top.wm_deiconify()
                 self.top.lift()
-                self.top.attributes('-fullscreen', self._fullscreen)
+                self.top.attributes("-fullscreen", self._fullscreen)
             else:
                 self.top.withdraw()
 
@@ -766,6 +776,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
 
 
 # ------------------------------------------------------------------- timer ---
+
 
 class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):

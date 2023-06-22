@@ -14,8 +14,7 @@ Conway game of life.
 """
 
 import numpy as np
-from vispy.gloo import (Program, FrameBuffer, RenderBuffer,
-                        clear, set_viewport, set_state)
+from vispy.gloo import Program, FrameBuffer, RenderBuffer, clear, set_viewport, set_state
 from vispy import app
 
 
@@ -107,10 +106,8 @@ void main(void)
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, title="Conway game of life",
-                            size=(512, 512), keys='interactive')
+        app.Canvas.__init__(self, title="Conway game of life", size=(512, 512), keys="interactive")
 
         # Build programs
         # --------------
@@ -131,10 +128,10 @@ class Canvas(app.Canvas):
         ............OO......................"""
         x, y = 0, 0
         for i in range(len(gun)):
-            if gun[i] == '\n':
+            if gun[i] == "\n":
                 y += 1
                 x = 0
-            elif gun[i] == 'O':
+            elif gun[i] == "O":
                 Z[y, x] = 1
             x += 1
 
@@ -143,38 +140,37 @@ class Canvas(app.Canvas):
         self.compute["texture"] = Z
         self.compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-        self.compute['dx'] = 1.0 / size[1]
-        self.compute['dy'] = 1.0 / size[0]
-        self.compute['pingpong'] = self.pingpong
+        self.compute["dx"] = 1.0 / size[1]
+        self.compute["dy"] = 1.0 / size[0]
+        self.compute["pingpong"] = self.pingpong
 
         self.render = Program(render_vertex, render_fragment, 4)
         self.render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         self.render["texture"] = self.compute["texture"]
-        self.render['pingpong'] = self.pingpong
+        self.render["pingpong"] = self.pingpong
 
-        self.fbo = FrameBuffer(self.compute["texture"],
-                               RenderBuffer(self.comp_size))
-        set_state(depth_test=False, clear_color='black')
+        self.fbo = FrameBuffer(self.compute["texture"], RenderBuffer(self.comp_size))
+        set_state(depth_test=False, clear_color="black")
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
+        self._timer = app.Timer("auto", connect=self.update, start=True)
 
         self.show()
 
     def on_draw(self, event):
         with self.fbo:
             set_viewport(0, 0, *self.comp_size)
-            self.compute["texture"].interpolation = 'nearest'
-            self.compute.draw('triangle_strip')
+            self.compute["texture"].interpolation = "nearest"
+            self.compute.draw("triangle_strip")
         clear()
         set_viewport(0, 0, *self.physical_size)
-        self.render["texture"].interpolation = 'linear'
-        self.render.draw('triangle_strip')
+        self.render["texture"].interpolation = "linear"
+        self.render.draw("triangle_strip")
         self.pingpong = 1 - self.pingpong
         self.compute["pingpong"] = self.pingpong
         self.render["pingpong"] = self.pingpong
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

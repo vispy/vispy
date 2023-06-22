@@ -4,8 +4,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from vispy.util.transforms import (translate, scale, rotate, ortho, frustum,
-                                   perspective)
+from vispy.util.transforms import translate, scale, rotate, ortho, frustum, perspective
 from vispy.testing import run_tests_if_main, assert_equal
 
 
@@ -25,7 +24,7 @@ def test_transforms():
     new_xfm = translate((1, -1, 1)).dot(translate((-1, 1, -1))).dot(xfm)
     assert_allclose(xfm, new_xfm)
 
-    new_xfm = scale((1, 2, 3)).dot(scale((1, 1. / 2., 1. / 3.))).dot(xfm)
+    new_xfm = scale((1, 2, 3)).dot(scale((1, 1.0 / 2.0, 1.0 / 3.0))).dot(xfm)
     assert_allclose(xfm, new_xfm)
 
     # These could be more complex...

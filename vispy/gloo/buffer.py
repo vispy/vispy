@@ -9,7 +9,7 @@ from os import path as op
 from traceback import extract_stack, format_list
 import weakref
 
-from . globject import GLObject
+from .globject import GLObject
 from ..util import logger
 
 
@@ -81,8 +81,8 @@ class Buffer(GLObject):
         # If the whole buffer is to be written, we clear any pending data
         # (because they will be overwritten anyway)
         if nbytes == self._nbytes and offset == 0:
-            self._glir.command('SIZE', self._id, nbytes)
-        self._glir.command('DATA', self._id, offset, data)
+            self._glir.command("SIZE", self._id, nbytes)
+        self._glir.command("DATA", self._id, offset, data)
 
     def set_data(self, data, copy=False):
         """Set data in the buffer (deferred operation).
@@ -105,10 +105,10 @@ class Buffer(GLObject):
             self.resize_bytes(nbytes)
         else:
             # Use SIZE to discard any previous data setting
-            self._glir.command('SIZE', self._id, nbytes)
+            self._glir.command("SIZE", self._id, nbytes)
 
         if nbytes:  # Only set data if there *is* data
-            self._glir.command('DATA', self._id, 0, data)
+            self._glir.command("DATA", self._id, 0, data)
 
     def resize_bytes(self, size):
         """Resize this buffer (deferred operation).
@@ -119,7 +119,7 @@ class Buffer(GLObject):
             New buffer size in bytes.
         """
         self._nbytes = size
-        self._glir.command('SIZE', self._id, size)
+        self._glir.command("SIZE", self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
             view._valid = False
@@ -228,10 +228,10 @@ class DataBuffer(Buffer):
         dtshape = self.dtype[0].shape
         n = dtshape[0] if dtshape else 1
         if n > 1:
-            dtype = 'vec%d' % n
+            dtype = "vec%d" % n
         else:
-            dtype = 'float' if 'f' in self.dtype[0].base.kind else 'int'
-        return 'attribute', dtype
+            dtype = "float" if "f" in self.dtype[0].base.kind else "int"
+        return "attribute", dtype
 
     def resize_bytes(self, size):
         """Resize the buffer (in-place, deferred operation)
@@ -289,16 +289,16 @@ class DataBuffer(Buffer):
         if data.size < stop - start:
             data = np.resize(data, stop - start)
         elif data.size > stop - start:
-            raise ValueError('Data too big to fit GPU data '
-                             '(%d > %d-%d).' % (data.size, stop, start))
+            raise ValueError(
+                "Data too big to fit GPU data " "(%d > %d-%d)." % (data.size, stop, start)
+            )
 
         # Set data
         offset = start
         self.set_subdata(data=data, offset=offset, copy=True)
 
     def __repr__(self):
-        return ("<%s size=%s last_dim=%s>" %
-                (self.__class__.__name__, self.size, self._last_dim))
+        return "<%s size=%s last_dim=%s>" % (self.__class__.__name__, self.size, self._last_dim)
 
 
 class DataBufferView(DataBuffer):
@@ -400,8 +400,7 @@ class DataBufferView(DataBuffer):
         raise RuntimeError("Cannot set data on Buffer view")
 
     def __repr__(self):
-        return ("<DataBufferView on %r at offset=%d size=%d>" %
-                (self.base, self.offset, self.size))
+        return "<DataBufferView on %r at offset=%d size=%d>" % (self.base, self.offset, self.size)
 
 
 # ------------------------------------------------------ VertexBuffer class ---
@@ -418,7 +417,7 @@ class VertexBuffer(DataBuffer):
         super().__init__(data)
         self.divisor = divisor
 
-    _GLIR_TYPE = 'VertexBuffer'
+    _GLIR_TYPE = "VertexBuffer"
 
     def _prepare_data(self, data, convert=False):
         # Build a structured view of the data if:
@@ -427,25 +426,24 @@ class VertexBuffer(DataBuffer):
         if isinstance(data, list):
             data = np.array(data, dtype=np.float32)
         if not isinstance(data, np.ndarray):
-            raise ValueError('Data must be a ndarray (got %s)' % type(data))
+            raise ValueError("Data must be a ndarray (got %s)" % type(data))
         if data.dtype.isbuiltin:
             if convert is True:
                 data = data.astype(np.float32)
             if data.dtype in (np.float64, np.int64):
-                raise TypeError('data must be 32-bit not %s'
-                                % data.dtype)
+                raise TypeError("data must be 32-bit not %s" % data.dtype)
             c = data.shape[-1] if data.ndim > 1 else 1
             if c in [2, 3, 4]:
-                if not data.flags['C_CONTIGUOUS']:
-                    logger.warning('Copying discontiguous data for struct '
-                                   'dtype:\n%s' % _last_stack_str())
+                if not data.flags["C_CONTIGUOUS"]:
+                    logger.warning(
+                        "Copying discontiguous data for struct " "dtype:\n%s" % _last_stack_str()
+                    )
                     data = data.copy()
             else:
                 c = 1
             if self._last_dim and c != self._last_dim:
-                raise ValueError('Last dimension should be %s not %s'
-                                 % (self._last_dim, c))
-            dtype_def = ('f0', data.dtype.base)
+                raise ValueError("Last dimension should be %s not %s" % (self._last_dim, c))
+            dtype_def = ("f0", data.dtype.base)
             if c != 1:
                 # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
                 dtype_def += (c,)
@@ -466,7 +464,7 @@ def _last_stack_str():
     """Print stack trace from call that didn't originate from here"""
     stack = extract_stack()
     for s in stack[::-1]:
-        if op.join('vispy', 'gloo', 'buffer.py') not in __file__:
+        if op.join("vispy", "gloo", "buffer.py") not in __file__:
             break
     return format_list([s])[0]
 
@@ -481,7 +479,7 @@ class IndexBuffer(DataBuffer):
         Buffer data.
     """
 
-    _GLIR_TYPE = 'IndexBuffer'
+    _GLIR_TYPE = "IndexBuffer"
 
     def __init__(self, data=None):
         DataBuffer.__init__(self, data)
@@ -491,7 +489,7 @@ class IndexBuffer(DataBuffer):
         if isinstance(data, list):
             data = np.array(data, dtype=np.uint32)
         if not isinstance(data, np.ndarray):
-            raise ValueError('Data must be a ndarray (got %s)' % type(data))
+            raise ValueError("Data must be a ndarray (got %s)" % type(data))
         if not data.dtype.isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
         else:
@@ -500,6 +498,5 @@ class IndexBuffer(DataBuffer):
                     data = data.astype(np.uint32)
             else:
                 if data.dtype not in [np.uint32, np.uint16, np.uint8]:
-                    raise TypeError("Invalid dtype for IndexBuffer: %r" %
-                                    data.dtype)
+                    raise TypeError("Invalid dtype for IndexBuffer: %r" % data.dtype)
         return data

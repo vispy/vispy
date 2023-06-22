@@ -32,9 +32,18 @@ from math import pi
 import numpy as np
 
 
-def cubehelix(start=0.5, rot=1, gamma=1.0, reverse=True, nlev=256.,
-         minSat=1.2, maxSat=1.2, minLight=0., maxLight=1.,
-         **kwargs):
+def cubehelix(
+    start=0.5,
+    rot=1,
+    gamma=1.0,
+    reverse=True,
+    nlev=256.0,
+    minSat=1.2,
+    maxSat=1.2,
+    minLight=0.0,
+    maxLight=1.0,
+    **kwargs,
+):
     """
     A full implementation of Dave Green's "cubehelix" for Matplotlib.
     Based on the FORTRAN 77 code provided in
@@ -97,39 +106,39 @@ def cubehelix(start=0.5, rot=1, gamma=1.0, reverse=True, nlev=256.,
         Control points.
     """
 
-# override start and rot if startHue and endHue are set
+    # override start and rot if startHue and endHue are set
     if kwargs is not None:
-        if 'startHue' in kwargs:
-            start = (kwargs.get('startHue') / 360. - 1.) * 3.
-        if 'endHue' in kwargs:
-            rot = kwargs.get('endHue') / 360. - start / 3. - 1.
-        if 'sat' in kwargs:
-            minSat = kwargs.get('sat')
-            maxSat = kwargs.get('sat')
+        if "startHue" in kwargs:
+            start = (kwargs.get("startHue") / 360.0 - 1.0) * 3.0
+        if "endHue" in kwargs:
+            rot = kwargs.get("endHue") / 360.0 - start / 3.0 - 1.0
+        if "sat" in kwargs:
+            minSat = kwargs.get("sat")
+            maxSat = kwargs.get("sat")
 
-# set up the parameters
+    # set up the parameters
     fract = np.linspace(minLight, maxLight, nlev)
-    angle = 2.0 * pi * (start / 3.0 + rot * fract + 1.)
+    angle = 2.0 * pi * (start / 3.0 + rot * fract + 1.0)
     fract = fract**gamma
 
     satar = np.linspace(minSat, maxSat, nlev)
-    amp = satar * fract * (1. - fract) / 2.
+    amp = satar * fract * (1.0 - fract) / 2.0
 
-# compute the RGB vectors according to main equations
+    # compute the RGB vectors according to main equations
     red = fract + amp * (-0.14861 * np.cos(angle) + 1.78277 * np.sin(angle))
     grn = fract + amp * (-0.29227 * np.cos(angle) - 0.90649 * np.sin(angle))
     blu = fract + amp * (1.97294 * np.cos(angle))
 
-# find where RBB are outside the range [0,1], clip
-    red[np.where((red > 1.))] = 1.
-    grn[np.where((grn > 1.))] = 1.
-    blu[np.where((blu > 1.))] = 1.
+    # find where RBB are outside the range [0,1], clip
+    red[np.where((red > 1.0))] = 1.0
+    grn[np.where((grn > 1.0))] = 1.0
+    blu[np.where((blu > 1.0))] = 1.0
 
-    red[np.where((red < 0.))] = 0.
-    grn[np.where((grn < 0.))] = 0.
-    blu[np.where((blu < 0.))] = 0.
+    red[np.where((red < 0.0))] = 0.0
+    grn[np.where((grn < 0.0))] = 0.0
+    blu[np.where((blu < 0.0))] = 0.0
 
-# optional color reverse
+    # optional color reverse
     if reverse is True:
         red = red[::-1]
         blu = blu[::-1]

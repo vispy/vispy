@@ -9,10 +9,24 @@
 import numpy as np
 from ctypes import byref, c_int32, c_byte
 
-from ...ext.cocoapy import cf, ct, quartz, CFRange, CFSTR, CGGlyph, UniChar, \
-    kCTFontFamilyNameAttribute, kCTFontBoldTrait, kCTFontItalicTrait, \
-    kCTFontSymbolicTrait, kCTFontTraitsAttribute, kCTFontAttributeName, \
-    kCGImageAlphaPremultipliedLast, kCFNumberSInt32Type, ObjCClass
+from ...ext.cocoapy import (
+    cf,
+    ct,
+    quartz,
+    CFRange,
+    CFSTR,
+    CGGlyph,
+    UniChar,
+    kCTFontFamilyNameAttribute,
+    kCTFontBoldTrait,
+    kCTFontItalicTrait,
+    kCTFontSymbolicTrait,
+    kCTFontTraitsAttribute,
+    kCTFontAttributeName,
+    kCGImageAlphaPremultipliedLast,
+    kCFNumberSInt32Type,
+    ObjCClass,
+)
 from ._vispy_fonts import _vispy_fonts, _get_vispy_font_filename
 
 _font_dict = {}
@@ -28,18 +42,18 @@ def _load_vispy_font(face, bold, italic):
     # font = ct.CTFontCreateWithGraphicsFont(cg_font, 12., None, None)
     array = ct.CTFontManagerCreateFontDescriptorsFromURL(url)
     desc = cf.CFArrayGetValueAtIndex(array, 0)
-    font = ct.CTFontCreateWithFontDescriptor(desc, 12., None)
+    font = ct.CTFontCreateWithFontDescriptor(desc, 12.0, None)
     cf.CFRelease(array)
     cf.CFRelease(url)
     if not font:
         raise RuntimeError("Couldn't load font: %s" % face)
-    key = '%s-%s-%s' % (face, bold, italic)
+    key = "%s-%s-%s" % (face, bold, italic)
     _font_dict[key] = font
     return font
 
 
 def _load_font(face, bold, italic):
-    key = '%s-%s-%s' % (face, bold, italic)
+    key = "%s-%s-%s" % (face, bold, italic)
     if key in _font_dict:
         return _font_dict[key]
     if face in _vispy_fonts:
@@ -49,8 +63,7 @@ def _load_font(face, bold, italic):
     traits |= kCTFontItalicTrait if italic else 0
 
     # Create an attribute dictionary.
-    args = [None, 0, cf.kCFTypeDictionaryKeyCallBacks,
-            cf.kCFTypeDictionaryValueCallBacks]
+    args = [None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks]
     attributes = cf.CFDictionaryCreateMutable(*args)
     # Add family name to attributes.
     cfname = CFSTR(face)
@@ -61,22 +74,19 @@ def _load_font(face, bold, italic):
     sym_traits = cf.CFNumberCreate(None, kCFNumberSInt32Type, byref(itraits))
     if sym_traits:
         # Construct a dictionary to hold the traits values.
-        args = [None, 0, cf.kCFTypeDictionaryKeyCallBacks,
-                cf.kCFTypeDictionaryValueCallBacks]
+        args = [None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks]
         traits_dict = cf.CFDictionaryCreateMutable(*args)
         if traits_dict:
             # Add CFNumber traits to traits dictionary.
-            cf.CFDictionaryAddValue(traits_dict, kCTFontSymbolicTrait,
-                                    sym_traits)
+            cf.CFDictionaryAddValue(traits_dict, kCTFontSymbolicTrait, sym_traits)
             # Add traits dictionary to attributes.
-            cf.CFDictionaryAddValue(attributes, kCTFontTraitsAttribute,
-                                    traits_dict)
+            cf.CFDictionaryAddValue(attributes, kCTFontTraitsAttribute, traits_dict)
             cf.CFRelease(traits_dict)
         cf.CFRelease(sym_traits)
     # Create font descriptor with attributes.
     desc = ct.CTFontDescriptorCreateWithAttributes(attributes)
     cf.CFRelease(attributes)
-    font = ct.CTFontCreateWithFontDescriptor(desc, 12., None)
+    font = ct.CTFontCreateWithFontDescriptor(desc, 12.0, None)
     if not font:
         raise RuntimeError("Couldn't load font: %s" % face)
     _font_dict[key] = font
@@ -84,20 +94,18 @@ def _load_font(face, bold, italic):
 
 
 def _load_glyph(f, char, glyphs_dict):
-    font = _load_font(f['face'], f['bold'], f['italic'])
+    font = _load_font(f["face"], f["bold"], f["italic"])
     # resize loaded font
-    args = [None, 0, cf.kCFTypeDictionaryKeyCallBacks,
-            cf.kCFTypeDictionaryValueCallBacks]
+    args = [None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks]
     attributes = cf.CFDictionaryCreateMutable(*args)
     desc = ct.CTFontDescriptorCreateWithAttributes(attributes)
     cf.CFRelease(attributes)
-    font = ct.CTFontCreateCopyWithAttributes(font, f['size'], None, desc)
+    font = ct.CTFontCreateCopyWithAttributes(font, f["size"], None, desc)
     cf.CFRelease(desc)
     if not font:
         raise RuntimeError("Couldn't load font")
     # Create an attributed string using text and font.
-    args = [None, 1, cf.kCFTypeDictionaryKeyCallBacks,
-            cf.kCFTypeDictionaryValueCallBacks]
+    args = [None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks]
     attributes = cf.CFDictionaryCreateMutable(*args)
     cf.CFDictionaryAddValue(attributes, kCTFontAttributeName, font)
     string = cf.CFAttributedStringCreate(None, CFSTR(char), attributes)
@@ -120,10 +128,17 @@ def _load_glyph(f, char, glyphs_dict):
     top = height - baseline
 
     bits_per_component = 8
-    bytes_per_row = 4*width
+    bytes_per_row = 4 * width
     color_space = quartz.CGColorSpaceCreateDeviceRGB()
-    args = [None, width, height, bits_per_component, bytes_per_row,
-            color_space, kCGImageAlphaPremultipliedLast]
+    args = [
+        None,
+        width,
+        height,
+        bits_per_component,
+        bytes_per_row,
+        color_space,
+        kCGImageAlphaPremultipliedLast,
+    ]
     bitmap = quartz.CGBitmapContextCreate(*args)
     # Draw text to bitmap context.
     quartz.CGContextSetShouldAntialias(bitmap, True)
@@ -149,15 +164,12 @@ def _load_glyph(f, char, glyphs_dict):
     bitmap = np.array(buffer, np.ubyte)
     bitmap.shape = (height, width, 4)
     bitmap = bitmap[:, :, 3].copy()
-    glyph = dict(char=char, offset=(left, top), bitmap=bitmap,
-                 advance=advance, kerning={})
+    glyph = dict(char=char, offset=(left, top), bitmap=bitmap, advance=advance, kerning={})
     glyphs_dict[char] = glyph
     # Generate kerning
     for other_char, other_glyph in glyphs_dict.items():
-        glyph['kerning'][other_char] = (_get_k_p_a(font, other_char, char) -
-                                        other_glyph['advance'])
-        other_glyph['kerning'][char] = (_get_k_p_a(font, char, other_char) -
-                                        glyph['advance'])
+        glyph["kerning"][other_char] = _get_k_p_a(font, other_char, char) - other_glyph["advance"]
+        other_glyph["kerning"][char] = _get_k_p_a(font, char, other_char) - glyph["advance"]
     cf.CFRelease(font)
 
 
@@ -166,8 +178,7 @@ def _get_k_p_a(font, left, right):
     # http://lists.apple.com/archives/coretext-dev/2010/Dec/msg00020.html
     # 1) set up a CTTypesetter
     chars = left + right
-    args = [None, 1, cf.kCFTypeDictionaryKeyCallBacks,
-            cf.kCFTypeDictionaryValueCallBacks]
+    args = [None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks]
     attributes = cf.CFDictionaryCreateMutable(*args)
     cf.CFDictionaryAddValue(attributes, kCTFontAttributeName, font)
     string = cf.CFAttributedStringCreate(None, CFSTR(chars), attributes)
@@ -185,8 +196,7 @@ def _get_k_p_a(font, left, right):
 
 
 def _list_fonts():
-    manager = ObjCClass('NSFontManager').sharedFontManager()
+    manager = ObjCClass("NSFontManager").sharedFontManager()
     avail = manager.availableFontFamilies()
-    fonts = [avail.objectAtIndex_(ii).UTF8String().decode('utf-8')
-             for ii in range(avail.count())]
+    fonts = [avail.objectAtIndex_(ii).UTF8String().decode("utf-8") for ii in range(avail.count())]
     return fonts

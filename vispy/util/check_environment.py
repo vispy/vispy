@@ -7,7 +7,7 @@ from packaging.version import Version
 from vispy.util import use_log_level
 
 
-def has_matplotlib(version='1.2'):
+def has_matplotlib(version="1.2"):
     """Determine if mpl is a usable version"""
     try:
         import matplotlib
@@ -21,7 +21,7 @@ def has_matplotlib(version='1.2'):
     return has_mpl
 
 
-def has_skimage(version='0.11'):
+def has_skimage(version="0.11"):
     """Determine if scikit-image is a usable version"""
     try:
         import skimage
@@ -33,7 +33,8 @@ def has_skimage(version='0.11'):
 
 def has_backend(backend, has=(), capable=(), out=()):
     from ..app.backends import BACKENDMAP
-    using = os.getenv('_VISPY_TESTING_APP', None)
+
+    using = os.getenv("_VISPY_TESTING_APP", None)
     if using is not None and using != backend:
         # e.g., we are on  a 'pyglet' run but the test requires PyQt4
         ret = (False,) if len(out) > 0 else False
@@ -43,14 +44,14 @@ def has_backend(backend, has=(), capable=(), out=()):
 
     # let's follow the standard code path
     module_name = BACKENDMAP[backend.lower()][1]
-    with use_log_level('warning', print_msg=False):
-        mod = __import__('app.backends.%s' % module_name, globals(), level=2)
+    with use_log_level("warning", print_msg=False):
+        mod = __import__("app.backends.%s" % module_name, globals(), level=2)
     mod = getattr(mod.backends, module_name)
     good = mod.testable
     for h in has:
-        good = (good and getattr(mod, 'has_%s' % h))
+        good = good and getattr(mod, "has_%s" % h)
     for cap in capable:
-        good = (good and mod.capability[cap])
+        good = good and mod.capability[cap]
     ret = (good,) if len(out) > 0 else good
     for o in out:
         ret += (getattr(mod, o),)

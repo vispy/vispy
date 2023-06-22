@@ -36,17 +36,13 @@ fragment_code = """
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(512, 512), title='Quad (GL)',
-                            keys='interactive')
+        app.Canvas.__init__(self, size=(512, 512), title="Quad (GL)", keys="interactive")
 
     def on_initialize(self, event):
         # Build data
-        self.data = np.zeros(4, [("position", np.float32, 2),
-                                 ("color", np.float32, 4)])
-        self.data['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
-                              (0, 0, 1, 1), (1, 1, 0, 1)]
-        self.data['position'] = [(-1, -1), (-1, +1),
-                                 (+1, -1), (+1, +1)]
+        self.data = np.zeros(4, [("position", np.float32, 2), ("color", np.float32, 4)])
+        self.data["color"] = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)]
+        self.data["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 
         # Build & activate program
 
@@ -114,7 +110,8 @@ class Canvas(app.Canvas):
     def on_resize(self, event):
         gl.glViewport(0, 0, *event.physical_size)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     c = Canvas()
     c.show()
     app.run()

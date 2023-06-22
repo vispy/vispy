@@ -197,26 +197,24 @@ class Function(ShaderObject):
         """
         # Check the key. Must be Varying, 'gl_X' or a known template variable
         if isinstance(key, Variable):
-            if key.vtype == 'varying':
-                if self.name != 'main':
-                    raise Exception("Varying assignment only alowed in 'main' "
-                                    "function.")
+            if key.vtype == "varying":
+                if self.name != "main":
+                    raise Exception("Varying assignment only alowed in 'main' " "function.")
                 storage = self._assignments
             else:
-                raise TypeError("Variable assignment only allowed for "
-                                "varyings, not %s (in %s)"
-                                % (key.vtype, self.name))
+                raise TypeError(
+                    "Variable assignment only allowed for "
+                    "varyings, not %s (in %s)" % (key.vtype, self.name)
+                )
         elif isinstance(key, str):
-            if any(map(key.startswith,
-                       ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
+            if any(map(key.startswith, ("gl_PointSize", "gl_Position", "gl_FragColor"))):
                 storage = self._assignments
-            elif key in self.template_vars or key in ('pre', 'post'):
+            elif key in self.template_vars or key in ("pre", "post"):
                 storage = self._expressions
             else:
-                raise KeyError('Invalid template variable %r' % key)
+                raise KeyError("Invalid template variable %r" % key)
         else:
-            raise TypeError('In `function[key]` key must be a string or '
-                            'varying.')
+            raise TypeError("In `function[key]` key must be a string or " "varying.")
 
         # If values already match, bail out now
         if eq(storage.get(key), val):
@@ -267,15 +265,20 @@ class Function(ShaderObject):
         if isinstance(val, TextExpression):
             for var in parsing.find_template_variables(val.expression()):
                 if var not in self.template_vars:
-                    self.template_vars.add(var.lstrip('$'))
+                    self.template_vars.add(var.lstrip("$"))
 
         self.changed(code_changed=True, value_changed=True)
         if logger.level <= logging.DEBUG:
             import traceback
+
             last = traceback.format_list(traceback.extract_stack()[-2:-1])
-            logger.debug("Assignment would trigger shader recompile:\n"
-                         "Original: %r\nReplacement: %r\nSource: %s",
-                         oldval, val, ''.join(last))
+            logger.debug(
+                "Assignment would trigger shader recompile:\n"
+                "Original: %r\nReplacement: %r\nSource: %s",
+                oldval,
+                val,
+                "".join(last),
+            )
 
     def __getitem__(self, key):
         """Return a reference to a program variable from this function.
@@ -299,9 +302,9 @@ class Function(ShaderObject):
             pass
 
         if key not in self.template_vars:
-            raise KeyError('Invalid template variable %r' % key)
+            raise KeyError("Invalid template variable %r" % key)
         else:
-            raise KeyError('No value known for key %r' % key)
+            raise KeyError("No value known for key %r" % key)
 
     def __call__(self, *args):
         """Set the signature for this function and return an FunctionCall
@@ -320,7 +323,7 @@ class Function(ShaderObject):
             try:
                 self._signature = parsing.parse_function_signature(self._code)
             except Exception as err:
-                raise ValueError('Invalid code: ' + str(err))
+                raise ValueError("Invalid code: " + str(err))
         return self._signature
 
     @property
@@ -354,8 +357,7 @@ class Function(ShaderObject):
         if isinstance(code, Function):
             code = code._code
         elif not isinstance(code, str):
-            raise ValueError('Function needs a string or Function; got %s.' %
-                             type(code))
+            raise ValueError("Function needs a string or Function; got %s." % type(code))
         self._code = self._clean_code(code)
 
         # (name, args, rval)
@@ -404,12 +406,11 @@ class Function(ShaderObject):
         """Find all template variables in self._code, excluding the function name."""
         template_vars = set()
         for var in parsing.find_template_variables(self._code):
-            var = var.lstrip('$')
+            var = var.lstrip("$")
             if var == self.name:
                 continue
-            if var in ('pre', 'post'):
-                raise ValueError('GLSL uses reserved template variable $%s' %
-                                 var)
+            if var in ("pre", "post"):
+                raise ValueError("GLSL uses reserved template variable $%s" % var)
             template_vars.add(var)
         return template_vars
 
@@ -434,43 +435,44 @@ class Function(ShaderObject):
                 key = names[key]
             if isinstance(val, ShaderObject):
                 val = val.expression(names)
-            line = '    %s = %s;' % (key, val)
+            line = "    %s = %s;" % (key, val)
             post_lines.append(line)
 
         # Add a default $post placeholder if needed
-        if 'post' in self._expressions:
-            post_lines.append('    $post')
+        if "post" in self._expressions:
+            post_lines.append("    $post")
 
         # Apply placeholders for hooks
-        post_text = '\n'.join(post_lines)
+        post_text = "\n".join(post_lines)
         if post_text:
-            post_text = '\n' + post_text + '\n'
-        code = code.rpartition('}')
+            post_text = "\n" + post_text + "\n"
+        code = code.rpartition("}")
         code = code[0] + post_text + code[1] + code[2]
 
         # Add a default $pre placeholder if needed
-        if 'pre' in self._expressions:
-            m = re.search(fname + r'\s*\([^{]*\)\s*{', code)
+        if "pre" in self._expressions:
+            m = re.search(fname + r"\s*\([^{]*\)\s*{", code)
             if m is None:
-                raise RuntimeError("Cound not find beginning of function '%s'"
-                                   % fname)
+                raise RuntimeError("Cound not find beginning of function '%s'" % fname)
             ind = m.span()[1]
             code = code[:ind] + "\n    $pre\n" + code[ind:]
 
         # Apply template variables
         for key, val in self._expressions.items():
             val = val.expression(names)
-            search = r'\$' + key + r'($|[^a-zA-Z0-9_])'
-            code = re.sub(search, val+r'\1', code)
+            search = r"\$" + key + r"($|[^a-zA-Z0-9_])"
+            code = re.sub(search, val + r"\1", code)
 
         # Done
-        if '$' in code:
+        if "$" in code:
             v = parsing.find_template_variables(code)
-            logger.warning('Unsubstituted placeholders in code: %s\n'
-                           '  replacements made: %s',
-                           v, list(self._expressions.keys()))
+            logger.warning(
+                "Unsubstituted placeholders in code: %s\n" "  replacements made: %s",
+                v,
+                list(self._expressions.keys()),
+            )
 
-        return code + '\n'
+        return code + "\n"
 
     def definition(self, names, version, shader):
         return self._get_replaced_code(names, version, shader)
@@ -493,15 +495,16 @@ class Function(ShaderObject):
 
     def __repr__(self):
         try:
-            args = ', '.join([' '.join(arg) for arg in self.args])
+            args = ", ".join([" ".join(arg) for arg in self.args])
         except Exception:
-            return ('<%s (error parsing signature) at 0x%x>' %
-                    (self.__class__.__name__, id(self)))
-        return '<%s "%s %s(%s)" at 0x%x>' % (self.__class__.__name__,
-                                             self.rtype,
-                                             self.name,
-                                             args,
-                                             id(self))
+            return "<%s (error parsing signature) at 0x%x>" % (self.__class__.__name__, id(self))
+        return '<%s "%s %s(%s)" at 0x%x>' % (
+            self.__class__.__name__,
+            self.rtype,
+            self.name,
+            args,
+            id(self),
+        )
 
 
 class MainFunction(Function):
@@ -517,7 +520,7 @@ class MainFunction(Function):
 
     @property
     def signature(self):
-        return ('main', [], 'void')
+        return ("main", [], "void")
 
     @property
     def version_pragma(self):
@@ -531,7 +534,7 @@ class MainFunction(Function):
         code = Function.definition(self, obj_names, version, shader)
         # strip out version pragma before returning code; this will be
         # added to the final compiled code later.
-        code = re.sub(parsing.re_version_pragma, '', code)
+        code = re.sub(parsing.re_version_pragma, "", code)
         return code
 
     def static_names(self):
@@ -544,7 +547,7 @@ class MainFunction(Function):
         # parse all function names + argument names
         funcs = parsing.find_functions(self.code)
         for f in funcs:
-            if f[0] == 'main':
+            if f[0] == "main":
                 continue
             names.append(f[0])
             for arg in f[1]:
@@ -623,7 +626,7 @@ class FunctionChain(Function):
         self._code = None
         self._name = name or "chain"
         self._args = []
-        self._rtype = 'void'
+        self._rtype = "void"
         self.functions = funcs
 
     @property
@@ -648,7 +651,7 @@ class FunctionChain(Function):
             self._rtype = funcs[-1].rtype
             self._args = funcs[0].args[:]
         else:
-            self._rtype = 'void'
+            self._rtype = "void"
             self._args = []
 
         self.changed(code_changed=True)
@@ -706,36 +709,37 @@ class FunctionChain(Function):
 
         result_index = 0
         if len(self.args) == 0:
-            last_rtype = 'void'
-            last_result = ''
+            last_rtype = "void"
+            last_result = ""
         else:
             last_rtype, last_result = self.args[0][:2]
 
         for fn in self._funcs:
             # Use previous return value as an argument to the next function
-            if last_rtype == 'void':
-                args = ''
+            if last_rtype == "void":
+                args = ""
             else:
                 args = last_result
                 if len(fn.args) != 1 or last_rtype != fn.args[0][0]:
-                    raise Exception("Cannot chain output '%s' of function to "
-                                    "input of '%s'" %
-                                    (last_rtype, fn.signature))
+                    raise Exception(
+                        "Cannot chain output '%s' of function to "
+                        "input of '%s'" % (last_rtype, fn.signature)
+                    )
             last_rtype = fn.rtype
 
             # Store the return value of this function
-            if fn.rtype == 'void':
-                set_str = ''
+            if fn.rtype == "void":
+                set_str = ""
             else:
                 result_index += 1
-                result = 'result_%d' % result_index
-                set_str = '%s %s = ' % (fn.rtype, result)
+                result = "result_%d" % result_index
+                set_str = "%s %s = " % (fn.rtype, result)
                 last_result = result
 
             code += "    %s%s(%s);\n" % (set_str, obj_names[fn], args)
 
         # return the last function's output
-        if self.rtype != 'void':
+        if self.rtype != "void":
             code += "    return result_%d;\n" % result_index
 
         code += "}\n"
@@ -784,5 +788,5 @@ class StatementList(ShaderObject):
 
         code = ""
         for item, pos in self.order:
-            code += item.expression(obj_names) + ';\n'
+            code += item.expression(obj_names) + ";\n"
         return code

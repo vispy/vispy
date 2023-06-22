@@ -22,21 +22,25 @@ from vispy import gloo, app
 
 # Create a texture
 radius = 32
-im1 = np.random.normal(
-    0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
+im1 = np.random.normal(0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
 
 # Mask it with a disk
 L = np.linspace(-radius, radius, 2 * radius + 1)
 (X, Y) = np.meshgrid(L, L)
-im1 *= np.array((X ** 2 + Y ** 2) <= radius * radius, dtype='float32')
+im1 *= np.array((X**2 + Y**2) <= radius * radius, dtype="float32")
 
 # Set number of particles, you should be able to scale this to 100000
 N = 10000
 
 # Create vertex data container
-data = np.zeros(N, [('a_lifetime', np.float32),
-                    ('a_startPosition', np.float32, 3),
-                    ('a_endPosition', np.float32, 3)])
+data = np.zeros(
+    N,
+    [
+        ("a_lifetime", np.float32),
+        ("a_startPosition", np.float32, 3),
+        ("a_endPosition", np.float32, 3),
+    ],
+)
 
 
 VERT_SHADER = """
@@ -84,25 +88,23 @@ void main()
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
+        app.Canvas.__init__(self, keys="interactive", size=(800, 600))
 
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self._program.bind(gloo.VertexBuffer(data))
-        self._program['s_texture'] = gloo.Texture2D(im1)
+        self._program["s_texture"] = gloo.Texture2D(im1)
 
         # Create first explosion
         self._new_explosion()
 
         # Enable blending
-        gloo.set_state(blend=True, clear_color='black',
-                       blend_func=('src_alpha', 'one'))
+        gloo.set_state(blend=True, clear_color="black", blend_func=("src_alpha", "one"))
 
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
+        self._timer = app.Timer("auto", connect=self.update, start=True)
 
         self.show()
 
@@ -111,39 +113,37 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-
         # Clear
         gloo.clear()
 
         # Draw
-        self._program['u_time'] = time.time() - self._starttime
-        self._program.draw('points')
+        self._program["u_time"] = time.time() - self._starttime
+        self._program.draw("points")
 
         # New explosion?
         if time.time() - self._starttime > 1.5:
             self._new_explosion()
 
     def _new_explosion(self):
-
         # New centerpos
         centerpos = np.random.uniform(-0.5, 0.5, (3,))
-        self._program['u_centerPosition'] = centerpos
+        self._program["u_centerPosition"] = centerpos
 
         # New color, scale alpha with N
-        alpha = 1.0 / N ** 0.08
+        alpha = 1.0 / N**0.08
         color = np.random.uniform(0.1, 0.9, (3,))
 
-        self._program['u_color'] = tuple(color) + (alpha,)
+        self._program["u_color"] = tuple(color) + (alpha,)
 
         # Create new vertex data
-        data['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))
-        data['a_startPosition'] = np.random.normal(0.0, 0.2, (N, 3))
-        data['a_endPosition'] = np.random.normal(0.0, 1.2, (N, 3))
+        data["a_lifetime"] = np.random.normal(2.0, 0.5, (N,))
+        data["a_startPosition"] = np.random.normal(0.0, 0.2, (N, 3))
+        data["a_endPosition"] = np.random.normal(0.0, 1.2, (N, 3))
 
         # Set time to zero
         self._starttime = time.time()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = Canvas()
     app.run()

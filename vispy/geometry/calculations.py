@@ -10,6 +10,7 @@ import numpy as np
 ###############################################################################
 # These fast normal calculation routines are adapted from mne-python
 
+
 def _fast_cross_3d(x, y):
     """Compute cross product between list of 3D vectors
 
@@ -40,9 +41,11 @@ def _fast_cross_3d(x, y):
     assert y.shape[1] == 3
     assert (x.shape[0] == 1 or y.shape[0] == 1) or x.shape[0] == y.shape[0]
     if max([x.shape[0], y.shape[0]]) >= 500:
-        return np.c_[x[:, 1] * y[:, 2] - x[:, 2] * y[:, 1],
-                     x[:, 2] * y[:, 0] - x[:, 0] * y[:, 2],
-                     x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0]]
+        return np.c_[
+            x[:, 1] * y[:, 2] - x[:, 2] * y[:, 1],
+            x[:, 2] * y[:, 0] - x[:, 0] * y[:, 2],
+            x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0],
+        ]
     else:
         return np.cross(x, y)
 
@@ -72,15 +75,14 @@ def _calculate_normals(rr, tris):
     nn = np.zeros((npts, 3))
     for verts in tris.T:  # note this only loops 3x (number of verts per tri)
         for idx in range(3):  # x, y, z
-            nn[:, idx] += np.bincount(verts.astype(np.int32),
-                                      tri_nn[:, idx], minlength=npts)
+            nn[:, idx] += np.bincount(verts.astype(np.int32), tri_nn[:, idx], minlength=npts)
     size = np.sqrt(np.sum(nn * nn, axis=1))
     size[size == 0] = 1.0  # prevent ugly divide-by-zero
     nn /= size[:, np.newaxis]
     return nn
 
 
-def resize(image, shape, kind='linear'):
+def resize(image, shape, kind="linear"):
     """Resize an image
 
     Parameters
@@ -100,15 +102,15 @@ def resize(image, shape, kind='linear'):
     image = np.array(image, float)
     shape = np.array(shape, int)
     if shape.ndim != 1 or shape.size != 2:
-        raise ValueError('shape must have two elements')
+        raise ValueError("shape must have two elements")
     if image.ndim < 2:
-        raise ValueError('image must have two dimensions')
-    if not isinstance(kind, str) or kind not in ('nearest', 'linear'):
+        raise ValueError("image must have two dimensions")
+    if not isinstance(kind, str) or kind not in ("nearest", "linear"):
         raise ValueError('mode must be "nearest" or "linear"')
 
     r = np.linspace(0, image.shape[0] - 1, shape[0])
     c = np.linspace(0, image.shape[1] - 1, shape[1])
-    if kind == 'linear':
+    if kind == "linear":
         r_0 = np.floor(r).astype(int)
         c_0 = np.floor(c).astype(int)
         r_1 = r_0 + 1

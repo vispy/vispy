@@ -66,24 +66,24 @@ void main()
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys="interactive")
         ps = self.pixel_scale
 
         # Create vertices
         n = 10000
         v_position = 0.25 * np.random.randn(n, 2).astype(np.float32)
         v_color = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-        v_size = np.random.uniform(2*ps, 12*ps, (n, 1)).astype(np.float32)
+        v_size = np.random.uniform(2 * ps, 12 * ps, (n, 1)).astype(np.float32)
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         # Set uniform and attribute
-        self.program['a_color'] = gloo.VertexBuffer(v_color)
-        self.program['a_position'] = gloo.VertexBuffer(v_position)
-        self.program['a_size'] = gloo.VertexBuffer(v_size)
-        gloo.set_state(clear_color='white', blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.program["a_color"] = gloo.VertexBuffer(v_color)
+        self.program["a_position"] = gloo.VertexBuffer(v_position)
+        self.program["a_size"] = gloo.VertexBuffer(v_size)
+        gloo.set_state(
+            clear_color="white", blend=True, blend_func=("src_alpha", "one_minus_src_alpha")
+        )
 
         self.show()
 
@@ -92,9 +92,9 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
-        self.program.draw('points')
+        self.program.draw("points")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

@@ -53,9 +53,9 @@ class ChainTransform(BaseTransform):
     def transforms(self):
         """The list of transform that make up the transform chain.
 
-        The order of transforms is given such that the last transform in the 
-        list is the first to be invoked when mapping coordinates through 
-        the chain. 
+        The order of transforms is given such that the last transform in the
+        list is the first to be invoked when mapping coordinates through
+        the chain.
 
         For example, the following two mappings are equivalent::
 
@@ -221,14 +221,14 @@ class ChainTransform(BaseTransform):
             trs = tr.transforms
         else:
             trs = [tr]
-        return ChainTransform(self.transforms+trs)
+        return ChainTransform(self.transforms + trs)
 
     def __rmul__(self, tr):
         if isinstance(tr, ChainTransform):
             trs = tr.transforms
         else:
             trs = [tr]
-        return ChainTransform(trs+self.transforms)
+        return ChainTransform(trs + self.transforms)
 
     def __str__(self):
         names = [tr.__class__.__name__ for tr in self.transforms]
@@ -288,8 +288,7 @@ class SimplifiedChainTransform(ChainTransform):
             for t2 in tr[1:]:
                 t1 = new_tr[-1]
                 pr = t1 * t2
-                if (not t1.dynamic and not t2.dynamic and not 
-                        isinstance(pr, ChainTransform)):
+                if not t1.dynamic and not t2.dynamic and not isinstance(pr, ChainTransform):
                     cont = True
                     new_tr.pop()
                     new_tr.append(pr)

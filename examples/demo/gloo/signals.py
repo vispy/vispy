@@ -15,24 +15,26 @@ import math
 
 m = 20
 n = 25000
-x = np.tile(np.linspace(-1., 1., n), m)
-y = .1 * np.random.randn(m, n)
+x = np.tile(np.linspace(-1.0, 1.0, n), m)
+y = 0.1 * np.random.randn(m, n)
 y += np.arange(m).reshape((-1, 1))
 
-data = np.zeros(n*m, dtype=[
-    ('a_position', np.float32, 2),
-    ('a_color', np.float32, 3),
-    ('a_index', np.float32),
-])
+data = np.zeros(
+    n * m,
+    dtype=[
+        ("a_position", np.float32, 2),
+        ("a_color", np.float32, 3),
+        ("a_index", np.float32),
+    ],
+)
 
-data['a_position'] = np.zeros((n*m, 2), dtype=np.float32)
-data['a_position'][:, 0] = x
-data['a_position'][:, 1] = .9*(y.ravel()/y.max()*2-1)
+data["a_position"] = np.zeros((n * m, 2), dtype=np.float32)
+data["a_position"][:, 0] = x
+data["a_position"][:, 1] = 0.9 * (y.ravel() / y.max() * 2 - 1)
 
-data['a_color'] = np.repeat(np.random.uniform(size=(m, 3), low=.5, high=.9),
-                            n, axis=0)
+data["a_color"] = np.repeat(np.random.uniform(size=(m, 3), low=0.5, high=0.9), n, axis=0)
 
-data['a_index'] = np.repeat(np.arange(m), n)
+data["a_index"] = np.repeat(np.arange(m), n)
 
 VERT_SHADER = """
 #version 120
@@ -69,17 +71,18 @@ void main() {
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys="interactive")
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program.bind(gloo.VertexBuffer(data))
 
-        self.program['u_pan'] = (0., 0.)
-        self.program['u_scale'] = (1., 1.)
+        self.program["u_pan"] = (0.0, 0.0)
+        self.program["u_scale"] = (1.0, 1.0)
 
         gloo.set_viewport(0, 0, *self.physical_size)
 
-        gloo.set_state(clear_color=(1, 1, 1, 1), blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        gloo.set_state(
+            clear_color=(1, 1, 1, 1), blend=True, blend_func=("src_alpha", "one_minus_src_alpha")
+        )
 
         self.show()
 
@@ -88,12 +91,12 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color=(0.0, 0.0, 0.0, 1.0))
-        self.program.draw('line_strip')
+        self.program.draw("line_strip")
 
     def _normalize(self, x_y):
         x, y = x_y
         w, h = float(self.size[0]), float(self.size[1])
-        return x/(w/2.)-1., y/(h/2.)-1.
+        return x / (w / 2.0) - 1.0, y / (h / 2.0) - 1.0
 
     def on_mouse_move(self, event):
         if event.is_dragging:
@@ -103,29 +106,31 @@ class Canvas(app.Canvas):
             dx, dy = x - x1, -(y - y1)
             button = event.press_event.button
 
-            pan_x, pan_y = self.program['u_pan']
-            scale_x, scale_y = self.program['u_scale']
+            pan_x, pan_y = self.program["u_pan"]
+            scale_x, scale_y = self.program["u_scale"]
 
             if button == 1:
-                self.program['u_pan'] = (pan_x+dx/scale_x, pan_y+dy/scale_y)
+                self.program["u_pan"] = (pan_x + dx / scale_x, pan_y + dy / scale_y)
             elif button == 2:
-                scale_x_new, scale_y_new = (scale_x * math.exp(2.5*dx),
-                                            scale_y * math.exp(2.5*dy))
-                self.program['u_scale'] = (scale_x_new, scale_y_new)
-                self.program['u_pan'] = (pan_x -
-                                         x0 * (1./scale_x - 1./scale_x_new),
-                                         pan_y +
-                                         y0 * (1./scale_y - 1./scale_y_new))
+                scale_x_new, scale_y_new = (
+                    scale_x * math.exp(2.5 * dx),
+                    scale_y * math.exp(2.5 * dy),
+                )
+                self.program["u_scale"] = (scale_x_new, scale_y_new)
+                self.program["u_pan"] = (
+                    pan_x - x0 * (1.0 / scale_x - 1.0 / scale_x_new),
+                    pan_y + y0 * (1.0 / scale_y - 1.0 / scale_y_new),
+                )
             self.update()
 
     def on_mouse_wheel(self, event):
-        dx = np.sign(event.delta[1])*.05
-        scale_x, scale_y = self.program['u_scale']
-        scale_x_new, scale_y_new = (scale_x * math.exp(2.5*dx),
-                                    scale_y * math.exp(2.5*dx))
-        self.program['u_scale'] = (scale_x_new, scale_y_new)
+        dx = np.sign(event.delta[1]) * 0.05
+        scale_x, scale_y = self.program["u_scale"]
+        scale_x_new, scale_y_new = (scale_x * math.exp(2.5 * dx), scale_y * math.exp(2.5 * dx))
+        self.program["u_scale"] = (scale_x_new, scale_y_new)
         self.update()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     c = Canvas()
     app.run()

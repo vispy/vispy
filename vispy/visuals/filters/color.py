@@ -60,7 +60,7 @@ class IsolineFilter(Filter):
         }
     """
 
-    def __init__(self, level=2., width=2.0, antialias=1.0, color='black', **kwargs):
+    def __init__(self, level=2.0, width=2.0, antialias=1.0, color="black", **kwargs):
         super(IsolineFilter, self).__init__(fcode=self.FRAG_SHADER, **kwargs)
 
         self.level = level
@@ -77,7 +77,7 @@ class IsolineFilter(Filter):
         if lev <= 0:
             lev = 0
         self._level = lev
-        self.fshader['isolevel'] = float(lev)
+        self.fshader["isolevel"] = float(lev)
 
     @property
     def width(self):
@@ -86,7 +86,7 @@ class IsolineFilter(Filter):
     @width.setter
     def width(self, w):
         self._width = w
-        self.fshader['isowidth'] = float(w)
+        self.fshader["isowidth"] = float(w)
 
     @property
     def color(self):
@@ -95,7 +95,7 @@ class IsolineFilter(Filter):
     @color.setter
     def color(self, c):
         self._color = c
-        self.fshader['isocolor'] = Color(c).rgba
+        self.fshader["isocolor"] = Color(c).rgba
 
     @property
     def antialias(self):
@@ -104,7 +104,7 @@ class IsolineFilter(Filter):
     @antialias.setter
     def antialias(self, a):
         self._antialias = a
-        self.fshader['antialias'] = float(a)
+        self.fshader["antialias"] = float(a)
 
 
 class Alpha(Filter):
@@ -126,7 +126,7 @@ class Alpha(Filter):
     @alpha.setter
     def alpha(self, a):
         self._alpha = a
-        self.fshader['alpha'] = float(a)
+        self.fshader["alpha"] = float(a)
 
 
 class ColorFilter(Filter):
@@ -136,7 +136,7 @@ class ColorFilter(Filter):
         }
     """
 
-    def __init__(self, filter=(1., 1., 1., 1.), fpos=8, **kwargs):
+    def __init__(self, filter=(1.0, 1.0, 1.0, 1.0), fpos=8, **kwargs):
         super(ColorFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=fpos, **kwargs)
 
         self.filter = filter
@@ -148,7 +148,7 @@ class ColorFilter(Filter):
     @filter.setter
     def filter(self, f):
         self._filter = tuple(f)
-        self.fshader['filter'] = self._filter
+        self.fshader["filter"] = self._filter
 
 
 class ZColormapFilter(Filter):
@@ -164,18 +164,19 @@ class ZColormapFilter(Filter):
         }
     """
 
-    def __init__(self, cmap, zrange=(0., 1.), fpos=3, vpos=9, **kwargs):
-        super(ZColormapFilter, self).__init__(fcode=self.FRAG_SHADER, fpos=fpos,
-                                              vcode=self.VERT_SHADER, vpos=vpos, **kwargs)
+    def __init__(self, cmap, zrange=(0.0, 1.0), fpos=3, vpos=9, **kwargs):
+        super(ZColormapFilter, self).__init__(
+            fcode=self.FRAG_SHADER, fpos=fpos, vcode=self.VERT_SHADER, vpos=vpos, **kwargs
+        )
 
         if isinstance(cmap, str):
             cmap = colormap.get_colormap(cmap)
         self.cmap = Function(cmap.glsl_map)
-        self.fshader['cmap'] = self.cmap
-        self.fshader['zrange'] = zrange
-        self.vshader['zval'] = Varying('v_zval', dtype='float')
-        self.fshader['zval'] = self.vshader['zval']
+        self.fshader["cmap"] = self.cmap
+        self.fshader["zrange"] = zrange
+        self.vshader["zval"] = Varying("v_zval", dtype="float")
+        self.fshader["zval"] = self.vshader["zval"]
 
     def _attach(self, visual):
         super(ZColormapFilter, self)._attach(visual)
-        self.vshader['position'] = visual.shared_program.vert['position']
+        self.vshader["position"] = visual.shared_program.vert["position"]

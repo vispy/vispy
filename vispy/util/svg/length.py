@@ -6,23 +6,21 @@
 import re
 import math
 
-from . base import units
+from .base import units
 from .. import logger
 
 
 class Length(object):
-
-    def __init__(self, content, mode='x', parent=None):
-
+    def __init__(self, content, mode="x", parent=None):
         if not content:
             self._unit = None
             self._value = 0
             self._computed_value = 0
             return
 
-        re_number = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?'
-        re_unit = r'em|ex|px|in|cm|mm|pt|pc|%'
-        re_length = r'(?P<value>%s)\s*(?P<unit>%s)*' % (re_number, re_unit)
+        re_number = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
+        re_unit = r"em|ex|px|in|cm|mm|pt|pc|%"
+        re_length = r"(?P<value>%s)\s*(?P<unit>%s)*" % (re_number, re_unit)
         match = re.match(re_length, content)
 
         if match:
@@ -33,16 +31,16 @@ class Length(object):
             self._unit = None
 
         scale = 1
-        if self._unit == '%':
+        if self._unit == "%":
             if not parent:
                 logger.warn("No parent for computing length using percent")
-            elif hasattr(parent, 'viewport'):
+            elif hasattr(parent, "viewport"):
                 w, h = parent.viewport
-                if mode == 'x':
+                if mode == "x":
                     scale = w
-                elif mode == 'y':
+                elif mode == "y":
                     scale = h
-                elif mode == 'xy':
+                elif mode == "xy":
                     scale = math.sqrt(w * w + h * h) / math.sqrt(2.0)
             else:
                 logger.warn("Parent doesn't have a viewport")
@@ -64,18 +62,15 @@ class Length(object):
 
 
 class XLength(Length):
-
     def __init__(self, content, parent=None):
-        Length.__init__(self, content, 'x', parent)
+        Length.__init__(self, content, "x", parent)
 
 
 class YLength(Length):
-
     def __init__(self, content, parent=None):
-        Length.__init__(self, content, 'y', parent)
+        Length.__init__(self, content, "y", parent)
 
 
 class XYLength(Length):
-
     def __init__(self, content, parent=None):
-        Length.__init__(self, content, 'xy', parent)
+        Length.__init__(self, content, "xy", parent)

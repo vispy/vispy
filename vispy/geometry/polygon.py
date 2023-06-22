@@ -117,7 +117,7 @@ class PolygonData(object):
             edges[-1, 1] = 0
         else:
             # start == end; no wrapping required.
-            edges = np.empty((npts-1, 2), dtype=np.uint32)
+            edges = np.empty((npts - 1, 2), dtype=np.uint32)
             edges[:, 0] = np.arange(npts)
             edges[:, 1] = edges[:, 0] + 1
 

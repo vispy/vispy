@@ -46,7 +46,7 @@ class PanZoomCamera(BaseCamera):
 
     """
 
-    _state_props = BaseCamera._state_props + ('rect', )
+    _state_props = BaseCamera._state_props + ("rect",)
 
     def __init__(self, rect=DEFAULT_RECT_TUPLE, aspect=None, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
@@ -133,7 +133,7 @@ class PanZoomCamera(BaseCamera):
     @property
     def rect(self):
         """The rectangular border of the ViewBox visible area.
-        
+
         This is expressed in the coordinate system of the scene.
         See :class:`~vispy.geometry.rect.Rect` for different ways this can
         be specified.
@@ -163,7 +163,7 @@ class PanZoomCamera(BaseCamera):
     @center.setter
     def center(self, center):
         if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
-            raise ValueError('center must be a 2 or 3 element tuple')
+            raise ValueError("center must be a 2 or 3 element tuple")
         rect = Rect(self.rect) or Rect(*DEFAULT_RECT_TUPLE)
         rect.center = center[:2]
         self.rect = rect
@@ -203,15 +203,15 @@ class PanZoomCamera(BaseCamera):
         # Scrolling
         BaseCamera.viewbox_mouse_event(self, event)
 
-        if event.type == 'mouse_wheel':
+        if event.type == "mouse_wheel":
             center = self._scene_transform.imap(event.pos)
-            self.zoom((1 + self.zoom_factor)**(-event.delta[1] * 30), center)
+            self.zoom((1 + self.zoom_factor) ** (-event.delta[1] * 30), center)
             event.handled = True
-        elif event.type == 'gesture_zoom':
+        elif event.type == "gesture_zoom":
             center = self._scene_transform.imap(event.pos)
             self.zoom(1 - event.scale, center)
             event.handled = True
-        elif event.type == 'mouse_move':
+        elif event.type == "mouse_move":
             if event.press_event is None:
                 return
 
@@ -231,14 +231,13 @@ class PanZoomCamera(BaseCamera):
                 # Zoom
                 p1c = np.array(event.last_event.pos)[:2]
                 p2c = np.array(event.pos)[:2]
-                scale = ((1 + self.zoom_factor)**((p1c - p2c) *
-                                                  np.array([1, -1])))
+                scale = (1 + self.zoom_factor) ** ((p1c - p2c) * np.array([1, -1]))
                 center = self._transform.imap(event.press_event.pos[:2])
                 self.zoom(scale, center)
                 event.handled = True
             else:
                 event.handled = False
-        elif event.type == 'mouse_press':
+        elif event.type == "mouse_press":
             # accept the event if it is button 1 or 2.
             # This is required in order to receive future events
             event.handled = event.button in [1, 2]
@@ -254,8 +253,7 @@ class PanZoomCamera(BaseCamera):
         # apply scale ratio constraint
         if self._aspect is not None:
             # Aspect ratio of the requested range
-            requested_aspect = (rect.width /
-                                rect.height if rect.height != 0 else 1)
+            requested_aspect = rect.width / rect.height if rect.height != 0 else 1
             # Aspect ratio of the viewbox
             view_aspect = vbr.width / vbr.height if vbr.height != 0 else 1
             # View aspect ratio needed to obey the scale constraint
@@ -283,23 +281,39 @@ class PanZoomCamera(BaseCamera):
         # for the scene we need a different (3D) mapping. When there
         # is a minus in up, we simply look at the scene from the other
         # side (as if z was flipped).
-        if self.up == '+z':
+        if self.up == "+z":
             self.tf_mat.matrix = self.transform.as_matrix().matrix
         else:
             rr = self._real_rect
-            d = d if (self.up[0] == '+') else -d
-            pp1 = [(vbr.left, vbr.bottom, 0), (vbr.left, vbr.top, 0),
-                   (vbr.right, vbr.bottom, 0), (vbr.left, vbr.bottom, 1)]
+            d = d if (self.up[0] == "+") else -d
+            pp1 = [
+                (vbr.left, vbr.bottom, 0),
+                (vbr.left, vbr.top, 0),
+                (vbr.right, vbr.bottom, 0),
+                (vbr.left, vbr.bottom, 1),
+            ]
             # Get Mapping
-            if self.up[1] == 'z':
-                pp2 = [(rr.left, rr.bottom, 0), (rr.left, rr.top, 0),
-                       (rr.right, rr.bottom, 0), (rr.left, rr.bottom, d)]
-            elif self.up[1] == 'y':
-                pp2 = [(rr.left, 0, rr.bottom), (rr.left, 0, rr.top),
-                       (rr.right, 0, rr.bottom), (rr.left, d, rr.bottom)]
-            elif self.up[1] == 'x':
-                pp2 = [(0, rr.left, rr.bottom), (0, rr.left, rr.top),
-                       (0, rr.right, rr.bottom), (d, rr.left, rr.bottom)]
+            if self.up[1] == "z":
+                pp2 = [
+                    (rr.left, rr.bottom, 0),
+                    (rr.left, rr.top, 0),
+                    (rr.right, rr.bottom, 0),
+                    (rr.left, rr.bottom, d),
+                ]
+            elif self.up[1] == "y":
+                pp2 = [
+                    (rr.left, 0, rr.bottom),
+                    (rr.left, 0, rr.top),
+                    (rr.right, 0, rr.bottom),
+                    (rr.left, d, rr.bottom),
+                ]
+            elif self.up[1] == "x":
+                pp2 = [
+                    (0, rr.left, rr.bottom),
+                    (0, rr.left, rr.top),
+                    (0, rr.right, rr.bottom),
+                    (d, rr.left, rr.bottom),
+                ]
 
             # Apply
             self.tf_mat.set_mapping(np.array(pp2), np.array(pp1))

@@ -31,14 +31,26 @@ class RegularPolygonVisual(EllipseVisual):
         Number of sides of the regular polygon
     """
 
-    def __init__(self, center=None, color='black', border_color=None,
-                 border_width=1, radius=0.1, sides=4, **kwargs):
-        EllipseVisual.__init__(self, center=center,
-                               radius=radius,
-                               color=color,
-                               border_color=border_color,
-                               border_width=border_width,
-                               num_segments=sides, **kwargs)
+    def __init__(
+        self,
+        center=None,
+        color="black",
+        border_color=None,
+        border_width=1,
+        radius=0.1,
+        sides=4,
+        **kwargs,
+    ):
+        EllipseVisual.__init__(
+            self,
+            center=center,
+            radius=radius,
+            color=color,
+            border_color=border_color,
+            border_width=border_width,
+            num_segments=sides,
+            **kwargs,
+        )
 
     @property
     def sides(self):
@@ -49,8 +61,7 @@ class RegularPolygonVisual(EllipseVisual):
     @sides.setter
     def sides(self, sides):
         if sides < 3:
-            raise ValueError('PolygonVisual must have at least 3 sides, not %s'
-                             % sides)
+            raise ValueError("PolygonVisual must have at least 3 sides, not %s" % sides)
         # edit using the property accessor of num_segments so this
         # internally calls the update()
         self.num_segments = sides

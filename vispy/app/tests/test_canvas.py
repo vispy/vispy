@@ -14,12 +14,13 @@ import pytest
 
 @requires_application()
 @pytest.mark.parametrize(
-    'blend_func',
+    "blend_func",
     [
-        ('src_alpha', 'one_minus_src_alpha', 'one', 'one_minus_src_alpha'),
-        ('src_alpha', 'one_minus_src_alpha'),
+        ("src_alpha", "one_minus_src_alpha", "one", "one_minus_src_alpha"),
+        ("src_alpha", "one_minus_src_alpha"),
         None,
-    ])
+    ],
+)
 def test_canvas_render(blend_func):
     """Test rendering a canvas to an array.
 
@@ -27,7 +28,7 @@ def test_canvas_render(blend_func):
     produce without actually using different types of Visuals.
 
     """
-    with Canvas(size=(125, 125), show=True, title='run') as c:
+    with Canvas(size=(125, 125), show=True, title="run") as c:
         im1 = np.zeros((100, 100, 4)).astype(np.float32)
         im1[:, :, 0] = 1
         im1[:, :, 3] = 1
@@ -44,12 +45,12 @@ def test_canvas_render(blend_func):
         image2.transform = STTransform(translate=(0, 0, -1))
         image2.transforms.configure(canvas=c, viewport=(0, 0, 125, 125))
         if blend_func:
-            image1.set_gl_state(preset='translucent', blend_func=blend_func)
-            image2.set_gl_state(preset='translucent', blend_func=blend_func)
+            image1.set_gl_state(preset="translucent", blend_func=blend_func)
+            image2.set_gl_state(preset="translucent", blend_func=blend_func)
 
         @c.events.draw.connect
         def on_draw(ev):
-            gloo.clear('black')
+            gloo.clear("black")
             gloo.set_viewport(0, 0, *c.physical_size)
             image1.draw()
             image2.draw()
@@ -63,7 +64,7 @@ def test_canvas_render(blend_func):
         assert not np.allclose(rgba_result[..., :3], 0)
         # the alpha should not be completely transparent
         assert not np.allclose(rgba_result[..., 3], 0)
-        if blend_func is None or 'one' in blend_func:
+        if blend_func is None or "one" in blend_func:
             # no transparency
             np.testing.assert_allclose(rgba_result[..., 3], 255)
         else:
@@ -75,10 +76,13 @@ def test_canvas_render(blend_func):
 
 @requires_application()
 @pytest.mark.parametrize(
-    'preset',
+    "preset",
     [
-        'opaque', 'additive', 'translucent',
-    ])
+        "opaque",
+        "additive",
+        "translucent",
+    ],
+)
 def test_blend_presets(preset):
     """Test blending presets a canvas to an array.
 
@@ -86,36 +90,39 @@ def test_blend_presets(preset):
     blend equations.
 
     """
-    with Canvas(size=(125, 125), show=True, title='run') as c:
+    with Canvas(size=(125, 125), show=True, title="run") as c:
         im1 = np.zeros((100, 100, 4)).astype(np.float32)
         im1[:, :, 1] = 1
-        im1[:, :, 3] = .4
+        im1[:, :, 3] = 0.4
         # Create the image
         image1 = ImageVisual(im1)
         image1.transform = STTransform(translate=(20, 20, -1))
         image1.transforms.configure(canvas=c, viewport=(0, 0, 125, 125))
-        
-        gloo.set_state(blend_equation='min')
+
+        gloo.set_state(blend_equation="min")
         image1.set_gl_state(preset)
 
         @c.events.draw.connect
         def on_draw(ev):
-            gloo.clear('black')
+            gloo.clear("black")
             gloo.set_viewport(0, 0, *c.physical_size)
             image1.draw()
-            
+
         rgba_result = c.render()
         assert not np.allclose(rgba_result[..., :3], 0)
 
 
 @requires_application()
-@pytest.mark.parametrize("mouse_event_type, button, buttons, expected_button, expected_buttons", [
-    ('mouse_press', 1, [], 1, [1]),
-    ('mouse_release', 1, [1], 1, [1]),
-    # left click pressed and held, followed by a right click
-    ('mouse_press', 2, [1], 2, [1, 2]),
-    ('mouse_release', 2, [1, 2], 2, [1, 2]),
-])
+@pytest.mark.parametrize(
+    "mouse_event_type, button, buttons, expected_button, expected_buttons",
+    [
+        ("mouse_press", 1, [], 1, [1]),
+        ("mouse_release", 1, [1], 1, [1]),
+        # left click pressed and held, followed by a right click
+        ("mouse_press", 2, [1], 2, [1, 2]),
+        ("mouse_release", 2, [1, 2], 2, [1, 2]),
+    ],
+)
 def test_mouse_event(mouse_event_type, button, buttons, expected_button, expected_buttons):
     mev = MouseEvent(type=mouse_event_type, button=button, buttons=buttons)
     assert mev.buttons == expected_buttons

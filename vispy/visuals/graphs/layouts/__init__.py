@@ -11,10 +11,10 @@ from .networkx_layout import NetworkxCoordinates
 
 
 _layout_map = {
-    'random': random,
-    'circular': circular,
-    'force_directed': fruchterman_reingold,
-    'spring_layout': fruchterman_reingold,
+    "random": random,
+    "circular": circular,
+    "force_directed": fruchterman_reingold,
+    "spring_layout": fruchterman_reingold,
     "networkx_layout": NetworkxCoordinates,
 }
 
@@ -44,8 +44,9 @@ def get_layout(name, *args, **kwargs):
         The callable generator which will calculate the graph layout
     """
     if name not in _layout_map:
-        raise KeyError("Graph layout '%s' not found. Should be one of %s"
-                       % (name, AVAILABLE_LAYOUTS))
+        raise KeyError(
+            "Graph layout '%s' not found. Should be one of %s" % (name, AVAILABLE_LAYOUTS)
+        )
 
     layout = _layout_map[name]
 

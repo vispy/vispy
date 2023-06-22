@@ -29,7 +29,7 @@ from vispy.util.ptime import time
 from vispy.gloo.util import _screenshot
 
 # WARNING: doesn't work with Qt4 (update() does not call on_draw()??)
-app.use_app('glfw')
+app.use_app("glfw")
 
 vertex = """
 attribute vec2 position;
@@ -105,23 +105,21 @@ class Canvas(app.Canvas):
         # Texture where we render the scene.
         self._rendertex = gloo.Texture2D(shape=self.size[::-1] + (4,))
         # FBO.
-        self._fbo = gloo.FrameBuffer(self._rendertex,
-                                     gloo.RenderBuffer(self.size[::-1]))
+        self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer(self.size[::-1]))
         # Regular program that will be rendered to the FBO.
         self.program = gloo.Program(vertex, fragment)
-        self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
-                                    (-1, -1), (1, 1), (1, -1)]
+        self.program["position"] = [(-1, -1), (-1, 1), (1, 1), (-1, -1), (1, 1), (1, -1)]
         self.program["scale"] = 3
         self.program["center"] = [-0.5, 0]
         self.program["iter"] = 300
-        self.program['resolution'] = self.size
+        self.program["resolution"] = self.size
         # We manually draw the hidden canvas.
         self.update()
 
     def on_draw(self, event):
         # Render in the FBO.
         with self._fbo:
-            gloo.clear('black')
+            gloo.clear("black")
             gloo.set_viewport(0, 0, *self.size)
             self.program.draw()
             # Retrieve the contents of the FBO texture.
@@ -130,17 +128,19 @@ class Canvas(app.Canvas):
         # Immediately exit the application.
         app.quit()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     c = Canvas()
     size = c.size
     app.run()
 
     # The rendering is done, we get the rendering output (4D NumPy array)
     render = c.im
-    print('Finished in %.1fms.' % (c._time*1e3))
+    print("Finished in %.1fms." % (c._time * 1e3))
 
     # Now, we display this image with matplotlib to check.
     import matplotlib.pyplot as plt
-    plt.figure(figsize=(size[0]/100., size[1]/100.), dpi=100)
-    plt.imshow(render, interpolation='none')
+
+    plt.figure(figsize=(size[0] / 100.0, size[1] / 100.0), dpi=100)
+    plt.imshow(render, interpolation="none")
     plt.show()

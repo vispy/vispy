@@ -72,35 +72,32 @@ class MarkerVisual(Visual):
         self._pos = pos
         self._color = color
         self._size = size
-        self.set_gl_state(blend=True,
-                          blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._draw_mode = 'points'
+        self.set_gl_state(blend=True, blend_func=("src_alpha", "one_minus_src_alpha"))
+        self._draw_mode = "points"
 
     def _prepare_transforms(self, view=None):
-        view.view_program.vert['transform'] = view.transforms.get_transform()
+        view.view_program.vert["transform"] = view.transforms.get_transform()
 
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
-        self.shared_program['a_position'] = VertexBuffer(self._pos)
-        self.shared_program['a_color'] = VertexBuffer(self._color)
-        self.shared_program['a_size'] = VertexBuffer(self._size)
+        self.shared_program["a_position"] = VertexBuffer(self._pos)
+        self.shared_program["a_color"] = VertexBuffer(self._color)
+        self.shared_program["a_size"] = VertexBuffer(self._size)
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys="interactive")
         ps = self.pixel_scale
 
         n = 10000
         pos = 0.25 * np.random.randn(n, 2).astype(np.float32)
         color = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
-        size = np.random.uniform(2*ps, 12*ps, (n, 1)).astype(np.float32)
+        size = np.random.uniform(2 * ps, 12 * ps, (n, 1)).astype(np.float32)
 
         self.points = MarkerVisual(pos=pos, color=color, size=size)
         w, h = self.size
-        self.points.transform = STTransform(scale=(w / 2., h / 2.),
-                                            translate=(w / 2., h / 2.))
+        self.points.transform = STTransform(scale=(w / 2.0, h / 2.0), translate=(w / 2.0, h / 2.0))
 
     def on_mouse_move(self, event):
         if event.is_dragging:
@@ -121,10 +118,11 @@ class Canvas(app.Canvas):
         self.points.transforms.configure(canvas=self, viewport=vp)
 
     def on_draw(self, event):
-        self.context.clear('white')
+        self.context.clear("white")
         self.points.draw()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     c = Canvas()
     c.show()
     app.run()

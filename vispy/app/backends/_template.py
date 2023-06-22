@@ -9,12 +9,11 @@ should be emitted.
 
 from __future__ import division
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 from ... import config
 
-USE_EGL = config['gl_backend'].lower().startswith('es')
+USE_EGL = config["gl_backend"].lower().startswith("es")
 
 
 # -------------------------------------------------------------------- init ---
@@ -25,26 +24,21 @@ KEYMAP = {
     -2: keys.CONTROL,
     -3: keys.ALT,
     -4: keys.META,
-
     -5: keys.LEFT,
     -6: keys.UP,
     -7: keys.RIGHT,
     -8: keys.DOWN,
     -9: keys.PAGEUP,
     -10: keys.PAGEDOWN,
-
     -11: keys.INSERT,
     -12: keys.DELETE,
     -13: keys.HOME,
     -14: keys.END,
-
     -15: keys.ESCAPE,
     -16: keys.BACKSPACE,
-
     -17: keys.SPACE,
     -18: keys.ENTER,
     -19: keys.TAB,
-
     -20: keys.F1,
     -21: keys.F2,
     -22: keys.F3,
@@ -66,18 +60,18 @@ KEYMAP = {
 # the initialization of the Canvas class.
 capability = dict(
     # if True they mean:
-    title=False,          # can set title on the fly
-    size=False,           # can set size on the fly
-    position=False,       # can set position on the fly
-    show=False,           # can show/hide window XXX ?
-    vsync=False,          # can set window to sync to blank
-    resizable=False,      # can toggle resizability (e.g., no user resizing)
-    decorate=False,       # can toggle decorations
-    fullscreen=False,     # fullscreen window support
-    context=False,        # can share contexts between windows
-    multi_window=False,   # can use multiple windows at once
-    scroll=False,         # scroll-wheel events are supported
-    parent=False,         # can pass native widget backend parent
+    title=False,  # can set title on the fly
+    size=False,  # can set size on the fly
+    position=False,  # can set position on the fly
+    show=False,  # can show/hide window XXX ?
+    vsync=False,  # can set window to sync to blank
+    resizable=False,  # can toggle resizability (e.g., no user resizing)
+    decorate=False,  # can toggle decorations
+    fullscreen=False,  # fullscreen window support
+    context=False,  # can share contexts between windows
+    multi_window=False,  # can use multiple windows at once
+    scroll=False,  # scroll-wheel events are supported
+    parent=False,  # can pass native widget backend parent
     always_on_top=False,  # can be made always-on-top
 )
 
@@ -90,13 +84,13 @@ def _set_config(c):
 
 # ------------------------------------------------------------- application ---
 
-class ApplicationBackend(BaseApplicationBackend):
 
+class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
 
     def _vispy_get_backend_name(self):
-        return 'ThisBackendsName'
+        return "ThisBackendsName"
 
     def _vispy_process_events(self):
         raise NotImplementedError()
@@ -112,6 +106,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 # ------------------------------------------------------------------ canvas ---
+
 
 # You can mix this class with the native widget
 class CanvasBackend(BaseCanvasBackend):
@@ -160,7 +155,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Deal with config
         # ... use context.config
         # Deal with context
-        p.context.shared.add_ref('backend-name', self)
+        p.context.shared.add_ref("backend-name", self)
         if p.context.shared.ref is self:
             self._native_context = None  # ...
         else:
@@ -224,8 +219,8 @@ class CanvasBackend(BaseCanvasBackend):
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
 
+class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
 

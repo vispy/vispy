@@ -14,6 +14,7 @@ Test the fps capability of Vispy with meshdata primitive
 """
 try:
     from sip import setapi
+
     setapi("QVariant", 2)
     setapi("QString", 2)
 except ImportError:
@@ -32,26 +33,36 @@ from vispy.geometry import meshdata as md
 from vispy.geometry import generation as gen
 
 # Provide automatic signal function selection for PyQt5/PySide2
-pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, "pyqtSignal") else QtCore.Signal
 
 
-OBJECT = {'sphere': [('rows', 3, 1000, 'int', 3),
-                     ('cols', 3, 1000, 'int', 3),
-                     ('radius', 0.1, 10, 'double', 1.0)],
-          'cylinder': [('rows', 4, 1000, 'int', 4),
-                       ('cols', 4, 1000, 'int', 4),
-                       ('radius', 0.1, 10, 'double', 1.0),
-                       ('radius Top.', 0.1, 10, 'double', 1.0),
-                       ('length', 0.1, 10, 'double', 1.0)],
-          'cone': [('cols', 3, 1000, 'int', 3),
-                   ('radius', 0.1, 10, 'double', 1.0),
-                   ('length', 0.1, 10, 'double', 1.0)],
-          'arrow': [('rows', 4, 1000, 'int', 4),
-                    ('cols', 4, 1000, 'int', 4),
-                    ('radius', 0.01, 10, 'double', 0.1),
-                    ('length', 0.1, 10, 'double', 1.0),
-                    ('cone_radius', 0.1, 10, 'double', 0.2),
-                    ('cone_length', 0.0, 10., 'double', 0.3)]}
+OBJECT = {
+    "sphere": [
+        ("rows", 3, 1000, "int", 3),
+        ("cols", 3, 1000, "int", 3),
+        ("radius", 0.1, 10, "double", 1.0),
+    ],
+    "cylinder": [
+        ("rows", 4, 1000, "int", 4),
+        ("cols", 4, 1000, "int", 4),
+        ("radius", 0.1, 10, "double", 1.0),
+        ("radius Top.", 0.1, 10, "double", 1.0),
+        ("length", 0.1, 10, "double", 1.0),
+    ],
+    "cone": [
+        ("cols", 3, 1000, "int", 3),
+        ("radius", 0.1, 10, "double", 1.0),
+        ("length", 0.1, 10, "double", 1.0),
+    ],
+    "arrow": [
+        ("rows", 4, 1000, "int", 4),
+        ("cols", 4, 1000, "int", 4),
+        ("radius", 0.01, 10, "double", 0.1),
+        ("length", 0.1, 10, "double", 1.0),
+        ("cone_radius", 0.1, 10, "double", 0.2),
+        ("cone_length", 0.0, 10.0, "double", 0.3),
+    ],
+}
 
 vert = """
 // Uniforms
@@ -95,12 +106,12 @@ DEFAULT_COLOR = (0, 1, 1, 1)
 
 
 class MyMeshData(md.MeshData):
-    """ Add to Meshdata class the capability to export good data for gloo """
+    """Add to Meshdata class the capability to export good data for gloo"""
 
-    def __init__(self, vertices=None, faces=None, edges=None,
-                 vertex_colors=None, face_colors=None):
-        md.MeshData.__init__(self, vertices=None, faces=None, edges=None,
-                             vertex_colors=None, face_colors=None)
+    def __init__(self, vertices=None, faces=None, edges=None, vertex_colors=None, face_colors=None):
+        md.MeshData.__init__(
+            self, vertices=None, faces=None, edges=None, vertex_colors=None, face_colors=None
+        )
 
     def get_glTriangles(self):
         """
@@ -109,9 +120,11 @@ class MyMeshData(md.MeshData):
             I1 is the indices for a filled mesh (use with GL_TRIANGLES)
             I2 is the indices for an outline mesh (use with GL_LINES)
         """
-        vtype = [('a_position', np.float32, 3),
-                 ('a_normal', np.float32, 3),
-                 ('a_color', np.float32, 4)]
+        vtype = [
+            ("a_position", np.float32, 3),
+            ("a_normal", np.float32, 3),
+            ("a_color", np.float32, 4),
+        ]
         vertices = self.get_vertices()
         normals = self.get_vertex_normals()
         faces = np.uint32(self.get_faces())
@@ -121,11 +134,13 @@ class MyMeshData(md.MeshData):
 
         nbrVerts = vertices.shape[0]
         V = np.zeros(nbrVerts, dtype=vtype)
-        V[:]['a_position'] = vertices
-        V[:]['a_normal'] = normals
-        V[:]['a_color'] = colors
+        V[:]["a_position"] = vertices
+        V[:]["a_normal"] = normals
+        V[:]["a_color"] = colors
 
         return V, faces.reshape((-1)), edges.reshape((-1))
+
+
 # -----------------------------------------------------------------------------
 
 
@@ -138,9 +153,11 @@ class ObjectParam(object):
         self.name = name
         self.list_param = list_param
         self.props = {}
-        self.props['visible'] = True
+        self.props["visible"] = True
         for nameV, minV, maxV, typeV, iniV in list_param:
             self.props[nameV] = iniV
+
+
 # -----------------------------------------------------------------------------
 
 
@@ -148,19 +165,20 @@ class ObjectWidget(QtWidgets.QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_objet_changed = pyqtsignal(ObjectParam, name='objectChanged')
+
+    signal_objet_changed = pyqtsignal(ObjectParam, name="objectChanged")
 
     def __init__(self, parent=None, param=None):
         super(ObjectWidget, self).__init__(parent)
 
         if param is None:
-            self.param = ObjectParam('sphere', OBJECT['sphere'])
+            self.param = ObjectParam("sphere", OBJECT["sphere"])
         else:
             self.param = param
 
-        self.gb_c = QtWidgets.QGroupBox(u"Hide/Show %s" % self.param.name)
+        self.gb_c = QtWidgets.QGroupBox("Hide/Show %s" % self.param.name)
         self.gb_c.setCheckable(True)
-        self.gb_c.setChecked(self.param.props['visible'])
+        self.gb_c.setChecked(self.param.props["visible"])
         self.gb_c.toggled.connect(self.update_param)
 
         lL = []
@@ -168,12 +186,12 @@ class ObjectWidget(QtWidgets.QWidget):
         gb_c_lay = QtWidgets.QGridLayout()
         for nameV, minV, maxV, typeV, iniV in self.param.list_param:
             lL.append(QtWidgets.QLabel(nameV, self.gb_c))
-            if typeV == 'double':
+            if typeV == "double":
                 self.sp.append(QtWidgets.QDoubleSpinBox(self.gb_c))
                 self.sp[-1].setDecimals(2)
                 self.sp[-1].setSingleStep(0.1)
                 self.sp[-1].setLocale(QtCore.QLocale(QtCore.QLocale.English))
-            elif typeV == 'int':
+            elif typeV == "int":
                 self.sp.append(QtWidgets.QSpinBox(self.gb_c))
             self.sp[-1].setMinimum(minV)
             self.sp[-1].setMaximum(maxV)
@@ -201,18 +219,21 @@ class ObjectWidget(QtWidgets.QWidget):
         """
         update param and emit a signal
         """
-        self.param.props['visible'] = self.gb_c.isChecked()
+        self.param.props["visible"] = self.gb_c.isChecked()
         keys = map(lambda x: x[0], self.param.list_param)
         for pos, nameV in enumerate(keys):
             self.param.props[nameV] = self.sp[pos].value()
         # emit signal
         self.signal_objet_changed.emit(self.param)
+
+
 # -----------------------------------------------------------------------------
 
 
 class Canvas(app.Canvas):
-
-    def __init__(self,):
+    def __init__(
+        self,
+    ):
         app.Canvas.__init__(self)
         self.size = 800, 600
         # fovy, zfar params
@@ -227,8 +248,8 @@ class Canvas(app.Canvas):
         self.projection = np.eye(4, dtype=np.float32)
         self.view = translate((0, 0, -5.0))
 
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
+        self.program["u_model"] = self.model
+        self.program["u_view"] = self.view
 
         self.theta = 0
         self.phi = 0
@@ -238,18 +259,17 @@ class Canvas(app.Canvas):
         self._timer.connect(self.on_timer)
         self._timer.start()
 
-    # ---------------------------------
+        # ---------------------------------
         gloo.set_clear_color((1, 1, 1, 1))
-        gloo.set_state('opaque')
+        gloo.set_state("opaque")
         gloo.set_polygon_offset(1, 1)
 
     # ---------------------------------
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
-        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
-                            rotate(self.phi, (0, 1, 0)))
-        self.program['u_model'] = self.model
+        self.theta += 0.5
+        self.phi += 0.5
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)), rotate(self.phi, (0, 1, 0)))
+        self.program["u_model"] = self.model
         self.update()
 
     # ---------------------------------
@@ -258,26 +278,23 @@ class Canvas(app.Canvas):
         self.size = event.size
         gloo.set_viewport(0, 0, width, height)
         self.aspect = width / float(height)
-        self.projection = perspective(self.fovy, width / float(height), 1.0,
-                                      self.zfar)
-        self.program['u_projection'] = self.projection
+        self.projection = perspective(self.fovy, width / float(height), 1.0, self.zfar)
+        self.program["u_projection"] = self.projection
 
     # ---------------------------------
     def on_draw(self, event):
         gloo.clear()
         if self.visible:
             # Filled mesh
-            gloo.set_state(blend=False, depth_test=True,
-                           polygon_offset_fill=True)
-            self.program['u_color'] = 1, 1, 1, 1
-            self.program.draw('triangles', self.filled_buf)
+            gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
+            self.program["u_color"] = 1, 1, 1, 1
+            self.program.draw("triangles", self.filled_buf)
 
             # Outline
-            gloo.set_state(blend=True, depth_test=True,
-                           polygon_offset_fill=False)
+            gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)
             gloo.set_depth_mask(False)
-            self.program['u_color'] = 0, 0, 0, 1
-            self.program.draw('lines', self.outline_buf)
+            self.program["u_color"] = 0, 0, 0, 1
+            self.program.draw("lines", self.outline_buf)
             gloo.set_depth_mask(True)
 
     # ---------------------------------
@@ -287,16 +304,17 @@ class Canvas(app.Canvas):
         self.vertices_buff = gloo.VertexBuffer(vertices)
         self.program.bind(self.vertices_buff)
         self.update()
+
+
 # -----------------------------------------------------------------------------
 
 
 class MainWindow(QtWidgets.QMainWindow):
-
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
 
         self.resize(700, 500)
-        self.setWindowTitle('vispy example ...')
+        self.setWindowTitle("vispy example ...")
 
         self.list_object = QtWidgets.QListWidget()
         self.list_object.setAlternatingRowColors(True)
@@ -324,7 +342,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # FPS message in statusbar:
         self.status = self.statusBar()
-        self.status_label = QtWidgets.QLabel('...')
+        self.status_label = QtWidgets.QLabel("...")
         self.status.addWidget(self.status_label)
 
         self.mesh = MyMeshData()
@@ -335,8 +353,7 @@ class MainWindow(QtWidgets.QMainWindow):
         name = self.list_object.currentIndex().data()
         if row != -1:
             self.props_widget.deleteLater()
-            self.props_widget = ObjectWidget(self, param=ObjectParam(name,
-                                                                     OBJECT[name]))
+            self.props_widget = ObjectWidget(self, param=ObjectParam(name, OBJECT[name]))
             self.splitter_v.addWidget(self.props_widget)
             self.props_widget.signal_objet_changed.connect(self.update_view)
             self.update_view(self.props_widget.param)
@@ -350,32 +367,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.status_label.setText(msg)
 
     def update_view(self, param):
-        cols = param.props['cols']
-        radius = param.props['radius']
-        if param.name == 'sphere':
-            rows = param.props['rows']
+        cols = param.props["cols"]
+        radius = param.props["radius"]
+        if param.name == "sphere":
+            rows = param.props["rows"]
             mesh = gen.create_sphere(cols, rows, radius=radius)
-        elif param.name == 'cone':
-            length = param.props['length']
+        elif param.name == "cone":
+            length = param.props["length"]
             mesh = gen.create_cone(cols, radius=radius, length=length)
-        elif param.name == 'cylinder':
-            rows = param.props['rows']
-            length = param.props['length']
-            radius2 = param.props['radius Top.']
-            mesh = gen.create_cylinder(rows, cols, radius=[radius, radius2],
-                                       length=length)
-        elif param.name == 'arrow':
-            length = param.props['length']
-            rows = param.props['rows']
-            cone_radius = param.props['cone_radius']
-            cone_length = param.props['cone_length']
-            mesh = gen.create_arrow(rows, cols, radius=radius, length=length,
-                                    cone_radius=cone_radius,
-                                    cone_length=cone_length)
+        elif param.name == "cylinder":
+            rows = param.props["rows"]
+            length = param.props["length"]
+            radius2 = param.props["radius Top."]
+            mesh = gen.create_cylinder(rows, cols, radius=[radius, radius2], length=length)
+        elif param.name == "arrow":
+            length = param.props["length"]
+            rows = param.props["rows"]
+            cone_radius = param.props["cone_radius"]
+            cone_length = param.props["cone_length"]
+            mesh = gen.create_arrow(
+                rows,
+                cols,
+                radius=radius,
+                length=length,
+                cone_radius=cone_radius,
+                cone_length=cone_length,
+            )
         else:
             return
 
-        self.canvas.visible = param.props['visible']
+        self.canvas.visible = param.props["visible"]
         self.mesh.set_vertices(mesh.get_vertices())
         self.mesh.set_faces(mesh.get_faces())
         colors = np.tile(DEFAULT_COLOR, (self.mesh.n_vertices, 1))
@@ -383,9 +404,9 @@ class MainWindow(QtWidgets.QMainWindow):
         vertices, filled, outline = self.mesh.get_glTriangles()
         self.canvas.set_data(vertices, filled, outline)
 
-# Start Qt event loop unless running in interactive mode.
-if __name__ == '__main__':
 
+# Start Qt event loop unless running in interactive mode.
+if __name__ == "__main__":
     appQt = QtWidgets.QApplication(sys.argv)
     win = MainWindow()
     win.show()

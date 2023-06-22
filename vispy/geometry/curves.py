@@ -72,7 +72,7 @@ curve_recursion_limit = 32
 m_cusp_limit = 0.0
 m_angle_tolerance = 10 * math.pi / 180.0
 m_approximation_scale = 1.0
-m_distance_tolerance_square = (0.5 / m_approximation_scale)**2
+m_distance_tolerance_square = (0.5 / m_approximation_scale) ** 2
 
 
 def calc_sq_distance(x1, y1, x2, y2):
@@ -86,12 +86,12 @@ def _curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
         return
 
     # Calculate all the mid-points of the line segments
-    x12 = (x1 + x2) / 2.
-    y12 = (y1 + y2) / 2.
-    x23 = (x2 + x3) / 2.
-    y23 = (y2 + y3) / 2.
-    x123 = (x12 + x23) / 2.
-    y123 = (y12 + y23) / 2.
+    x12 = (x1 + x2) / 2.0
+    y12 = (y1 + y2) / 2.0
+    x23 = (x2 + x3) / 2.0
+    y23 = (y2 + y3) / 2.0
+    x123 = (x12 + x23) / 2.0
+    y123 = (y12 + y23) / 2.0
 
     dx = x3 - x1
     dy = y3 - y1
@@ -107,8 +107,7 @@ def _curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
                 return
 
             # Angle & Cusp Condition
-            da = math.fabs(
-                math.atan2(y3 - y2, x3 - x2) - math.atan2(y2 - y1, x2 - x1))
+            da = math.fabs(math.atan2(y3 - y2, x3 - x2) - math.atan2(y2 - y1, x2 - x1))
             if da >= math.pi:
                 da = 2 * math.pi - da
 
@@ -127,7 +126,7 @@ def _curve3_recursive_bezier(points, x1, y1, x2, y2, x3, y3, level=0):
                 # Simple collinear case, 1---2---3, we can leave just two
                 # endpoints
                 return
-            if(d <= 0):
+            if d <= 0:
                 d = calc_sq_distance(x2, y2, x1, y1)
             elif d >= 1:
                 d = calc_sq_distance(x2, y2, x3, y3)
@@ -148,18 +147,18 @@ def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
         return
 
     # Calculate all the mid-points of the line segments
-    x12 = (x1 + x2) / 2.
-    y12 = (y1 + y2) / 2.
-    x23 = (x2 + x3) / 2.
-    y23 = (y2 + y3) / 2.
-    x34 = (x3 + x4) / 2.
-    y34 = (y3 + y4) / 2.
-    x123 = (x12 + x23) / 2.
-    y123 = (y12 + y23) / 2.
-    x234 = (x23 + x34) / 2.
-    y234 = (y23 + y34) / 2.
-    x1234 = (x123 + x234) / 2.
-    y1234 = (y123 + y234) / 2.
+    x12 = (x1 + x2) / 2.0
+    y12 = (y1 + y2) / 2.0
+    x23 = (x2 + x3) / 2.0
+    y23 = (y2 + y3) / 2.0
+    x34 = (x3 + x4) / 2.0
+    y34 = (y3 + y4) / 2.0
+    x123 = (x12 + x23) / 2.0
+    y123 = (y12 + y23) / 2.0
+    x234 = (x23 + x34) / 2.0
+    y234 = (y23 + y34) / 2.0
+    x1234 = (x123 + x234) / 2.0
+    y1234 = (y123 + y234) / 2.0
 
     # Try to approximate the full cubic curve by a single straight line
     dx = x4 - x1
@@ -167,8 +166,7 @@ def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
     d2 = math.fabs(((x2 - x4) * dy - (y2 - y4) * dx))
     d3 = math.fabs(((x3 - x4) * dy - (y3 - y4) * dx))
 
-    s = int((d2 > curve_collinearity_epsilon) << 1) + \
-        int(d3 > curve_collinearity_epsilon)
+    s = int((d2 > curve_collinearity_epsilon) << 1) + int(d3 > curve_collinearity_epsilon)
 
     if s == 0:
         # All collinear OR p1==p4
@@ -178,7 +176,7 @@ def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
             d3 = calc_sq_distance(x4, y4, x3, y3)
 
         else:
-            k = 1. / k
+            k = 1.0 / k
             da1 = x2 - x1
             da2 = y2 - y1
             d2 = k * (da1 * dx + da2 * dy)
@@ -221,8 +219,7 @@ def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
                 return
 
             # Angle Condition
-            da1 = math.fabs(
-                math.atan2(y4 - y3, x4 - x3) - math.atan2(y3 - y2, x3 - x2))
+            da1 = math.fabs(math.atan2(y4 - y3, x4 - x3) - math.atan2(y3 - y2, x3 - x2))
             if da1 >= math.pi:
                 da1 = 2 * math.pi - da1
 
@@ -244,8 +241,7 @@ def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
 
             # Angle Condition
             # ---------------
-            da1 = math.fabs(
-                math.atan2(y3 - y2, x3 - x2) - math.atan2(y2 - y1, x2 - x1))
+            da1 = math.fabs(math.atan2(y3 - y2, x3 - x2) - math.atan2(y2 - y1, x2 - x1))
             if da1 >= math.pi:
                 da1 = 2 * math.pi - da1
 
@@ -260,8 +256,7 @@ def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
 
     elif s == 3:
         # Regular case
-        if (d2 + d3) * (d2 + d3) <= m_distance_tolerance_square * (
-                dx * dx + dy * dy):
+        if (d2 + d3) * (d2 + d3) <= m_distance_tolerance_square * (dx * dx + dy * dy):
             # If the curvature doesn't exceed the distance_tolerance value
             # we tend to finish subdivisions.
 
@@ -293,10 +288,8 @@ def _curve4_recursive_bezier(points, x1, y1, x2, y2, x3, y3, x4, y4, level=0):
                     return
 
     # Continue subdivision
-    _curve4_recursive_bezier(
-        points, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1)
-    _curve4_recursive_bezier(
-        points, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1)
+    _curve4_recursive_bezier(points, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1)
+    _curve4_recursive_bezier(points, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1)
 
 
 def curve3_bezier(p1, p2, p3):

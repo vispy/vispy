@@ -17,10 +17,10 @@ except ImportError:
 
 
 def compare_render(
-        orig_data: ArrayLike,
-        rendered_data: ArrayLike,
-        previous_render: Optional[ArrayLike] = None,
-        atol: Optional[float] = 1.0
+    orig_data: ArrayLike,
+    rendered_data: ArrayLike,
+    previous_render: Optional[ArrayLike] = None,
+    atol: Optional[float] = 1.0,
 ):
     """Compare an expected original array with the rendered result.
 
@@ -43,8 +43,9 @@ def compare_render(
     np.testing.assert_allclose(rendered_data.astype(float), predicted.astype(float), atol=atol)
     if previous_render is not None:
         # assert not allclose
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_data, previous_render, atol=10)
+        pytest.raises(
+            AssertionError, np.testing.assert_allclose, rendered_data, previous_render, atol=10
+        )
 
 
 def max_for_dtype(input_dtype: DtypeLike):

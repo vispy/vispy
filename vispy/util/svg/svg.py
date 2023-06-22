@@ -4,12 +4,11 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 
-from . group import Group
-from . viewport import Viewport
+from .group import Group
+from .viewport import Viewport
 
 
 class SVG(Group):
-
     def __init__(self, content=None, parent=None):
         Group.__init__(self, content, parent)
         self._viewport = Viewport(content)

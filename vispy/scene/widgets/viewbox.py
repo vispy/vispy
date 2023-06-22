@@ -59,7 +59,7 @@ class ViewBox(Widget):
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
-            camera = 'base'
+            camera = "base"
         if isinstance(camera, str):
             self.camera = make_camera(camera, parent=self.scene)
         elif isinstance(camera, BaseCamera):
@@ -112,7 +112,7 @@ class ViewBox(Widget):
             cam.view_changed()
 
         else:
-            raise ValueError('Not a camera object.')
+            raise ValueError("Not a camera object.")
 
     def is_in_scene(self, node):
         """Get whether the given node is inside the scene of this viewbox.
@@ -144,15 +144,14 @@ class ViewBox(Widget):
         bounds = [(np.inf, -np.inf), (np.inf, -np.inf), (np.inf, -np.inf)]
         # Get bounds of all children
         for ob in self.scene.children:
-            if hasattr(ob, 'bounds'):
+            if hasattr(ob, "bounds"):
                 for axis in (0, 1, 2):
                     if (dim is not None) and dim != axis:
                         continue
                     b = ob.bounds(axis)
                     if b is not None:
                         b = min(b), max(b)  # Ensure correct order
-                        bounds[axis] = (min(bounds[axis][0], b[0]),
-                                        max(bounds[axis][1], b[1]))
+                        bounds[axis] = (min(bounds[axis][0], b[0]), max(bounds[axis][1], b[1]))
         # Set defaults
         for axis in (0, 1, 2):
             if any(np.isinf(bounds[axis])):
@@ -195,5 +194,5 @@ class ViewBox(Widget):
         self._update_scene_clipper()
 
     def _update_scene_clipper(self, event=None):
-        tr = self.get_transform('visual', 'framebuffer')
+        tr = self.get_transform("visual", "framebuffer")
         self._scene._clipper.bounds = tr.map(self.inner_rect)

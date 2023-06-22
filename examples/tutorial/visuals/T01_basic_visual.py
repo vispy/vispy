@@ -7,15 +7,15 @@
 Tutorial: Creating Visuals
 --------------------------
 
-This tutorial is intended to guide developers who are interested in creating 
+This tutorial is intended to guide developers who are interested in creating
 new subclasses of Visual. In most cases, this will not be necessary because
 vispy's base library of visuals will be sufficient to create complex scenes as
-needed. However, there are cases where a particular visual effect is desired 
+needed. However, there are cases where a particular visual effect is desired
 that is not supported in the base library, or when a custom visual is needed to
 optimize performance for a specific use case.
 
 The purpose of a Visual is to encapsulate a single drawable object. This
-drawable can be as simple or complex as desired. Some of the simplest visuals 
+drawable can be as simple or complex as desired. Some of the simplest visuals
 draw points, lines, or triangles, whereas more complex visuals invove multiple
 drawing stages or make use of sub-visuals to construct larger objects.
 
@@ -35,7 +35,7 @@ import numpy as np
 # Define a simple vertex shader. We use $template variables as placeholders for
 # code that will be inserted later on. In this example, $position will become
 # an attribute, and $transform will become a function. Important: using
-# $transform in this way ensures that users of this visual will be able to 
+# $transform in this way ensures that users of this visual will be able to
 # apply arbitrary transformations to it.
 vertex_shader = """
 void main() {
@@ -53,10 +53,10 @@ void main() {
 """
 
 
-# Start the new Visual class. 
+# Start the new Visual class.
 # By convention, all Visual subclass names end in 'Visual'.
-# (Custom visuals may ignore this convention, but for visuals that are built 
-# in to vispy, this is required to ensure that the VisualNode subclasses are 
+# (Custom visuals may ignore this convention, but for visuals that are built
+# in to vispy, this is required to ensure that the VisualNode subclasses are
 # generated correctly.)
 class MyRectVisual(visuals.Visual):
     """Visual that draws a red rectangle.
@@ -73,7 +73,7 @@ class MyRectVisual(visuals.Visual):
         height of rectangle
 
     All parameters are specified in the local (arbitrary) coordinate system of
-    the visual. How this coordinate system translates to the canvas will 
+    the visual. How this coordinate system translates to the canvas will
     depend on the transformation functions used during drawing.
     """
 
@@ -84,18 +84,20 @@ class MyRectVisual(visuals.Visual):
         visuals.Visual.__init__(self, vertex_shader, fragment_shader)
 
         # vertices for two triangles forming a rectangle
-        self.vbo = gloo.VertexBuffer(np.array([
-            [x, y], [x+w, y], [x+w, y+h],
-            [x, y], [x+w, y+h], [x, y+h]
-        ], dtype=np.float32))
+        self.vbo = gloo.VertexBuffer(
+            np.array(
+                [[x, y], [x + w, y], [x + w, y + h], [x, y], [x + w, y + h], [x, y + h]],
+                dtype=np.float32,
+            )
+        )
 
-        # Assign values to the $position and $color template variables in 
-        # the shaders. ModularProgram automatically handles generating the 
+        # Assign values to the $position and $color template variables in
+        # the shaders. ModularProgram automatically handles generating the
         # necessary attribute and uniform declarations with unique variable
         # names.
-        self.shared_program.vert['position'] = self.vbo
-        self.shared_program.frag['color'] = (1, 0, 0, 1)
-        self._draw_mode = 'triangles'
+        self.shared_program.vert["position"] = self.vbo
+        self.shared_program.frag["color"] = (1, 0, 0, 1)
+        self._draw_mode = "triangles"
 
     def _prepare_transforms(self, view):
         # This method is called when the user or the scenegraph has assigned
@@ -106,45 +108,47 @@ class MyRectVisual(visuals.Visual):
         # The most common approach here is to simply take the complete
         # transformation from visual coordinates to render coordinates. Later
         # tutorials detail more complex transform handling.
-        view.view_program.vert['transform'] = view.get_transform()
+        view.view_program.vert["transform"] = view.get_transform()
 
 
 # At this point the visual is ready to use, but it takes some extra effort to
-# set up a Canvas and TransformSystem for drawing (the examples in 
-# examples/basics/visuals/ all follow this approach). 
-# 
-# An easier approach is to make the visual usable in a scenegraph, in which 
-# case the canvas will take care of drawing the visual and setting up the 
+# set up a Canvas and TransformSystem for drawing (the examples in
+# examples/basics/visuals/ all follow this approach).
+#
+# An easier approach is to make the visual usable in a scenegraph, in which
+# case the canvas will take care of drawing the visual and setting up the
 # TransformSystem for us.
-# 
+#
 # To be able to use our new Visual in a scenegraph, it needs to be
 # a subclass of scene.Node. In vispy we achieve this by creating a parallel
 # set of classes that inherit from both Node and each Visual subclass.
 # This can be done automatically using scene.visuals.create_visual_node():
 MyRect = scene.visuals.create_visual_node(MyRectVisual)
 
-# By convention, these classes have the same name as the Visual they inherit 
+# By convention, these classes have the same name as the Visual they inherit
 # from, but without the 'Visual' suffix.
 
 # The auto-generated class MyRect is basically equivalent to::
-# 
+#
 #     class MyRect(MyRectVisual, scene.Node):
 #        def __init__(self, *args, **kwds):
 #            parent = kwds.pop('parent', None)
 #            name = kwds.pop('name', None)
 #            MyRectVisual.__init__(self, *args, **kwds)
 #            Node.__init__(self, parent=parent, name=name)
-#         
+#
 
 
 # Finally we will test the visual by displaying in a scene.
 
 # Create a canvas to display our visual
-canvas = scene.SceneCanvas(keys='interactive', show=True)
+canvas = scene.SceneCanvas(keys="interactive", show=True)
 
 # Create two instances of MyRect, each using canvas.scene as their parent
-rects = [MyRect(100, 100, 200, 300, parent=canvas.scene),
-         MyRect(500, 100, 200, 300, parent=canvas.scene)]
+rects = [
+    MyRect(100, 100, 200, 300, parent=canvas.scene),
+    MyRect(500, 100, 200, 300, parent=canvas.scene),
+]
 
 # To test that the user-specified transforms work correctly, I'll rotate
 # one rectangle slightly.
@@ -153,7 +157,8 @@ tr.rotate(5, (0, 0, 1))
 rects[1].transform = tr
 
 # ..and optionally start the event loop
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     if sys.flags.interactive != 1:
         app.run()

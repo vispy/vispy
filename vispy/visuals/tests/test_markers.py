@@ -2,8 +2,7 @@
 import numpy as np
 import pytest
 from vispy.scene.visuals import Markers
-from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main)
+from vispy.testing import requires_application, TestingCanvas, run_tests_if_main
 from vispy.testing.image_tester import assert_image_approved
 
 
@@ -48,7 +47,7 @@ def test_markers_edge_width():
 
 def test_empty_markers_symbol():
     markers = Markers()
-    markers.symbol = 'o'
+    markers.symbol = "o"
 
 
 run_tests_if_main()

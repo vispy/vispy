@@ -57,8 +57,7 @@ class Filter(BaseFilter):
         Fragment shader.
     """
 
-    def __init__(self, vcode=None, vhook='post', vpos=5,
-                 fcode=None, fhook='post', fpos=5):
+    def __init__(self, vcode=None, vhook="post", vpos=5, fcode=None, fhook="post", fpos=5):
         super(Filter, self).__init__()
 
         if vcode is not None:
@@ -92,11 +91,11 @@ class Filter(BaseFilter):
             The visual that called this.
         """
         if self.vshader:
-            hook = visual._get_hook('vert', self._vhook)
+            hook = visual._get_hook("vert", self._vhook)
             hook.add(self._vexpr, position=self._vpos)
 
         if self.fshader:
-            hook = visual._get_hook('frag', self._fhook)
+            hook = visual._get_hook("frag", self._fhook)
             hook.add(self._fexpr, position=self._fpos)
 
         self._attached = True
@@ -111,11 +110,11 @@ class Filter(BaseFilter):
             The visual that called this.
         """
         if self.vshader:
-            hook = visual._get_hook('vert', self._vhook)
+            hook = visual._get_hook("vert", self._vhook)
             hook.remove(self._vexpr)
 
         if self.fshader:
-            hook = visual._get_hook('frag', self._fhook)
+            hook = visual._get_hook("frag", self._fhook)
             hook.remove(self._fexpr)
 
         self._attached = False

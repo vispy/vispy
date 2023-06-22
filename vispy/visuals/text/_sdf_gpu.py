@@ -9,8 +9,7 @@ Adapted to `vispy` by Eric Larson <larson.eric.d@gmail.com>.
 
 import numpy as np
 
-from ...gloo import (Program, FrameBuffer, VertexBuffer, Texture2D,
-                     set_viewport, set_state)
+from ...gloo import Program, FrameBuffer, VertexBuffer, Texture2D, set_viewport, set_state
 
 vert_seed = """
 attribute vec2 a_position;
@@ -232,18 +231,16 @@ class SDFRendererGPU(object):
         self.program_seed = Program(vert_seed, frag_seed)
         self.program_flood = Program(vert, frag_flood)
         self.program_insert = Program(vert, frag_insert)
-        self.programs = [self.program_seed, self.program_flood,
-                         self.program_insert]
+        self.programs = [self.program_seed, self.program_flood, self.program_insert]
 
         # Initialize variables
         self.fbo_to = [FrameBuffer(), FrameBuffer(), FrameBuffer()]
-        vtype = np.dtype([('a_position', np.float32, 2),
-                          ('a_texcoord', np.float32, 2)])
+        vtype = np.dtype([("a_position", np.float32, 2), ("a_texcoord", np.float32, 2)])
         vertices = np.zeros(4, dtype=vtype)
-        vertices['a_position'] = [[-1., -1.], [-1., 1.], [1., -1.], [1., 1.]]
-        vertices['a_texcoord'] = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
+        vertices["a_position"] = [[-1.0, -1.0], [-1.0, 1.0], [1.0, -1.0], [1.0, 1.0]]
+        vertices["a_texcoord"] = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]
         vertices = VertexBuffer(vertices)
-        self.program_insert['u_step'] = 1.
+        self.program_insert["u_step"] = 1.0
         for program in self.programs:
             program.bind(vertices)
 
@@ -265,8 +262,9 @@ class SDFRendererGPU(object):
         set_state(blend=False, depth_test=False)
 
         # calculate the negative half (within object)
-        orig_tex = Texture2D(255 - data, format='luminance',
-                             wrapping='clamp_to_edge', interpolation='nearest')
+        orig_tex = Texture2D(
+            255 - data, format="luminance", wrapping="clamp_to_edge", interpolation="nearest"
+        )
         edf_neg_tex = self._render_edf(orig_tex)
 
         # calculate positive half (outside object)
@@ -275,13 +273,13 @@ class SDFRendererGPU(object):
         edf_pos_tex = self._render_edf(orig_tex)
 
         # render final product to output texture
-        self.program_insert['u_texture'] = orig_tex
-        self.program_insert['u_pos_texture'] = edf_pos_tex
-        self.program_insert['u_neg_texture'] = edf_neg_tex
+        self.program_insert["u_texture"] = orig_tex
+        self.program_insert["u_pos_texture"] = edf_pos_tex
+        self.program_insert["u_neg_texture"] = edf_neg_tex
         self.fbo_to[-1].color_buffer = texture
         with self.fbo_to[-1]:
             set_viewport(tuple(offset) + tuple(size))
-            self.program_insert.draw('triangle_strip')
+            self.program_insert.draw("triangle_strip")
 
     def _render_edf(self, orig_tex):
         """Render an EDF to a texture"""
@@ -290,27 +288,28 @@ class SDFRendererGPU(object):
 
         comp_texs = []
         for _ in range(2):
-            tex = Texture2D(sdf_size + (4,), format='rgba',
-                            interpolation='nearest', wrapping='clamp_to_edge')
+            tex = Texture2D(
+                sdf_size + (4,), format="rgba", interpolation="nearest", wrapping="clamp_to_edge"
+            )
             comp_texs.append(tex)
         self.fbo_to[0].color_buffer = comp_texs[0]
         self.fbo_to[1].color_buffer = comp_texs[1]
         for program in self.programs[1:]:  # program_seed does not need this
-            program['u_texh'], program['u_texw'] = sdf_size
+            program["u_texh"], program["u_texw"] = sdf_size
 
         # Do the rendering
         last_rend = 0
         with self.fbo_to[last_rend]:
             set_viewport(0, 0, sdf_size[1], sdf_size[0])
-            self.program_seed['u_texture'] = orig_tex
-            self.program_seed.draw('triangle_strip')
+            self.program_seed["u_texture"] = orig_tex
+            self.program_seed.draw("triangle_strip")
         stepsize = (np.array(sdf_size) // 2).max()
         while stepsize > 0:
-            self.program_flood['u_step'] = stepsize
-            self.program_flood['u_texture'] = comp_texs[last_rend]
+            self.program_flood["u_step"] = stepsize
+            self.program_flood["u_texture"] = comp_texs[last_rend]
             last_rend = 1 if last_rend == 0 else 0
             with self.fbo_to[last_rend]:
                 set_viewport(0, 0, sdf_size[1], sdf_size[0])
-                self.program_flood.draw('triangle_strip')
+                self.program_flood.draw("triangle_strip")
             stepsize //= 2
         return comp_texs[last_rend]

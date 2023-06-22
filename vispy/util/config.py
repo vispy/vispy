@@ -40,41 +40,47 @@ def _init():
 
     app_dir = _get_vispy_app_dir()
     if app_dir is not None:
-        _data_path = op.join(app_dir, 'data')
-        _test_data_path = op.join(app_dir, 'test_data')
+        _data_path = op.join(app_dir, "data")
+        _test_data_path = op.join(app_dir, "test_data")
     else:
         _data_path = _test_data_path = None
 
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
-        'data_path': (str,),
-        'default_backend': (str,),
-        'gl_backend': (str,),
-        'gl_debug': (bool,),
-        'glir_file': (str,) + file_types,
-        'include_path': list,
-        'logging_level': (str,),
-        'qt_lib': (str,),
-        'dpi': (int, type(None)),
-        'profile': (str, type(None),),
-        'audit_tests': (bool,),
-        'test_data_path': (str, type(None),),
+        "data_path": (str,),
+        "default_backend": (str,),
+        "gl_backend": (str,),
+        "gl_debug": (bool,),
+        "glir_file": (str,) + file_types,
+        "include_path": list,
+        "logging_level": (str,),
+        "qt_lib": (str,),
+        "dpi": (int, type(None)),
+        "profile": (
+            str,
+            type(None),
+        ),
+        "audit_tests": (bool,),
+        "test_data_path": (
+            str,
+            type(None),
+        ),
     }
 
     # Default values for all config options
     default_config_options = {
-        'data_path': _data_path,
-        'default_backend': '',
-        'gl_backend': 'gl2',
-        'gl_debug': False,
-        'glir_file': '',
-        'include_path': [],
-        'logging_level': 'warning',
-        'qt_lib': 'any',
-        'dpi': None,
-        'profile': None,
-        'audit_tests': False,
-        'test_data_path': _test_data_path,
+        "data_path": _data_path,
+        "default_backend": "",
+        "gl_backend": "gl2",
+        "gl_debug": False,
+        "glir_file": "",
+        "include_path": [],
+        "logging_level": "warning",
+        "qt_lib": "any",
+        "dpi": None,
+        "profile": None,
+        "audit_tests": False,
+        "test_data_path": _test_data_path,
     }
 
     config = Config(**default_config_options)
@@ -82,9 +88,10 @@ def _init():
     try:
         config.update(**_load_config())
     except Exception as err:
-        raise Exception('Error while reading vispy config file "%s":\n  %s' %
-                        (_get_config_fname(), str(err)))
-    set_log_level(config['logging_level'])
+        raise Exception(
+            'Error while reading vispy config file "%s":\n  %s' % (_get_config_fname(), str(err))
+        )
+    set_log_level(config["logging_level"])
 
     _parse_command_line_arguments()
 
@@ -142,41 +149,49 @@ def _parse_command_line_arguments():
     """
     global config
     # Get command line args for vispy
-    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-glir-file=',
-                'vispy-log=', 'vispy-help', 'vispy-profile=', 'vispy-cprofile',
-                'vispy-dpi=', 'vispy-audit-tests']
+    argnames = [
+        "vispy-backend=",
+        "vispy-gl-debug",
+        "vispy-glir-file=",
+        "vispy-log=",
+        "vispy-help",
+        "vispy-profile=",
+        "vispy-cprofile",
+        "vispy-dpi=",
+        "vispy-audit-tests",
+    ]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], '', argnames)
+        opts, args = getopt.getopt(sys.argv[1:], "", argnames)
     except getopt.GetoptError:
         opts = []
     # Use them to set the config values
     for o, a in opts:
-        if o.startswith('--vispy'):
-            if o == '--vispy-backend':
-                config['default_backend'] = a
-                logger.info('vispy backend: %s', a)
-            elif o == '--vispy-gl-debug':
-                config['gl_debug'] = True
-            elif o == '--vispy-glir-file':
-                config['glir_file'] = a
-            elif o == '--vispy-log':
-                if ',' in a:
-                    verbose, match = a.split(',')
+        if o.startswith("--vispy"):
+            if o == "--vispy-backend":
+                config["default_backend"] = a
+                logger.info("vispy backend: %s", a)
+            elif o == "--vispy-gl-debug":
+                config["gl_debug"] = True
+            elif o == "--vispy-glir-file":
+                config["glir_file"] = a
+            elif o == "--vispy-log":
+                if "," in a:
+                    verbose, match = a.split(",")
                 else:
                     verbose = a
                     match = None
-                config['logging_level'] = a
+                config["logging_level"] = a
                 set_log_level(verbose, match)
-            elif o == '--vispy-profile':
-                config['profile'] = a
-            elif o == '--vispy-cprofile':
+            elif o == "--vispy-profile":
+                config["profile"] = a
+            elif o == "--vispy-cprofile":
                 _enable_profiling()
-            elif o == '--vispy-help':
+            elif o == "--vispy-help":
                 print(VISPY_HELP)
-            elif o == '--vispy-dpi':
-                config['dpi'] = int(a)
-            elif o == '--vispy-audit-tests':
-                config['audit_tests'] = True
+            elif o == "--vispy-dpi":
+                config["dpi"] = int(a)
+            elif o == "--vispy-audit-tests":
+                config["audit_tests"] = True
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
 
@@ -184,20 +199,21 @@ def _parse_command_line_arguments():
 ###############################################################################
 # CONFIG
 
+
 # Adapted from pyzolib/paths.py:
 # https://bitbucket.org/pyzo/pyzolib/src/tip/paths.py
 def _get_vispy_app_dir():
     """Helper to get the default directory for storing vispy data"""
     # Define default user directory
-    user_dir = os.path.expanduser('~')
+    user_dir = os.path.expanduser("~")
 
     # Get system app data dir
     path = None
-    if sys.platform.startswith('win'):
-        path1, path2 = os.getenv('LOCALAPPDATA'), os.getenv('APPDATA')
+    if sys.platform.startswith("win"):
+        path1, path2 = os.getenv("LOCALAPPDATA"), os.getenv("APPDATA")
         path = path1 or path2
-    elif sys.platform.startswith('darwin'):
-        path = os.path.join(user_dir, 'Library', 'Application Support')
+    elif sys.platform.startswith("darwin"):
+        path = os.path.join(user_dir, "Library", "Application Support")
     # On Linux and as fallback
     if not (path and os.path.isdir(path)):
         path = user_dir
@@ -205,14 +221,14 @@ def _get_vispy_app_dir():
     # Maybe we should store things local to the executable (in case of a
     # portable distro or a frozen application that wants to be portable)
     prefix = sys.prefix
-    if getattr(sys, 'frozen', None):  # See application_dir() function
+    if getattr(sys, "frozen", None):  # See application_dir() function
         prefix = os.path.abspath(os.path.dirname(sys.path[0]))
-    for reldir in ('settings', '../settings'):
+    for reldir in ("settings", "../settings"):
         localpath = os.path.abspath(os.path.join(prefix, reldir))
         if os.path.isdir(localpath):
             try:
-                open(os.path.join(localpath, 'test.write'), 'wb').close()
-                os.remove(os.path.join(localpath, 'test.write'))
+                open(os.path.join(localpath, "test.write"), "wb").close()
+                os.remove(os.path.join(localpath, "test.write"))
             except IOError:
                 pass  # We cannot write in this directory
             else:
@@ -220,7 +236,7 @@ def _get_vispy_app_dir():
                 break
 
     # Get path specific for this app
-    appname = '.vispy' if path == user_dir else 'vispy'
+    appname = ".vispy" if path == user_dir else "vispy"
     path = os.path.join(path, appname)
     return path
 
@@ -233,7 +249,7 @@ class ConfigEvent(Event):
     """
 
     def __init__(self, changes):
-        Event.__init__(self, type='config_change')
+        Event.__init__(self, type="config_change")
         self.changes = changes
 
 
@@ -248,9 +264,7 @@ class Config(object):
 
     def __init__(self, **kwargs):
         self.events = EmitterGroup(source=self)
-        self.events['changed'] = EventEmitter(
-            event_class=ConfigEvent,
-            source=self)
+        self.events["changed"] = EventEmitter(event_class=ConfigEvent, source=self)
         self._config = {}
         self.update(**kwargs)
         self._known_keys = get_config_keys()
@@ -269,11 +283,11 @@ class Config(object):
         # check values against acceptable ones
         known_keys = _allowed_config_keys
         if key not in known_keys:
-            raise KeyError('key "%s" not in known keys: "%s"'
-                           % (key, known_keys))
+            raise KeyError('key "%s" not in known keys: "%s"' % (key, known_keys))
         if not isinstance(val, known_keys[key]):
-            raise TypeError('Value for key "%s" must be one of %s, not %s.'
-                            % (key, known_keys[key], type(val)))
+            raise TypeError(
+                'Value for key "%s" must be one of %s, not %s.' % (key, known_keys[key], type(val))
+            )
 
     def update(self, **kwargs):
         for key, val in kwargs.items():
@@ -302,9 +316,9 @@ def _get_config_fname():
     directory = _get_vispy_app_dir()
     if directory is None:
         return None
-    fname = op.join(directory, 'vispy.json')
-    if os.environ.get('_VISPY_CONFIG_TESTING', None) is not None:
-        fname = op.join(_TempDir(), 'vispy.json')
+    fname = op.join(directory, "vispy.json")
+    if os.environ.get("_VISPY_CONFIG_TESTING", None) is not None:
+        fname = op.join(_TempDir(), "vispy.json")
     return fname
 
 
@@ -313,7 +327,7 @@ def _load_config():
     fname = _get_config_fname()
     if fname is None or not op.isfile(fname):
         return dict()
-    with open(fname, 'r') as fid:
+    with open(fname, "r") as fid:
         config = json.load(fid)
     return config
 
@@ -333,10 +347,10 @@ def save_config(**kwargs):
     # write to disk
     fname = _get_config_fname()
     if fname is None:
-        raise RuntimeError('config filename could not be determined')
+        raise RuntimeError("config filename could not be determined")
     if not op.isdir(op.dirname(fname)):
         os.mkdir(op.dirname(fname))
-    with open(fname, 'w') as fid:
+    with open(fname, "w") as fid:
         json.dump(current_config, fid, sort_keys=True, indent=0)
 
 
@@ -355,12 +369,15 @@ def set_data_dir(directory=None, create=False, save=False):
     if directory is None:
         directory = _data_path
         if _data_path is None:
-            raise IOError('default path cannot be determined, please '
-                          'set it manually (directory != None)')
+            raise IOError(
+                "default path cannot be determined, please " "set it manually (directory != None)"
+            )
     if not op.isdir(directory):
         if not create:
-            raise IOError('directory "%s" does not exist, perhaps try '
-                          'create=True to create it?' % directory)
+            raise IOError(
+                'directory "%s" does not exist, perhaps try '
+                "create=True to create it?" % directory
+            )
         os.mkdir(directory)
     config.update(data_path=directory)
     if save:
@@ -373,6 +390,7 @@ def _enable_profiling():
     """
     import cProfile
     import atexit
+
     global _profiler
     _profiler = cProfile.Profile()
     _profiler.enable()
@@ -384,7 +402,7 @@ _profiler = None
 
 def _profile_atexit():
     global _profiler
-    _profiler.print_stats(sort='cumulative')
+    _profiler.print_stats(sort="cumulative")
 
 
 def sys_info(fname=None, overwrite=False):
@@ -403,41 +421,42 @@ def sys_info(fname=None, overwrite=False):
         The system information as a string.
     """
     if fname is not None and op.isfile(fname) and not overwrite:
-        raise IOError('file exists, use overwrite=True to overwrite')
+        raise IOError("file exists, use overwrite=True to overwrite")
 
-    out = 'Platform: %s\n' % platform.platform()
-    out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
-    out += 'NumPy:    %s\n' % (np.__version__,)
+    out = "Platform: %s\n" % platform.platform()
+    out += "Python:   %s\n" % str(sys.version).replace("\n", " ")
+    out += "NumPy:    %s\n" % (np.__version__,)
     try:
         # Nest all imports here to avoid any circular imports
         from ..app import use_app, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
         from .check_environment import has_backend
+
         # get default app
-        with use_log_level('warning'):
+        with use_log_level("warning"):
             app = use_app(call_reuse=False)  # suppress messages
-        out += 'Backend:  %s\n' % app.backend_name
+        out += "Backend:  %s\n" % app.backend_name
         for backend in BACKEND_NAMES:
-            if backend.startswith('ipynb_'):
+            if backend.startswith("ipynb_"):
                 continue
-            with use_log_level('warning', print_msg=False):
-                which = has_backend(backend, out=['which'])[1]
-            out += '{0:<9} {1}\n'.format(backend + ':', which)
-        out += '\n'
+            with use_log_level("warning", print_msg=False):
+                which = has_backend(backend, out=["which"])[1]
+            out += "{0:<9} {1}\n".format(backend + ":", which)
+        out += "\n"
         # We need an OpenGL context to get GL info
-        canvas = Canvas('Test', (10, 10), show=False, app=app)
+        canvas = Canvas("Test", (10, 10), show=False, app=app)
         canvas._backend._vispy_set_current()
-        out += 'GL version:  %r\n' % (gl.glGetParameter(gl.GL_VERSION),)
+        out += "GL version:  %r\n" % (gl.glGetParameter(gl.GL_VERSION),)
         x_ = gl.GL_MAX_TEXTURE_SIZE
-        out += 'MAX_TEXTURE_SIZE: %r\n' % (gl.glGetParameter(x_),)
-        out += 'Extensions: %r\n' % (gl.glGetParameter(gl.GL_EXTENSIONS),)
+        out += "MAX_TEXTURE_SIZE: %r\n" % (gl.glGetParameter(x_),)
+        out += "Extensions: %r\n" % (gl.glGetParameter(gl.GL_EXTENSIONS),)
         canvas.close()
     except Exception:  # don't stop printing info
-        out += 'App info-gathering error:\n%s' % traceback.format_exc()
+        out += "App info-gathering error:\n%s" % traceback.format_exc()
         pass
     if fname is not None:
-        with open(fname, 'w') as fid:
+        with open(fname, "w") as fid:
             fid.write(out)
     return out
 
@@ -468,20 +487,27 @@ class _TempDir(str):
 _init()
 
 
-if hasattr(inspect, 'signature'):  # py35
+if hasattr(inspect, "signature"):  # py35
+
     def _get_args(function, varargs=False):
         params = inspect.signature(function).parameters
-        args = [key for key, param in params.items()
-                if param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)]
+        args = [
+            key
+            for key, param in params.items()
+            if param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)
+        ]
         if varargs:
-            varargs = [param.name for param in params.values()
-                       if param.kind == param.VAR_POSITIONAL]
+            varargs = [
+                param.name for param in params.values() if param.kind == param.VAR_POSITIONAL
+            ]
             if len(varargs) == 0:
                 varargs = None
             return args, varargs
         else:
             return args
+
 else:
+
     def _get_args(function, varargs=False):
         out = inspect.getargspec(function)  # args, varargs, keywords, defaults
         if varargs:

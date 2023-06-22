@@ -6,13 +6,12 @@
 
 import copy
 from ...util import logger
-from . path import Path
-from . base import namespace
-from . transformable import Transformable
+from .path import Path
+from .base import namespace
+from .transformable import Transformable
 
 
 class Group(Transformable):
-
     def __init__(self, content=None, parent=None):
         Transformable.__init__(self, content, parent)
 
@@ -20,7 +19,7 @@ class Group(Transformable):
         for element in content:
             if not element.tag.startswith(namespace):
                 continue
-            tag = element.tag[len(namespace):]
+            tag = element.tag[len(namespace) :]
             if tag == "g":
                 item = Group(element, self)
             elif tag == "path":
@@ -36,7 +35,7 @@ class Group(Transformable):
         L = copy.deepcopy(self._items)
         while i < len(L):
             while isinstance(L[i], Group) and len(L[i]._items):
-                L[i:i + 1] = L[i]._items
+                L[i : i + 1] = L[i]._items
             i += 1
         return L
 

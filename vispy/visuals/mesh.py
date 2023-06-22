@@ -92,16 +92,27 @@ class MeshVisual(Visual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
-    def __init__(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
-                 meshdata=None, shading=None, mode='triangles', **kwargs):
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'],
-                        **kwargs)
-        self.set_gl_state('translucent', depth_test=True, cull_face=False)
+    def __init__(
+        self,
+        vertices=None,
+        faces=None,
+        vertex_colors=None,
+        face_colors=None,
+        color=(0.5, 0.5, 1, 1),
+        vertex_values=None,
+        meshdata=None,
+        shading=None,
+        mode="triangles",
+        **kwargs,
+    ):
+        Visual.__init__(
+            self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"], **kwargs
+        )
+        self.set_gl_state("translucent", depth_test=True, cull_face=False)
 
         self.events.add(data_updated=Event)
 
@@ -110,7 +121,7 @@ class MeshVisual(Visual):
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._cmap = CubeHelixColormap()
-        self._clim = 'auto'
+        self._clim = "auto"
 
         # Uniform color
         self._color = Color(color)
@@ -124,9 +135,15 @@ class MeshVisual(Visual):
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
         MeshVisual.set_data(
-            self, vertices=vertices, faces=faces, vertex_colors=vertex_colors,
-            face_colors=face_colors, vertex_values=vertex_values,
-            meshdata=meshdata, color=color)
+            self,
+            vertices=vertices,
+            faces=faces,
+            vertex_colors=vertex_colors,
+            face_colors=face_colors,
+            vertex_values=vertex_values,
+            meshdata=meshdata,
+            color=color,
+        )
 
         # primitive mode
         self._draw_mode = mode
@@ -140,21 +157,29 @@ class MeshVisual(Visual):
 
     @shading.setter
     def shading(self, shading):
-        assert shading in (None, 'flat', 'smooth')
+        assert shading in (None, "flat", "smooth")
         self._shading = shading
         if shading is None and self.shading_filter is None:
             # Delay creation of filter until necessary.
             return
         if self.shading_filter is None:
             from vispy.visuals.filters import ShadingFilter
+
             self.shading_filter = ShadingFilter(shading=shading)
             self.attach(self.shading_filter)
         else:
             self.shading_filter.shading = shading
 
-    def set_data(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, color=None, vertex_values=None,
-                 meshdata=None):
+    def set_data(
+        self,
+        vertices=None,
+        faces=None,
+        vertex_colors=None,
+        face_colors=None,
+        color=None,
+        vertex_values=None,
+        meshdata=None,
+    ):
         """Set the mesh data
 
         Parameters
@@ -177,10 +202,13 @@ class MeshVisual(Visual):
         if meshdata is not None:
             self._meshdata = meshdata
         else:
-            self._meshdata = MeshData(vertices=vertices, faces=faces,
-                                      vertex_colors=vertex_colors,
-                                      face_colors=face_colors,
-                                      vertex_values=vertex_values)
+            self._meshdata = MeshData(
+                vertices=vertices,
+                faces=faces,
+                vertex_colors=vertex_colors,
+                face_colors=face_colors,
+                vertex_values=vertex_values,
+            )
         self._bounds = self._meshdata.get_bounds()
         if color is not None:
             self._color = Color(color)
@@ -188,18 +216,17 @@ class MeshVisual(Visual):
 
     @property
     def clim(self):
-        return (self._clim if isinstance(self._clim, str) else
-                tuple(self._clim))
+        return self._clim if isinstance(self._clim, str) else tuple(self._clim)
 
     @clim.setter
     def clim(self, clim):
         if isinstance(clim, str):
-            if clim != 'auto':
+            if clim != "auto":
                 raise ValueError('clim must be "auto" if a string')
         else:
             clim = np.array(clim, float)
             if clim.shape != (2,):
-                raise ValueError('clim must have two elements')
+                raise ValueError("clim must have two elements")
         self._clim = clim
         self.mesh_data_changed()
 
@@ -241,9 +268,9 @@ class MeshVisual(Visual):
 
     @mode.setter
     def mode(self, m):
-        modes = ['triangles', 'triangle_strip', 'triangle_fan']
+        modes = ["triangles", "triangle_strip", "triangle_fan"]
         if m not in modes:
-            raise ValueError("Mesh mode must be one of %s" % ', '.join(modes))
+            raise ValueError("Mesh mode must be one of %s" % ", ".join(modes))
         self._draw_mode = m
 
     @property
@@ -279,12 +306,12 @@ class MeshVisual(Visual):
     def _build_color_transform(self, colors):
         # Eventually this could be de-duplicated with visuals/image.py, which does
         # something similar (but takes a ``color`` instead of ``float``)
-        null_color_transform = 'vec4 pass(vec4 color) { return color; }'
-        clim_func = 'float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }'
+        null_color_transform = "vec4 pass(vec4 color) { return color; }"
+        clim_func = "float cmap(float val) { return (val - $cmin) / ($cmax - $cmin); }"
         if colors.ndim == 2 and colors.shape[1] == 1:
             fun = Function(clim_func)
-            fun['cmin'] = self._clim_values[0]
-            fun['cmax'] = self._clim_values[1]
+            fun["cmin"] = self._clim_values[0]
+            fun["cmax"] = self._clim_values[1]
             fun = FunctionChain(None, [fun, Function(self.cmap.glsl_map)])
         else:
             fun = Function(null_color_transform)
@@ -294,17 +321,21 @@ class MeshVisual(Visual):
     @lru_cache(maxsize=2)
     def _ensure_vec4_func(dims):
         if dims == 2:
-            func = Function("""
+            func = Function(
+                """
                 vec4 vec2to4(vec2 xyz) {
                     return vec4(xyz, 0.0, 1.0);
                 }
-            """)
+            """
+            )
         elif dims == 3:
-            func = Function("""
+            func = Function(
+                """
                 vec4 vec3to4(vec3 xyz) {
                     return vec4(xyz, 1.0);
                 }
-            """)
+            """
+            )
         else:
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
         return func
@@ -312,42 +343,42 @@ class MeshVisual(Visual):
     def _update_data(self):
         md = self.mesh_data
 
-        v = md.get_vertices(indexed='faces')
+        v = md.get_vertices(indexed="faces")
         if v is None:
             return False
         if v.shape[-1] == 2:
             v = np.concatenate((v, np.zeros((v.shape[:-1] + (1,)))), -1)
         self._vertices.set_data(v, convert=True)
         if md.has_vertex_color():
-            colors = md.get_vertex_colors(indexed='faces')
+            colors = md.get_vertex_colors(indexed="faces")
             colors = colors.astype(np.float32)
         elif md.has_face_color():
-            colors = md.get_face_colors(indexed='faces')
+            colors = md.get_face_colors(indexed="faces")
             colors = colors.astype(np.float32)
         elif md.has_vertex_value():
-            colors = md.get_vertex_values(indexed='faces')
+            colors = md.get_vertex_values(indexed="faces")
             colors = colors.ravel()[:, np.newaxis]
             colors = colors.astype(np.float32)
         else:
             colors = self._color.rgba
 
-        self.shared_program.vert['position'] = self._vertices
+        self.shared_program.vert["position"] = self._vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
+        self.shared_program["texture2D_LUT"] = self._cmap.texture_lut()
 
         # Position input handling
         ensure_vec4 = self._ensure_vec4_func(v.shape[-1])
-        self.shared_program.vert['to_vec4'] = ensure_vec4
+        self.shared_program.vert["to_vec4"] = ensure_vec4
 
         # Set the base color.
         #
         # The base color is mixed further by the material filters for texture
         # or shading effects.
-        self.shared_program.vert['color_transform'] = self._build_color_transform(colors)
+        self.shared_program.vert["color_transform"] = self._build_color_transform(colors)
         if colors.ndim == 1:
-            self.shared_program.vert['base_color'] = colors
+            self.shared_program.vert["base_color"] = colors
         else:
-            self.shared_program.vert['base_color'] = VertexBuffer(colors)
+            self.shared_program.vert["base_color"] = VertexBuffer(colors)
 
         self._data_changed = False
 
@@ -362,7 +393,7 @@ class MeshVisual(Visual):
     @staticmethod
     def _prepare_transforms(view):
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr
+        view.view_program.vert["transform"] = tr
 
     def _compute_bounds(self, axis, view):
         if self._bounds is None:

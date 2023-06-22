@@ -18,23 +18,23 @@ import numpy as np
 from vispy import app, scene, io
 
 # Read volume
-vol1 = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
+vol1 = np.load(io.load_data_file("volume/stent.npz"))["arr_0"]
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys="interactive")
 canvas.size = 800, 600
 canvas.show()
 canvas.measure_fps()
 
 # Set up a viewbox to display the image with interactive pan/zoom
 # Create two ViewBoxes, place side-by-side
-vb1 = scene.widgets.ViewBox(border_color='yellow', parent=canvas.scene)
-vb2 = scene.widgets.ViewBox(border_color='blue', parent=canvas.scene)
+vb1 = scene.widgets.ViewBox(border_color="yellow", parent=canvas.scene)
+vb2 = scene.widgets.ViewBox(border_color="blue", parent=canvas.scene)
 
 # This is temporarily needed because fragment clipping method is not yet
 # compatible with multiple parenting.
-vb1.clip_method = 'viewport'
-vb2.clip_method = 'viewport'
+vb1.clip_method = "viewport"
+vb2.clip_method = "viewport"
 
 scenes = vb1.scene, vb2.scene
 #
@@ -56,5 +56,5 @@ cam2.transform.translate((+10, 0, 0))
 vb1.camera = cam1
 vb2.camera = cam2
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()

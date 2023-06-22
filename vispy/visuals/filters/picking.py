@@ -37,9 +37,9 @@ class PickingFilter(Filter):
     @id.setter
     def id(self, id):
         if id < 1:
-            raise ValueError('Picking ID must be integer > 0.')
-        id_color = struct.unpack('<4B', struct.pack('<I', id))
-        self.fshader['id_color'] = [x/255. for x in id_color]
+            raise ValueError("Picking ID must be integer > 0.")
+        id_color = struct.unpack("<4B", struct.pack("<I", id))
+        self.fshader["id_color"] = [x / 255.0 for x in id_color]
         self._id = id
         self._id_color = id_color
 
@@ -50,7 +50,7 @@ class PickingFilter(Filter):
     @enabled.setter
     def enabled(self, e):
         self._enabled = e
-        self.fshader['enabled'] = 1 if e is True else 0
+        self.fshader["enabled"] = 1 if e is True else 0
 
     @property
     def color(self):

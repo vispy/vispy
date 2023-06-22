@@ -8,15 +8,16 @@ import warnings
 from vispy.testing import requires_application
 
 
-@requires_application('pyqt4', has=['uic'])
+@requires_application("pyqt4", has=["uic"])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
     from PyQt4 import QtGui, uic
+
     app = QtGui.QApplication.instance()
     if app is None:
         app = QtGui.QApplication([])
 
-    fname = op.join(op.dirname(__file__), 'qt-designer.ui')
+    fname = op.join(op.dirname(__file__), "qt-designer.ui")
     with warnings.catch_warnings(record=True):  # pyqt4 deprecation warning
         WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
 
@@ -42,6 +43,6 @@ def test_qt_designer():
 
 
 # Don't use run_tests_if_main(), because we want to show the win
-if __name__ == '__main__':
+if __name__ == "__main__":
     win = test_qt_designer()
     win.show()

@@ -56,7 +56,7 @@ class PanZoomTransform(BaseTransform):
     def pan(self, value):
         if isinstance(value, Variable):
             self._pan = value
-            self._shader_map['pan'] = self._pan
+            self._shader_map["pan"] = self._pan
         elif isinstance(self._pan, Variable):
             self._pan.value = value
         else:
@@ -73,7 +73,7 @@ class PanZoomTransform(BaseTransform):
     def zoom(self, value):
         if isinstance(value, Variable):
             self._zoom = value
-            self._shader_map['zoom'] = self._zoom
+            self._shader_map["zoom"] = self._zoom
         elif isinstance(self._zoom, Variable):
             self._zoom.value = value
         else:
@@ -92,31 +92,30 @@ class PanZoomTransform(BaseTransform):
 
 class PanZoomCanvas(app.Canvas):
     def __init__(self, **kwargs):
-        super(PanZoomCanvas, self).__init__(keys='interactive', **kwargs)
+        super(PanZoomCanvas, self).__init__(keys="interactive", **kwargs)
         self._visuals = []
 
         self._pz = PanZoomTransform()
-        self._pz.pan = Variable('uniform vec2 u_pan', (0, 0))
-        self._pz.zoom = Variable('uniform vec2 u_zoom', (1, 1))
+        self._pz.pan = Variable("uniform vec2 u_pan", (0, 0))
+        self._pz.zoom = Variable("uniform vec2 u_zoom", (1, 1))
 
         self.width, self.height = self.size
-        self.context.set_viewport(0, 0, self.physical_size[0],
-                                  self.physical_size[1])
-        self.context.set_state(clear_color='black', blend=True,
-                               blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.context.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
+        self.context.set_state(
+            clear_color="black", blend=True, blend_func=("src_alpha", "one_minus_src_alpha")
+        )
 
         self._tr = TransformSystem(self)
         self.show()
 
     def on_resize(self, event):
         self.width, self.height = event.size
-        self.context.set_viewport(0, 0, event.physical_size[0],
-                                  event.physical_size[1])
+        self.context.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
 
     def _normalize(self, x_y):
         x, y = x_y
         w, h = float(self.width), float(self.height)
-        return x/(w/2.)-1., y/(h/2.)-1.
+        return x / (w / 2.0) - 1.0, y / (h / 2.0) - 1.0
 
     def bounds(self):
         pan_x, pan_y = self._pz.pan
@@ -139,38 +138,39 @@ class PanZoomCanvas(app.Canvas):
             zoom_x, zoom_y = self._pz.zoom
 
             if button == 1:
-                self._pz.pan = (pan_x + dx/zoom_x,
-                                pan_y + dy/zoom_y)
+                self._pz.pan = (pan_x + dx / zoom_x, pan_y + dy / zoom_y)
             elif button == 2:
-                zoom_x_new, zoom_y_new = (zoom_x * math.exp(2.5 * dx),
-                                          zoom_y * math.exp(2.5 * dy))
+                zoom_x_new, zoom_y_new = (zoom_x * math.exp(2.5 * dx), zoom_y * math.exp(2.5 * dy))
                 self._pz.zoom = (zoom_x_new, zoom_y_new)
-                self._pz.pan = (pan_x - x0 * (1./zoom_x - 1./zoom_x_new),
-                                pan_y + y0 * (1./zoom_y - 1./zoom_y_new))
+                self._pz.pan = (
+                    pan_x - x0 * (1.0 / zoom_x - 1.0 / zoom_x_new),
+                    pan_y + y0 * (1.0 / zoom_y - 1.0 / zoom_y_new),
+                )
             self.update()
 
     def on_mouse_wheel(self, event):
         prof = Profiler()  # noqa
         if not event.modifiers:
-            dx = np.sign(event.delta[1])*.05
+            dx = np.sign(event.delta[1]) * 0.05
             x0, y0 = self._normalize(event.pos)
             pan_x, pan_y = self._pz.pan
             zoom_x, zoom_y = self._pz.zoom
-            zoom_x_new, zoom_y_new = (zoom_x * math.exp(2.5 * dx),
-                                      zoom_y * math.exp(2.5 * dx))
+            zoom_x_new, zoom_y_new = (zoom_x * math.exp(2.5 * dx), zoom_y * math.exp(2.5 * dx))
             self._pz.zoom = (zoom_x_new, zoom_y_new)
-            self._pz.pan = (pan_x - x0 * (1./zoom_x - 1./zoom_x_new),
-                            pan_y + y0 * (1./zoom_y - 1./zoom_y_new))
+            self._pz.pan = (
+                pan_x - x0 * (1.0 / zoom_x - 1.0 / zoom_x_new),
+                pan_y + y0 * (1.0 / zoom_y - 1.0 / zoom_y_new),
+            )
             self.update()
 
     def on_key_press(self, event):
-        if event.key == 'R':
-            self._pz.zoom = (1., 1.)
-            self._pz.pan = (0., 0.)
+        if event.key == "R":
+            self._pz.zoom = (1.0, 1.0)
+            self._pz.pan = (0.0, 0.0)
             self.update()
 
     def add_visual(self, name, value):
-        value.shared_program.vert['transform'] = self._pz
+        value.shared_program.vert["transform"] = self._pz
         value.events.update.connect(self.update)
         self._visuals.append(value)
 
@@ -188,7 +188,7 @@ class PanZoomCanvas(app.Canvas):
         self.context.clear()
         for visual in self.visuals:
             visual.draw()
-            prof('draw visual')
+            prof("draw visual")
 
 
 X_TRANSFORM = """
@@ -255,9 +255,9 @@ class SignalsVisual(Visual):
 
         self._data = data
 
-        a_index = np.c_[np.repeat(np.arange(nsignals), nsamples),
-                        np.tile(np.arange(nsamples), nsignals)
-                        ].astype(np.float32)
+        a_index = np.c_[
+            np.repeat(np.arange(nsignals), nsamples), np.tile(np.arange(nsamples), nsignals)
+        ].astype(np.float32)
 
         # Doesn't seem to work nor to be very efficient.
         # indices = nsignals * np.arange(nsamples)
@@ -266,29 +266,28 @@ class SignalsVisual(Visual):
         # self._ibuffer = gloo.IndexBuffer(indices)
 
         self._buffer = gloo.VertexBuffer(data.reshape(-1, 1))
-        self.shared_program['a_position'] = self._buffer
-        self.shared_program['a_index'] = a_index
+        self.shared_program["a_position"] = self._buffer
+        self.shared_program["a_index"] = a_index
 
         x_transform = Function(X_TRANSFORM)
-        x_transform['nsamples'] = nsamples
-        self.shared_program.vert['get_x'] = x_transform
+        x_transform["nsamples"] = nsamples
+        self.shared_program.vert["get_x"] = x_transform
 
         y_transform = Function(Y_TRANSFORM)
-        y_transform['scale'] = Variable('uniform float u_signal_scale', 1.)
-        y_transform['nsignals'] = nsignals
-        self.shared_program.vert['get_y'] = y_transform
+        y_transform["scale"] = Variable("uniform float u_signal_scale", 1.0)
+        y_transform["nsignals"] = nsignals
+        self.shared_program.vert["get_y"] = y_transform
         self._y_transform = y_transform
 
         colormap = Function(DISCRETE_CMAP)
         rng = np.random.RandomState(0)
-        cmap = rng.uniform(size=(1, nsignals, 3),
-                           low=.5, high=.9).astype(np.float32)
+        cmap = rng.uniform(size=(1, nsignals, 3), low=0.5, high=0.9).astype(np.float32)
         tex = gloo.Texture2D((cmap * 255).astype(np.uint8))
-        colormap['colormap'] = Variable('uniform sampler2D u_colormap', tex)
-        colormap['ncolors'] = nsignals
-        self.shared_program.frag['get_color'] = colormap
-        self._draw_mode = 'line_strip'
-        self.set_gl_state('translucent', depth_test=False)
+        colormap["colormap"] = Variable("uniform sampler2D u_colormap", tex)
+        colormap["ncolors"] = nsignals
+        self.shared_program.frag["get_color"] = colormap
+        self._draw_mode = "line_strip"
+        self.set_gl_state("translucent", depth_test=False)
 
     @property
     def data(self):
@@ -302,11 +301,11 @@ class SignalsVisual(Visual):
 
     @property
     def signal_scale(self):
-        return self._y_transform['scale'].value
+        return self._y_transform["scale"].value
 
     @signal_scale.setter
     def signal_scale(self, value):
-        self._y_transform['scale'].value = value
+        self._y_transform["scale"].value = value
         self.update()
 
     def _prepare_draw(self, view=None):
@@ -320,20 +319,21 @@ class SignalsVisual(Visual):
 Signals = scene.visuals.create_visual_node(SignalsVisual)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     data = np.random.normal(size=(128, 1000)).astype(np.float32)
 
-    pzcanvas = PanZoomCanvas(position=(400, 300), size=(800, 600),
-                             title="PanZoomCanvas", vsync=False)
+    pzcanvas = PanZoomCanvas(
+        position=(400, 300), size=(800, 600), title="PanZoomCanvas", vsync=False
+    )
     visual = SignalsVisual(data)
-    pzcanvas.add_visual('signal', visual)
+    pzcanvas.add_visual("signal", visual)
 
-    scanvas = scene.SceneCanvas(show=True, keys='interactive',
-                                title="SceneCanvas", vsync=False)
-    view = scanvas.central_widget.add_view('panzoom')
+    scanvas = scene.SceneCanvas(show=True, keys="interactive", title="SceneCanvas", vsync=False)
+    view = scanvas.central_widget.add_view("panzoom")
     svisual = Signals(data, parent=view.scene)
     view.camera.set_range([-0.9, 0.9], [-0.9, 0.9])
 
     import sys
+
     if sys.flags.interactive != 1:
         app.run()

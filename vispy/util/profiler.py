@@ -38,8 +38,7 @@ class Profiler(object):
     only the initial "vispy.." prefix from the module.
     """
 
-    _profilers = (config['profile'].split(",") if config['profile'] is not None
-                  else [])
+    _profilers = config["profile"].split(",") if config["profile"] is not None else []
 
     _depth = 0
     _msgs = []
@@ -61,10 +60,9 @@ class Profiler(object):
 
     _disabled_profiler = DisabledProfiler()
 
-    def __new__(cls, msg=None, disabled='env', delayed=True):
+    def __new__(cls, msg=None, disabled="env", delayed=True):
         """Optionally create a new profiler based on caller's qualname."""
-        if (disabled is True or 
-                (disabled == 'env' and len(cls._profilers) == 0)):
+        if disabled is True or (disabled == "env" and len(cls._profilers) == 0):
             return cls._disabled_profiler
 
         # determine the qualified name of the caller function
@@ -76,8 +74,11 @@ class Profiler(object):
         else:  # we are in a method
             qualifier = caller_object_type.__name__
         func_qualname = qualifier + "." + caller_frame.f_code.co_name
-        if (disabled == 'env' and func_qualname not in cls._profilers and
-                'all' not in cls._profilers):  # don't do anything
+        if (
+            disabled == "env"
+            and func_qualname not in cls._profilers
+            and "all" not in cls._profilers
+        ):  # don't do anything
             return cls._disabled_profiler
         # create an actual profiling object
         cls._depth += 1
@@ -119,12 +120,15 @@ class Profiler(object):
     def finish(self, msg=None):
         """Add a final message; flush the message list if no parent profiler."""
         if self._finished or self.disable:
-            return        
+            return
         self._finished = True
         if msg is not None:
             self(msg)
-        self._new_msg("< Exiting %s, total time: %0.4f ms", 
-                      self._name, (ptime.time() - self._firstTime) * 1000)
+        self._new_msg(
+            "< Exiting %s, total time: %0.4f ms",
+            self._name,
+            (ptime.time() - self._firstTime) * 1000,
+        )
         type(self)._depth -= 1
         if self._depth < 1:
             self.flush()

@@ -9,25 +9,26 @@ from __future__ import division
 from packaging.version import Version
 from time import sleep
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 from ...util.ptime import time
 from ... import config
 
-USE_EGL = config['gl_backend'].lower().startswith('es')
+USE_EGL = config["gl_backend"].lower().startswith("es")
 
 
 # -------------------------------------------------------------------- init ---
 
 try:
     import pyglet
+
     version = pyglet.version
-    if Version(version) < Version('1.2'):
-        help_ = ('You can install the latest pyglet using:\n    '
-                 'pip install http://pyglet.googlecode.com/archive/tip.zip')
-        raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
-                          % (version, help_))
+    if Version(version) < Version("1.2"):
+        help_ = (
+            "You can install the latest pyglet using:\n    "
+            "pip install http://pyglet.googlecode.com/archive/tip.zip"
+        )
+        raise ImportError("Pyglet version too old (%s), need >= 1.2\n%s" % (version, help_))
 
     # Map native keys to vispy keys
     KEYMAP = {
@@ -39,22 +40,18 @@ try:
         pyglet.window.key.RALT: keys.ALT,
         pyglet.window.key.LMETA: keys.META,
         pyglet.window.key.RMETA: keys.META,
-
         pyglet.window.key.LEFT: keys.LEFT,
         pyglet.window.key.UP: keys.UP,
         pyglet.window.key.RIGHT: keys.RIGHT,
         pyglet.window.key.DOWN: keys.DOWN,
         pyglet.window.key.PAGEUP: keys.PAGEUP,
         pyglet.window.key.PAGEDOWN: keys.PAGEDOWN,
-
         pyglet.window.key.INSERT: keys.INSERT,
         pyglet.window.key.DELETE: keys.DELETE,
         pyglet.window.key.HOME: keys.HOME,
         pyglet.window.key.END: keys.END,
-
         pyglet.window.key.ESCAPE: keys.ESCAPE,
         pyglet.window.key.BACKSPACE: keys.BACKSPACE,
-
         pyglet.window.key.F1: keys.F1,
         pyglet.window.key.F2: keys.F2,
         pyglet.window.key.F3: keys.F3,
@@ -67,28 +64,29 @@ try:
         pyglet.window.key.F10: keys.F10,
         pyglet.window.key.F11: keys.F11,
         pyglet.window.key.F12: keys.F12,
-
         pyglet.window.key.SPACE: keys.SPACE,
         pyglet.window.key.ENTER: keys.ENTER,  # == pyglet.window.key.RETURN
         pyglet.window.key.NUM_ENTER: keys.ENTER,
         pyglet.window.key.TAB: keys.TAB,
     }
 
-    BUTTONMAP = {pyglet.window.mouse.LEFT: 1,
-                 pyglet.window.mouse.RIGHT: 2,
-                 pyglet.window.mouse.MIDDLE: 3
-                 }
+    BUTTONMAP = {
+        pyglet.window.mouse.LEFT: 1,
+        pyglet.window.mouse.RIGHT: 2,
+        pyglet.window.mouse.MIDDLE: 3,
+    }
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 
     class _Window(object):
         pass
+
 else:
     if USE_EGL:
-        available, testable, why_not = False, False, 'EGL not supported'
+        available, testable, why_not = False, False, "EGL not supported"
     else:
         available, testable, why_not = True, True, None
-    which = 'pyglet ' + str(pyglet.version)
+    which = "pyglet " + str(pyglet.version)
     _Window = pyglet.window.Window
 
 
@@ -113,37 +111,38 @@ capability = dict(  # things that can be set by the backend
 
 # ------------------------------------------------------- set_configuration ---
 
+
 def _set_config(config):
     """Set gl configuration"""
     pyglet_config = pyglet.gl.Config()
 
-    pyglet_config.red_size = config['red_size']
-    pyglet_config.green_size = config['green_size']
-    pyglet_config.blue_size = config['blue_size']
-    pyglet_config.alpha_size = config['alpha_size']
+    pyglet_config.red_size = config["red_size"]
+    pyglet_config.green_size = config["green_size"]
+    pyglet_config.blue_size = config["blue_size"]
+    pyglet_config.alpha_size = config["alpha_size"]
 
     pyglet_config.accum_red_size = 0
     pyglet_config.accum_green_size = 0
     pyglet_config.accum_blue_size = 0
     pyglet_config.accum_alpha_size = 0
 
-    pyglet_config.depth_size = config['depth_size']
-    pyglet_config.stencil_size = config['stencil_size']
-    pyglet_config.double_buffer = config['double_buffer']
-    pyglet_config.stereo = config['stereo']
-    pyglet_config.samples = config['samples']
+    pyglet_config.depth_size = config["depth_size"]
+    pyglet_config.stencil_size = config["stencil_size"]
+    pyglet_config.double_buffer = config["double_buffer"]
+    pyglet_config.stereo = config["stereo"]
+    pyglet_config.samples = config["samples"]
     return pyglet_config
 
 
 # ------------------------------------------------------------- application ---
 
-class ApplicationBackend(BaseApplicationBackend):
 
+class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
 
     def _vispy_get_backend_name(self):
-        return 'Pyglet'
+        return "Pyglet"
 
     def _vispy_process_events(self):
         # pyglet.app.platform_event_loop.step(0.0)
@@ -151,7 +150,7 @@ class ApplicationBackend(BaseApplicationBackend):
         for window in pyglet.app.windows:
             window.switch_to()
             window.dispatch_events()
-            window.dispatch_event('on_draw')
+            window.dispatch_event("on_draw")
 
     def _vispy_run(self):
         return pyglet.app.run()
@@ -165,6 +164,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
+
 class CanvasBackend(BaseCanvasBackend, _Window):
     """Pyglet backend for Canvas abstract class."""
 
@@ -175,11 +175,14 @@ class CanvasBackend(BaseCanvasBackend, _Window):
         # Deal with config
         config = _set_config(p.context.config)  # Also used further below
         # Deal with context
-        p.context.shared.add_ref('pyglet', self)
+        p.context.shared.add_ref("pyglet", self)
         # contexts are shared by default in Pyglet
 
-        style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if p.decorate else
-                 pyglet.window.Window.WINDOW_STYLE_BORDERLESS)
+        style = (
+            pyglet.window.Window.WINDOW_STYLE_DEFAULT
+            if p.decorate
+            else pyglet.window.Window.WINDOW_STYLE_BORDERLESS
+        )
         # We keep track of modifier keys so we can pass them to mouse_motion
         self._current_modifiers = set()
         # self._buttons_accepted = 0
@@ -193,18 +196,24 @@ class CanvasBackend(BaseCanvasBackend, _Window):
             else:
                 screen = screen.get_screens()
                 if p.fullscreen >= len(screen):
-                    raise RuntimeError('fullscreen must be < %s'
-                                       % len(screen))
+                    raise RuntimeError("fullscreen must be < %s" % len(screen))
                 self._vispy_screen = screen[p.fullscreen]
         else:
             self._vispy_fullscreen = False
             self._vispy_screen = None
         self._initialize_sent = False
-        pyglet.window.Window.__init__(self, width=p.size[0], height=p.size[1],
-                                      caption=p.title, visible=p.show,
-                                      config=config, vsync=p.vsync,
-                                      resizable=p.resizable, style=style,
-                                      screen=self._vispy_screen)
+        pyglet.window.Window.__init__(
+            self,
+            width=p.size[0],
+            height=p.size[1],
+            caption=p.title,
+            visible=p.show,
+            config=config,
+            vsync=p.vsync,
+            resizable=p.resizable,
+            style=style,
+            screen=self._vispy_screen,
+        )
         if p.position is not None:
             self._vispy_set_position(*p.position)
 
@@ -331,8 +340,9 @@ class CanvasBackend(BaseCanvasBackend, _Window):
             button=BUTTONMAP.get(button, 0),
             modifiers=self._modifiers(),
         )
-#         if ev2.handled:
-#             self._buttons_accepted |= button
+
+    #         if ev2.handled:
+    #             self._buttons_accepted |= button
 
     def on_mouse_release(self, x, y, button, modifiers=None):
         if self._vispy_canvas is None:
@@ -367,15 +377,21 @@ class CanvasBackend(BaseCanvasBackend, _Window):
 
     def on_key_press(self, key, modifiers):
         # Process modifiers
-        if key in (pyglet.window.key.LCTRL, pyglet.window.key.RCTRL,
-                   pyglet.window.key.LALT, pyglet.window.key.RALT,
-                   pyglet.window.key.LSHIFT, pyglet.window.key.RSHIFT):
+        if key in (
+            pyglet.window.key.LCTRL,
+            pyglet.window.key.RCTRL,
+            pyglet.window.key.LALT,
+            pyglet.window.key.RALT,
+            pyglet.window.key.LSHIFT,
+            pyglet.window.key.RSHIFT,
+        ):
             self._current_modifiers.add(key)
         # Emit
         self._vispy_canvas.events.key_press(
             key=self._processKey(key),
-            text='',  # Handlers that trigger on text wont see this event
-            modifiers=self._modifiers(modifiers))
+            text="",  # Handlers that trigger on text wont see this event
+            modifiers=self._modifiers(modifiers),
+        )
 
     def on_text(self, text):
         # Typically this is called after on_key_press and before
@@ -383,23 +399,29 @@ class CanvasBackend(BaseCanvasBackend, _Window):
         self._vispy_canvas.events.key_press(
             key=None,  # Handlers that trigger on key wont see this event
             text=text,
-            modifiers=self._modifiers())
+            modifiers=self._modifiers(),
+        )
 
     def on_key_release(self, key, modifiers):
         # Process modifiers
-        if key in (pyglet.window.key.LCTRL, pyglet.window.key.RCTRL,
-                   pyglet.window.key.LALT, pyglet.window.key.RALT,
-                   pyglet.window.key.LSHIFT, pyglet.window.key.RSHIFT):
+        if key in (
+            pyglet.window.key.LCTRL,
+            pyglet.window.key.RCTRL,
+            pyglet.window.key.LALT,
+            pyglet.window.key.RALT,
+            pyglet.window.key.LSHIFT,
+            pyglet.window.key.RSHIFT,
+        ):
             self._current_modifiers.discard(key)
         # Get txt
         try:
             text = chr(key)
         except Exception:
-            text = ''
+            text = ""
         # Emit
         self._vispy_canvas.events.key_release(
-            key=self._processKey(key), text=text,
-            modifiers=self._modifiers(modifiers))
+            key=self._processKey(key), text=text, modifiers=self._modifiers(modifiers)
+        )
 
     def _processKey(self, key):
         if 97 <= key <= 122:
@@ -417,21 +439,21 @@ class CanvasBackend(BaseCanvasBackend, _Window):
             pygletmod = self._current_modifiers
         if isinstance(pygletmod, set):
             for key in pygletmod:
-                mod += KEYMAP[key],
+                mod += (KEYMAP[key],)
         else:
             if pygletmod & pyglet.window.key.MOD_SHIFT:
-                mod += keys.SHIFT,
+                mod += (keys.SHIFT,)
             if pygletmod & pyglet.window.key.MOD_CTRL:
-                mod += keys.CONTROL,
+                mod += (keys.CONTROL,)
             if pygletmod & pyglet.window.key.MOD_ALT:
-                mod += keys.ALT,
+                mod += (keys.ALT,)
         return mod
 
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend):
 
+class TimerBackend(BaseTimerBackend):
     def _vispy_start(self, interval):
         interval = self._vispy_timer._interval
         if self._vispy_timer.max_iterations == 1:
@@ -440,9 +462,7 @@ class TimerBackend(BaseTimerBackend):
             # seems pyglet does not give the expected behavior when interval==0
             if interval == 0:
                 interval = 1e-9
-            pyglet.clock.schedule_interval(
-                self._vispy_timer._timeout,
-                interval)
+            pyglet.clock.schedule_interval(self._vispy_timer._timeout, interval)
 
     def _vispy_stop(self):
         pyglet.clock.unschedule(self._vispy_timer._timeout)

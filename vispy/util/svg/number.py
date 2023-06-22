@@ -6,7 +6,6 @@
 
 
 class Number(object):
-
     def __init__(self, content):
         if not content:
             self._value = 0

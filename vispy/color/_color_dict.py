@@ -34,14 +34,14 @@ def get_color_dict():
 # github.com/bahamas10/css-color-names/blob/master/css-color-names.json
 
 _color_dict = {
-    "k": '#000000',
-    "w": '#FFFFFF',
-    "r": '#FF0000',
-    "g": '#00FF00',
-    "b": '#0000FF',
-    "y": '#FFFF00',
-    "m": '#FF00FF',
-    "c": '#00FFFF',
+    "k": "#000000",
+    "w": "#FFFFFF",
+    "r": "#FF0000",
+    "g": "#00FF00",
+    "b": "#0000FF",
+    "y": "#FFFF00",
+    "m": "#FF00FF",
+    "c": "#00FFFF",
     "aqua": "#00ffff",
     "aliceblue": "#f0f8ff",
     "antiquewhite": "#faebd7",

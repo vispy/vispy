@@ -28,43 +28,38 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 # connection array
-connect = np.empty((N-1, 2), np.int32)
-connect[:, 0] = np.arange(N-1)
+connect = np.empty((N - 1, 2), np.int32)
+connect[:, 0] = np.arange(N - 1)
 connect[:, 1] = connect[:, 0] + 1
-connect[N//2, 1] = N//2  # put a break in the middle
+connect[N // 2, 1] = N // 2  # put a break in the middle
 
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive',
-                            size=(800, 800))
+        app.Canvas.__init__(self, keys="interactive", size=(800, 800))
         # Create several visuals demonstrating different features of Line
         self.lines = [
             # agg-method lines:
             # per-vertex color
-            visuals.LineVisual(pos=pos, color=color, method='agg'),
+            visuals.LineVisual(pos=pos, color=color, method="agg"),
             # solid
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), method='agg'),
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), method="agg"),
             # wide
-            visuals.LineVisual(pos=pos, color=color, width=5, method='agg'),
-
+            visuals.LineVisual(pos=pos, color=color, width=5, method="agg"),
             # GL-method lines:
-            visuals.LineVisual(pos=pos, color=color, method='gl'),
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), method='gl'),
-            visuals.LineVisual(pos=pos, color=color, width=5, method='gl'),
+            visuals.LineVisual(pos=pos, color=color, method="gl"),
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), method="gl"),
+            visuals.LineVisual(pos=pos, color=color, width=5, method="gl"),
             # GL-method: "connect" not available in AGG method yet
-
             # only connect alternate vert pairs
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1),
-                               connect='segments', method='gl'),
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), connect="segments", method="gl"),
             # connect specific pairs
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1),
-                               connect=connect, method='gl'),
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect, method="gl"),
         ]
         counts = [0, 0]
         for i, line in enumerate(self.lines):
             # arrange lines in a grid
-            tidx = (line.method == 'agg')
+            tidx = line.method == "agg"
             x = 400 * tidx
             y = 140 * (counts[tidx] + 1)
             counts[tidx] += 1
@@ -72,17 +67,17 @@ class Canvas(app.Canvas):
             # redraw the canvas if any visuals request an update
             line.events.update.connect(lambda evt: self.update())
 
-        self.texts = [visuals.TextVisual('GL', bold=True, font_size=24,
-                                         color='w', pos=(200, 40)),
-                      visuals.TextVisual('Agg', bold=True, font_size=24,
-                                         color='w', pos=(600, 40))]
+        self.texts = [
+            visuals.TextVisual("GL", bold=True, font_size=24, color="w", pos=(200, 40)),
+            visuals.TextVisual("Agg", bold=True, font_size=24, color="w", pos=(600, 40)),
+        ]
         for text in self.texts:
             text.transform = NullTransform()
         self.visuals = self.lines + self.texts
         self.show()
 
     def on_draw(self, event):
-        gloo.clear('black')
+        gloo.clear("black")
         for visual in self.visuals:
             visual.draw()
 
@@ -94,7 +89,7 @@ class Canvas(app.Canvas):
             visual.transforms.configure(canvas=self, viewport=vp)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     win = Canvas()
 
     def update(ev):

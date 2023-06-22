@@ -26,20 +26,17 @@ def test_networkx_layout_with_graph():
     graph = nx.complete_graph(5)
     # define positions
     layout = np.random.rand(5, 2)
-    settings['graph'] = graph
-    settings['layout'] = layout
+    settings["graph"] = graph
+    settings["layout"] = layout
 
     # test numpy array input
-    testing.assert_true(isinstance(
-        get_layout(**settings), NetworkxCoordinates))
+    testing.assert_true(isinstance(get_layout(**settings), NetworkxCoordinates))
     # testing string input
-    settings['layout'] = 'circular'
-    testing.assert_true(isinstance(
-        get_layout(**settings), NetworkxCoordinates))
+    settings["layout"] = "circular"
+    testing.assert_true(isinstance(get_layout(**settings), NetworkxCoordinates))
     # testing dict input
-    settings['layout'] = nx.circular_layout(graph)
-    testing.assert_true(isinstance(
-        get_layout(**settings), NetworkxCoordinates))
+    settings["layout"] = nx.circular_layout(graph)
+    testing.assert_true(isinstance(get_layout(**settings), NetworkxCoordinates))
 
 
 def test_networkx_layout_no_networkx():

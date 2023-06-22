@@ -14,33 +14,26 @@ class BasicEvent(Event):
 
 
 class TypedEvent(Event):
-
     def __init__(self, **kwargs):
-        kwargs['type'] = 'typed_event'
+        kwargs["type"] = "typed_event"
         Event.__init__(self, **kwargs)
 
 
 class TestGroups(unittest.TestCase):
-
     def test_group_construction(self):
         """The EmitterGroup basic construction"""
-        grp = EmitterGroup(em1=Event,
-                           em2=BasicEvent,
-                           em3=TypedEvent)
+        grp = EmitterGroup(em1=Event, em2=BasicEvent, em3=TypedEvent)
 
         grp.em1.connect(self.record_event)
         grp.em2.connect(self.record_event)
         grp.em3.connect(self.record_event)
         self.result = None
         ev = grp.em1()
-        self.assert_result(event=ev, type='em1', event_class=Event)
+        self.assert_result(event=ev, type="em1", event_class=Event)
         ev = grp.em2()
-        self.assert_result(event=ev, type='em2', event_class=BasicEvent)
+        self.assert_result(event=ev, type="em2", event_class=BasicEvent)
         ev = grp.em3()
-        self.assert_result(
-            event=ev,
-            type='typed_event',
-            event_class=TypedEvent)
+        self.assert_result(event=ev, type="typed_event", event_class=TypedEvent)
 
     def test_group_add_emitter(self):
         """The EmitterGroup.add"""
@@ -48,21 +41,17 @@ class TestGroups(unittest.TestCase):
         grp.em1.connect(self.record_event)
         self.result = None
         ev = grp.em1()
-        self.assert_result(event=ev, type='em1')
+        self.assert_result(event=ev, type="em1")
 
         grp.add(em2=BasicEvent)
         grp.em2.connect(self.record_event)
         ev = grp.em2()
-        self.assert_result(event=ev, type='em2', event_class=BasicEvent)
+        self.assert_result(event=ev, type="em2", event_class=BasicEvent)
 
         grp.add(em3=TypedEvent)
         grp.em3.connect(self.record_event)
         ev = grp.em3(test_key=2)
-        self.assert_result(
-            event=ev,
-            type='typed_event',
-            event_class=TypedEvent,
-            test_key=2)
+        self.assert_result(event=ev, type="typed_event", event_class=TypedEvent, test_key=2)
 
         try:
             grp.add(em3=Event)
@@ -82,6 +71,7 @@ class TestGroups(unittest.TestCase):
 
         def cb(ev):
             self.result = 1
+
         grp.em1.connect(self.record_event)
         grp.em2.connect(self.record_event)
         grp.connect(cb)
@@ -91,7 +81,7 @@ class TestGroups(unittest.TestCase):
         try:
             grp.em1()
             grp.em2()
-            grp(type='test_event')
+            grp(type="test_event")
         finally:
             grp.unblock_all()
         assert self.result is None
@@ -100,15 +90,13 @@ class TestGroups(unittest.TestCase):
         """EmitterGroup.block_all"""
         grp = EmitterGroup(em1=Event)
         grp.em1.connect(self.error_event)
-        with use_log_level('warning',
-                           record=True, print_msg=False) as emit_list:
+        with use_log_level("warning", record=True, print_msg=False) as emit_list:
             grp.em1()
         assert_true(len(emit_list) >= 1)
         grp.ignore_callback_errors = False
         assert_raises(RuntimeError, grp.em1)
         grp.ignore_callback_errors = True
-        with use_log_level('warning',
-                           record=True, print_msg=False) as emit_list:
+        with use_log_level("warning", record=True, print_msg=False) as emit_list:
             grp.em1()
         assert_true(len(emit_list) >= 1)
 
@@ -127,8 +115,8 @@ class TestGroups(unittest.TestCase):
 
     def test_group_autoconnect(self):
         """The EmitterGroup auto-connect"""
-        class Source:
 
+        class Source:
             def on_em1(self, ev):
                 self.result = 1
 
@@ -137,6 +125,7 @@ class TestGroups(unittest.TestCase):
 
             def em3_event(self, ev):
                 self.result = 3
+
         src = Source()
         grp = EmitterGroup(source=src, em1=Event, auto_connect=False)
         src.result = None
@@ -161,7 +150,6 @@ class TestGroups(unittest.TestCase):
 
     def test_add_custom_emitter(self):
         class Emitter(EventEmitter):
-
             def _prepare_event(self, *args, **kwargs):
                 ev = super(Emitter, self)._prepare_event(*args, **kwargs)
                 ev.test_key = 1
@@ -169,52 +157,39 @@ class TestGroups(unittest.TestCase):
 
         class Source:
             pass
+
         src = Source()
 
-        grp = EmitterGroup(source=src, em1=Emitter(type='test_event1'))
+        grp = EmitterGroup(source=src, em1=Emitter(type="test_event1"))
         grp.em1.connect(self.record_event)
         self.result = None
         ev = grp.em1()
-        self.assert_result(
-            event=ev,
-            test_key=1,
-            type='test_event1',
-            source=src)
+        self.assert_result(event=ev, test_key=1, type="test_event1", source=src)
 
-        grp.add(em2=Emitter(type='test_event2'))
+        grp.add(em2=Emitter(type="test_event2"))
         grp.em2.connect(self.record_event)
         self.result = None
         ev = grp.em2()
-        self.assert_result(
-            event=ev,
-            test_key=1,
-            type='test_event2',
-            source=src)
+        self.assert_result(event=ev, test_key=1, type="test_event2", source=src)
 
     def test_group_connect(self):
         grp = EmitterGroup(source=self, em1=Event)
         grp.connect(self.record_event)
         self.result = None
         ev = grp.em1(test_key=1)
-        self.assert_result(
-            event=ev,
-            source=self,
-            sources=[
-                self,
-                self],
-            test_key=1)
+        self.assert_result(event=ev, source=self, sources=[self, self], test_key=1)
 
     def record_event(self, ev, key=None):
         # get a copy of all event attributes because these may change
         # as the event is passed around; we want to know exactly what the event
         # looked like when it reached this callback.
-        names = [name for name in dir(ev) if name[0] != '_']
+        names = [name for name in dir(ev) if name[0] != "_"]
         attrs = {}
         for name in names:
             val = getattr(ev, name)
-            if name == 'source':
+            if name == "source":
                 attrs[name] = val
-            elif name == 'sources':
+            elif name == "sources":
                 attrs[name] = val[:]
             else:
                 try:
@@ -227,16 +202,15 @@ class TestGroups(unittest.TestCase):
         if key is None:
             self.result = ev, attrs
         else:
-            if not hasattr(self, 'result') or self.result is None:
+            if not hasattr(self, "result") or self.result is None:
                 self.result = {}
             self.result[key] = ev, attrs
 
     def error_event(self, ev, key=None):
-        raise RuntimeError('Errored')
+        raise RuntimeError("Errored")
 
     def assert_result(self, key=None, **kwargs):
-        assert (hasattr(self, 'result') and self.result is not None), \
-            "No event recorded"
+        assert hasattr(self, "result") and self.result is not None, "No event recorded"
 
         if key is None:
             event, event_attrs = self.result
@@ -246,17 +220,15 @@ class TestGroups(unittest.TestCase):
         assert isinstance(event, Event), "Emitted object is not Event instance"
 
         for name, val in kwargs.items():
-            if name == 'event':
+            if name == "event":
                 assert event is val, "Event objects do not match"
 
-            elif name == 'event_class':
-                assert isinstance(event, val), \
-                    "Emitted object is not instance of %s" % val.__name__
+            elif name == "event_class":
+                assert isinstance(event, val), "Emitted object is not instance of %s" % val.__name__
 
             else:
                 attr = event_attrs[name]
-                assert (attr == val), "Event.%s != %s  (%s)" % (
-                    name, str(val), str(attr))
+                assert attr == val, "Event.%s != %s  (%s)" % (name, str(val), str(attr))
 
 
 run_tests_if_main()

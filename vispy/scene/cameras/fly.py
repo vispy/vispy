@@ -53,17 +53,16 @@ class FlyCamera(PerspectiveCamera):
     """
 
     # Using _rotation1 and _rotation2 for camera states instead of _rotation
-    _state_props = PerspectiveCamera._state_props + ('rotation1', 'rotation2')
+    _state_props = PerspectiveCamera._state_props + ("rotation1", "rotation2")
 
     def __init__(self, fov=60, rotation=None, **kwargs):
-
         # Motion speed vector
-        self._speed = np.zeros((6,), 'float64')
+        self._speed = np.zeros((6,), "float64")
         self._distance = None
 
         # Acceleration and braking vectors, set from keyboard
-        self._brake = np.zeros((6,), 'uint8')  # bool-ish
-        self._acc = np.zeros((6,), 'float64')
+        self._brake = np.zeros((6,), "uint8")  # bool-ish
+        self._acc = np.zeros((6,), "float64")
 
         # Init rotations
         self._auto_roll = True  # Whether to roll to make Z up
@@ -83,16 +82,24 @@ class FlyCamera(PerspectiveCamera):
 
         # Mapping that defines keys to thrusters
         self._keymap = {
-            keys.UP: (+1, 1), keys.DOWN: (-1, 1),
-            keys.RIGHT: (+1, 2), keys.LEFT: (-1, 2),
+            keys.UP: (+1, 1),
+            keys.DOWN: (-1, 1),
+            keys.RIGHT: (+1, 2),
+            keys.LEFT: (-1, 2),
             #
-            'W': (+1, 1), 'S': (-1, 1),
-            'D': (+1, 2), 'A': (-1, 2),
-            'F': (+1, 3), 'C': (-1, 3),
+            "W": (+1, 1),
+            "S": (-1, 1),
+            "D": (+1, 2),
+            "A": (-1, 2),
+            "F": (+1, 3),
+            "C": (-1, 3),
             #
-            'I': (+1, 4), 'K': (-1, 4),
-            'L': (+1, 5), 'J': (-1, 5),
-            'Q': (+1, 6), 'E': (-1, 6),
+            "I": (+1, 4),
+            "K": (-1, 4),
+            "L": (+1, 5),
+            "J": (-1, 5),
+            "Q": (+1, 6),
+            "E": (-1, 6),
             #
             keys.SPACE: (0, 1, 2, 3),  # 0 means brake, apply to translation
             # keys.ALT: (+5, 1),  # Turbo
@@ -205,9 +212,9 @@ class FlyCamera(PerspectiveCamera):
             yaw += 90 * np.sign(self._flip_factors[0])
 
         # Set orientation
-        q1 = Quaternion.create_from_axis_angle(pitch*math.pi/180, 1, 0, 0)
-        q2 = Quaternion.create_from_axis_angle(0*math.pi/180, 0, 1, 0)
-        q3 = Quaternion.create_from_axis_angle(yaw*math.pi/180, 0, 0, 1)
+        q1 = Quaternion.create_from_axis_angle(pitch * math.pi / 180, 1, 0, 0)
+        q2 = Quaternion.create_from_axis_angle(0 * math.pi / 180, 0, 1, 0)
+        q3 = Quaternion.create_from_axis_angle(yaw * math.pi / 180, 0, 0, 1)
         #
         self._rotation1 = (q1 * q2 * q3).normalize()
         self._rotation2 = Quaternion()
@@ -216,7 +223,6 @@ class FlyCamera(PerspectiveCamera):
         self.view_changed()
 
     def _get_directions(self):
-
         # Get reference points in reference coordinates
         # p0 = Point(0,0,0)
         pf = (0, 0, -1)  # front
@@ -235,7 +241,7 @@ class FlyCamera(PerspectiveCamera):
 
         def _normalize(p):
             L = sum(x**2 for x in p) ** 0.5
-            return np.array(p, 'float64') / L
+            return np.array(p, "float64") / L
 
         pf = _normalize(pf)
         pr = _normalize(pr)
@@ -276,9 +282,8 @@ class FlyCamera(PerspectiveCamera):
         # --- Determine new position from translation speed
 
         if self._speed[:3].any():
-
             # Create speed vectors, use scale_factor as a reference
-            dv = np.array([1.0/d for d in self._flip_factors])
+            dv = np.array([1.0 / d for d in self._flip_factors])
             #
             vf = pf * dv * rel_speed * self._scale_factor
             vr = pr * dv * rel_speed * self._scale_factor
@@ -286,10 +291,12 @@ class FlyCamera(PerspectiveCamera):
             direction = vf, vr, vu
 
             # Set position
-            center_loc = np.array(self._center, dtype='float32')
-            center_loc += (self._speed[0] * direction[0] +
-                           self._speed[1] * direction[1] +
-                           self._speed[2] * direction[2])
+            center_loc = np.array(self._center, dtype="float32")
+            center_loc += (
+                self._speed[0] * direction[0]
+                + self._speed[1] * direction[1]
+                + self._speed[2] * direction[2]
+            )
             self._center = tuple(center_loc)
 
         # --- Determine new orientation from rotation speed
@@ -309,28 +316,28 @@ class FlyCamera(PerspectiveCamera):
 
         # Calculate auto-roll
         if self.auto_roll:
-            up = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[self.up[1]]
-            up = np.array(up) * {'+': +1, '-': -1}[self.up[0]]
+            up = {"x": (1, 0, 0), "y": (0, 1, 0), "z": (0, 0, 1)}[self.up[1]]
+            up = np.array(up) * {"+": +1, "-": -1}[self.up[0]]
 
             def angle(p1, p2):
                 return np.arccos(p1.dot(p2))
+
             # au = angle(pu, (0, 0, 1))
             ar = angle(pr, up)
             al = angle(pl, up)
             af = angle(pf, up)
             # Roll angle that's off from being leveled (in unit strength)
-            roll_angle = math.sin(0.5*(al - ar))
+            roll_angle = math.sin(0.5 * (al - ar))
             # Correct for pitch
             roll_angle *= abs(math.sin(af))  # abs(math.sin(au))
             if abs(roll_angle) < 0.05:
                 roll_angle = 0
             if roll_angle:
                 # Correct to soften the force at 90 degree angle
-                roll_angle = np.sign(roll_angle) * np.abs(roll_angle)**0.5
+                roll_angle = np.sign(roll_angle) * np.abs(roll_angle) ** 0.5
                 # Get correction for this iteration and apply
                 angle_correction = 1.0 * roll_angle * math.pi / 180
-                q = Quaternion.create_from_axis_angle(angle_correction,
-                                                      0, 0, 1)
+                q = Quaternion.create_from_axis_angle(angle_correction, 0, 0, 1)
                 self._rotation1 = (q * self._rotation1).normalize()
 
         # Update
@@ -365,11 +372,11 @@ class FlyCamera(PerspectiveCamera):
             else:
                 vec = self._acc
             # Set
-            if event.type == 'key_release':
+            if event.type == "key_release":
                 val = 0
             for dim in val_dims[1:]:
                 factor = 1.0
-                vec[dim-1] = val * factor
+                vec[dim - 1] = val * factor
             event.handled = True
 
     def viewbox_mouse_event(self, event):
@@ -385,21 +392,21 @@ class FlyCamera(PerspectiveCamera):
         if event.handled or not self.interactive:
             return
 
-        if event.type == 'mouse_wheel':
+        if event.type == "mouse_wheel":
             if not event.mouse_event.modifiers:
                 # Move forward / backward
                 self._speed[0] += 0.5 * event.delta[1]
             elif keys.SHIFT in event.mouse_event.modifiers:
                 # Speed
-                s = 1.1 ** - event.delta[1]
+                s = 1.1 ** -event.delta[1]
                 self.scale_factor /= s  # divide instead of multiply
-                print('scale factor: %1.1f units/s' % self.scale_factor)
+                print("scale factor: %1.1f units/s" % self.scale_factor)
             return
 
-        if event.type == 'mouse_press':
+        if event.type == "mouse_press":
             event.handled = True
 
-        if event.type == 'mouse_release':
+        if event.type == "mouse_release":
             # Reset
             self._event_value = None
             # Apply rotation
@@ -410,8 +417,7 @@ class FlyCamera(PerspectiveCamera):
             # Ensure the timer runs
             self._timer.start()
 
-        if event.type == 'mouse_move':
-
+        if event.type == "mouse_move":
             if event.press_event is None:
                 return
             if not event.buttons:
@@ -430,8 +436,8 @@ class FlyCamera(PerspectiveCamera):
                 d_az = -float(pos2[0] - pos1[0]) / w
                 d_el = +float(pos2[1] - pos1[1]) / h
                 # Apply gain
-                d_az *= - 0.5 * math.pi  # * self._speed_rot
-                d_el *= + 0.5 * math.pi  # * self._speed_rot
+                d_az *= -0.5 * math.pi  # * self._speed_rot
+                d_el *= +0.5 * math.pi  # * self._speed_rot
                 # Create temporary quaternions
                 q_az = Quaternion.create_from_axis_angle(d_az, 0, 1, 0)
                 q_el = Quaternion.create_from_axis_angle(d_el, 1, 0, 0)
@@ -449,7 +455,7 @@ class FlyCamera(PerspectiveCamera):
                 p1c = event.map_to_canvas(p1)[:2]
                 p2c = event.map_to_canvas(p2)[:2]
                 d = p2c - p1c
-                fov = self._event_value * math.exp(-0.01*d[1])
+                fov = self._event_value * math.exp(-0.01 * d[1])
                 self._fov = min(90.0, max(10, fov))
                 event.handled = True
 
@@ -470,5 +476,5 @@ class FlyCamera(PerspectiveCamera):
         tr.reset()
         #
         tr.rotate(-angle, axis_angle[1:])
-        tr.scale([1.0/a for a in self._flip_factors])
+        tr.scale([1.0 / a for a in self._flip_factors])
         tr.translate(self._center)

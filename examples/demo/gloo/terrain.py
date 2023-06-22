@@ -33,24 +33,24 @@ def generate_terrain(r_min, r_max, c_min, c_max, disp):
     r_mid = (r_min + r_max) // 2
     c_mid = (c_min + c_max) // 2
 
-    e = (a+b+c+d)/4 + np.random.uniform(0, disp)
+    e = (a + b + c + d) / 4 + np.random.uniform(0, disp)
 
     points[r_mid, c_mid, 2] = e
 
-    points[r_min, c_mid, 2] = (a + b + e)/3 + np.random.uniform(0, disp)
-    points[r_max, c_mid, 2] = (c + d + e)/3 + np.random.uniform(0, disp)
-    points[r_mid, c_min, 2] = (a + c + e)/3 + np.random.uniform(0, disp)
-    points[r_mid, c_max, 2] = (b + d + e)/3 + np.random.uniform(0, disp)
+    points[r_min, c_mid, 2] = (a + b + e) / 3 + np.random.uniform(0, disp)
+    points[r_max, c_mid, 2] = (c + d + e) / 3 + np.random.uniform(0, disp)
+    points[r_mid, c_min, 2] = (a + c + e) / 3 + np.random.uniform(0, disp)
+    points[r_mid, c_max, 2] = (b + d + e) / 3 + np.random.uniform(0, disp)
 
     new_disp = disp * (2 ** (-0.5))
 
-    if (r_mid - r_min > 1 or c_mid - c_min > 1):
+    if r_mid - r_min > 1 or c_mid - c_min > 1:
         generate_terrain(r_min, r_mid, c_min, c_mid, new_disp)
-    if (r_max - r_mid > 1 or c_mid - c_min > 1):
+    if r_max - r_mid > 1 or c_mid - c_min > 1:
         generate_terrain(r_mid, r_max, c_min, c_mid, new_disp)
-    if (r_mid - r_min > 1 or c_max - c_mid > 1):
+    if r_mid - r_min > 1 or c_max - c_mid > 1:
         generate_terrain(r_min, r_mid, c_mid, c_max, new_disp)
-    if (r_max - r_mid > 1 or c_max - c_mid > 1):
+    if r_max - r_mid > 1 or c_max - c_mid > 1:
         generate_terrain(r_mid, r_max, c_mid, c_max, new_disp)
 
 
@@ -66,17 +66,18 @@ def generate_points(length=3):
     """
     print("Points are being generated...")
     global points, triangles, height
-    size = 2**(length) + 1
+    size = 2 ** (length) + 1
     points = np.indices((size, size, 1)).T[0].transpose((1, 0, 2))
     points = points.astype(np.float32)
-    generate_terrain(0, size-1, 0, size-1, length)
+    generate_terrain(0, size - 1, 0, size - 1, length)
     height = length
-    points = np.resize(points, (size*size, 3))
+    points = np.resize(points, (size * size, 3))
     points2 = np.delete(points, 2, 1)
     tri = Delaunay(points2)
     triangles = points[tri.simplices]
     triangles = np.vstack(triangles)
     print("Points successfully generated.")
+
 
 VERT_SHADER = """
 uniform   float u_height;
@@ -106,16 +107,19 @@ void main()
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys="interactive")
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         # Sets the view to an appropriate position over the terrain
-        self.default_view = np.array([[0.8, 0.2, -0.48, 0],
-                                      [-0.5, 0.3, -0.78, 0],
-                                      [-0.01, 0.9, -0.3, 0],
-                                      [-4.5, -21.5, -7.4, 1]],
-                                     dtype=np.float32)
+        self.default_view = np.array(
+            [
+                [0.8, 0.2, -0.48, 0],
+                [-0.5, 0.3, -0.78, 0],
+                [-0.01, 0.9, -0.3, 0],
+                [-4.5, -21.5, -7.4, 1],
+            ],
+            dtype=np.float32,
+        )
         self.view = self.default_view
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
@@ -123,15 +127,15 @@ class Canvas(app.Canvas):
         self.translate = [0, 0, 0]
         self.rotate = [0, 0, 0]
 
-        self.program['u_height'] = height
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
+        self.program["u_height"] = height
+        self.program["u_model"] = self.model
+        self.program["u_view"] = self.view
 
-        self.program['a_position'] = gloo.VertexBuffer(triangles)
+        self.program["a_position"] = gloo.VertexBuffer(triangles)
 
         self.activate_zoom()
 
-        gloo.set_state(clear_color='black', depth_test=True)
+        gloo.set_state(clear_color="black", depth_test=True)
 
         self.show()
 
@@ -152,41 +156,43 @@ class Canvas(app.Canvas):
         self.translate = [0, 0, 0]
         self.rotate = [0, 0, 0]
 
-        if(event.text == 'p' or event.text == 'P'):
+        if event.text == "p" or event.text == "P":
             print(self.view)
-        elif(event.text == 'd' or event.text == 'D'):
+        elif event.text == "d" or event.text == "D":
             self.translate[0] = 0.3
-        elif(event.text == 'a' or event.text == 'A'):
+        elif event.text == "a" or event.text == "A":
             self.translate[0] = -0.3
-        elif(event.text == 'w' or event.text == 'W'):
+        elif event.text == "w" or event.text == "W":
             self.translate[1] = 0.3
-        elif(event.text == 's' or event.text == 'S'):
+        elif event.text == "s" or event.text == "S":
             self.translate[1] = -0.3
-        elif(event.text == 'o' or event.text == 'O'):
+        elif event.text == "o" or event.text == "O":
             self.translate[2] = 0.3
-        elif(event.text == 'i' or event.text == 'I'):
+        elif event.text == "i" or event.text == "I":
             self.translate[2] = -0.3
-        elif(event.text == 'x'):
+        elif event.text == "x":
             self.rotate = [1, 0, 0]
-        elif(event.text == 'X'):
+        elif event.text == "X":
             self.rotate = [-1, 0, 0]
-        elif(event.text == 'y'):
+        elif event.text == "y":
             self.rotate = [0, 1, 0]
-        elif(event.text == 'Y'):
+        elif event.text == "Y":
             self.rotate = [0, -1, 0]
-        elif(event.text == 'z'):
+        elif event.text == "z":
             self.rotate = [0, 0, 1]
-        elif(event.text == 'Z'):
+        elif event.text == "Z":
             self.rotate = [0, 0, -1]
-        elif(event.text == ' '):
+        elif event.text == " ":
             self.view = self.default_view
 
         self.view = self.view.dot(
             translate(-np.array(self.translate)).dot(
                 rotate(self.rotate[0], (1, 0, 0)).dot(
-                    rotate(self.rotate[1], (0, 1, 0)).dot(
-                        rotate(self.rotate[2], (0, 0, 1))))))
-        self.program['u_view'] = self.view
+                    rotate(self.rotate[1], (0, 1, 0)).dot(rotate(self.rotate[2], (0, 0, 1)))
+                )
+            )
+        )
+        self.program["u_view"] = self.view
         self.update()
 
     def on_resize(self, event):
@@ -194,19 +200,18 @@ class Canvas(app.Canvas):
 
     def activate_zoom(self):
         gloo.set_viewport(0, 0, *self.physical_size)
-        self.projection = perspective(60.0, self.size[0] /
-                                      float(self.size[1]), 1.0, 100.0)
-        self.program['u_projection'] = self.projection
+        self.projection = perspective(60.0, self.size[0] / float(self.size[1]), 1.0, 100.0)
+        self.program["u_projection"] = self.projection
 
     def on_draw(self, event):
         # Clear
         gloo.clear(color=True, depth=True)
         # Draw
-        self.program.draw('triangles')
+        self.program.draw("triangles")
 
 
 generate_points(8)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = Canvas()
     app.run()

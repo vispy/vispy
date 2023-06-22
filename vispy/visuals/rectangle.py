@@ -41,10 +41,17 @@ class RectangleVisual(PolygonVisual):
         Keyword arguments to pass to `PolygonVisual`.
     """
 
-    def __init__(self, center=None, color='black', border_color=None,
-                 border_width=1, height=1.0, width=1.0,
-                 radius=[0., 0., 0., 0.], **kwargs):
-
+    def __init__(
+        self,
+        center=None,
+        color="black",
+        border_color=None,
+        border_width=1,
+        height=1.0,
+        width=1.0,
+        radius=[0.0, 0.0, 0.0, 0.0],
+        **kwargs,
+    ):
         self._height = height
         self._width = width
         self._color = Color(color)
@@ -54,85 +61,99 @@ class RectangleVisual(PolygonVisual):
         self._center = center
 
         # triangulation can be very slow
-        kwargs.setdefault('triangulate', False)
-        PolygonVisual.__init__(self, pos=None, color=color,
-                               border_color=border_color,
-                               border_width=border_width, **kwargs)
+        kwargs.setdefault("triangulate", False)
+        PolygonVisual.__init__(
+            self,
+            pos=None,
+            color=color,
+            border_color=border_color,
+            border_width=border_width,
+            **kwargs,
+        )
 
-        self._mesh.mode = 'triangle_fan'
+        self._mesh.mode = "triangle_fan"
         self._regen_pos()
         self._update()
 
     @staticmethod
     def _generate_vertices(center, radius, height, width):
-        half_height = height / 2.
-        half_width = width / 2.
+        half_height = height / 2.0
+        half_width = width / 2.0
         hw = min(half_height, half_width)
 
         if isinstance(radius, (list, tuple)):
             if len(radius) != 4:
-                raise ValueError("radius must be float or 4 value tuple/list"
-                                 " (got %s of length %d)" % (type(radius),
-                                                             len(radius)))
+                raise ValueError(
+                    "radius must be float or 4 value tuple/list"
+                    " (got %s of length %d)" % (type(radius), len(radius))
+                )
 
             if (radius > np.ones(4) * hw).all():
-                raise ValueError('Radius of curvature cannot be greater than\
-                                  half of min(width, height)')
+                raise ValueError(
+                    "Radius of curvature cannot be greater than\
+                                  half of min(width, height)"
+                )
             radius = np.array(radius, dtype=np.float32)
 
         else:
             if radius > hw:
-                raise ValueError('Radius of curvature cannot be greater than\
-                                  half of min(width, height)')
+                raise ValueError(
+                    "Radius of curvature cannot be greater than\
+                                  half of min(width, height)"
+                )
             radius = np.ones(4) * radius
 
-        num_segments = (radius / hw * 500.).astype(int)
+        num_segments = (radius / hw * 500.0).astype(int)
 
         bias1 = np.ones(4) * half_width - radius
         bias2 = np.ones(4) * half_height - radius
 
-        corner1 = np.empty([num_segments[0]+1, 3], dtype=np.float32)
-        corner2 = np.empty([num_segments[1]+1, 3], dtype=np.float32)
-        corner3 = np.empty([num_segments[2]+1, 3], dtype=np.float32)
-        corner4 = np.empty([num_segments[3]+1, 3], dtype=np.float32)
+        corner1 = np.empty([num_segments[0] + 1, 3], dtype=np.float32)
+        corner2 = np.empty([num_segments[1] + 1, 3], dtype=np.float32)
+        corner3 = np.empty([num_segments[2] + 1, 3], dtype=np.float32)
+        corner4 = np.empty([num_segments[3] + 1, 3], dtype=np.float32)
 
-        start_angle = 0.
-        end_angle = np.pi / 2.
+        start_angle = 0.0
+        end_angle = np.pi / 2.0
 
-        theta = np.linspace(end_angle, start_angle, num_segments[0]+1)
+        theta = np.linspace(end_angle, start_angle, num_segments[0] + 1)
 
         corner1[:, 0] = center[0] - bias1[0] - radius[0] * np.sin(theta)
         corner1[:, 1] = center[1] - bias2[0] - radius[0] * np.cos(theta)
         corner1[:, 2] = 0
 
-        theta = np.linspace(start_angle, end_angle, num_segments[1]+1)
+        theta = np.linspace(start_angle, end_angle, num_segments[1] + 1)
 
         corner2[:, 0] = center[0] + bias1[1] + radius[1] * np.sin(theta)
         corner2[:, 1] = center[1] - bias2[1] - radius[1] * np.cos(theta)
         corner2[:, 2] = 0
 
-        theta = np.linspace(end_angle, start_angle, num_segments[2]+1)
+        theta = np.linspace(end_angle, start_angle, num_segments[2] + 1)
 
         corner3[:, 0] = center[0] + bias1[2] + radius[2] * np.sin(theta)
         corner3[:, 1] = center[1] + bias2[2] + radius[2] * np.cos(theta)
         corner3[:, 2] = 0
 
-        theta = np.linspace(start_angle, end_angle, num_segments[3]+1)
+        theta = np.linspace(start_angle, end_angle, num_segments[3] + 1)
 
         corner4[:, 0] = center[0] - bias1[3] - radius[3] * np.sin(theta)
         corner4[:, 1] = center[1] + bias2[3] + radius[3] * np.cos(theta)
         corner4[:, 2] = 0
 
-        output = np.concatenate(([[center[0], center[1], 0.]],
-                                 [[center[0] - half_width, center[1], 0.]],
-                                 corner1,
-                                 [[center[0], center[1] - half_height, 0.]],
-                                 corner2,
-                                 [[center[0] + half_width, center[1], 0.]],
-                                 corner3,
-                                 [[center[0], center[1] + half_height, 0.]],
-                                 corner4,
-                                 [[center[0] - half_width, center[1], 0.]]))
+        output = np.concatenate(
+            (
+                [[center[0], center[1], 0.0]],
+                [[center[0] - half_width, center[1], 0.0]],
+                corner1,
+                [[center[0], center[1] - half_height, 0.0]],
+                corner2,
+                [[center[0] + half_width, center[1], 0.0]],
+                corner3,
+                [[center[0], center[1] + half_height, 0.0]],
+                corner4,
+                [[center[0] - half_width, center[1], 0.0]],
+            )
+        )
 
         vertices = np.array(output, dtype=np.float32)
         return vertices
@@ -156,8 +177,8 @@ class RectangleVisual(PolygonVisual):
 
     @height.setter
     def height(self, height):
-        if height <= 0.:
-            raise ValueError('Height must be positive')
+        if height <= 0.0:
+            raise ValueError("Height must be positive")
         self._height = height
         self._regen_pos()
         self._update()
@@ -169,8 +190,8 @@ class RectangleVisual(PolygonVisual):
 
     @width.setter
     def width(self, width):
-        if width <= 0.:
-            raise ValueError('Width must be positive')
+        if width <= 0.0:
+            raise ValueError("Width must be positive")
         self._width = width
         self._regen_pos()
         self._update()
@@ -187,10 +208,9 @@ class RectangleVisual(PolygonVisual):
         self._update()
 
     def _regen_pos(self):
-        vertices = self._generate_vertices(center=self._center,
-                                           radius=self._radius,
-                                           height=self._height,
-                                           width=self._width)
+        vertices = self._generate_vertices(
+            center=self._center, radius=self._radius, height=self._height, width=self._width
+        )
         # don't use the center point and only use X/Y coordinates
         vertices = vertices[1:, ..., :2]
         self._pos = vertices

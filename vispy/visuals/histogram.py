@@ -24,7 +24,7 @@ class HistogramVisual(MeshVisual):
         Orientation of the histogram.
     """
 
-    def __init__(self, data, bins=10, color='w', orientation='h'):
+    def __init__(self, data, bins=10, color="w", orientation="h"):
         #   4-5
         #   | |
         # 1-2/7-8
@@ -32,12 +32,10 @@ class HistogramVisual(MeshVisual):
         # 0-3-6-9
         data = np.asarray(data)
         if data.ndim != 1:
-            raise ValueError('Only 1D data currently supported')
-        if not isinstance(orientation, str) or \
-                orientation not in ('h', 'v'):
-            raise ValueError('orientation must be "h" or "v", not %s'
-                             % (orientation,))
-        X, Y = (0, 1) if orientation == 'h' else (1, 0)
+            raise ValueError("Only 1D data currently supported")
+        if not isinstance(orientation, str) or orientation not in ("h", "v"):
+            raise ValueError('orientation must be "h" or "v", not %s' % (orientation,))
+        X, Y = (0, 1) if orientation == "h" else (1, 0)
 
         # do the histogramming
         data, bin_edges = np.histogram(data, bins)
@@ -49,8 +47,7 @@ class HistogramVisual(MeshVisual):
         bin_edges.astype(np.float32)
         # and now our tris
         tris = np.zeros((2 * len(bin_edges) - 2, 3), np.uint32)
-        offsets = 3 * np.arange(len(bin_edges) - 1,
-                                dtype=np.uint32)[:, np.newaxis]
+        offsets = 3 * np.arange(len(bin_edges) - 1, dtype=np.uint32)[:, np.newaxis]
         tri_1 = np.array([0, 2, 1])
         tri_2 = np.array([2, 0, 3])
         tris[::2] = tri_1 + offsets

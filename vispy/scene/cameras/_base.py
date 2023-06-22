@@ -27,12 +27,17 @@ def make_camera(cam_type, *args, **kwargs):
     Camera class.
     """
     cam_types = {None: BaseCamera}
-    for camType in (BaseCamera, PanZoomCamera, PerspectiveCamera,
-                    TurntableCamera, FlyCamera, ArcballCamera):
+    for camType in (
+        BaseCamera,
+        PanZoomCamera,
+        PerspectiveCamera,
+        TurntableCamera,
+        FlyCamera,
+        ArcballCamera,
+    ):
         cam_types[camType.__name__[:-6].lower()] = camType
 
     try:
         return cam_types[cam_type](*args, **kwargs)
     except KeyError:
-        raise KeyError('Unknown camera type "%s". Options are: %s' %
-                       (cam_type, cam_types.keys()))
+        raise KeyError('Unknown camera type "%s". Options are: %s' % (cam_type, cam_types.keys()))

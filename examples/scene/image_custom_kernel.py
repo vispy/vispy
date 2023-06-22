@@ -24,7 +24,7 @@ from scipy.signal.windows import gaussian
 from scipy.ndimage import gaussian_filter
 import numpy as np
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys="interactive")
 canvas.size = 800, 600
 canvas.show()
 
@@ -33,7 +33,7 @@ view = canvas.central_widget.add_view()
 
 # Load the image with a slight blur (so we can later show the sharpening filter)
 img_data = gaussian_filter(
-    read_png(load_data_file('mona_lisa/mona_lisa_sm.png')),
+    read_png(load_data_file("mona_lisa/mona_lisa_sm.png")),
     sigma=1,
 )
 
@@ -52,10 +52,10 @@ big_gaussian_kernel = big_gaussian_kernel / big_gaussian_kernel.sum()
 sharpen_kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
 
 kernels = {
-    'null': np.ones((1, 1)),
-    'small gaussian': small_gaussian_kernel,
-    'big gaussian': big_gaussian_kernel,
-    'sharpening': sharpen_kernel,
+    "null": np.ones((1, 1)),
+    "small gaussian": small_gaussian_kernel,
+    "big gaussian": big_gaussian_kernel,
+    "sharpening": sharpen_kernel,
 }
 
 k_names = cycle(kernels.keys())
@@ -64,12 +64,12 @@ k = next(k_names)
 
 image = scene.visuals.Image(
     img_data,
-    interpolation='custom',
+    interpolation="custom",
     custom_kernel=kernels[k],
     parent=view.scene,
 )
 
-canvas.title = f'Custom sampling with {k} kernel'
+canvas.title = f"Custom sampling with {k} kernel"
 
 # Set 2D camera (the camera will scale to the contents in the scene)
 view.camera = scene.PanZoomCamera(aspect=1)
@@ -81,13 +81,13 @@ view.camera.set_range()
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
-    if event.key == 'k':
+    if event.key == "k":
         k = next(k_names)
         image.custom_kernel = kernels[k]
-        canvas.title = f'Custom sampling with {k} kernel'
+        canvas.title = f"Custom sampling with {k} kernel"
         canvas.update()
 
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()
     print(__doc__)

@@ -13,6 +13,7 @@ def get(filename):
             return comment + code
     return '#error "%s" not found !\n' % filename
 
+
 code = """
 #include "colormap/colormaps.glsl"
 """
@@ -31,7 +32,7 @@ def replace(match):
         # text += '\n#line %d // End of "%s"' % (lineno, filename)
         text += '// --- end of "%s" ---\n' % filename
         return text
-    return ''
+    return ""
 
 
 if __name__ == "__main__":

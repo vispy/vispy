@@ -445,21 +445,21 @@ return min(vbar, hbar);
 """
 
 symbol_shaders = {
-    'disc': disc,
-    'arrow': arrow,
-    'ring': ring,
-    'clobber': clobber,
-    'square': square,
-    'x': x,
-    'diamond': diamond,
-    'vbar': vbar,
-    'hbar': hbar,
-    'cross': cross,
-    'tailed_arrow': tailed_arrow,
-    'triangle_up': triangle_up,
-    'triangle_down': triangle_down,
-    'star': star,
-    'cross_lines': cross_lines,
+    "disc": disc,
+    "arrow": arrow,
+    "ring": ring,
+    "clobber": clobber,
+    "square": square,
+    "x": x,
+    "diamond": diamond,
+    "vbar": vbar,
+    "hbar": hbar,
+    "cross": cross,
+    "tailed_arrow": tailed_arrow,
+    "triangle_up": triangle_up,
+    "triangle_down": triangle_down,
+    "star": star,
+    "cross_lines": cross_lines,
 }
 
 # combine all the symbol shaders in a big if-else statement
@@ -476,23 +476,25 @@ float symbol(vec2 pointcoord, float size, int symbol) {{
 
 # aliases
 symbol_aliases = {
-    'o': 'disc',
-    '+': 'cross',
-    '++': 'cross_lines',
-    's': 'square',
-    '-': 'hbar',
-    '|': 'vbar',
-    '->': 'tailed_arrow',
-    '>': 'arrow',
-    '^': 'triangle_up',
-    'v': 'triangle_down',
-    '*': 'star',
+    "o": "disc",
+    "+": "cross",
+    "++": "cross_lines",
+    "s": "square",
+    "-": "hbar",
+    "|": "vbar",
+    "->": "tailed_arrow",
+    ">": "arrow",
+    "^": "triangle_up",
+    "v": "triangle_down",
+    "*": "star",
 }
 
 symbol_shader_values = {name: i for i, name in enumerate(symbol_shaders)}
-symbol_shader_values.update({
-    **{alias: symbol_shader_values[name] for alias, name in symbol_aliases.items()},
-})
+symbol_shader_values.update(
+    {
+        **{alias: symbol_shader_values[name] for alias, name in symbol_aliases.items()},
+    }
+)
 
 
 class MarkersVisual(Visual):
@@ -550,28 +552,38 @@ class MarkersVisual(Visual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
     _symbol_shader_values = symbol_shader_values
     _symbol_shader = symbol_func
 
-    def __init__(self, scaling="fixed", alpha=1, antialias=1, spherical=False,
-                 light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
+    def __init__(
+        self,
+        scaling="fixed",
+        alpha=1,
+        antialias=1,
+        spherical=False,
+        light_color="white",
+        light_position=(1, -1, 1),
+        light_ambient=0.3,
+        **kwargs,
+    ):
         self._vbo = VertexBuffer()
         self._data = None
 
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
         self._symbol_func = Function(self._symbol_shader)
-        self.shared_program.frag['marker'] = self._symbol_func
-        self._v_size_var = Variable('varying float v_size')
-        self.shared_program.vert['v_size'] = self._v_size_var
-        self.shared_program.frag['v_size'] = self._v_size_var
-        self._symbol_func['v_size'] = self._v_size_var
+        self.shared_program.frag["marker"] = self._symbol_func
+        self._v_size_var = Variable("varying float v_size")
+        self.shared_program.vert["v_size"] = self._v_size_var
+        self.shared_program.frag["v_size"] = self._v_size_var
+        self._symbol_func["v_size"] = self._v_size_var
 
-        self.set_gl_state(depth_test=True, blend=True,
-                          blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._draw_mode = 'points'
+        self.set_gl_state(
+            depth_test=True, blend=True, blend_func=("src_alpha", "one_minus_src_alpha")
+        )
+        self._draw_mode = "points"
 
         if len(kwargs) > 0:
             self.set_data(**kwargs)
@@ -588,9 +600,16 @@ class MarkersVisual(Visual):
 
         self.freeze()
 
-    def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
-                 edge_color='black', face_color='white',
-                 symbol='o'):
+    def set_data(
+        self,
+        pos=None,
+        size=10.0,
+        edge_width=1.0,
+        edge_width_rel=None,
+        edge_color="black",
+        face_color="white",
+        symbol="o",
+    ):
         """Set the data used to display this visual.
 
         Parameters
@@ -612,21 +631,20 @@ class MarkersVisual(Visual):
             The style of symbol used to draw each marker (see Notes).
         """
         if (edge_width is not None) + (edge_width_rel is not None) != 1:
-            raise ValueError('exactly one of edge_width and edge_width_rel '
-                             'must be non-None')
+            raise ValueError("exactly one of edge_width and edge_width_rel " "must be non-None")
 
         if edge_width is not None:
             edge_width = np.asarray(edge_width)
             if np.any(edge_width < 0):
-                raise ValueError('edge_width cannot be negative')
+                raise ValueError("edge_width cannot be negative")
         else:
             edge_width_rel = np.asarray(edge_width_rel)
             if np.any(edge_width_rel < 0):
-                raise ValueError('edge_width_rel cannot be negative')
+                raise ValueError("edge_width_rel cannot be negative")
 
         if symbol is not None:
             if not np.all(np.isin(np.asarray(symbol), self.symbols)):
-                raise ValueError(f'symbols must one of {self.symbols}')
+                raise ValueError(f"symbols must one of {self.symbols}")
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -637,26 +655,30 @@ class MarkersVisual(Visual):
             face_color = face_color[0]
 
         if pos is not None:
-            assert (isinstance(pos, np.ndarray) and
-                    pos.ndim == 2 and pos.shape[1] in (2, 3))
+            assert isinstance(pos, np.ndarray) and pos.ndim == 2 and pos.shape[1] in (2, 3)
 
             n = len(pos)
-            data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                                      ('a_fg_color', np.float32, 4),
-                                      ('a_bg_color', np.float32, 4),
-                                      ('a_size', np.float32),
-                                      ('a_edgewidth', np.float32),
-                                      ('a_symbol', np.float32)])
-            data['a_fg_color'] = edge_color
-            data['a_bg_color'] = face_color
+            data = np.zeros(
+                n,
+                dtype=[
+                    ("a_position", np.float32, 3),
+                    ("a_fg_color", np.float32, 4),
+                    ("a_bg_color", np.float32, 4),
+                    ("a_size", np.float32),
+                    ("a_edgewidth", np.float32),
+                    ("a_symbol", np.float32),
+                ],
+            )
+            data["a_fg_color"] = edge_color
+            data["a_bg_color"] = face_color
             if edge_width is not None:
-                data['a_edgewidth'] = edge_width
+                data["a_edgewidth"] = edge_width
             else:
-                data['a_edgewidth'] = size * edge_width_rel
-            data['a_position'][:, :pos.shape[1]] = pos
-            data['a_size'] = size
+                data["a_edgewidth"] = size * edge_width_rel
+            data["a_position"][:, : pos.shape[1]] = pos
+            data["a_size"] = size
 
-            data['a_symbol'] = np.vectorize(self._symbol_shader_values.get)(symbol)
+            data["a_symbol"] = np.vectorize(self._symbol_shader_values.get)(symbol)
 
             self._data = data
             self._vbo.set_data(data)
@@ -673,23 +695,23 @@ class MarkersVisual(Visual):
         if self._data is None:
             return None
         value_to_symbol = {v: k for k, v in self._symbol_shader_values.items()}
-        return np.vectorize(value_to_symbol.get)(self._data['a_symbol'])
+        return np.vectorize(value_to_symbol.get)(self._data["a_symbol"])
 
     @symbol.setter
     def symbol(self, value):
         if self._data is not None:
             rec_to_kw = {
-                'a_position': 'pos',
-                'a_fg_color': 'edge_color',
-                'a_bg_color': 'face_color',
-                'a_size': 'size',
-                'a_edgewidth': 'edge_width',
-                'a_symbol': 'symbol',
+                "a_position": "pos",
+                "a_fg_color": "edge_color",
+                "a_bg_color": "face_color",
+                "a_size": "size",
+                "a_edgewidth": "edge_width",
+                "a_symbol": "symbol",
             }
             kwargs = {kw: self._data[rec] for rec, kw in rec_to_kw.items()}
         else:
             kwargs = {}
-        kwargs['symbol'] = value
+        kwargs["symbol"] = value
         self.set_data(**kwargs)
 
     @property
@@ -710,9 +732,11 @@ class MarkersVisual(Visual):
         }
         if value not in scaling_modes:
             possible_options = ", ".join(repr(opt) for opt in scaling_modes)
-            raise ValueError(f"Unknown scaling option {value!r}, expected one of: {possible_options}")
+            raise ValueError(
+                f"Unknown scaling option {value!r}, expected one of: {possible_options}"
+            )
         scaling_int = scaling_modes[value]
-        self.shared_program['u_scaling'] = scaling_int
+        self.shared_program["u_scaling"] = scaling_int
         self._scaling = value
         self._scaling_int = scaling_int
         self.update()
@@ -727,7 +751,7 @@ class MarkersVisual(Visual):
     @antialias.setter
     def antialias(self, value):
         value = float(value)
-        self.shared_program['u_antialias'] = value
+        self.shared_program["u_antialias"] = value
         self._antialias = value
         self.update()
 
@@ -741,7 +765,7 @@ class MarkersVisual(Visual):
     @light_position.setter
     def light_position(self, value):
         value = np.array(value)
-        self.shared_program['u_light_position'] = value / np.linalg.norm(value)
+        self.shared_program["u_light_position"] = value / np.linalg.norm(value)
         self._light_position = value
         self.update()
 
@@ -754,7 +778,7 @@ class MarkersVisual(Visual):
 
     @light_ambient.setter
     def light_ambient(self, value):
-        self.shared_program['u_light_ambient'] = value
+        self.shared_program["u_light_ambient"] = value
         self._light_ambient = value
         self.update()
 
@@ -767,7 +791,7 @@ class MarkersVisual(Visual):
 
     @light_color.setter
     def light_color(self, value):
-        self.shared_program['u_light_color'] = ColorArray(value).rgb
+        self.shared_program["u_light_color"] = ColorArray(value).rgb
         self._light_color = value
         self.update()
 
@@ -780,7 +804,7 @@ class MarkersVisual(Visual):
 
     @alpha.setter
     def alpha(self, value):
-        self.shared_program['u_alpha'] = value
+        self.shared_program["u_alpha"] = value
         self._alpha = value
         self.update()
 
@@ -793,25 +817,31 @@ class MarkersVisual(Visual):
 
     @spherical.setter
     def spherical(self, value):
-        self.shared_program['u_spherical'] = value
+        self.shared_program["u_spherical"] = value
         self._spherical = value
         self.update()
 
     def _prepare_transforms(self, view):
-        view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
-        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
-        view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
-        view.view_program.vert['framebuffer_to_scene'] = view.get_transform('framebuffer', 'scene')
-        view.view_program.vert['scene_to_framebuffer'] = view.get_transform('scene', 'framebuffer')
+        view.view_program.vert["visual_to_framebuffer"] = view.get_transform(
+            "visual", "framebuffer"
+        )
+        view.view_program.vert["framebuffer_to_visual"] = view.get_transform(
+            "framebuffer", "visual"
+        )
+        view.view_program.vert["framebuffer_to_render"] = view.get_transform(
+            "framebuffer", "render"
+        )
+        view.view_program.vert["framebuffer_to_scene"] = view.get_transform("framebuffer", "scene")
+        view.view_program.vert["scene_to_framebuffer"] = view.get_transform("scene", "framebuffer")
 
     def _prepare_draw(self, view):
         if self._data is None:
             return False
-        view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        view.view_program['u_scaling'] = self._scaling_int
+        view.view_program["u_px_scale"] = view.transforms.pixel_scale
+        view.view_program["u_scaling"] = self._scaling_int
 
     def _compute_bounds(self, axis, view):
-        pos = self._data['a_position']
+        pos = self._data["a_position"]
         if pos is None:
             return None
         if pos.shape[1] > axis:

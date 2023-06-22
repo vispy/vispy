@@ -41,15 +41,23 @@ class Widget(Compound):
         The margin to keep outside the widget's border.
     """
 
-    def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
-                 border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
+    def __init__(
+        self,
+        pos=(0, 0),
+        size=(10, 10),
+        border_color=None,
+        border_width=1,
+        bgcolor=None,
+        padding=0,
+        margin=0,
+        **kwargs,
+    ):
         # For drawing border.
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
-        self._mesh = MeshVisual(color=border_color, mode='triangles')
-        self._mesh.set_gl_state('translucent', depth_test=False,
-                                cull_face=False)
-        self._picking_mesh = MeshVisual(mode='triangle_fan')
+        self._mesh = MeshVisual(color=border_color, mode="triangles")
+        self._mesh.set_gl_state("translucent", depth_test=False, cull_face=False)
+        self._picking_mesh = MeshVisual(mode="triangle_fan")
         self._picking_mesh.set_gl_state(cull_face=False, depth_test=False)
         self._picking_mesh.visible = False
 
@@ -97,8 +105,7 @@ class Widget(Compound):
         assert isinstance(p, tuple)
         assert len(p) == 2
         # Handle floating point discrepancies
-        if abs(p[0] - self.pos[0]) < 1e-4 and \
-           abs(p[1] - self.pos[1]) < 1e-4:
+        if abs(p[0] - self.pos[0]) < 1e-4 and abs(p[1] - self.pos[1]) < 1e-4:
             return
         self._pos_or_size_changed = True
         self.transform.translate = p[0], p[1], 0, 0
@@ -118,8 +125,7 @@ class Widget(Compound):
         assert isinstance(s, tuple)
         assert len(s) == 2
         # Handle floating point discrepancies
-        if abs(s[0] - self._size[0]) < 1e-4 and \
-           abs(s[1] - self._size[1]) < 1e-4:
+        if abs(s[0] - self._size[0]) < 1e-4 and abs(s[1] - self._size[1]) < 1e-4:
             return
         self._pos_or_size_changed = True
         self._size = s
@@ -152,7 +158,7 @@ class Widget(Compound):
             return
 
         width_min = float(width_min)
-        assert(0 <= width_min)
+        assert 0 <= width_min
 
         self._width_limits[0] = width_min
         self._update_layout()
@@ -177,7 +183,7 @@ class Widget(Compound):
             return
 
         width_max = float(width_max)
-        assert(self.width_min <= width_max)
+        assert self.width_min <= width_max
 
         self._width_limits[1] = width_max
         self._update_layout()
@@ -206,7 +212,7 @@ class Widget(Compound):
             return
 
         height_min = float(height_min)
-        assert(height_min >= 0)
+        assert height_min >= 0
 
         self._height_limits[0] = height_min
         self._update_layout()
@@ -231,7 +237,7 @@ class Widget(Compound):
             return
 
         height_max = float(height_max)
-        assert(0 <= self.height_min <= height_max)
+        assert 0 <= self.height_min <= height_max
         self._height_limits[1] = height_max
         self._update_layout()
 
@@ -259,7 +265,7 @@ class Widget(Compound):
         m = self.margin + self._border_width + self.padding
         if not self.border_color.is_blank:
             m += 1
-        return Rect((m, m), (self.size[0]-2*m, self.size[1]-2*m))
+        return Rect((m, m), (self.size[0] - 2 * m, self.size[1] - 2 * m))
 
     @property
     def stretch(self):
@@ -298,7 +304,7 @@ class Widget(Compound):
         if self._clipper is None:
             return
         self._clipper.rect = self.inner_rect
-        self._clipper.transform = self.get_transform('framebuffer', 'visual')
+        self._clipper.transform = self.get_transform("framebuffer", "visual")
 
     @property
     def border_color(self):
@@ -365,39 +371,48 @@ class Widget(Compound):
         left = bot = m
         right = self.size[0] - m
         top = self.size[1] - m
-        pos = np.array([
-            [left, bot], [left+w, bot+w],
-            [right, bot], [right-w, bot+w],
-            [right, top], [right-w, top-w],
-            [left, top], [left+w, top-w],
-        ], dtype=np.float32)
-        faces = np.array([
-            [0, 2, 1],
-            [1, 2, 3],
-            [2, 4, 3],
-            [3, 5, 4],
-            [4, 5, 6],
-            [5, 7, 6],
-            [6, 0, 7],
-            [7, 0, 1],
-            [5, 3, 1],
-            [1, 5, 7],
-        ], dtype=np.int32)
+        pos = np.array(
+            [
+                [left, bot],
+                [left + w, bot + w],
+                [right, bot],
+                [right - w, bot + w],
+                [right, top],
+                [right - w, top - w],
+                [left, top],
+                [left + w, top - w],
+            ],
+            dtype=np.float32,
+        )
+        faces = np.array(
+            [
+                [0, 2, 1],
+                [1, 2, 3],
+                [2, 4, 3],
+                [3, 5, 4],
+                [4, 5, 6],
+                [5, 7, 6],
+                [6, 0, 7],
+                [7, 0, 1],
+                [5, 3, 1],
+                [1, 5, 7],
+            ],
+            dtype=np.int32,
+        )
         start = 8 if self._border_color.is_blank else 0
         stop = 8 if self._bgcolor.is_blank else 10
         face_colors = None
         if self._face_colors is not None:
             face_colors = self._face_colors[start:stop]
-        self._mesh.set_data(vertices=pos, faces=faces[start:stop],
-                            face_colors=face_colors)
+        self._mesh.set_data(vertices=pos, faces=faces[start:stop], face_colors=face_colors)
 
         # picking mesh covers the entire area
         self._picking_mesh.set_data(vertices=pos[::2])
 
     def _update_colors(self):
         self._face_colors = np.concatenate(
-            (np.tile(self.border_color.rgba, (8, 1)),
-             np.tile(self.bgcolor.rgba, (2, 1)))).astype(np.float32)
+            (np.tile(self.border_color.rgba, (8, 1)), np.tile(self.bgcolor.rgba, (2, 1)))
+        ).astype(np.float32)
         self._update_visibility()
 
     @property
@@ -451,6 +466,7 @@ class Widget(Compound):
         All arguments are given to Grid().
         """
         from .grid import Grid
+
         grid = Grid(*args, **kwargs)
         return self.add_widget(grid)
 
@@ -461,6 +477,7 @@ class Widget(Compound):
         All arguments are given to ViewBox().
         """
         from .viewbox import ViewBox
+
         view = ViewBox(*args, **kwargs)
         return self.add_widget(view)
 

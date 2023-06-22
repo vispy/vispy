@@ -77,8 +77,9 @@ def use(app=None, gl=None):
     if app is None and gl is None:
         raise TypeError('Must specify at least one of "app" or "gl".')
 
-    if app == 'osmesa':
+    if app == "osmesa":
         from ..util.osmesa_gl import fix_osmesa_gl_lib
+
         fix_osmesa_gl_lib()
         if gl is not None:
             raise ValueError("Do not specify gl when using osmesa")
@@ -86,10 +87,12 @@ def use(app=None, gl=None):
     # Apply now
     if gl:
         from .. import gloo, config
-        config['gl_backend'] = gl
+
+        config["gl_backend"] = gl
         gloo.gl.use_gl(gl)
     if app:
         from ..app import use_app
+
         use_app(app)
 
 
@@ -130,15 +133,15 @@ def run_subprocess(command, return_code=False, **kwargs):
 
     # communicate() may return bytes, str, or None depending on the kwargs
     # passed to Popen(). Convert all to unicode str:
-    output = ['' if s is None else s for s in output]
-    output = [s.decode('utf-8') if isinstance(s, bytes) else s for s in output]
+    output = ["" if s is None else s for s in output]
+    output = [s.decode("utf-8") if isinstance(s, bytes) else s for s in output]
     output = tuple(output)
 
     if not return_code and p.returncode:
         print(output[0])
         print(output[1])
         err_fun = subprocess.CalledProcessError.__init__
-        if 'output' in _get_args(err_fun):
+        if "output" in _get_args(err_fun):
             raise subprocess.CalledProcessError(p.returncode, command, output)
         else:
             raise subprocess.CalledProcessError(p.returncode, command)
@@ -150,6 +153,8 @@ def run_subprocess(command, return_code=False, **kwargs):
 def test(*args, **kwargs):
     """Proxy function to delay `.testing` import"""
     from vispy.testing import test as _test  # noqa
+
     return _test(*args, **kwargs)
+
 
 test.__test__ = False  # no discover test function as test

@@ -42,46 +42,41 @@ def iso_mesh_line(vertices, tris, vertex_data, levels):
     connects = None
     vertex_level = None
     level_index = None
-    if not all([isinstance(x, np.ndarray) for x in (vertices, tris,
-                                                    vertex_data, levels)]):
-        raise ValueError('all inputs must be numpy arrays')
+    if not all([isinstance(x, np.ndarray) for x in (vertices, tris, vertex_data, levels)]):
+        raise ValueError("all inputs must be numpy arrays")
     if vertices.shape[1] <= 3:
         verts = vertices
     elif vertices.shape[1] == 4:
         verts = vertices[:, :-1]
     else:
         verts = None
-    if (verts is not None and tris.shape[1] == 3 and
-            vertex_data.shape[0] == verts.shape[0]):
-        edges = np.vstack((tris.reshape((-1)),
-                           np.roll(tris, -1, axis=1).reshape((-1)))).T
+    if verts is not None and tris.shape[1] == 3 and vertex_data.shape[0] == verts.shape[0]:
+        edges = np.vstack((tris.reshape((-1)), np.roll(tris, -1, axis=1).reshape((-1)))).T
         edge_datas = vertex_data[edges]
-        edge_coors = verts[edges].reshape(tris.shape[0]*3, 2, 3)
+        edge_coors = verts[edges].reshape(tris.shape[0] * 3, 2, 3)
         for lev in levels:
             # index for select edges with vertices have only False - True
             # or True - False at extremity
-            index = (edge_datas >= lev)
+            index = edge_datas >= lev
             index = index[:, 0] ^ index[:, 1]  # xor calculation
             # Selectect edge
             edge_datas_Ok = edge_datas[index, :]
             xyz = edge_coors[index]
             # Linear interpolation
-            ratio = np.array([(lev - edge_datas_Ok[:, 0]) /
-                              (edge_datas_Ok[:, 1] - edge_datas_Ok[:, 0])])
+            ratio = np.array(
+                [(lev - edge_datas_Ok[:, 0]) / (edge_datas_Ok[:, 1] - edge_datas_Ok[:, 0])]
+            )
             point = xyz[:, 0, :] + ratio.T * (xyz[:, 1, :] - xyz[:, 0, :])
-            nbr = point.shape[0]//2
+            nbr = point.shape[0] // 2
             if connects is not None:
-                connect = np.arange(0, nbr*2).reshape((nbr, 2)) + \
-                    len(lines)
+                connect = np.arange(0, nbr * 2).reshape((nbr, 2)) + len(lines)
                 connects = np.append(connects, connect, axis=0)
                 lines = np.append(lines, point, axis=0)
-                vertex_level = np.append(vertex_level,
-                                         np.zeros(len(point)) +
-                                         lev)
+                vertex_level = np.append(vertex_level, np.zeros(len(point)) + lev)
                 level_index = np.append(level_index, np.array(len(point)))
             else:
                 lines = point
-                connects = np.arange(0, nbr*2).reshape((nbr, 2))
+                connects = np.arange(0, nbr * 2).reshape((nbr, 2))
                 vertex_level = np.zeros(len(point)) + lev
                 level_index = np.array(len(point))
 
@@ -110,8 +105,7 @@ class IsolineVisual(LineVisual):
         Keyword arguments to pass to `LineVisual`.
     """
 
-    def __init__(self, vertices=None, tris=None, data=None,
-                 levels=None, color_lev=None, **kwargs):
+    def __init__(self, vertices=None, tris=None, data=None, levels=None, color_lev=None, **kwargs):
         self._data = None
         self._vertices = None
         self._tris = None
@@ -126,8 +120,8 @@ class IsolineVisual(LineVisual):
         self._lc = None
         self._cl = None
         self._update_color_lev = False
-        kwargs['antialias'] = False
-        LineVisual.__init__(self, method='gl', **kwargs)
+        kwargs["antialias"] = False
+        LineVisual.__init__(self, method="gl", **kwargs)
         self.set_data(vertices=vertices, tris=tris, data=data)
 
     @property
@@ -195,8 +189,7 @@ class IsolineVisual(LineVisual):
         except (KeyError, TypeError):
             colors = ColorArray(self._color_lev).rgba
         else:
-            lev = _normalize(self._levels, self._levels.min(),
-                             self._levels.max())
+            lev = _normalize(self._levels, self._levels.min(), self._levels.max())
             # map function expects (Nlev,1)!
             colors = f_color_levs.map(lev[:, np.newaxis])
 
@@ -204,9 +197,11 @@ class IsolineVisual(LineVisual):
             colors = colors * np.ones((len(self._levels), 1))
 
         # detect color/level mismatch and raise error
-        if (len(colors) != len(self._levels)):
-            raise TypeError("Color/level mismatch. Color must be of shape "
-                            "(Nlev, ...) and provide one color per level")
+        if len(colors) != len(self._levels):
+            raise TypeError(
+                "Color/level mismatch. Color must be of shape "
+                "(Nlev, ...) and provide one color per level"
+            )
 
         self._lc = colors
 
@@ -219,17 +214,22 @@ class IsolineVisual(LineVisual):
         self._cl = np.vstack(level_color)
 
     def _prepare_draw(self, view):
-        if (self._data is None or self._levels is None or self._tris is None or
-                self._vertices is None or self._color_lev is None):
+        if (
+            self._data is None
+            or self._levels is None
+            or self._tris is None
+            or self._vertices is None
+            or self._color_lev is None
+        ):
             return False
 
         if self._need_recompute:
             self._v, self._c, self._vl, self._li = iso_mesh_line(
-                self._vertices, self._tris, self._data, self._levels)
+                self._vertices, self._tris, self._data, self._levels
+            )
             self._levels_to_colors()
             self._compute_iso_color()
-            LineVisual.set_data(self, pos=self._v, connect=self._c,
-                                color=self._cl)
+            LineVisual.set_data(self, pos=self._v, connect=self._c, color=self._cl)
             self._need_recompute = False
 
         if self._need_color_update:

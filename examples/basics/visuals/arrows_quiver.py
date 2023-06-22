@@ -19,8 +19,7 @@ from vispy.visuals.transforms import NullTransform
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, title="Quiver plot", keys="interactive",
-                            size=(830, 430))
+        app.Canvas.__init__(self, title="Quiver plot", keys="interactive", size=(830, 430))
 
         self.arrow_length = 20
 
@@ -30,11 +29,7 @@ class Canvas(app.Canvas):
 
         self.generate_grid()
 
-        self.visual = visuals.ArrowVisual(
-            color='white',
-            connect='segments',
-            arrow_size=8
-        )
+        self.visual = visuals.ArrowVisual(color="white", connect="segments", arrow_size=8)
 
         self.visual.events.update.connect(lambda evt: self.update())
         self.visual.transform = NullTransform()
@@ -64,21 +59,18 @@ class Canvas(app.Canvas):
         self.visual.transforms.configure(canvas=self, viewport=vp)
 
     def rotate_arrows(self, point_towards):
-        direction_vectors = (self.grid_coords - point_towards).astype(
-            np.float32)
+        direction_vectors = (self.grid_coords - point_towards).astype(np.float32)
         norms = np.sqrt(np.sum(direction_vectors**2, axis=-1))
         direction_vectors[:, 0] /= norms
         direction_vectors[:, 1] /= norms
 
         vertices = np.repeat(self.grid_coords, 2, axis=0)
-        vertices[::2] = vertices[::2] + ((0.5 * self.arrow_length) *
-                                         direction_vectors)
-        vertices[1::2] = vertices[1::2] - ((0.5 * self.arrow_length) *
-                                           direction_vectors)
+        vertices[::2] = vertices[::2] + ((0.5 * self.arrow_length) * direction_vectors)
+        vertices[1::2] = vertices[1::2] - ((0.5 * self.arrow_length) * direction_vectors)
 
         self.visual.set_data(
             pos=vertices,
-            arrows=vertices.reshape((len(vertices)//2, 4)),
+            arrows=vertices.reshape((len(vertices) // 2, 4)),
         )
 
     def on_mouse_move(self, event):
@@ -86,10 +78,11 @@ class Canvas(app.Canvas):
         self.rotate_arrows(np.array(event.pos))
 
     def on_draw(self, event):
-        gloo.clear('black')
+        gloo.clear("black")
         self.visual.draw()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     win = Canvas()
 
     if sys.flags.interactive != 1:

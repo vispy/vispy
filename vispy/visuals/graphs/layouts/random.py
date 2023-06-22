@@ -46,7 +46,6 @@ def random(adjacency_mat, directed=False, random_state=None):
     num_nodes = adjacency_mat.shape[0]
     node_coords = random_state.rand(num_nodes, 2)
 
-    line_vertices, arrows = _straight_line_vertices(adjacency_mat,
-                                                    node_coords, directed)
+    line_vertices, arrows = _straight_line_vertices(adjacency_mat, node_coords, directed)
 
     yield node_coords, line_vertices, arrows

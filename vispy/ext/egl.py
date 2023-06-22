@@ -9,17 +9,17 @@ import ctypes
 from ctypes import c_int as _c_int, POINTER as _POINTER, c_void_p, c_char_p
 
 _egl_file = None
-if 'EGL_LIBRARY' in os.environ:
-    if os.path.exists(os.environ['EGL_LIBRARY']):
-        _egl_file = os.path.realpath(os.environ['EGL_LIBRARY'])
+if "EGL_LIBRARY" in os.environ:
+    if os.path.exists(os.environ["EGL_LIBRARY"]):
+        _egl_file = os.path.realpath(os.environ["EGL_LIBRARY"])
 
 # Else, try to find it
 if _egl_file is None:
-    _egl_file = ctypes.util.find_library('EGL')
+    _egl_file = ctypes.util.find_library("EGL")
 
 # Else, we failed and exit
 if _egl_file is None:
-    raise OSError('EGL library not found')
+    raise OSError("EGL library not found")
 
 # Load it
 _lib = ctypes.CDLL(_egl_file)
@@ -206,21 +206,25 @@ EGL_ALPHA_FORMAT_PRE = EGL_VG_ALPHA_FORMAT_PRE
 
 # The functions
 
-_lib.eglGetDisplay.argtypes = _c_int,
+_lib.eglGetDisplay.argtypes = (_c_int,)
 _lib.eglGetDisplay.restype = c_void_p
 _lib.eglInitialize.argtypes = c_void_p, _POINTER(_c_int), _POINTER(_c_int)
-_lib.eglTerminate.argtypes = c_void_p,
-_lib.eglChooseConfig.argtypes = (c_void_p, _POINTER(_c_int),
-                                 _POINTER(c_void_p), _c_int, _POINTER(_c_int))
-_lib.eglCreateWindowSurface.argtypes = (c_void_p, c_void_p,
-                                        c_void_p, _POINTER(_c_int))
+_lib.eglTerminate.argtypes = (c_void_p,)
+_lib.eglChooseConfig.argtypes = (
+    c_void_p,
+    _POINTER(_c_int),
+    _POINTER(c_void_p),
+    _c_int,
+    _POINTER(_c_int),
+)
+_lib.eglCreateWindowSurface.argtypes = (c_void_p, c_void_p, c_void_p, _POINTER(_c_int))
 _lib.eglCreateWindowSurface.restype = c_void_p
 _lib.eglCreatePbufferSurface.argtypes = (c_void_p, c_void_p, _POINTER(_c_int))
 _lib.eglCreatePbufferSurface.restype = c_void_p
 _lib.eglCreateContext.argtypes = c_void_p, c_void_p, c_void_p, _POINTER(_c_int)
 _lib.eglCreateContext.restype = c_void_p
 _lib.eglMakeCurrent.argtypes = (c_void_p,) * 4
-_lib.eglBindAPI.argtypes = _c_int,
+_lib.eglBindAPI.argtypes = (_c_int,)
 _lib.eglSwapBuffers.argtypes = (c_void_p,) * 2
 _lib.eglDestroySurface.argtypes = (c_void_p,) * 2
 _lib.eglQueryString.argtypes = (c_void_p, _c_int)
@@ -236,17 +240,17 @@ def eglGetDisplay(display=EGL_DEFAULT_DISPLAY):
     """Connect to the EGL display server."""
     res = _lib.eglGetDisplay(display)
     if not res or res == EGL_NO_DISPLAY:
-        raise RuntimeError('Could not create display')
+        raise RuntimeError("Could not create display")
     return c_void_p(res)
 
 
 def eglInitialize(display):
     """Initialize EGL and return EGL version tuple."""
-    majorVersion = (_c_int*1)()
-    minorVersion = (_c_int*1)()
+    majorVersion = (_c_int * 1)()
+    minorVersion = (_c_int * 1)()
     res = _lib.eglInitialize(display, majorVersion, minorVersion)
     if res == EGL_FALSE:
-        raise RuntimeError('Could not initialize')
+        raise RuntimeError("Could not initialize")
     return majorVersion[0], minorVersion[0]
 
 
@@ -259,35 +263,49 @@ def eglQueryString(display, name):
     """Query string from display"""
     out = _lib.eglQueryString(display, name)
     if not out:
-        raise RuntimeError('Could not query %s' % name)
+        raise RuntimeError("Could not query %s" % name)
     return out
 
 
-DEFAULT_ATTRIB_LIST = (EGL_RED_SIZE, 8, EGL_BLUE_SIZE, 8,
-                       EGL_GREEN_SIZE, 8, EGL_ALPHA_SIZE, 8,
-                       EGL_BIND_TO_TEXTURE_RGBA, EGL_TRUE,
-                       EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
-                       EGL_CONFORMANT, EGL_OPENGL_ES2_BIT,
-                       EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                       EGL_NATIVE_RENDERABLE, EGL_TRUE,
-                       EGL_SURFACE_TYPE, EGL_PBUFFER_BIT)
+DEFAULT_ATTRIB_LIST = (
+    EGL_RED_SIZE,
+    8,
+    EGL_BLUE_SIZE,
+    8,
+    EGL_GREEN_SIZE,
+    8,
+    EGL_ALPHA_SIZE,
+    8,
+    EGL_BIND_TO_TEXTURE_RGBA,
+    EGL_TRUE,
+    EGL_COLOR_BUFFER_TYPE,
+    EGL_RGB_BUFFER,
+    EGL_CONFORMANT,
+    EGL_OPENGL_ES2_BIT,
+    EGL_RENDERABLE_TYPE,
+    EGL_OPENGL_ES2_BIT,
+    EGL_NATIVE_RENDERABLE,
+    EGL_TRUE,
+    EGL_SURFACE_TYPE,
+    EGL_PBUFFER_BIT,
+)
 
 
 def _convert_attrib_list(attribList):
     attribList = attribList or []
     attribList = [a for a in attribList] + [EGL_NONE]
-    attribList = (_c_int*len(attribList))(*attribList)
+    attribList = (_c_int * len(attribList))(*attribList)
     return attribList
 
 
 def eglChooseConfig(display, attribList=DEFAULT_ATTRIB_LIST):
     attribList = _convert_attrib_list(attribList)
-    numConfigs = (_c_int*1)()
+    numConfigs = (_c_int * 1)()
     _lib.eglChooseConfig(display, attribList, None, 0, numConfigs)
     n = numConfigs[0]
     if n <= 0:
-        raise RuntimeError('Could not find any suitable config.')
-    config = (c_void_p*n)()
+        raise RuntimeError("Could not find any suitable config.")
+    config = (c_void_p * n)()
     _lib.eglChooseConfig(display, attribList, config, n, numConfigs)
     return config
 
@@ -298,21 +316,24 @@ def _check_res(res):
     else:
         return res
     if e == EGL_BAD_MATCH:
-        raise ValueError('Cannot create surface: attributes do not match ' +
-                         'or given config cannot render in window.')
+        raise ValueError(
+            "Cannot create surface: attributes do not match "
+            + "or given config cannot render in window."
+        )
     elif e == EGL_BAD_CONFIG:
-        raise ValueError('Cannot create surface: given config is not ' +
-                         'supported by this system.')
+        raise ValueError(
+            "Cannot create surface: given config is not " + "supported by this system."
+        )
     elif e == EGL_BAD_NATIVE_WINDOW:
-        raise ValueError('Cannot create surface: the given native window ' +
-                         'handle is invalid.')
+        raise ValueError("Cannot create surface: the given native window " + "handle is invalid.")
     elif e == EGL_BAD_ALLOC:
-        raise RuntimeError('Could not allocate surface: not enough ' +
-                           'resources or native window already associated ' +
-                           'with another config.')
+        raise RuntimeError(
+            "Could not allocate surface: not enough "
+            + "resources or native window already associated "
+            + "with another config."
+        )
     else:
-        raise RuntimeError('Could not create window surface due to ' +
-                           'unknown error: %i' % e)
+        raise RuntimeError("Could not create window surface due to " + "unknown error: %i" % e)
 
 
 def eglCreateWindowSurface(display, config, window, attribList=None):
@@ -330,46 +351,45 @@ def eglCreatePbufferSurface(display, config, attribList=None):
     return _check_res(surface)
 
 
-def eglCreateContext(display, config, shareContext=EGL_NO_CONTEXT,
-                     attribList=None):
+def eglCreateContext(display, config, shareContext=EGL_NO_CONTEXT, attribList=None):
     # Deal with attrib list
     attribList = attribList or [EGL_CONTEXT_CLIENT_VERSION, 2]
     attribList = [a for a in attribList] + [EGL_NONE]
-    attribList = (_c_int*len(attribList))(*attribList)
+    attribList = (_c_int * len(attribList))(*attribList)
     #
     res = c_void_p(_lib.eglCreateContext(display, config, shareContext, attribList))
     if res == EGL_NO_CONTEXT:
         e = eglGetError()
         if e == EGL_BAD_CONFIG:
-            raise ValueError('Could not create context: given config is ' +
-                             'not supported by this system.')
+            raise ValueError(
+                "Could not create context: given config is " + "not supported by this system."
+            )
         else:
-            raise RuntimeError('Could not create context due to ' +
-                               'unknown error: %i' % e)
+            raise RuntimeError("Could not create context due to " + "unknown error: %i" % e)
     return res
 
 
 def eglMakeCurrent(display, draw, read, context):
     res = _lib.eglMakeCurrent(display, draw, read, context)
     if res == EGL_FALSE:
-        raise RuntimeError('Could not make the context current.')
+        raise RuntimeError("Could not make the context current.")
 
 
 def eglBindAPI(api):
     """Set the current rendering API (OpenGL, OpenGL ES or OpenVG)"""
     res = _lib.eglBindAPI(api)
     if res == EGL_FALSE:
-        raise RuntimeError('Could not bind API %d' % api)
+        raise RuntimeError("Could not bind API %d" % api)
     return res
 
 
 def eglSwapBuffers(display, surface):
     res = _lib.eglSwapBuffers(display, surface)
     if res == EGL_FALSE:
-        raise RuntimeError('Could not swap buffers.')
+        raise RuntimeError("Could not swap buffers.")
 
 
 def eglDestroySurface(display, surface):
     res = _lib.eglDestroySurface(display, surface)
     if res == EGL_FALSE:
-        raise RuntimeError('Could not destroy surface')
+        raise RuntimeError("Could not destroy surface")

@@ -5,7 +5,7 @@ from .program import ModularProgram
 
 class MultiProgram(object):
     """A collection of ModularPrograms that emulates the API of a single
-    ModularProgram. 
+    ModularProgram.
 
     A single Visual is often drawn in many different ways--viewed under
     different transforms, with different clipping boundaries, or with different
@@ -15,28 +15,28 @@ class MultiProgram(object):
     programs.
     """
 
-    def __init__(self, vcode='', fcode='', gcode=None):
+    def __init__(self, vcode="", fcode="", gcode=None):
         self._vcode = vcode
         self._fcode = fcode
         self._gcode = gcode
         self._programs = weakref.WeakValueDictionary()
         self._set_items = {}
         self._next_prog_id = 0
-        self._vert = MultiShader(self, 'vert')
-        self._frag = MultiShader(self, 'frag')
-        self._geom = None if gcode is None else MultiShader(self, 'geom')
+        self._vert = MultiShader(self, "vert")
+        self._frag = MultiShader(self, "frag")
+        self._geom = None if gcode is None else MultiShader(self, "geom")
 
     def add_program(self, name=None):
         """Create a program and add it to this MultiProgram.
 
-        It is the caller's responsibility to keep a reference to the returned 
+        It is the caller's responsibility to keep a reference to the returned
         program.
 
-        The *name* must be unique, but is otherwise arbitrary and used for 
+        The *name* must be unique, but is otherwise arbitrary and used for
         debugging purposes.
         """
         if name is None:
-            name = 'program' + str(self._next_prog_id)
+            name = "program" + str(self._next_prog_id)
             self._next_prog_id += 1
 
         if name in self._programs:
@@ -85,7 +85,7 @@ class MultiProgram(object):
     def geom(self, code):
         self._gcode = code
         if self._geom is None:
-            self._geom = MultiShader(self, 'geom')
+            self._geom = MultiShader(self, "geom")
         for p in self._programs.values():
             p.geom = code
 
@@ -123,7 +123,7 @@ class MultiShader(object):
         mp.vert['u_scale'] = (1, 2)
 
         # applies to one program
-        mp.get_program('p1').frag['u_color'] = (1, 1, 1, 1)  
+        mp.get_program('p1').frag['u_color'] = (1, 1, 1, 1)
     """
 
     def __init__(self, program, shader):

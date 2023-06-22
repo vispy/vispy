@@ -68,7 +68,7 @@ class TurntableCamera(Base3DRotationCamera):
         roll=0.0,
         distance=None,
         translate_speed=1.0,
-        **kwargs
+        **kwargs,
     ):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
 
@@ -82,7 +82,7 @@ class TurntableCamera(Base3DRotationCamera):
     @property
     def elevation(self):
         """Get the camera elevation angle in degrees.
-        
+
         The camera points along the x-y plane when the angle is 0.
         """
         return self._elevation
@@ -96,7 +96,7 @@ class TurntableCamera(Base3DRotationCamera):
     @property
     def azimuth(self):
         """Get the camera azimuth angle in degrees.
-        
+
         The camera points along the y-z plane when the angle is 0.
         """
         return self._azimuth
@@ -165,9 +165,11 @@ class TurntableCamera(Base3DRotationCamera):
         sro, saz, sel = np.sin(rae)
         cro, caz, cel = np.cos(rae)
         d0, d1 = dist[0], dist[1]
-        dx = (+ d0 * (cro * caz + sro * sel * saz)
-              + d1 * (sro * caz - cro * sel * saz)) * self.translate_speed
-        dy = (+ d0 * (cro * saz - sro * sel * caz)
-              + d1 * (sro * saz + cro * sel * caz)) * self.translate_speed
-        dz = (- d0 * sro * cel + d1 * cro * cel) * self.translate_speed
+        dx = (
+            +d0 * (cro * caz + sro * sel * saz) + d1 * (sro * caz - cro * sel * saz)
+        ) * self.translate_speed
+        dy = (
+            +d0 * (cro * saz - sro * sel * caz) + d1 * (sro * saz + cro * sel * caz)
+        ) * self.translate_speed
+        dz = (-d0 * sro * cel + d1 * cro * cel) * self.translate_speed
         return dx, dy, dz

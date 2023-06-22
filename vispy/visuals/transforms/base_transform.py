@@ -67,7 +67,7 @@ class BaseTransform(object):
     def __init__(self):
         self._inverse = None
         self._dynamic = False
-        self.changed = EventEmitter(source=self, type='transform_changed')
+        self.changed = EventEmitter(source=self, type="transform_changed")
         if self.glsl_map is not None:
             self._shader_map = Function(self.glsl_map)
         if self.glsl_imap is not None:
@@ -104,10 +104,10 @@ class BaseTransform(object):
 
     @property
     def dynamic(self):
-        """Boolean flag that indicates whether this transform is expected to 
+        """Boolean flag that indicates whether this transform is expected to
         change frequently.
 
-        Transforms that are flagged as dynamic will not be collapsed in 
+        Transforms that are flagged as dynamic will not be collapsed in
         ``ChainTransform.simplified``. This allows changes to the transform
         to propagate through the chain without requiring the chain to be
         re-simplified.
@@ -132,7 +132,7 @@ class BaseTransform(object):
 
     def _shader_object(self):
         """This method allows transforms to be assigned directly to shader
-        template variables. 
+        template variables.
 
         Example::
 
@@ -166,7 +166,7 @@ class BaseTransform(object):
                * return NotImplemented if the superclass would return an
                  invalid result.
 
-        3. When BaseTransform.__mul__(A, B) is called, it returns 
+        3. When BaseTransform.__mul__(A, B) is called, it returns
            NotImplemented, which causes B.__rmul__(A) to be invoked.
         4. B.__rmul__(A) attempts to generate an optimized transform product.
         5. If that fails, it must:
@@ -226,7 +226,7 @@ class InverseTransform(BaseTransform):
         return self._inverse.shader_map
 
     def __repr__(self):
-        return ("<Inverse of %r>" % repr(self._inverse))
+        return "<Inverse of %r>" % repr(self._inverse)
 
 
 # import here to avoid import cycle; needed for BaseTransform.__mul__.

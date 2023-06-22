@@ -4,9 +4,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from . color import Color
-from . number import Number
-from . length import Length
+from .color import Color
+from .number import Number
+from .length import Length
 
 _converters = {
     "fill": Color,
@@ -22,7 +22,6 @@ _converters = {
 
 
 class Style(object):
-
     def __init__(self):
         self._unset = True
         for key in _converters.keys():
@@ -54,6 +53,6 @@ class Style(object):
             key_ = key.replace("-", "_")
             value = self.__getattribute__(key_)
             if value is not None:
-                s += '%s:%s ' % (key, value)
+                s += "%s:%s " % (key, value)
         s += '"'
         return s

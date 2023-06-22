@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
@@ -47,7 +46,7 @@ def merge_includes(code):
                 text += fh.read()
             text += '// --- end of "%s" ---\n' % filename
             return text
-        return ''
+        return ""
 
     # Limit recursion to depth 10
     for i in range(10):

@@ -10,13 +10,12 @@ from time import sleep
 import gc
 import warnings
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys, logger
 from ...util.ptime import time
 from ... import config
 
-USE_EGL = config['gl_backend'].lower().startswith('es')
+USE_EGL = config["gl_backend"].lower().startswith("es")
 
 
 # -------------------------------------------------------------------- init ---
@@ -34,22 +33,18 @@ try:
         wx.WXK_CONTROL: keys.CONTROL,
         wx.WXK_ALT: keys.ALT,
         wx.WXK_WINDOWS_MENU: keys.META,
-
         wx.WXK_LEFT: keys.LEFT,
         wx.WXK_UP: keys.UP,
         wx.WXK_RIGHT: keys.RIGHT,
         wx.WXK_DOWN: keys.DOWN,
         wx.WXK_PAGEUP: keys.PAGEUP,
         wx.WXK_PAGEDOWN: keys.PAGEDOWN,
-
         wx.WXK_INSERT: keys.INSERT,
         wx.WXK_DELETE: keys.DELETE,
         wx.WXK_HOME: keys.HOME,
         wx.WXK_END: keys.END,
-
         wx.WXK_ESCAPE: keys.ESCAPE,
         wx.WXK_BACK: keys.BACKSPACE,
-
         wx.WXK_F1: keys.F1,
         wx.WXK_F2: keys.F2,
         wx.WXK_F3: keys.F3,
@@ -62,7 +57,6 @@ try:
         wx.WXK_F10: keys.F10,
         wx.WXK_F11: keys.F11,
         wx.WXK_F12: keys.F12,
-
         wx.WXK_SPACE: keys.SPACE,
         wx.WXK_RETURN: keys.ENTER,  # == pyglet.window.key.RETURN
         wx.WXK_NUMPAD_ENTER: keys.ENTER,
@@ -73,12 +67,13 @@ except Exception as exp:
 
     class GLCanvas(object):
         pass
+
 else:
     if USE_EGL:
-        available, testable, why_not = False, False, 'EGL not supported'
+        available, testable, why_not = False, False, "EGL not supported"
     else:
         available, testable, why_not = True, True, None
-    which = 'wxPython ' + str(wx.__version__)
+    which = "wxPython " + str(wx.__version__)
 
 
 # -------------------------------------------------------------- capability ---
@@ -102,17 +97,26 @@ capability = dict(  # things that can be set by the backend
 
 # ------------------------------------------------------- set_configuration ---
 
+
 def _set_config(c):
     """Set gl configuration"""
-    gl_attribs = [glcanvas.WX_GL_RGBA,
-                  glcanvas.WX_GL_DEPTH_SIZE, c['depth_size'],
-                  glcanvas.WX_GL_STENCIL_SIZE, c['stencil_size'],
-                  glcanvas.WX_GL_MIN_RED, c['red_size'],
-                  glcanvas.WX_GL_MIN_GREEN, c['green_size'],
-                  glcanvas.WX_GL_MIN_BLUE, c['blue_size'],
-                  glcanvas.WX_GL_MIN_ALPHA, c['alpha_size']]
-    gl_attribs += [glcanvas.WX_GL_DOUBLEBUFFER] if c['double_buffer'] else []
-    gl_attribs += [glcanvas.WX_GL_STEREO] if c['stereo'] else []
+    gl_attribs = [
+        glcanvas.WX_GL_RGBA,
+        glcanvas.WX_GL_DEPTH_SIZE,
+        c["depth_size"],
+        glcanvas.WX_GL_STENCIL_SIZE,
+        c["stencil_size"],
+        glcanvas.WX_GL_MIN_RED,
+        c["red_size"],
+        glcanvas.WX_GL_MIN_GREEN,
+        c["green_size"],
+        glcanvas.WX_GL_MIN_BLUE,
+        c["blue_size"],
+        glcanvas.WX_GL_MIN_ALPHA,
+        c["alpha_size"],
+    ]
+    gl_attribs += [glcanvas.WX_GL_DOUBLEBUFFER] if c["double_buffer"] else []
+    gl_attribs += [glcanvas.WX_GL_STEREO] if c["stereo"] else []
     return gl_attribs
 
 
@@ -123,14 +127,13 @@ _timers = []
 
 
 class ApplicationBackend(BaseApplicationBackend):
-
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._event_loop = wx.GUIEventLoop()
         wx.EventLoop.SetActive(self._event_loop)
 
     def _vispy_get_backend_name(self):
-        return 'wx'
+        return "wx"
 
     def _vispy_process_events(self):
         # inpsired by https://github.com/wxWidgets/wxPython/blob/master/
@@ -138,7 +141,7 @@ class ApplicationBackend(BaseApplicationBackend):
         for _ in range(3):  # trial-and-error found this to work (!)
             while self._event_loop.Pending():
                 self._event_loop.Dispatch()
-            if hasattr(_wx_app, 'ProcessIdle'):
+            if hasattr(_wx_app, "ProcessIdle"):
                 _wx_app.ProcessIdle()
             else:
                 self._event_loop.ProcessIdle()
@@ -156,7 +159,7 @@ class ApplicationBackend(BaseApplicationBackend):
         global _wx_app
         _wx_app = wx.GetApp()  # in case the user already has one
         if _wx_app is None:
-            if hasattr(wx, 'App'):
+            if hasattr(wx, "App"):
                 _wx_app = wx.App()
             else:
                 # legacy wx
@@ -166,6 +169,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 # ------------------------------------------------------------------ canvas ---
+
 
 def _get_mods(evt):
     """Helper to extract list of mods from event"""
@@ -181,7 +185,7 @@ def _process_key(evt):
     """Helper to convert from wx keycode to vispy keycode"""
     key = evt.GetKeyCode()
     if key in KEYMAP:
-        return KEYMAP[key], ''
+        return KEYMAP[key], ""
     if 97 <= key <= 122:
         key -= 32
     if key >= 32 and key <= 127:
@@ -215,7 +219,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         # Set config
         self._gl_attribs = _set_config(p.context.config)
         # Deal with context
-        p.context.shared.add_ref('wx', self)
+        p.context.shared.add_ref("wx", self)
         if p.context.shared.ref is self:
             self._gl_context = None  # set for real once we init the GLCanvas
         else:
@@ -227,20 +231,25 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             pos = p.position
 
         if p.parent is None:
-            style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
-                     wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
+            style = (
+                wx.MINIMIZE_BOX
+                | wx.MAXIMIZE_BOX
+                | wx.CLOSE_BOX
+                | wx.SYSTEM_MENU
+                | wx.CAPTION
+                | wx.CLIP_CHILDREN
+            )
             style |= wx.NO_BORDER if not p.decorate else wx.RESIZE_BORDER
             style |= wx.STAY_ON_TOP if p.always_on_top else 0
-            self._frame = wx.Frame(None, wx.ID_ANY, p.title, pos, p.size,
-                                   style)
+            self._frame = wx.Frame(None, wx.ID_ANY, p.title, pos, p.size, style)
 
             if not p.resizable:
-                self._frame.SetSizeHints(p.size[0], p.size[1],
-                                         p.size[0], p.size[1])
+                self._frame.SetSizeHints(p.size[0], p.size[1], p.size[0], p.size[1])
             if p.fullscreen is not False:
                 if p.fullscreen is not True:
-                    logger.warning('Cannot specify monitor number for wx '
-                                   'fullscreen, using default')
+                    logger.warning(
+                        "Cannot specify monitor number for wx " "fullscreen, using default"
+                    )
                 self._fullscreen = True
             else:
                 self._fullscreen = False
@@ -254,9 +263,16 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             self._frame = None
             self._fullscreen = False
         self._init = False
-        GLCanvas.__init__(self, parent, wx.ID_ANY, pos=pos,
-                          size=p.size, style=0, name='GLCanvas',
-                          attribList=self._gl_attribs)
+        GLCanvas.__init__(
+            self,
+            parent,
+            wx.ID_ANY,
+            pos=pos,
+            size=p.size,
+            style=0,
+            name="GLCanvas",
+            attribList=self._gl_attribs,
+        )
 
         if self._gl_context is None:
             self._gl_context = glcanvas.GLContext(self)
@@ -325,7 +341,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         # Set size of the widget or window
         if not self._init:
             self._size_init = (w, h)
-        if hasattr(self, 'SetSize'):
+        if hasattr(self, "SetSize"):
             # phoenix
             self.SetSize(w, h)
         else:
@@ -400,9 +416,8 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
         pos = (evt.GetX(), evt.GetY())
         mods = _get_mods(evt)
         if evt.GetWheelRotation() != 0:
-            delta = (0., float(evt.GetWheelRotation())/120.0)
-            self._vispy_canvas.events.mouse_wheel(delta=delta, pos=pos,
-                                                  modifiers=mods)
+            delta = (0.0, float(evt.GetWheelRotation()) / 120.0)
+            self._vispy_canvas.events.mouse_wheel(delta=delta, pos=pos, modifiers=mods)
         elif evt.Moving() or evt.Dragging():  # mouse move event
             self._vispy_mouse_move(pos=pos, modifiers=mods)
         elif evt.ButtonDown():
@@ -435,29 +450,26 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             else:
                 evt.Skip()
             self._vispy_mouse_press(pos=pos, button=button, modifiers=mods)
-            self._vispy_mouse_double_click(pos=pos, button=button,
-                                           modifiers=mods)
+            self._vispy_mouse_double_click(pos=pos, button=button, modifiers=mods)
         evt.Skip()
 
     def on_key_down(self, evt):
         if self._vispy_canvas is None:
             return
         key, text = _process_key(evt)
-        self._vispy_canvas.events.key_press(key=key, text=text,
-                                            modifiers=_get_mods(evt))
+        self._vispy_canvas.events.key_press(key=key, text=text, modifiers=_get_mods(evt))
 
     def on_key_up(self, evt):
         if self._vispy_canvas is None:
             return
         key, text = _process_key(evt)
-        self._vispy_canvas.events.key_release(key=key, text=text,
-                                              modifiers=_get_mods(evt))
+        self._vispy_canvas.events.key_release(key=key, text=text, modifiers=_get_mods(evt))
 
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend):
 
+class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
         assert _wx_app is not None
@@ -466,7 +478,7 @@ class TimerBackend(BaseTimerBackend):
         parent.Bind(wx.EVT_TIMER, self._vispy_timeout, self._timer)
 
     def _vispy_start(self, interval):
-        self._timer.Start(int(interval * 1000.), False)
+        self._timer.Start(int(interval * 1000.0), False)
 
     def _vispy_stop(self):
         self._timer.Stop()

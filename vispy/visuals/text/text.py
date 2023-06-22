@@ -16,7 +16,7 @@ import sys
 
 from ._sdf_gpu import SDFRendererGPU
 from ._sdf_cpu import _calc_distance_field
-from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
+from ...gloo import TextureAtlas, IndexBuffer, VertexBuffer
 from ...gloo import context
 from ...gloo.wrappers import _check_valid
 from ...util.fonts import _load_glyph
@@ -48,13 +48,13 @@ class TextureFont(object):
 
     def __init__(self, font, renderer):
         self._atlas = TextureAtlas(dtype=np.uint8)
-        self._atlas.wrapping = 'clamp_to_edge'
+        self._atlas.wrapping = "clamp_to_edge"
         self._kernel, _ = load_spatial_filters()
         self._renderer = renderer
         self._font = deepcopy(font)
-        self._font['size'] = 256  # use high resolution point size for SDF
+        self._font["size"] = 256  # use high resolution point size for SDF
         self._lowres_size = 64  # end at this point size for storage
-        assert (self._font['size'] % self._lowres_size) == 0
+        assert (self._font["size"] % self._lowres_size) == 0
         # spread/border at the high-res for SDF calculation; must be chosen
         # relative to fragment_insert.glsl multiplication factor to ensure we
         # get to zero at the edges of characters
@@ -67,7 +67,7 @@ class TextureFont(object):
     @property
     def ratio(self):
         """Ratio of the initial high-res to final stored low-res glyph"""
-        return self._font['size'] // self._lowres_size
+        return self._font["size"] // self._lowres_size
 
     @property
     def slop(self):
@@ -76,7 +76,7 @@ class TextureFont(object):
 
     def __getitem__(self, char):
         if not (isinstance(char, str) and len(char) == 1):
-            raise TypeError('index must be a 1-character string')
+            raise TypeError("index must be a 1-character string")
         if char not in self._glyphs:
             self._load_char(char)
         return self._glyphs[char]
@@ -95,27 +95,28 @@ class TextureFont(object):
         _load_glyph(self._font, char, self._glyphs)
         # put new glyph into the texture
         glyph = self._glyphs[char]
-        bitmap = glyph['bitmap']
+        bitmap = glyph["bitmap"]
 
         # convert to padded array
-        data = np.zeros((bitmap.shape[0] + 2*self._spread,
-                         bitmap.shape[1] + 2*self._spread), np.uint8)
-        data[self._spread:-self._spread, self._spread:-self._spread] = bitmap
+        data = np.zeros(
+            (bitmap.shape[0] + 2 * self._spread, bitmap.shape[1] + 2 * self._spread), np.uint8
+        )
+        data[self._spread : -self._spread, self._spread : -self._spread] = bitmap
 
         # Store, while scaling down to proper size
         height = data.shape[0] // self.ratio
         width = data.shape[1] // self.ratio
         region = self._atlas.get_free_region(width + 2, height + 2)
         if region is None:
-            raise RuntimeError('Cannot store glyph')
+            raise RuntimeError("Cannot store glyph")
         x, y, w, h = region
         x, y, w, h = x + 1, y + 1, w - 2, h - 2
 
         self._renderer.render_to_texture(data, self._atlas, (x, y), (w, h))
         u0 = x / float(self._atlas.shape[1])
         v0 = y / float(self._atlas.shape[0])
-        u1 = (x+w) / float(self._atlas.shape[1])
-        v1 = (y+h) / float(self._atlas.shape[0])
+        u1 = (x + w) / float(self._atlas.shape[1])
+        v1 = (y + h) / float(self._atlas.shape[0])
         texcoords = (u0, v0, u1, v1)
         glyph.update(dict(size=(w, h), texcoords=texcoords))
 
@@ -125,20 +126,18 @@ class FontManager(object):
 
     # XXX: should store a font-manager on each context,
     # or let TextureFont use a TextureAtlas for each context
-    def __init__(self, method='cpu'):
+    def __init__(self, method="cpu"):
         self._fonts = {}
-        if not isinstance(method, str) or \
-                method not in ('cpu', 'gpu'):
-            raise ValueError('method must be "cpu" or "gpu", got %s (%s)'
-                             % (method, type(method)))
-        if method == 'cpu':
+        if not isinstance(method, str) or method not in ("cpu", "gpu"):
+            raise ValueError('method must be "cpu" or "gpu", got %s (%s)' % (method, type(method)))
+        if method == "cpu":
             self._renderer = SDFRendererCPU()
         else:  # method == 'gpu':
             self._renderer = SDFRendererGPU()
 
     def get_font(self, face, bold=False, italic=False):
         """Get a font described by face and size"""
-        key = '%s-%s-%s' % (face, bold, italic)
+        key = "%s-%s-%s" % (face, bold, italic)
         if key not in self._fonts:
             font = dict(face=face, bold=bold, italic=italic)
             self._fonts[key] = TextureFont(font, self._renderer)
@@ -243,34 +242,33 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     canvas = context.get_current_canvas()
     canvas.context.flush_commands()
 
-    text_vtype = np.dtype([('a_position', np.float32, 2),
-                           ('a_texcoord', np.float32, 2)])
+    text_vtype = np.dtype([("a_position", np.float32, 2), ("a_texcoord", np.float32, 2)])
     vertices = np.zeros(len(text) * 4, dtype=text_vtype)
     prev = None
     width = height = ascender = descender = 0
-    ratio, slop = 1. / font.ratio, font.slop
+    ratio, slop = 1.0 / font.ratio, font.slop
     x_off = -slop
     # Need to make sure we have a unicode string here (Py2.7 mis-interprets
     # characters like "•" otherwise)
-    if sys.version[0] == '2' and isinstance(text, str):
-        text = text.decode('utf-8')
+    if sys.version[0] == "2" and isinstance(text, str):
+        text = text.decode("utf-8")
     # Need to store the original viewport, because the font[char] will
     # trigger SDF rendering, which changes our viewport
     # todo: get rid of call to glGetParameter!
 
     # Also analyse chars with large ascender and descender, otherwise the
     # vertical alignment can be very inconsistent
-    for char in 'hy':
+    for char in "hy":
         glyph = font[char]
-        y0 = glyph['offset'][1] * ratio + slop
-        y1 = y0 - glyph['size'][1]
+        y0 = glyph["offset"][1] * ratio + slop
+        y1 = y0 - glyph["size"][1]
         ascender = max(ascender, y0 - slop)
         descender = min(descender, y1 + slop)
-        height = max(height, glyph['size'][1] - 2*slop)
+        height = max(height, glyph["size"][1] - 2 * slop)
 
     # Get/set the fonts whitespace length and line height (size of this ok?)
-    glyph = font[' ']
-    spacewidth = glyph['advance'] * ratio
+    glyph = font[" "]
+    spacewidth = glyph["advance"] * ratio
     lineheight = height * 1.5
 
     # Added escape sequences characters: {unicode:offset,...}
@@ -305,12 +303,12 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
             elif esc_seq[ord(char)] > 0:
                 # Add offset in y-direction and reset things in x-direction
                 dx = dy = 0
-                if anchor_x == 'right':
+                if anchor_x == "right":
                     dx = -width
-                elif anchor_x == 'center':
-                    dx = -width / 2.
-                vertices['a_position'][vi_marker:vi+4] += (dx, dy)
-                vi_marker = vi+4
+                elif anchor_x == "center":
+                    dx = -width / 2.0
+                vertices["a_position"][vi_marker : vi + 4] += (dx, dy)
+                vi_marker = vi + 4
                 ii_offset -= 1
                 # Reset variables that affects x-direction positioning
                 x_off = -slop
@@ -320,45 +318,45 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         else:
             # For ordinary characters, normal procedure
             glyph = font[char]
-            kerning = glyph['kerning'].get(prev, 0.) * ratio
-            x0 = x_off + glyph['offset'][0] * ratio + kerning
-            y0 = glyph['offset'][1] * ratio + slop - y_offset
-            x1 = x0 + glyph['size'][0]
-            y1 = y0 - glyph['size'][1]
-            u0, v0, u1, v1 = glyph['texcoords']
+            kerning = glyph["kerning"].get(prev, 0.0) * ratio
+            x0 = x_off + glyph["offset"][0] * ratio + kerning
+            y0 = glyph["offset"][1] * ratio + slop - y_offset
+            x1 = x0 + glyph["size"][0]
+            y1 = y0 - glyph["size"][1]
+            u0, v0, u1, v1 = glyph["texcoords"]
             position = [[x0, y0], [x0, y1], [x1, y1], [x1, y0]]
             texcoords = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]]
             vi = (ii + ii_offset) * 4
-            vertices['a_position'][vi:vi+4] = position
-            vertices['a_texcoord'][vi:vi+4] = texcoords
-            x_move = glyph['advance'] * ratio + kerning
+            vertices["a_position"][vi : vi + 4] = position
+            vertices["a_texcoord"][vi : vi + 4] = texcoords
+            x_move = glyph["advance"] * ratio + kerning
             x_off += x_move
             ascender = max(ascender, y0 - slop)
             descender = min(descender, y1 + slop)
             width += x_move
-            height = max(height, glyph['size'][1] - 2*slop)
+            height = max(height, glyph["size"][1] - 2 * slop)
             prev = char
 
     if orig_viewport is not None:
         canvas.context.set_viewport(*orig_viewport)
 
     dx = dy = 0
-    if anchor_y == 'top':
+    if anchor_y == "top":
         dy = -descender
-    elif anchor_y in ('center', 'middle'):
+    elif anchor_y in ("center", "middle"):
         dy = (-descender - ascender) / 2
-    elif anchor_y == 'bottom':
+    elif anchor_y == "bottom":
         dy = -ascender
-    if anchor_x == 'right':
+    if anchor_x == "right":
         dx = -width
-    elif anchor_x == 'center':
-        dx = -width / 2.
+    elif anchor_x == "center":
+        dx = -width / 2.0
 
     # If any linebreaks occured in text, we only want to translate characters
     # in the last line in text (those after the vi_marker)
-    vertices['a_position'][0:vi_marker] += (0, dy)
-    vertices['a_position'][vi_marker:] += (dx, dy)
-    vertices['a_position'] /= lowres_size
+    vertices["a_position"][0:vi_marker] += (0, dy)
+    vertices["a_position"][vi_marker:] += (dx, dy)
+    vertices["a_position"] /= lowres_size
 
     return vertices
 
@@ -404,20 +402,32 @@ class TextVisual(Visual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
-    def __init__(self, text=None, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
-                 rotation=0., anchor_x='center', anchor_y='center',
-                 method='cpu', font_manager=None, depth_test=False):
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+    def __init__(
+        self,
+        text=None,
+        color="black",
+        bold=False,
+        italic=False,
+        face="OpenSans",
+        font_size=12,
+        pos=[0, 0, 0],
+        rotation=0.0,
+        anchor_x="center",
+        anchor_y="center",
+        method="cpu",
+        font_manager=None,
+        depth_test=False,
+    ):
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
         # Check input
-        valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
-        _check_valid('anchor_y', anchor_y, valid_keys)
-        valid_keys = ('left', 'center', 'right')
-        _check_valid('anchor_x', anchor_x, valid_keys)
+        valid_keys = ("top", "center", "middle", "baseline", "bottom")
+        _check_valid("anchor_y", anchor_y, valid_keys)
+        valid_keys = ("left", "center", "right")
+        _check_valid("anchor_x", anchor_x, valid_keys)
         # Init font handling stuff
         # _font_manager is a temporary solution to use global mananger
         self._font_manager = font_manager or FontManager(method=method)
@@ -435,9 +445,13 @@ class TextVisual(Visual):
         self.pos = pos
         self.rotation = rotation
         self._text_scale = STTransform()
-        self._draw_mode = 'triangles'
-        self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
-                          blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self._draw_mode = "triangles"
+        self.set_gl_state(
+            blend=True,
+            depth_test=depth_test,
+            cull_face=False,
+            blend_func=("src_alpha", "one_minus_src_alpha"),
+        )
         self.freeze()
 
     @property
@@ -492,11 +506,11 @@ class TextVisual(Visual):
     @property
     def rotation(self):
         """The rotation of the text (clockwise, in degrees)"""
-        return self._rotation * 180. / np.pi
+        return self._rotation * 180.0 / np.pi
 
     @rotation.setter
     def rotation(self, rotation):
-        self._rotation = np.asarray(rotation) * np.pi / 180.
+        self._rotation = np.asarray(rotation) * np.pi / 180.0
         self._pos_changed = True
         self.update()
 
@@ -509,12 +523,11 @@ class TextVisual(Visual):
     def pos(self, pos):
         pos = np.atleast_2d(pos).astype(np.float32)
         if pos.shape[1] == 2:
-            pos = np.concatenate((pos, np.zeros((pos.shape[0], 1),
-                                                np.float32)), axis=1)
+            pos = np.concatenate((pos, np.zeros((pos.shape[0], 1), np.float32)), axis=1)
         elif pos.shape[1] != 3:
-            raise ValueError('pos must have 2 or 3 elements')
+            raise ValueError("pos must have 2 or 3 elements")
         elif pos.shape[0] == 0:
-            raise ValueError('at least one position must be given')
+            raise ValueError("at least one position must be given")
         self._pos = pos
         self._pos_changed = True
         self.update()
@@ -530,12 +543,19 @@ class TextVisual(Visual):
             n_char = sum(len(t) for t in text)
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
-            self._vertices = np.concatenate([
-                _text_to_vbo(t, self._font, self._anchors[0], self._anchors[1],
-                             self._font._lowres_size) for t in text])
+            self._vertices = np.concatenate(
+                [
+                    _text_to_vbo(
+                        t, self._font, self._anchors[0], self._anchors[1], self._font._lowres_size
+                    )
+                    for t in text
+                ]
+            )
             self._vertices = VertexBuffer(self._vertices)
-            idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
-                   np.arange(0, 4*n_char, 4, dtype=np.uint32)[:, np.newaxis])
+            idx = (
+                np.array([0, 1, 2, 0, 2, 3], np.uint32)
+                + np.arange(0, 4 * n_char, 4, dtype=np.uint32)[:, np.newaxis]
+            )
             self._index_buffer = IndexBuffer(idx.ravel())
             self.shared_program.bind(self._vertices)
             # This is necessary to reset the GL drawing state after generating
@@ -547,7 +567,7 @@ class TextVisual(Visual):
             text = self.text
             if not isinstance(text, str):
                 repeats = [4 * len(t) for t in text]
-                text = ''.join(text)
+                text = "".join(text)
             else:
                 repeats = [4 * len(text)]
             n_text = len(repeats)
@@ -561,53 +581,51 @@ class TextVisual(Visual):
                 _rep = [1] * (len(_rot) - 1) + [n_text - len(_rot) + 1]
                 _rot = np.repeat(_rot, _rep, axis=0)
             _rot = np.repeat(_rot[:n_text], repeats, axis=0)
-            self.shared_program['a_rotation'] = _rot.astype(np.float32)
+            self.shared_program["a_rotation"] = _rot.astype(np.float32)
             # Position
             if pos.shape[0] < n_text:
                 _rep = [1] * (len(pos) - 1) + [n_text - len(pos) + 1]
                 pos = np.repeat(pos, _rep, axis=0)
             pos = np.repeat(pos[:n_text], repeats, axis=0)
             assert pos.shape[0] == self._vertices.size == len(_rot)
-            self.shared_program['a_pos'] = pos
+            self.shared_program["a_pos"] = pos
             self._pos_changed = False
         if self._color_changed:
             # now we promote color to the proper shape (varying)
             text = self.text
             if not isinstance(text, str):
                 repeats = [4 * len(t) for t in text]
-                text = ''.join(text)
+                text = "".join(text)
             else:
                 repeats = [4 * len(text)]
             n_text = len(repeats)
             color = self.color.rgba
             if color.shape[0] < n_text:
-                color = np.repeat(color,
-                                  [1]*(len(color)-1) + [n_text-len(color)+1],
-                                  axis=0)
+                color = np.repeat(color, [1] * (len(color) - 1) + [n_text - len(color) + 1], axis=0)
             color = np.repeat(color[:n_text], repeats, axis=0)
             assert color.shape[0] == self._vertices.size
             self._color_vbo = VertexBuffer(color)
-            self.shared_program.vert['color'] = self._color_vbo
+            self.shared_program.vert["color"] = self._color_vbo
             self._color_changed = False
 
         transforms = self.transforms
-        n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
-        tr = transforms.get_transform('document', 'render')
+        n_pix = (self._font_size / 72.0) * transforms.dpi  # logical pix
+        tr = transforms.get_transform("document", "render")
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
         self._text_scale.scale = px_scale * n_pix
-        self.shared_program.vert['text_scale'] = self._text_scale
-        self.shared_program['u_npix'] = n_pix
-        self.shared_program['u_kernel'] = self._font._kernel
-        self.shared_program['u_color'] = self._color.rgba
-        self.shared_program['u_font_atlas'] = self._font._atlas
-        self.shared_program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
+        self.shared_program.vert["text_scale"] = self._text_scale
+        self.shared_program["u_npix"] = n_pix
+        self.shared_program["u_kernel"] = self._font._kernel
+        self.shared_program["u_color"] = self._color.rgba
+        self.shared_program["u_font_atlas"] = self._font._atlas
+        self.shared_program["u_font_atlas_shape"] = self._font._atlas.shape[:2]
 
     def _prepare_transforms(self, view):
         self._pos_changed = True
         # Note that we access `view_program` instead of `shared_program`
         # because we do not want this function assigned to other views.
         tr = view.transforms.get_transform()
-        view.view_program.vert['transform'] = tr  # .simplified()
+        view.view_program.vert["transform"] = tr  # .simplified()
 
     def _compute_bounds(self, axis, view):
         return self._pos[:, axis].min(), self._pos[:, axis].max()
@@ -656,8 +674,8 @@ class SDFRendererCPU(object):
         _calc_distance_field(sdf, w, h, 32)
         # This tweaking gets us a result more similar to the GPU SDFs,
         # for which the text rendering code was optimized
-        sdf = 2 * sdf - 1.
-        sdf = np.sign(sdf) * np.abs(sdf) ** 0.75 / 2. + 0.5
+        sdf = 2 * sdf - 1.0
+        sdf = np.sign(sdf) * np.abs(sdf) ** 0.75 / 2.0 + 0.5
         # Downsample using NumPy (because we can't guarantee SciPy)
         xp = (np.arange(w) + 0.5) / float(w)
         x = (np.arange(tex_w) + 0.5) / float(tex_w)
@@ -669,7 +687,5 @@ class SDFRendererCPU(object):
         # convert to uint8
         bitmap = (bitmap * 255).astype(np.uint8)
         # convert single channel to RGB by repeating
-        bitmap = np.tile(bitmap[..., np.newaxis],
-                         (1, 1, 3))
-        texture[offset[1]:offset[1] + size[1],
-                offset[0]:offset[0] + size[0], :] = bitmap
+        bitmap = np.tile(bitmap[..., np.newaxis], (1, 1, 3))
+        texture[offset[1] : offset[1] + size[1], offset[0] : offset[0] + size[0], :] = bitmap

@@ -11,13 +11,12 @@ from time import sleep
 import warnings
 import gc
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys, logger
 from ...util.ptime import time
 from ... import config
 
-USE_EGL = config['gl_backend'].lower().startswith('es')
+USE_EGL = config["gl_backend"].lower().startswith("es")
 
 
 # -------------------------------------------------------------------- init ---
@@ -38,22 +37,18 @@ try:
         sdl2.SDLK_RALT: keys.ALT,
         sdl2.SDLK_LGUI: keys.META,
         sdl2.SDLK_RGUI: keys.META,
-
         sdl2.SDLK_LEFT: keys.LEFT,
         sdl2.SDLK_UP: keys.UP,
         sdl2.SDLK_RIGHT: keys.RIGHT,
         sdl2.SDLK_DOWN: keys.DOWN,
         sdl2.SDLK_PAGEUP: keys.PAGEUP,
         sdl2.SDLK_PAGEDOWN: keys.PAGEDOWN,
-
         sdl2.SDLK_INSERT: keys.INSERT,
         sdl2.SDLK_DELETE: keys.DELETE,
         sdl2.SDLK_HOME: keys.HOME,
         sdl2.SDLK_END: keys.END,
-
         sdl2.SDLK_ESCAPE: keys.ESCAPE,
         sdl2.SDLK_BACKSPACE: keys.BACKSPACE,
-
         sdl2.SDLK_F1: keys.F1,
         sdl2.SDLK_F2: keys.F2,
         sdl2.SDLK_F3: keys.F3,
@@ -66,24 +61,20 @@ try:
         sdl2.SDLK_F10: keys.F10,
         sdl2.SDLK_F11: keys.F11,
         sdl2.SDLK_F12: keys.F12,
-
         sdl2.SDLK_SPACE: keys.SPACE,
         sdl2.SDLK_RETURN: keys.ENTER,
         sdl2.SDLK_TAB: keys.TAB,
     }
 
-    BUTTONMAP = {sdl2.SDL_BUTTON_LEFT: 1,
-                 sdl2.SDL_BUTTON_MIDDLE: 2,
-                 sdl2.SDL_BUTTON_RIGHT: 3
-                 }
+    BUTTONMAP = {sdl2.SDL_BUTTON_LEFT: 1, sdl2.SDL_BUTTON_MIDDLE: 2, sdl2.SDL_BUTTON_RIGHT: 3}
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
     if USE_EGL:
-        available, testable, why_not = False, False, 'EGL not supported'
+        available, testable, why_not = False, False, "EGL not supported"
     else:
         available, testable, why_not = True, True, None
-    which = 'sdl2 %d.%d.%d' % sdl2.version_info[:3]
+    which = "sdl2 %d.%d.%d" % sdl2.version_info[:3]
 
 _SDL2_INITIALIZED = False
 _VP_SDL2_ALL_WINDOWS = {}
@@ -114,26 +105,27 @@ capability = dict(  # things that can be set by the backend
 
 # ------------------------------------------------------- set_configuration ---
 
+
 def _set_config(c):
     """Set gl configuration for SDL2"""
     func = sdl2.SDL_GL_SetAttribute
-    func(sdl2.SDL_GL_RED_SIZE, c['red_size'])
-    func(sdl2.SDL_GL_GREEN_SIZE, c['green_size'])
-    func(sdl2.SDL_GL_BLUE_SIZE, c['blue_size'])
-    func(sdl2.SDL_GL_ALPHA_SIZE, c['alpha_size'])
-    func(sdl2.SDL_GL_DEPTH_SIZE, c['depth_size'])
-    func(sdl2.SDL_GL_STENCIL_SIZE, c['stencil_size'])
-    func(sdl2.SDL_GL_DOUBLEBUFFER, 1 if c['double_buffer'] else 0)
-    samps = c['samples']
+    func(sdl2.SDL_GL_RED_SIZE, c["red_size"])
+    func(sdl2.SDL_GL_GREEN_SIZE, c["green_size"])
+    func(sdl2.SDL_GL_BLUE_SIZE, c["blue_size"])
+    func(sdl2.SDL_GL_ALPHA_SIZE, c["alpha_size"])
+    func(sdl2.SDL_GL_DEPTH_SIZE, c["depth_size"])
+    func(sdl2.SDL_GL_STENCIL_SIZE, c["stencil_size"])
+    func(sdl2.SDL_GL_DOUBLEBUFFER, 1 if c["double_buffer"] else 0)
+    samps = c["samples"]
     func(sdl2.SDL_GL_MULTISAMPLEBUFFERS, 1 if samps > 0 else 0)
     func(sdl2.SDL_GL_MULTISAMPLESAMPLES, samps if samps > 0 else 0)
-    func(sdl2.SDL_GL_STEREO, c['stereo'])
+    func(sdl2.SDL_GL_STEREO, c["stereo"])
 
 
 # ------------------------------------------------------------- application ---
 
-class ApplicationBackend(BaseApplicationBackend):
 
+class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._timers = list()
@@ -143,7 +135,7 @@ class ApplicationBackend(BaseApplicationBackend):
             self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
-        return 'SDL2'
+        return "SDL2"
 
     def _vispy_process_events(self):
         events = sdl2.ext.get_events()
@@ -189,6 +181,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
+
 class CanvasBackend(BaseCanvasBackend):
     """SDL2 backend for Canvas abstract class."""
 
@@ -200,7 +193,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Deal with config
         _set_config(p.context.config)
         # Deal with context
-        p.context.shared.add_ref('sdl2', self)
+        p.context.shared.add_ref("sdl2", self)
         if p.context.shared.ref is self:
             share = None
         else:
@@ -218,8 +211,9 @@ class CanvasBackend(BaseCanvasBackend):
         if p.fullscreen is not False:
             self._fullscreen = True
             if p.fullscreen is not True:
-                logger.warning('Cannot specify monitor number for SDL2 '
-                               'fullscreen, using default')
+                logger.warning(
+                    "Cannot specify monitor number for SDL2 " "fullscreen, using default"
+                )
             flags |= sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP
         else:
             self._fullscreen = False
@@ -230,7 +224,7 @@ class CanvasBackend(BaseCanvasBackend):
             position = None
         self._id = sdl2.ext.Window(p.title, p.size, position, flags)
         if not self._id.window:
-            raise RuntimeError('Could not create window')
+            raise RuntimeError("Could not create window")
         if share is None:
             self._native_context = sdl2.SDL_GL_CreateContext(self._id.window)
         else:
@@ -269,7 +263,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Set the window title. Has no effect for widgets
-        sdl2.SDL_SetWindowTitle(self._id.window, title.encode('UTF-8'))
+        sdl2.SDL_SetWindowTitle(self._id.window, title.encode("UTF-8"))
 
     def _vispy_set_size(self, w, h):
         if self._id is None:
@@ -316,8 +310,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         w, h = ctypes.c_int(), ctypes.c_int()
-        sdl2.SDL_GetWindowSize(self._id.window,
-                               ctypes.byref(w), ctypes.byref(h))
+        sdl2.SDL_GetWindowSize(self._id.window, ctypes.byref(w), ctypes.byref(h))
         w, h = w.value, h.value
         return w, h
 
@@ -333,8 +326,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         x, y = ctypes.c_int(), ctypes.c_int()
-        sdl2.SDL_GetWindowPosition(self._id.window,
-                                   ctypes.byref(x), ctypes.byref(y))
+        sdl2.SDL_GetWindowPosition(self._id.window, ctypes.byref(x), ctypes.byref(y))
         x, y = x.value, y.value
         return x, y
 
@@ -368,8 +360,7 @@ class CanvasBackend(BaseCanvasBackend):
         elif event.type == sdl2.SDL_MOUSEMOTION:
             x, y = event.motion.x, event.motion.y
             self._vispy_mouse_move(pos=(x, y), modifiers=self._mods)
-        elif event.type in (sdl2.SDL_MOUSEBUTTONDOWN,
-                            sdl2.SDL_MOUSEBUTTONUP):
+        elif event.type in (sdl2.SDL_MOUSEBUTTONDOWN, sdl2.SDL_MOUSEBUTTONUP):
             x, y = event.button.x, event.button.y
             button = event.button.button
             if button in BUTTONMAP:
@@ -382,20 +373,19 @@ class CanvasBackend(BaseCanvasBackend):
         elif event.type == sdl2.SDL_MOUSEWHEEL:
             pos = self._get_mouse_position()
             delta = float(event.wheel.x), float(event.wheel.y)
-            self._vispy_canvas.events.mouse_wheel(pos=pos, delta=delta,
-                                                  modifiers=self._mods)
+            self._vispy_canvas.events.mouse_wheel(pos=pos, delta=delta, modifiers=self._mods)
         elif event.type in (sdl2.SDL_KEYDOWN, sdl2.SDL_KEYUP):
-            down = (event.type == sdl2.SDL_KEYDOWN)
+            down = event.type == sdl2.SDL_KEYDOWN
             keysym = event.key.keysym
             mods = keysym.mod
             key = keysym.sym
             self._process_mod(mods, down)
             if key in KEYMAP:
-                key, text = KEYMAP[key], ''
+                key, text = KEYMAP[key], ""
             elif key >= 32 and key <= 127:
                 key, text = keys.Key(chr(key)), chr(key)
             else:
-                key, text = None, ''
+                key, text = None, ""
             if down:
                 fun = self._vispy_canvas.events.key_press
             else:
@@ -419,13 +409,14 @@ class CanvasBackend(BaseCanvasBackend):
             elif not down:
                 self._mods.pop(self._mods.index(mod))
 
+
 # ------------------------------------------------------------------- timer ---
 
 
 # XXX should probably use SDL_Timer (and SDL_INIT_TIMER)
 
-class TimerBackend(BaseTimerBackend):
 
+class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
         vispy_timer._app._backend._add_timer(self)
@@ -436,7 +427,7 @@ class TimerBackend(BaseTimerBackend):
         self._next_time = time() + self._interval
 
     def _vispy_stop(self):
-        self._next_time = float('inf')
+        self._next_time = float("inf")
 
     def _tick(self):
         if time() >= self._next_time:

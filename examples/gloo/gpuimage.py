@@ -90,20 +90,18 @@ void main() {
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, position=(300, 100),
-                            size=(800, 800), keys='interactive')
+        app.Canvas.__init__(self, position=(300, 100), size=(800, 800), keys="interactive")
 
         self.program = gloo.Program(vertex, fragment)
-        self.program['a_position'] = [(-1., -1.), (-1., +1.),
-                                      (+1., -1.), (+1., +1.)]
+        self.program["a_position"] = [(-1.0, -1.0), (-1.0, +1.0), (+1.0, -1.0), (+1.0, +1.0)]
 
-        self.program['u_time'] = 0.0
-        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self.program["u_time"] = 0.0
+        self.timer = app.Timer("auto", connect=self.on_timer, start=True)
 
         self.show()
 
     def on_timer(self, event):
-        self.program['u_time'] = event.elapsed
+        self.program["u_time"] = event.elapsed
         self.update()
 
     def on_resize(self, event):
@@ -111,9 +109,9 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-        self.program.draw('triangle_strip')
+        self.program.draw("triangle_strip")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

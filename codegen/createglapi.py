@@ -12,7 +12,7 @@ The files involved in the code generation process are:
   * vispy_ext.h - C header file with a subset of GL3+ constants defined
   * webgl.idl - the interface definition language for WebGL
   * annotations.py - manual annotations for non-trivial functions
-  * headerparser.py - parses .h and .idl files 
+  * headerparser.py - parses .h and .idl files
   * createglapi.py - uses all of the above to generate the actual code
 
 Rationale
@@ -104,27 +104,28 @@ def create_parsers():
 DEFINE_ENUM = '''
 class Enum(int):
     """Enum (integer) with a meaningfull repr."""
-    
+
     def __new__(cls, name, value):
         base = int.__new__(cls, value)
         base.name = name
         return base
-        
+
     def __repr__(self):
         return self.name
 '''
 
-DEFINE_CONST_MAP = '''
+DEFINE_CONST_MAP = """
 ENUM_MAP = {}
 for var_name, ob in list(globals().items()):
     if var_name.startswith('GL_'):
         ENUM_MAP[int(ob)] = ob
 del ob, var_name
-'''
+"""
 
 
-def create_constants_module(constant_definitions: list[headerparser.ConstantDefinition],
-                            extension: bool = False) -> None:
+def create_constants_module(
+    constant_definitions: list[headerparser.ConstantDefinition], extension: bool = False
+) -> None:
     lines = [PREAMBLE % "Constants for OpenGL ES 2.0.", DEFINE_ENUM, ""]
 
     # For extensions, we only take the OES ones, and remove the OES
@@ -348,7 +349,7 @@ class ProxyApiGenerator(ApiGenerator):
         """ Base proxy class for the GL ES 2.0 API. Subclasses should
         implement __call__ to process the API calls.
         """
-       
+
         def __call__(self, funcname, returns, *args):
             raise NotImplementedError()
     '''
@@ -366,9 +367,7 @@ class ProxyApiGenerator(ApiGenerator):
         prefix = "return " if ret else ""
         argstr = ", ".join(des.args)
         self.lines.append("    def %s(self, %s):" % (des.apiname, argstr))
-        self.lines.append(
-            '        %sself("%s", %r, %s)' % (prefix, apiname(des.name), ret, argstr)
-        )
+        self.lines.append('        %sself("%s", %r, %s)' % (prefix, apiname(des.name), ret, argstr))
 
     def _add_group_function(self, des, sig, es2func):
         ret = self._returns(des)
@@ -376,9 +375,7 @@ class ProxyApiGenerator(ApiGenerator):
         funcname = apiname(sig.split("(")[0])
         args = sig.split("(", 1)[1].split(")")[0]
         self.lines.append("    def %s(self, %s):" % (funcname, args))
-        self.lines.append(
-            '        %sself("%s", %r, %s)' % (prefix, funcname, ret, args)
-        )
+        self.lines.append('        %sself("%s", %r, %s)' % (prefix, funcname, ret, args))
 
 
 class Gl2ApiGenerator(ApiGenerator):
@@ -428,9 +425,7 @@ class Gl2ApiGenerator(ApiGenerator):
                 lines.append("_lib.%s.argtypes = ()" % es2func.glname)
         # Set output arg (if available)
         if ct_arg_types[0][0] != type(None):
-            lines.append(
-                "_lib.%s.restype = ctypes.%s" % (es2func.glname, ct_arg_types[0][1])
-            )
+            lines.append("_lib.%s.restype = ctypes.%s" % (es2func.glname, ct_arg_types[0][1]))
 
     def _native_call_line(self, name, es2func, cargstr=None, prefix="", indent=4):
         resstr, argstr = self._get_argtype_str(es2func)
@@ -468,20 +463,15 @@ class Gl2ApiGenerator(ApiGenerator):
         # Write C function signature, for debugging and development
         if self.write_c_sig:
             argnamesstr = ", ".join(
-                [
-                    c_type + " " + c_name
-                    for c_type, c_name in zip(ce_arg_types, ce_arg_names)
-                ]
+                [c_type + " " + c_name for c_type, c_name in zip(ce_arg_types, ce_arg_names)]
             )
-            lines.append(
-                "# %s = %s(%s)" % (es2func.args[0].ctype, es2func.oname, argnamesstr)
-            )
+            lines.append("# %s = %s(%s)" % (es2func.args[0].ctype, es2func.oname, argnamesstr))
 
         # Write Python function def
         lines.append("def %s(%s):" % (des.apiname, ", ".join(des.args)))
 
         # Construct C function call
-        cargs = [arg.name for arg in des.es2.args[1:]]
+        [arg.name for arg in des.es2.args[1:]]
 
         # Now write the body of the function ...
         if des.ann:
@@ -555,12 +545,8 @@ class Gl2ApiGenerator(ApiGenerator):
             lines.append("        values = values.copy()")
             lines.append('    assert values.dtype.name == "float32"')
             lines.append("    values_ = values")
-            lines.append(
-                "    values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))"
-            )
-            lines.append(
-                call_line(funcname, es2func, "location, count, transpose, values")
-            )
+            lines.append("    values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))")
+            lines.append(call_line(funcname, es2func, "location, count, transpose, values"))
         elif des.name == "vertexAttrib":
             lines.append("def %s:" % sig)
             lines.append(call_line(funcname, es2func, args))
@@ -730,8 +716,7 @@ class FunctionCollector:
                 if annfunc and argnames_ann != argnames_es2:
                     des.args = argnames_ann
                     print(
-                        "WARNING: %s: Annotation overload even though webgl and es2 match."
-                        % name
+                        "WARNING: %s: Annotation overload even though webgl and es2 match." % name
                     )
                 else:
                     des.args = argnames_es2
@@ -774,7 +759,9 @@ def main():
     annotations = parse_anotations()
     gl2es2_parser, webgl_parser = create_parsers()
     vispy_ext_parser = headerparser.Parser(os.path.join(THISDIR, "headers", "vispy_ext.h"))
-    constant_definitions = list(gl2es2_parser.constants.values()) + list(vispy_ext_parser.constants.values())
+    constant_definitions = list(gl2es2_parser.constants.values()) + list(
+        vispy_ext_parser.constants.values()
+    )
     create_constants_module(constant_definitions)
 
     # Get full function definitions and report

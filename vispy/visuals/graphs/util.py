@@ -14,6 +14,7 @@ try:
     from scipy.sparse import issparse
     from scipy import sparse
 except ImportError:
+
     def issparse(*args, **kwargs):
         return False
 
@@ -24,8 +25,9 @@ def _get_edges(adjacency_mat):
 
 
 def _sparse_get_edges(adjacency_mat):
-    return np.concatenate((adjacency_mat.row[:, np.newaxis],
-                           adjacency_mat.col[:, np.newaxis]), axis=-1)
+    return np.concatenate(
+        (adjacency_mat.row[:, np.newaxis], adjacency_mat.col[:, np.newaxis]), axis=-1
+    )
 
 
 def _ndarray_get_edges(adjacency_mat):
@@ -77,8 +79,7 @@ def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
     if not issparse(adjacency_mat):
         adjacency_mat = np.asarray(adjacency_mat, float)
 
-    if (adjacency_mat.ndim != 2 or adjacency_mat.shape[0] !=
-            adjacency_mat.shape[1]):
+    if adjacency_mat.ndim != 2 or adjacency_mat.shape[0] != adjacency_mat.shape[1]:
         raise ValueError("Adjacency matrix should be square.")
 
     arrow_vertices = np.array([])
@@ -89,7 +90,7 @@ def _straight_line_vertices(adjacency_mat, node_coords, directed=False):
     if directed:
         arrows = np.array(list(_get_directed_edges(adjacency_mat)))
         arrow_vertices = node_coords[arrows.ravel()]
-        arrow_vertices = arrow_vertices.reshape((len(arrow_vertices)//2, 4))
+        arrow_vertices = arrow_vertices.reshape((len(arrow_vertices) // 2, 4))
 
     return line_vertices, arrow_vertices
 

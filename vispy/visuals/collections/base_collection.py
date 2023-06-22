@@ -15,8 +15,8 @@ from __future__ import division
 import math
 import numpy as np
 from ...gloo import Texture2D, VertexBuffer, IndexBuffer
-from . util import dtype_reduce
-from . array_list import ArrayList
+from .util import dtype_reduce
+from .array_list import ArrayList
 
 
 def next_power_of_2(n):
@@ -110,15 +110,11 @@ class Item(object):
             raise IndexError("Unknown key")
 
     def __str__(self):
-        return "Item (%s, %s, %s)" % (self._vertices,
-                                      self._indices,
-                                      self._uniforms)
+        return "Item (%s, %s, %s)" % (self._vertices, self._indices, self._uniforms)
 
 
 class BaseCollection(object):
-
     def __init__(self, vtype, utype=None, itype=None):
-
         # Vertices and type (mandatory)
         self._vertices_list = None
         self._vertices_buffer = None
@@ -157,7 +153,6 @@ class BaseCollection(object):
         # Uniforms type (optional)
         # -------------------------
         if utype is not None:
-
             if utype.names is None:
                 raise ValueError("utype must be a structured dtype")
 
@@ -165,13 +160,13 @@ class BaseCollection(object):
             # that we can append new fields
             vtype = eval(str(np.dtype(vtype)))
             # We add a uniform index to access uniform data
-            vtype.append(('collection_index', np.float32))
+            vtype.append(("collection_index", np.float32))
             vtype = np.dtype(vtype)
 
             # Check utype is made of float32 only
             utype = eval(str(np.dtype(utype)))
             r_utype = dtype_reduce(utype)
-            if not isinstance(r_utype[0], str) or r_utype[2] != 'float32':
+            if not isinstance(r_utype[0], str) or r_utype[2] != "float32":
                 raise RuntimeError("utype cannot be reduced to float32 only")
 
             # Make utype divisible by 4
@@ -180,7 +175,7 @@ class BaseCollection(object):
             # Make utype a power of two
             count = next_power_of_2(r_utype[1])
             if (count - r_utype[1]) > 0:
-                utype.append(('__unused__', np.float32, count - r_utype[1]))
+                utype.append(("__unused__", np.float32, count - r_utype[1]))
 
             self._uniforms_list = ArrayList(dtype=utype)
             self._uniforms_float_count = count
@@ -284,8 +279,10 @@ class BaseCollection(object):
                 if itemsize is None:
                     idxs = np.array(indices) + vsize
                 elif isinstance(itemsize, int):
-                    idxs = vsize + (np.tile(indices, count) +
-                                    itemsize * np.repeat(np.arange(count), len(indices)))  # noqa
+                    idxs = vsize + (
+                        np.tile(indices, count)
+                        + itemsize * np.repeat(np.arange(count), len(indices))
+                    )  # noqa
                 else:
                     raise ValueError("Indices not compatible with items")
                 self._indices_list.append(idxs, len(indices))
@@ -363,7 +360,7 @@ class BaseCollection(object):
             elif U is not None and key in U.dtype.names:
                 # Careful, U is the whole texture that can be bigger than list
                 # return U[key]
-                return U[key][:len(self._uniforms_list)]
+                return U[key][: len(self._uniforms_list)]
             else:
                 raise IndexError("Unknown field name ('%s')" % key)
 
@@ -420,7 +417,7 @@ class BaseCollection(object):
             elif self.utype and key in self.utype.names:
                 # Careful, U is the whole texture that can be bigger than list
                 # U[key] = data
-                U[key][:len(self._uniforms_list)] = data
+                U[key][: len(self._uniforms_list)] = data
             else:
                 raise IndexError("Unknown field name ('%s')" % key)
 
@@ -472,7 +469,7 @@ class BaseCollection(object):
             texture = texture.reshape(shape[0], shape[1], 4)
             self._uniforms_texture = Texture2D(texture)
             self._uniforms_texture.data = texture
-            self._uniforms_texture.interpolation = 'nearest'
+            self._uniforms_texture.interpolation = "nearest"
 
         if len(self._programs):
             for program in self._programs:

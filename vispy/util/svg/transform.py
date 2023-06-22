@@ -11,11 +11,8 @@ import numpy as np
 
 
 class Matrix(object):
-
     def __init__(self, a=1, b=0, c=0, d=1, e=0, f=0):
-        self._matrix = np.array([[a, c, e],
-                                 [b, d, f],
-                                 [0, 0, 1]], dtype=float)
+        self._matrix = np.array([[a, c, e], [b, d, f], [0, 0, 1]], dtype=float)
 
     @property
     def matrix(self):
@@ -32,12 +29,9 @@ class Matrix(object):
 
 # ---------------------------------------------------------------- Identity ---
 class Identity(Matrix):
-
     def __init__(self):
         Matrix.__init__(self)
-        self._matrix[...] = ([[1, 0, 0],
-                              [0, 1, 0],
-                              [0, 0, 1]])
+        self._matrix[...] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 
     def __repr__(self):
         return "Identity()"
@@ -53,9 +47,7 @@ class Translate(Matrix):
     def __init__(self, x, y=0):
         Matrix.__init__(self)
         self._x, self._y = x, y
-        self._matrix[...] = ([[1, 0, x],
-                              [0, 1, y],
-                              [0, 0, 1]])
+        self._matrix[...] = [[1, 0, x], [0, 1, y], [0, 0, 1]]
 
     def __repr__(self):
         return "Translate(%g,%g)" % (self._x, self._y)
@@ -73,9 +65,7 @@ class Scale(Matrix):
         Matrix.__init__(self)
         self._x = x
         self._y = y or x
-        self._matrix[...] = ([[x, 0, 0],
-                              [0, y, 0],
-                              [0, 0, 1]])
+        self._matrix[...] = [[x, 0, 0], [0, y, 0], [0, 0, 1]]
 
     def __repr__(self):
         return "Scale(%g,%g)" % (self._x, self._y)
@@ -96,15 +86,16 @@ class Rotate(Matrix):
         self._y = y
 
         angle = math.pi * angle / 180.0
-        rotate = np.array([[math.cos(angle), -math.sin(angle), 0],
-                           [math.sin(angle), math.cos(angle), 0],
-                           [0, 0, 1]], dtype=float)
-        forward = np.array([[1, 0, x],
-                            [0, 1, y],
-                            [0, 0, 1]], dtype=float)
-        inverse = np.array([[1, 0, -x],
-                            [0, 1, -y],
-                            [0, 0, 1]], dtype=float)
+        rotate = np.array(
+            [
+                [math.cos(angle), -math.sin(angle), 0],
+                [math.sin(angle), math.cos(angle), 0],
+                [0, 0, 1],
+            ],
+            dtype=float,
+        )
+        forward = np.array([[1, 0, x], [0, 1, y], [0, 0, 1]], dtype=float)
+        inverse = np.array([[1, 0, -x], [0, 1, -y], [0, 0, 1]], dtype=float)
         self._matrix = np.dot(inverse, np.dot(rotate, forward))
 
     def __repr__(self):
@@ -122,9 +113,7 @@ class SkewX(Matrix):
         Matrix.__init__(self)
         self._angle = angle
         angle = math.pi * angle / 180.0
-        self._matrix[...] = ([[1, math.tan(angle), 0],
-                              [0, 1, 0],
-                              [0, 0, 1]])
+        self._matrix[...] = [[1, math.tan(angle), 0], [0, 1, 0], [0, 0, 1]]
 
     def __repr__(self):
         return "SkewX(%g)" % (self._angle)
@@ -141,9 +130,7 @@ class SkewY(Matrix):
         Matrix.__init__(self)
         self._angle = angle
         angle = math.pi * angle / 180.0
-        self._matrix[...] = ([[1, 0, 0],
-                              [math.tan(angle), 1, 0],
-                              [0, 0, 1]])
+        self._matrix[...] = [[1, 0, 0], [math.tan(angle), 1, 0], [0, 0, 1]]
 
     def __repr__(self):
         return "SkewY(%g)" % (self._angle)
@@ -162,18 +149,20 @@ class Transform(object):
         if not content:
             return
 
-        converters = {"matrix": Matrix,
-                      "scale": Scale,
-                      "rotate": Rotate,
-                      "translate": Translate,
-                      "skewx": SkewX,
-                      "skewy": SkewY}
+        converters = {
+            "matrix": Matrix,
+            "scale": Scale,
+            "rotate": Rotate,
+            "translate": Translate,
+            "skewx": SkewX,
+            "skewy": SkewY,
+        }
         keys = "|".join(converters.keys())
         pattern = r"(?P<name>%s)\s*\((?P<args>[^)]*)\)" % keys
 
         for match in re.finditer(pattern, content):
             name = match.group("name").strip()
-            args = match.group("args").strip().replace(',', ' ')
+            args = match.group("args").strip().replace(",", " ")
             args = [float(value) for value in args.split()]
             transform = converters[name](*args)
             self._transforms.append(transform)
@@ -211,7 +200,6 @@ class Transform(object):
         return self._xml()
 
     def _xml(self, prefix=""):
-
         identity = True
         for transform in self._transforms:
             if not isinstance(transform, Identity):

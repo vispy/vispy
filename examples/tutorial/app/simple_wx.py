@@ -18,7 +18,7 @@ from vispy import app, gloo
 class Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self._timer = app.Timer("auto", connect=self.on_timer, start=True)
         self.tick = 0
 
     def on_draw(self, event):
@@ -36,8 +36,7 @@ class Canvas(app.Canvas):
 
 class TestFrame(wx.Frame):
     def __init__(self):
-        wx.Frame.__init__(self, None, -1, "Vispy Test",
-                          wx.DefaultPosition, size=(500, 500))
+        wx.Frame.__init__(self, None, -1, "Vispy Test", wx.DefaultPosition, size=(500, 500))
 
         MenuBar = wx.MenuBar()
         file_menu = wx.Menu()
@@ -58,7 +57,7 @@ class TestFrame(wx.Frame):
         event.Skip()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     myapp = wx.App(0)
     frame = TestFrame()
     frame.Show(True)

@@ -2,11 +2,11 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from ..import scene
+from .. import scene
 from ..io import read_mesh
 from ..geometry import MeshData
 
-__all__ = ['PlotWidget']
+__all__ = ["PlotWidget"]
 
 
 class PlotWidget(scene.Widget):
@@ -26,7 +26,7 @@ class PlotWidget(scene.Widget):
     """
 
     def __init__(self, *args, **kwargs):
-        self._fg = kwargs.pop('fg_color', 'k')
+        self._fg = kwargs.pop("fg_color", "k")
         self.grid = None
         self.camera = None
         self.title = None
@@ -113,17 +113,18 @@ class PlotWidget(scene.Widget):
         ylabel_widget = self.grid.add_widget(self.ylabel, row=2, col=2)
         ylabel_widget.width_max = 1
 
-        self.yaxis = scene.AxisWidget(orientation='left',
-                                      text_color=fg,
-                                      axis_color=fg, tick_color=fg)
+        self.yaxis = scene.AxisWidget(
+            orientation="left", text_color=fg, axis_color=fg, tick_color=fg
+        )
 
         yaxis_widget = self.grid.add_widget(self.yaxis, row=2, col=3)
         yaxis_widget.width_max = 40
 
         # row 3
         # xaxis - column 4
-        self.xaxis = scene.AxisWidget(orientation='bottom', text_color=fg,
-                                      axis_color=fg, tick_color=fg)
+        self.xaxis = scene.AxisWidget(
+            orientation="bottom", text_color=fg, axis_color=fg, tick_color=fg
+        )
         xaxis_widget = self.grid.add_widget(self.xaxis, row=3, col=4)
         xaxis_widget.height_max = 40
 
@@ -141,9 +142,8 @@ class PlotWidget(scene.Widget):
         self.cbar_bottom.height_max = 1
 
         # This needs to be added to the grid last (to fix #1742)
-        self.view = self.grid.add_view(row=2, col=4,
-                                       border_color='grey', bgcolor="#efefef")
-        self.view.camera = 'panzoom'
+        self.view = self.grid.add_view(row=2, col=4, border_color="grey", bgcolor="#efefef")
+        self.view.camera = "panzoom"
         self.camera = self.view.camera
 
         self._configured = True
@@ -154,15 +154,14 @@ class PlotWidget(scene.Widget):
         if self._configured:
             return
 
-        self.view = self.grid.add_view(row=0, col=0,
-                                       border_color='grey', bgcolor="#efefef")
+        self.view = self.grid.add_view(row=0, col=0, border_color="grey", bgcolor="#efefef")
 
-        self.view.camera = 'turntable'
+        self.view.camera = "turntable"
         self.camera = self.view.camera
 
         self._configured = True
 
-    def histogram(self, data, bins=10, color='w', orientation='h'):
+    def histogram(self, data, bins=10, color="w", orientation="h"):
         """Calculate and show a histogram of data
 
         Parameters
@@ -187,7 +186,7 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return hist
 
-    def image(self, data, cmap='cubehelix', clim='auto', fg_color=None, **kwargs):
+    def image(self, data, cmap="cubehelix", clim="auto", fg_color=None, **kwargs):
         """Show an image
 
         Parameters
@@ -221,9 +220,17 @@ class PlotWidget(scene.Widget):
 
         return image
 
-    def mesh(self, vertices=None, faces=None, vertex_colors=None,
-             face_colors=None, color=(0.5, 0.5, 1.), fname=None,
-             meshdata=None, shading='auto'):
+    def mesh(
+        self,
+        vertices=None,
+        faces=None,
+        vertex_colors=None,
+        face_colors=None,
+        color=(0.5, 0.5, 1.0),
+        fname=None,
+        meshdata=None,
+        shading="auto",
+    ):
         """Show a 3D mesh
 
         Parameters
@@ -255,32 +262,50 @@ class PlotWidget(scene.Widget):
             The mesh.
         """
         self._configure_3d()
-        if shading == 'auto':
-            shading = 'smooth'
+        if shading == "auto":
+            shading = "smooth"
             if face_colors is not None:
                 shading = None
         if fname is not None:
             if not all(x is None for x in (vertices, faces, meshdata)):
-                raise ValueError('vertices, faces, and meshdata must be None '
-                                 'if fname is not None')
+                raise ValueError(
+                    "vertices, faces, and meshdata must be None " "if fname is not None"
+                )
             vertices, faces = read_mesh(fname)[:2]
         if meshdata is not None:
             if not all(x is None for x in (vertices, faces, fname)):
-                raise ValueError('vertices, faces, and fname must be None if '
-                                 'fname is not None')
+                raise ValueError("vertices, faces, and fname must be None if " "fname is not None")
         else:
-            meshdata = MeshData(vertices, faces, vertex_colors=vertex_colors,
-                                face_colors=face_colors)
-        mesh = scene.Mesh(meshdata=meshdata, vertex_colors=vertex_colors,
-                          face_colors=face_colors, color=color,
-                          shading=shading)
+            meshdata = MeshData(
+                vertices, faces, vertex_colors=vertex_colors, face_colors=face_colors
+            )
+        mesh = scene.Mesh(
+            meshdata=meshdata,
+            vertex_colors=vertex_colors,
+            face_colors=face_colors,
+            color=color,
+            shading=shading,
+        )
         self.view.add(mesh)
         self.view.camera.set_range()
         return mesh
 
-    def plot(self, data, color='k', symbol=None, line_kind='-', width=1.,
-             marker_size=10., edge_color='k', face_color='b', edge_width=1.,
-             title=None, xlabel=None, ylabel=None, connect='strip'):
+    def plot(
+        self,
+        data,
+        color="k",
+        symbol=None,
+        line_kind="-",
+        width=1.0,
+        marker_size=10.0,
+        edge_color="k",
+        face_color="b",
+        edge_width=1.0,
+        title=None,
+        xlabel=None,
+        ylabel=None,
+        connect="strip",
+    ):
         """Plot a series of data using lines and markers
 
         Parameters
@@ -324,12 +349,18 @@ class PlotWidget(scene.Widget):
         LinePlot
         """
         self._configure_2d()
-        line = scene.LinePlot(data, connect=connect, color=color,
-                              symbol=symbol, line_kind=line_kind,
-                              width=width, marker_size=marker_size,
-                              edge_color=edge_color,
-                              face_color=face_color,
-                              edge_width=edge_width)
+        line = scene.LinePlot(
+            data,
+            connect=connect,
+            color=color,
+            symbol=symbol,
+            line_kind=line_kind,
+            width=width,
+            marker_size=marker_size,
+            edge_color=edge_color,
+            face_color=face_color,
+            edge_width=edge_width,
+        )
         self.view.add(line)
         self.view.camera.set_range()
         self.visuals.append(line)
@@ -343,9 +374,18 @@ class PlotWidget(scene.Widget):
 
         return line
 
-    def spectrogram(self, x, n_fft=256, step=None, fs=1., window='hann',
-                    normalize=False, color_scale='log', cmap='cubehelix',
-                    clim='auto'):
+    def spectrogram(
+        self,
+        x,
+        n_fft=256,
+        step=None,
+        fs=1.0,
+        window="hann",
+        normalize=False,
+        color_scale="log",
+        cmap="cubehelix",
+        clim="auto",
+    ):
         """Calculate and show a spectrogram
 
         Parameters
@@ -385,14 +425,12 @@ class PlotWidget(scene.Widget):
         """
         self._configure_2d()
         # XXX once we have axes, we should use "fft_freqs", too
-        spec = scene.Spectrogram(x, n_fft, step, fs, window,
-                                 normalize, color_scale, cmap, clim)
+        spec = scene.Spectrogram(x, n_fft, step, fs, window, normalize, color_scale, cmap, clim)
         self.view.add(spec)
         self.view.camera.set_range()
         return spec
 
-    def volume(self, vol, clim=None, method='mip', threshold=None,
-               cmap='grays', **kwargs):
+    def volume(self, vol, clim=None, method="mip", threshold=None, cmap="grays", **kwargs):
         """Show a 3D volume
 
         Parameters
@@ -446,10 +484,16 @@ class PlotWidget(scene.Widget):
         self.view.camera.set_range()
         return surf
 
-    def colorbar(self, cmap, position="right",
-                 label="", clim=("", ""),
-                 border_width=0.0, border_color="black",
-                 **kwargs):
+    def colorbar(
+        self,
+        cmap,
+        position="right",
+        label="",
+        clim=("", ""),
+        border_width=0.0,
+        border_color="black",
+        **kwargs,
+    ):
         """Show a ColorBar
 
         Parameters
@@ -487,21 +531,22 @@ class PlotWidget(scene.Widget):
         """
         self._configure_2d()
 
-        cbar = scene.ColorBarWidget(orientation=position,
-                                    label=label,
-                                    cmap=cmap,
-                                    clim=clim,
-                                    border_width=border_width,
-                                    border_color=border_color,
-                                    **kwargs)
+        cbar = scene.ColorBarWidget(
+            orientation=position,
+            label=label,
+            cmap=cmap,
+            clim=clim,
+            border_width=border_width,
+            border_color=border_color,
+            **kwargs,
+        )
 
         CBAR_LONG_DIM = 50
 
         if cbar.orientation == "bottom":
             self.grid.remove_widget(self.cbar_bottom)
             self.cbar_bottom = self.grid.add_widget(cbar, row=5, col=4)
-            self.cbar_bottom.height_max = \
-                self.cbar_bottom.height_max = CBAR_LONG_DIM
+            self.cbar_bottom.height_max = self.cbar_bottom.height_max = CBAR_LONG_DIM
 
         elif cbar.orientation == "top":
             self.grid.remove_widget(self.cbar_top)
@@ -516,7 +561,6 @@ class PlotWidget(scene.Widget):
         else:  # cbar.orientation == "right"
             self.grid.remove_widget(self.cbar_right)
             self.cbar_right = self.grid.add_widget(cbar, row=2, col=5)
-            self.cbar_right.width_max = \
-                self.cbar_right.width_min = CBAR_LONG_DIM
+            self.cbar_right.width_max = self.cbar_right.width_min = CBAR_LONG_DIM
 
         return cbar

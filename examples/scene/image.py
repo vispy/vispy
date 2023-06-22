@@ -17,7 +17,7 @@ from vispy import scene
 from vispy import app
 from vispy.io import load_data_file, read_png
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys="interactive")
 canvas.size = 800, 600
 canvas.show()
 
@@ -25,13 +25,14 @@ canvas.show()
 view = canvas.central_widget.add_view()
 
 # Create the image
-img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
-interpolation = 'nearest'
+img_data = read_png(load_data_file("mona_lisa/mona_lisa_sm.png"))
+interpolation = "nearest"
 
-image = scene.visuals.Image(img_data, interpolation=interpolation,
-                            parent=view.scene, method='subdivide')
+image = scene.visuals.Image(
+    img_data, interpolation=interpolation, parent=view.scene, method="subdivide"
+)
 
-canvas.title = 'Spatial Filtering using %s Filter' % interpolation
+canvas.title = "Spatial Filtering using %s Filter" % interpolation
 
 # Set 2D camera (the camera will scale to the contents in the scene)
 view.camera = scene.PanZoomCamera(aspect=1)
@@ -50,17 +51,17 @@ act = 17
 @canvas.events.key_press.connect
 def on_key_press(event):
     global act
-    if event.key in ['Left', 'Right']:
-        if event.key == 'Right':
+    if event.key in ["Left", "Right"]:
+        if event.key == "Right":
             step = 1
         else:
             step = -1
         act = (act + step) % len(names)
         interpolation = names[act]
         image.interpolation = interpolation
-        canvas.title = 'Spatial Filtering using %s Filter' % interpolation
+        canvas.title = "Spatial Filtering using %s Filter" % interpolation
         canvas.update()
 
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()

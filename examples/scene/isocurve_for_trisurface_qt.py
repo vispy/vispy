@@ -22,6 +22,7 @@ from vispy.color.colormap import get_colormaps
 
 try:
     from sip import setapi
+
     setapi("QVariant", 2)
     setapi("QString", 2)
 except ImportError:
@@ -30,26 +31,41 @@ except ImportError:
 try:
     from PyQt4 import QtCore
     from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import (QMainWindow, QWidget, QLabel,
-                             QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
-                             QSplitter)
+    from PyQt4.QtGui import (
+        QMainWindow,
+        QWidget,
+        QLabel,
+        QSpinBox,
+        QComboBox,
+        QGridLayout,
+        QVBoxLayout,
+        QSplitter,
+    )
 except Exception:
     # To switch between PyQt5 and PySide2 bindings just change the from import
     from PyQt5 import QtCore
     from PyQt5.QtCore import Qt
-    from PyQt5.QtWidgets import (QMainWindow, QWidget, QLabel,
-                                 QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
-                                 QSplitter)
+    from PyQt5.QtWidgets import (
+        QMainWindow,
+        QWidget,
+        QLabel,
+        QSpinBox,
+        QComboBox,
+        QGridLayout,
+        QVBoxLayout,
+        QSplitter,
+    )
 
 # Provide automatic signal function selection for PyQtX/PySide2
-pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
+pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, "pyqtSignal") else QtCore.Signal
 
 
 class ObjectWidget(QWidget):
     """
     Widget for editing OBJECT parameters
     """
-    signal_object_changed = pyqtsignal(name='objectChanged')
+
+    signal_object_changed = pyqtsignal(name="objectChanged")
 
     def __init__(self, parent=None):
         super(ObjectWidget, self).__init__(parent)
@@ -84,12 +100,11 @@ class ObjectWidget(QWidget):
 
 
 class MainWindow(QMainWindow):
-
     def __init__(self):
         QMainWindow.__init__(self)
 
         self.resize(700, 500)
-        self.setWindowTitle('vispy example ...')
+        self.setWindowTitle("vispy example ...")
 
         splitter = QSplitter(Qt.Horizontal)
 
@@ -107,29 +122,31 @@ class MainWindow(QMainWindow):
 
     def update_view(self):
         # banded, nbr_steps, cmap
-        self.canvas.set_data(self.props.nbr_steps.value(),
-                             self.props.combo.currentText())
+        self.canvas.set_data(self.props.nbr_steps.value(), self.props.combo.currentText())
 
 
 class Canvas(scene.SceneCanvas):
-
     def __init__(self):
         scene.SceneCanvas.__init__(self, keys=None)
         self.size = 800, 600
         self.unfreeze()
         self.view = self.central_widget.add_view()
         self.radius = 2.0
-        self.view.camera = 'turntable'
+        self.view.camera = "turntable"
         mesh = create_sphere(20, 20, radius=self.radius)
         vertices = mesh.get_vertices()
         tris = mesh.get_faces()
 
         cl = np.linspace(-self.radius, self.radius, 6 + 2)[1:-1]
 
-        self.iso = scene.visuals.Isoline(vertices=vertices, tris=tris,
-                                         data=vertices[:, 2],
-                                         levels=cl, color_lev='autumn',
-                                         parent=self.view.scene)
+        self.iso = scene.visuals.Isoline(
+            vertices=vertices,
+            tris=tris,
+            data=vertices[:, 2],
+            levels=cl,
+            color_lev="autumn",
+            parent=self.view.scene,
+        )
         self.freeze()
 
         # Add a 3D axis to keep us oriented
@@ -141,7 +158,7 @@ class Canvas(scene.SceneCanvas):
         self.iso.levels = cl
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.create()
     win = MainWindow()
     win.show()

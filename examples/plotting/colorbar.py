@@ -28,6 +28,7 @@ def gen_image(width, height):
 
     return v_fn(*grid).astype(np.float32)
 
+
 fig = vp.Fig(size=(800, 600), show=False)
 plot = fig[0, 0]
 plot.bgcolor = "#efefef"
@@ -39,11 +40,13 @@ plot.camera.set_range((100, 400), (100, 400))
 positions = ["top", "bottom", "left", "right"]
 
 for position in positions:
-    plot.colorbar(position=position,
-                  label="argument of e^(1/z)",
-                  clim=("0°", "180°"),
-                  cmap="hsl",
-                  border_width=1,
-                  border_color="#aeaeae")
-if __name__ == '__main__':
+    plot.colorbar(
+        position=position,
+        label="argument of e^(1/z)",
+        clim=("0°", "180°"),
+        cmap="hsl",
+        border_width=1,
+        border_color="#aeaeae",
+    )
+if __name__ == "__main__":
     fig.show(run=True)

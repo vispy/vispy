@@ -17,7 +17,7 @@ def compact(vertices, indices, tolerance=1e-3):
     V["pos"][:, 2] = vertices[:, 2]
 
     epsilon = 1e-3
-    decimals = int(np.log(epsilon)/np.log(1/10.))
+    decimals = int(np.log(epsilon) / np.log(1 / 10.0))
 
     # Round all vertices within given decimals
     V_ = np.zeros_like(V)
@@ -41,7 +41,7 @@ def compact(vertices, indices, tolerance=1e-3):
     I_ = indices.copy().ravel()
     for i in range(len(indices)):
         I_[i] = RI[indices[i]]
-    I_ = I_.reshape(len(indices)//3, 3)
+    I_ = I_.reshape(len(indices) // 3, 3)
 
     # Return reduced vertices set, transalted indices and mapping that allows
     # to go from U to V
@@ -63,7 +63,7 @@ def normals(vertices, indices):
     vertices, indices, mapping = compact(vertices, indices)
 
     T = vertices[indices]
-    N = np.cross(T[:, 1] - T[:, 0], T[:, 2]-T[:, 0])
+    N = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
     L = np.sqrt(np.sum(N * N, axis=1))
     L[L == 0] = 1.0  # prevent divide-by-zero
     N /= L[:, np.newaxis]
@@ -71,7 +71,7 @@ def normals(vertices, indices):
     normals[indices[:, 0]] += N
     normals[indices[:, 1]] += N
     normals[indices[:, 2]] += N
-    L = np.sqrt(np.sum(normals*normals, axis=1))
+    L = np.sqrt(np.sum(normals * normals, axis=1))
     L[L == 0] = 1.0
     normals /= L[:, np.newaxis]
 

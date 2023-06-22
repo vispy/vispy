@@ -8,13 +8,11 @@ from vispy.testing import run_tests_if_main
 
 
 def test_identifier():
-    assert(re.match('('+re_identifier+')', 'Ax2_d3__7').groups()[0] ==
-           'Ax2_d3__7')
-    assert(re.match('('+re_identifier+')', '_Ax2_d3__7').groups()[0] ==
-           '_Ax2_d3__7')
-    assert(re.match(re_identifier, '7Ax2_d3__7') is None)
-    assert(re.match('('+re_identifier+')', 'x,y').groups()[0] == 'x')
-    assert(re.match('('+re_identifier+')', 'x y').groups()[0] == 'x')
+    assert re.match("(" + re_identifier + ")", "Ax2_d3__7").groups()[0] == "Ax2_d3__7"
+    assert re.match("(" + re_identifier + ")", "_Ax2_d3__7").groups()[0] == "_Ax2_d3__7"
+    assert re.match(re_identifier, "7Ax2_d3__7") is None
+    assert re.match("(" + re_identifier + ")", "x,y").groups()[0] == "x"
+    assert re.match("(" + re_identifier + ")", "x y").groups()[0] == "x"
 
 
 def test_find_variables():
@@ -34,17 +32,17 @@ def test_find_variables():
     """
 
     expect = dict(
-        x=(None, 'float'),
-        y=(None, 'float'),
-        z=(None, 'float'),
-        w=(None, 'int'),
-        v=(None, 'int'),
-        u=(None, 'int'),
-        t=(None, 'vec4'),
-        s=('uniform', 'vec2'),
-        q=('attribute', 'float'),
-        r=('attribute', 'float'),
-        p=('const', 'mat4'),
+        x=(None, "float"),
+        y=(None, "float"),
+        z=(None, "float"),
+        w=(None, "int"),
+        v=(None, "int"),
+        u=(None, "int"),
+        t=(None, "vec4"),
+        s=("uniform", "vec2"),
+        q=("attribute", "float"),
+        r=("attribute", "float"),
+        p=("const", "mat4"),
     )
 
     vars = find_program_variables(code)

@@ -85,36 +85,28 @@ class _BorderVisual(Visual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
-    def __init__(self, pos, halfdim,
-                 border_width=1.0,
-                 border_color=None,
-                 **kwargs):
-
+    def __init__(self, pos, halfdim, border_width=1.0, border_color=None, **kwargs):
         self._pos = pos
         self._halfdim = halfdim
         self._border_width = border_width
         self._border_color = Color(border_color)
 
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
 
     @staticmethod
     def _prepare_transforms(view):
-
         program = view.shared_program
-        program.vert['visual_to_doc'] = \
-            view.transforms.get_transform('visual', 'document')
-        program.vert['doc_to_render'] = \
-            view.transforms.get_transform('document', 'render')
+        program.vert["visual_to_doc"] = view.transforms.get_transform("visual", "document")
+        program.vert["doc_to_render"] = view.transforms.get_transform("document", "render")
 
     @property
     def visual_border_width(self):
         """The border width in visual coordinates"""
-        render_to_doc =  \
-            self.transforms.get_transform('document', 'visual')
+        render_to_doc = self.transforms.get_transform("document", "visual")
 
         vec = render_to_doc.map([self.border_width, self.border_width, 0])
         origin = render_to_doc.map([0, 0, 0])
@@ -130,36 +122,43 @@ class _BorderVisual(Visual):
         x, y = self._pos
         halfw, halfh = self._halfdim
 
-        border_vertices = np.array([
-            [x - halfw, y - halfh],
-            [x - halfw, y - halfh],
-
-            [x + halfw, y - halfh],
-            [x + halfw, y - halfh],
-
-            [x + halfw, y + halfh],
-            [x + halfw, y + halfh],
-
-            [x - halfw, y + halfh],
-            [x - halfw, y + halfh],
-
-            [x - halfw, y - halfh],
-            [x - halfw, y - halfh],
-        ], dtype=np.float32)
+        border_vertices = np.array(
+            [
+                [x - halfw, y - halfh],
+                [x - halfw, y - halfh],
+                [x + halfw, y - halfh],
+                [x + halfw, y - halfh],
+                [x + halfw, y + halfh],
+                [x + halfw, y + halfh],
+                [x - halfw, y + halfh],
+                [x - halfw, y + halfh],
+                [x - halfw, y - halfh],
+                [x - halfw, y - halfh],
+            ],
+            dtype=np.float32,
+        )
 
         # Direction each vertex should move to correct for line width
-        adjust_dir = np.array([
-            [0, 0], [-1, -1],
-            [0, 0], [1, -1],
-            [0, 0], [1, 1],
-            [0, 0], [-1, 1],
-            [0, 0], [-1, -1],
-        ], dtype=np.float32)
+        adjust_dir = np.array(
+            [
+                [0, 0],
+                [-1, -1],
+                [0, 0],
+                [1, -1],
+                [0, 0],
+                [1, 1],
+                [0, 0],
+                [-1, 1],
+                [0, 0],
+                [-1, -1],
+            ],
+            dtype=np.float32,
+        )
 
-        self.shared_program['a_position'] = border_vertices
-        self.shared_program['a_adjust_dir'] = adjust_dir
-        self.shared_program.vert['border_width'] = float(self._border_width)
-        self.shared_program.frag['border_color'] = self._border_color.rgba
+        self.shared_program["a_position"] = border_vertices
+        self.shared_program["a_adjust_dir"] = adjust_dir
+        self.shared_program.vert["border_width"] = float(self._border_width)
+        self.shared_program.frag["border_color"] = self._border_color.rgba
 
     def _prepare_draw(self, view=None):
         self._update()
@@ -185,7 +184,7 @@ class _BorderVisual(Visual):
     @border_color.setter
     def border_color(self, border_color):
         self._border_color = Color(border_color)
-        self.shared_program.frag['border_color'] = self._border_color.rgba
+        self.shared_program.frag["border_color"] = self._border_color.rgba
 
     @property
     def pos(self):

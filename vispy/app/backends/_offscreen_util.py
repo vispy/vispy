@@ -7,7 +7,7 @@ from ... import gloo
 
 
 class OffscreenContext:
-    """ A helper class to provide an OpenGL context. This context is global
+    """A helper class to provide an OpenGL context. This context is global
     to the application.
     """
 
@@ -16,7 +16,7 @@ class OffscreenContext:
 
     @classmethod
     def get_global_instance(cls):
-        """ Get a global context. Note that any assumptions about OpenGL state
+        """Get a global context. Note that any assumptions about OpenGL state
         being local will not hold.
         """
         if cls._global_instance is None:
@@ -47,7 +47,7 @@ class OffscreenContext:
             self._canvas = self.glfw.create_window(1, 1, "dummy window", None, None)
         else:
             try:
-                _app = Application('default')
+                _app = Application("default")
             except Exception:
                 raise RuntimeError(
                     "Cannot find a backend to create an OpenGL context. "
@@ -57,8 +57,7 @@ class OffscreenContext:
             self._canvas.show(False)
 
     def make_current(self):
-        """ Make this the currently active context.
-        """
+        """Make this the currently active context."""
         # If an application only used off-screen canvases this would technically
         # have to be called just once. But note that an application/session
         # could run both real canvases and off-screen ones.
@@ -68,7 +67,7 @@ class OffscreenContext:
             self._canvas.set_current()
 
     def close(self):
-        """ Close the context. """
+        """Close the context."""
         # Cannot close the global instance
         if self is OffscreenContext._global_instance:
             return
@@ -84,8 +83,7 @@ class OffscreenContext:
 
 
 class FrameBufferHelper:
-    """ Provides a canvas to render to, using an FBO.
-    """
+    """Provides a canvas to render to, using an FBO."""
 
     def __init__(self):
         self._fbo = None
@@ -104,13 +102,11 @@ class FrameBufferHelper:
                 self._fbo.resize((h, w))
 
     def set_physical_size(self, w, h):
-        """ Set the physical size of the canvas.
-        """
+        """Set the physical size of the canvas."""
         self._physical_size = w, h
 
     def get_frame(self):
-        """ Call this within the with-context to obtain the frame buffer contents.
-        """
+        """Call this within the with-context to obtain the frame buffer contents."""
         return self._fbo.read()
 
     def __enter__(self):

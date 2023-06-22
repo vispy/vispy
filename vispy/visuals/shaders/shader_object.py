@@ -26,13 +26,13 @@ class ShaderObject(object):
         """
         if isinstance(ref, Variable):
             ref = ref.name
-        elif isinstance(ref, str) and ref.startswith('gl_'):
+        elif isinstance(ref, str) and ref.startswith("gl_"):
             # gl_ names not allowed for variables
             ref = ref[3:].lower()
 
         # Allow any type of object to be converted to ShaderObject if it
         # provides a magic method:
-        if hasattr(obj, '_shader_object'):
+        if hasattr(obj, "_shader_object"):
             obj = obj._shader_object()
 
         if isinstance(obj, ShaderObject):
@@ -43,8 +43,8 @@ class ShaderObject(object):
         else:
             obj = Variable(ref, obj)
             # Try prepending the name to indicate attribute, uniform, varying
-            if obj.vtype and obj.vtype[0] in 'auv':
-                obj.name = obj.vtype[0] + '_' + obj.name
+            if obj.vtype and obj.vtype[0] in "auv":
+                obj.name = obj.vtype[0] + "_" + obj.name
 
         return obj
 
@@ -83,6 +83,7 @@ class ShaderObject(object):
         """
         alldeps = []
         if sort:
+
             def key(obj):
                 # sort deps such that we get functions, variables, self.
                 if not isinstance(obj, Variable):
@@ -137,8 +138,7 @@ class ShaderObject(object):
     def changed(self, code_changed=False, value_changed=False):
         """Inform dependents that this shaderobject has changed."""
         for d in self._dependents:
-            d._dep_changed(self, code_changed=code_changed,
-                           value_changed=value_changed)
+            d._dep_changed(self, code_changed=code_changed, value_changed=value_changed)
 
     def compile(self):
         """Return a compilation of this object and its dependencies.
@@ -148,14 +148,13 @@ class ShaderObject(object):
         Compiler directly to ensure consistent naming across multiple objects.
         """
         compiler = Compiler(obj=self)
-        return compiler.compile()['obj']
+        return compiler.compile()["obj"]
 
     def __repr__(self):
         if self.name is not None:
-            return '<%s "%s" at 0x%x>' % (self.__class__.__name__,
-                                          self.name, id(self))
+            return '<%s "%s" at 0x%x>' % (self.__class__.__name__, self.name, id(self))
         else:
-            return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
+            return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
 
 
 from .variable import Variable  # noqa

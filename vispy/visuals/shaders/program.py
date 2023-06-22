@@ -24,10 +24,10 @@ class ModularProgram(Program):
     program variables.
     """
 
-    def __init__(self, vcode='', fcode='', gcode=None):
+    def __init__(self, vcode="", fcode="", gcode=None):
         Program.__init__(self)
 
-        self.changed = EventEmitter(source=self, type='program_change')
+        self.changed = EventEmitter(source=self, type="program_change")
 
         # Cache state of Variables so we know which ones require update
         self._variable_cache = WeakKeyDictionary()
@@ -35,8 +35,8 @@ class ModularProgram(Program):
         # List of settable variables to be checked for value changes
         self._variables = []
 
-        self._vert = MainFunction('vertex', '')
-        self._frag = MainFunction('fragment', '')
+        self._vert = MainFunction("vertex", "")
+        self._frag = MainFunction("fragment", "")
         self._vert._dependents[self] = None
         self._frag._dependents[self] = None
         self._geom = None
@@ -78,7 +78,7 @@ class ModularProgram(Program):
             return
         gcode = preprocess(gcode)
         if self._geom is None:
-            self._geom = MainFunction('geometry', '')
+            self._geom = MainFunction("geometry", "")
             self._geom._dependents[self] = None
         self._geom.code = gcode
         self._need_build = True
@@ -86,15 +86,19 @@ class ModularProgram(Program):
 
     def _dep_changed(self, dep, code_changed=False, value_changed=False):
         if code_changed and logger.level <= logging.DEBUG:
-            logger.debug("ModularProgram changed: %s   source=%s, values=%s", 
-                         self, code_changed, value_changed)
+            logger.debug(
+                "ModularProgram changed: %s   source=%s, values=%s",
+                self,
+                code_changed,
+                value_changed,
+            )
             import traceback
+
             traceback.print_stack()
 
         if code_changed:
             self._need_build = True
-        self.changed(code_changed=code_changed, 
-                     value_changed=value_changed)
+        self.changed(code_changed=code_changed, value_changed=value_changed)
 
     def draw(self, *args, **kwargs):
         self.build_if_needed()
@@ -111,34 +115,43 @@ class ModularProgram(Program):
             self._variable_cache.clear()
 
             # Collect a list of all settable variables
-            settable_vars = 'attribute', 'uniform', 'in'
-            deps = [d for d in self.vert.dependencies() if (
-                isinstance(d, Variable) and d.vtype in settable_vars)]
-            deps += [d for d in self.frag.dependencies() if (
-                isinstance(d, Variable) and d.vtype == 'uniform')]
+            settable_vars = "attribute", "uniform", "in"
+            deps = [
+                d
+                for d in self.vert.dependencies()
+                if (isinstance(d, Variable) and d.vtype in settable_vars)
+            ]
+            deps += [
+                d
+                for d in self.frag.dependencies()
+                if (isinstance(d, Variable) and d.vtype == "uniform")
+            ]
             if self.geom is not None:
-                deps += [d for d in self.geom.dependencies() if (
-                    isinstance(d, Variable) and d.vtype == 'uniform')]
+                deps += [
+                    d
+                    for d in self.geom.dependencies()
+                    if (isinstance(d, Variable) and d.vtype == "uniform")
+                ]
             self._variables = deps
 
             self._need_build = False
 
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s", self)
-        shaders = {'vert': self.vert, 'frag': self.frag}
+        shaders = {"vert": self.vert, "frag": self.frag}
         if self.geom is not None:
-            shaders['geom'] = self.geom
+            shaders["geom"] = self.geom
         self.compiler = Compiler(**shaders)
         code = self.compiler.compile()
 
-        # Update shader code, but don't let the program update variables yet 
-        code['update_variables'] = False
+        # Update shader code, but don't let the program update variables yet
+        code["update_variables"] = False
         self.set_shaders(**code)
 
-        logger.debug('==== Vertex Shader ====\n\n%s\n', code['vert'])
-        if 'geom' in code:
-            logger.debug('==== Geometry shader ====\n\n%s\n', code['geom'])
-        logger.debug('==== Fragment shader ====\n\n%s\n', code['frag'])
+        logger.debug("==== Vertex Shader ====\n\n%s\n", code["vert"])
+        if "geom" in code:
+            logger.debug("==== Geometry shader ====\n\n%s\n", code["geom"])
+        logger.debug("==== Fragment shader ====\n\n%s\n", code["frag"])
 
     def update_variables(self):
         # Set any variables that have a new value
@@ -156,6 +169,5 @@ class ModularProgram(Program):
         # Process any pending variables and discard anything else that is
         # not active in the program (otherwise we get lots of warnings).
         self._process_pending_variables()
-        logger.debug("Discarding unused variables before draw: %s" % 
-                     self._pending_variables.keys())
+        logger.debug("Discarding unused variables before draw: %s" % self._pending_variables.keys())
         self._pending_variables = {}

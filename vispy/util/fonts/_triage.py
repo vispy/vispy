@@ -7,16 +7,17 @@
 import sys
 
 from ._vispy_fonts import _vispy_fonts
-if sys.platform.startswith('linux'):
+
+if sys.platform.startswith("linux"):
     from ._freetype import _load_glyph
     from ...ext.fontconfig import _list_fonts
-elif sys.platform == 'darwin':
+elif sys.platform == "darwin":
     from ._quartz import _load_glyph, _list_fonts
-elif sys.platform.startswith('win'):
+elif sys.platform.startswith("win"):
     from ._freetype import _load_glyph  # noqa, analysis:ignore
     from ._win32 import _list_fonts  # noqa, analysis:ignore
 else:
-    raise NotImplementedError('unknown system %s' % sys.platform)
+    raise NotImplementedError("unknown system %s" % sys.platform)
 
 _fonts = {}
 

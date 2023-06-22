@@ -45,10 +45,10 @@ def dtype_reduce(dtype, level=0, depth=0):
             name = str(dtype.subdtype[0])
         else:
             name = str(dtype)
-        return ['', count, name]
+        return ["", count, name]
     else:
         items = []
-        name = ''
+        name = ""
         # Get reduced fields
         for key, value in fields.items():
             dtype_list = dtype_reduce(value[0], level, depth + 1)
@@ -56,7 +56,7 @@ def dtype_reduce(dtype, level=0, depth=0):
                 items.append([key, dtype_list[1], dtype_list[2]])
             else:
                 items.append(dtype_list)
-            name += key + ','
+            name += key + ","
 
         # Check if we can reduce item list
         ctype = None
@@ -105,10 +105,9 @@ attribute float     collection_index;
 """
 
     # Header generation (easy)
-    types = {1: 'float', 2: 'vec2 ', 3: 'vec3 ',
-             4: 'vec4 ', 9: 'mat3 ', 16: 'mat4 '}
+    types = {1: "float", 2: "vec2 ", 3: "vec3 ", 4: "vec4 ", 9: "mat3 ", 16: "mat4 "}
     for name, count, _ in _utype:
-        if name != '__unused__':
+        if name != "__unused__":
             header += "varying %s %s%s;\n" % (types[count], prefix, name)
 
     # Body generation (not so easy)
@@ -131,13 +130,15 @@ attribute float     collection_index;
     store = 0
     # Be very careful with utype name order (_utype.keys is wrong)
     for name in utype.names:
-        if name == '__unused__':
+        if name == "__unused__":
             continue
         count, shift = _utype[name], 0
         size = count
         while count:
             if store == 0:
-                body += "\n    _uniform = texture2D(uniforms, vec2(float(i++)/size_x,ty));\n"  # noqa
+                body += (
+                    "\n    _uniform = texture2D(uniforms, vec2(float(i++)/size_x,ty));\n"  # noqa
+                )
                 store = 4
             if store == 4:
                 a = "xyzw"

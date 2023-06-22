@@ -29,6 +29,7 @@ def SkipTest(*args, **kwargs):
     """Backport for raising SkipTest that gives a better traceback."""
     __tracebackhide__ = True
     import pytest
+
     return pytest.skip(*args, **kwargs)
 
 
@@ -40,7 +41,7 @@ def _safe_rep(obj, short=False):
         result = object.__repr__(obj)
     if not short or len(result) < 80:
         return result
-    return result[:80] + ' [truncated]...'
+    return result[:80] + " [truncated]..."
 
 
 def _safe_str(obj):
@@ -57,9 +58,9 @@ def _format_msg(msg, std_msg):
         msg = std_msg
     else:
         try:
-            msg = '%s : %s' % (std_msg, msg)
+            msg = "%s : %s" % (std_msg, msg)
         except UnicodeDecodeError:
-            msg = '%s : %s' % (_safe_str(std_msg), _safe_str(msg))
+            msg = "%s : %s" % (_safe_str(std_msg), _safe_str(msg))
     return msg
 
 
@@ -75,7 +76,7 @@ def assert_raises(exp, func, *args, **kwargs):
         func(*args, **kwargs)
     except exp:
         return
-    std_msg = '%s not raised' % (_safe_rep(exp))
+    std_msg = "%s not raised" % (_safe_rep(exp))
     raise AssertionError(_format_msg(None, std_msg))
 
 
@@ -83,7 +84,7 @@ def assert_in(member, container, msg=None):
     """Backport"""
     if member in container:
         return
-    std_msg = '%s not found in %s' % (_safe_rep(member), _safe_rep(container))
+    std_msg = "%s not found in %s" % (_safe_rep(member), _safe_rep(container))
     raise AssertionError(_format_msg(msg, std_msg))
 
 
@@ -91,7 +92,7 @@ def assert_true(x, msg=None):
     """Backport"""
     if x:
         return
-    std_msg = '%s is not True' % (_safe_rep(x),)
+    std_msg = "%s is not True" % (_safe_rep(x),)
     raise AssertionError(_format_msg(msg, std_msg))
 
 
@@ -99,7 +100,7 @@ def assert_equal(x, y, msg=None):
     """Backport"""
     if x == y:
         return
-    std_msg = '%s not equal to %s' % (_safe_rep(x), _safe_rep(y))
+    std_msg = "%s not equal to %s" % (_safe_rep(x), _safe_rep(y))
     raise AssertionError(_format_msg(msg, std_msg))
 
 
@@ -107,7 +108,7 @@ def assert_not_equal(x, y, msg=None):
     """Backport"""
     if x != y:
         return
-    std_msg = '%s equal to %s' % (_safe_rep(x), _safe_rep(y))
+    std_msg = "%s equal to %s" % (_safe_rep(x), _safe_rep(y))
     raise AssertionError(_format_msg(msg, std_msg))
 
 
@@ -115,14 +116,14 @@ def assert_not_in(member, container, msg=None):
     """Backport"""
     if member not in container:
         return
-    std_msg = '%s found in %s' % (_safe_rep(member), _safe_rep(container))
+    std_msg = "%s found in %s" % (_safe_rep(member), _safe_rep(container))
     raise AssertionError(_format_msg(msg, std_msg))
 
 
 def assert_is(expr1, expr2, msg=None):
     """Backport"""
     if expr1 is not expr2:
-        std_msg = '%s is not %s' % (_safe_rep(expr1), _safe_rep(expr2))
+        std_msg = "%s is not %s" % (_safe_rep(expr1), _safe_rep(expr2))
         raise AssertionError(_format_msg(msg, std_msg))
 
 
@@ -139,15 +140,16 @@ class raises(object):
         if isinstance(exc, self.exc):
             return True
         elif exc is None:
-            raise AssertionError("Expected %s (no exception raised)" %
-                                 self.exc.__name__)
+            raise AssertionError("Expected %s (no exception raised)" % self.exc.__name__)
         else:
-            raise AssertionError("Expected %s, got %s instead (%s)" %
-                                 (self.exc.__name__, type(exc).__name__, exc))
+            raise AssertionError(
+                "Expected %s, got %s instead (%s)" % (self.exc.__name__, type(exc).__name__, exc)
+            )
 
 
 ###############################################################################
 # GL stuff
+
 
 def has_pyopengl():
     try:
@@ -160,12 +162,12 @@ def has_pyopengl():
 
 def requires_pyopengl():
     skip = not has_pyopengl()
-    return skipif(skip, reason='Requires PyOpenGL')
+    return skipif(skip, reason="Requires PyOpenGL")
 
 
 def requires_ssl():
-    bad = os.getenv('CIBW_BUILDING', 'false') == 'true'
-    return skipif(bad, reason='Requires proper SSL support')
+    bad = os.getenv("CIBW_BUILDING", "false") == "true"
+    return skipif(bad, reason="Requires proper SSL support")
 
 
 ###############################################################################
@@ -175,6 +177,7 @@ def requires_ssl():
 def has_application(backend=None, has=(), capable=()):
     """Determine if a suitable app backend exists"""
     from ..app.backends import BACKEND_NAMES
+
     # avoid importing other backends if we don't need to
     if backend is None:
         for backend in BACKEND_NAMES:
@@ -184,12 +187,11 @@ def has_application(backend=None, has=(), capable=()):
                 break
         else:
             good = False
-            msg = 'Requires application backend'
+            msg = "Requires application backend"
     else:
-        good, why = has_backend(backend, has=has, capable=capable,
-                                out=['why_not'])
+        good, why = has_backend(backend, has=has, capable=capable, out=["why_not"])
         if not good:
-            msg = 'Requires %s: %s' % (backend, why)
+            msg = "Requires %s: %s" % (backend, why)
         else:
             msg = backend
     return good, msg
@@ -200,6 +202,7 @@ def composed(*decs):
         for dec in reversed(decs):
             f = dec(f)
         return f
+
     return deco
 
 
@@ -213,6 +216,7 @@ def garbage_collect(f):
             return f(*args, **kwargs)
         finally:
             gc.collect()
+
     return deco
 
 
@@ -234,14 +238,15 @@ def requires_application(backend=None, has=(), capable=(), force_gc=True):
 def requires_img_lib():
     """Decorator for tests that require an image library"""
     from ..io import _check_img_lib
-    if sys.platform.startswith('win'):
+
+    if sys.platform.startswith("win"):
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
         has_img_lib = not all(c is None for c in _check_img_lib())
-    return skipif(not has_img_lib, reason='imageio or PIL required')
+    return skipif(not has_img_lib, reason="imageio or PIL required")
 
 
-def has_ipython(version='3.0'):
+def has_ipython(version="3.0"):
     """Function that checks the presence of IPython"""
     # typecast version to a string, in case an integer is given
     version = str(version)
@@ -254,15 +259,15 @@ def has_ipython(version='3.0'):
         if Version(IPython.__version__) >= Version(version):
             return True, "IPython present"
         else:
-            message = (
-                "current IPython version: (%s) is "
-                "older than expected version: (%s)") % \
-                (IPython.__version__, version)
+            message = ("current IPython version: (%s) is " "older than expected version: (%s)") % (
+                IPython.__version__,
+                version,
+            )
 
             return False, message
 
 
-def requires_ipython(version='3.0'):
+def requires_ipython(version="3.0"):
     ipython_present, message = has_ipython(version)
     return skipif(not ipython_present, reason=message)
 
@@ -274,16 +279,18 @@ def requires_numpydoc():
         present = False
     else:
         present = True
-    return skipif(not present, reason='numpydoc is required')
+    return skipif(not present, reason="numpydoc is required")
 
 
 ###############################################################################
 # Visuals stuff
 
+
 def _has_scipy(min_version):
     try:
         assert isinstance(min_version, str)
         import scipy  # noqa, analysis:ignore
+
         this_version = Version(scipy.__version__)
         if this_version < min_version:
             return False
@@ -293,19 +300,16 @@ def _has_scipy(min_version):
         return True
 
 
-def requires_scipy(min_version='0.13'):
-    return skipif(not _has_scipy(min_version),
-                  reason='Requires Scipy version >= %s' % min_version)
+def requires_scipy(min_version="0.13"):
+    return skipif(not _has_scipy(min_version), reason="Requires Scipy version >= %s" % min_version)
 
 
 def _bad_glfw_decorate(app):
-    return app.backend_name == 'Glfw' and \
-        app.backend_module.glfw.__version__ == (3, 3, 1)
+    return app.backend_name == "Glfw" and app.backend_module.glfw.__version__ == (3, 3, 1)
 
 
 @nottest
-def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=None,
-                  **kwargs):
+def TestingCanvas(bgcolor="black", size=(100, 100), dpi=None, decorate=None, **kwargs):
     """Avoid importing scene until necessary."""
     # On Windows decorations can force windows to be an incorrect size
     # (e.g., instead of 100x100 they will be 100x248), having no
@@ -319,14 +323,15 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=None,
             if decorate is None:
                 # deal with GLFW's problems
                 from vispy.app import use_app
+
                 app = use_app()
                 if _bad_glfw_decorate(app):
                     decorate = True
                 else:
                     decorate = False
-            SceneCanvas.__init__(self, bgcolor=bgcolor, size=size,
-                                 dpi=dpi, decorate=decorate,
-                                 **kwargs)
+            SceneCanvas.__init__(
+                self, bgcolor=bgcolor, size=size, dpi=dpi, decorate=decorate, **kwargs
+            )
 
         def __enter__(self):
             SceneCanvas.__enter__(self)
@@ -354,9 +359,10 @@ def TestingCanvas(bgcolor='black', size=(100, 100), dpi=None, decorate=None,
 def save_testing_image(image, location):
     from ..gloo.util import _screenshot
     from ..util import make_png
+
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    with open(location + '.png', 'wb') as fid:
+    with open(location + ".png", "wb") as fid:
         fid.write(make_png(image))
 
 
@@ -364,53 +370,56 @@ def save_testing_image(image, location):
 def run_tests_if_main():
     """Run tests in a given file if it is run as a script"""
     local_vars = inspect.currentframe().f_back.f_locals
-    if not local_vars.get('__name__', '') == '__main__':
+    if not local_vars.get("__name__", "") == "__main__":
         return
     # we are in a "__main__"
-    fname = local_vars['__file__']
+    fname = local_vars["__file__"]
     # Run ourselves. post-mortem debugging!
     try:
         import faulthandler
+
         faulthandler.enable()
     except Exception:
         pass
     import __main__
+
     try:
         import pytest
-        pytest.main(['-s', '--tb=short', fname])
+
+        pytest.main(["-s", "--tb=short", fname])
     except ImportError:
-        print('==== Running tests in script\n==== %s' % fname)
+        print("==== Running tests in script\n==== %s" % fname)
         run_tests_in_object(__main__)
-        print('==== Tests pass')
+        print("==== Tests pass")
 
 
 def run_tests_in_object(ob):
     # Setup
     for name in dir(ob):
-        if name.lower().startswith('setup'):
-            print('Calling %s' % name)
+        if name.lower().startswith("setup"):
+            print("Calling %s" % name)
             getattr(ob, name)()
     # Exec
     for name in sorted(dir(ob), key=lambda x: x.lower()):  # consistent order
         val = getattr(ob, name)
-        if name.startswith('_'):
+        if name.startswith("_"):
             continue
-        elif callable(val) and (name[:4] == 'test' or name[-4:] == 'test'):
-            print('Running test-func %s ... ' % name, end='')
+        elif callable(val) and (name[:4] == "test" or name[-4:] == "test"):
+            print("Running test-func %s ... " % name, end="")
             try:
                 val()
-                print('ok')
+                print("ok")
             except Exception as err:
-                if 'skiptest' in err.__class__.__name__.lower():
-                    print('skip')
+                if "skiptest" in err.__class__.__name__.lower():
+                    print("skip")
                 else:
                     raise
-        elif isinstance(val, type) and 'Test' in name:
-            print('== Running test-class %s' % name)
+        elif isinstance(val, type) and "Test" in name:
+            print("== Running test-class %s" % name)
             run_tests_in_object(val())
-            print('== Done with test-class %s' % name)
+            print("== Done with test-class %s" % name)
     # Teardown
     for name in dir(ob):
-        if name.lower().startswith('teardown'):
-            print('Calling %s' % name)
+        if name.lower().startswith("teardown"):
+            print("Calling %s" % name)
             getattr(ob, name)()

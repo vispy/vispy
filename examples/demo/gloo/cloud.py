@@ -213,21 +213,25 @@ void main()
 
 # ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
+        app.Canvas.__init__(self, keys="interactive", size=(800, 600))
         ps = self.pixel_scale
 
         # Create vertices
         n = 1000000
-        data = np.zeros(n, [('a_position', np.float32, 3),
-                            ('a_bg_color', np.float32, 4),
-                            ('a_fg_color', np.float32, 4),
-                            ('a_size', np.float32)])
-        data['a_position'] = 0.45 * np.random.randn(n, 3)
-        data['a_bg_color'] = np.random.uniform(0.85, 1.00, (n, 4))
-        data['a_fg_color'] = 0, 0, 0, 1
-        data['a_size'] = np.random.uniform(5*ps, 10*ps, n)
+        data = np.zeros(
+            n,
+            [
+                ("a_position", np.float32, 3),
+                ("a_bg_color", np.float32, 4),
+                ("a_fg_color", np.float32, 4),
+                ("a_size", np.float32),
+            ],
+        )
+        data["a_position"] = 0.45 * np.random.randn(n, 3)
+        data["a_bg_color"] = np.random.uniform(0.85, 1.00, (n, 4))
+        data["a_fg_color"] = 0, 0, 0, 1
+        data["a_size"] = np.random.uniform(5 * ps, 10 * ps, n)
         u_linewidth = 1.0
         u_antialias = 1.0
 
@@ -240,34 +244,33 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
         self.program.bind(gloo.VertexBuffer(data))
-        self.program['u_linewidth'] = u_linewidth
-        self.program['u_antialias'] = u_antialias
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
-        self.program['u_size'] = 5 / self.translate
+        self.program["u_linewidth"] = u_linewidth
+        self.program["u_antialias"] = u_antialias
+        self.program["u_model"] = self.model
+        self.program["u_view"] = self.view
+        self.program["u_size"] = 5 / self.translate
 
         self.theta = 0
         self.phi = 0
 
-        gloo.set_state('translucent', clear_color='white')
+        gloo.set_state("translucent", clear_color="white")
 
-        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self.timer = app.Timer("auto", connect=self.on_timer, start=True)
 
         self.show()
 
     def on_key_press(self, event):
-        if event.text == ' ':
+        if event.text == " ":
             if self.timer.running:
                 self.timer.stop()
             else:
                 self.timer.start()
 
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
-        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
-                            rotate(self.phi, (0, 1, 0)))
-        self.program['u_model'] = self.model
+        self.theta += 0.5
+        self.phi += 0.5
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)), rotate(self.phi, (0, 1, 0)))
+        self.program["u_model"] = self.model
         self.update()
 
     def on_resize(self, event):
@@ -278,21 +281,20 @@ class Canvas(app.Canvas):
         self.translate = max(2, self.translate)
         self.view = translate((0, 0, -self.translate))
 
-        self.program['u_view'] = self.view
-        self.program['u_size'] = 5 / self.translate
+        self.program["u_view"] = self.view
+        self.program["u_size"] = 5 / self.translate
         self.update()
 
     def on_draw(self, event):
         gloo.clear()
-        self.program.draw('points')
+        self.program.draw("points")
 
     def apply_zoom(self):
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
-        self.projection = perspective(45.0, self.size[0] /
-                                      float(self.size[1]), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.projection = perspective(45.0, self.size[0] / float(self.size[1]), 1.0, 1000.0)
+        self.program["u_projection"] = self.projection
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = Canvas()
     app.run()

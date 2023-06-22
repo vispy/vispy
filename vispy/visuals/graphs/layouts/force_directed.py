@@ -16,8 +16,10 @@ import numpy as np
 try:
     from scipy.sparse import issparse
 except ImportError:
+
     def issparse(*args, **kwargs):
         return False
+
 
 from ..util import _straight_line_vertices, _rescale_layout
 
@@ -101,16 +103,12 @@ class fruchterman_reingold(object):
 
         if self.pos is None:
             # Random initial positions
-            pos = np.asarray(
-                np.random.random((self.num_nodes, self.dim)),
-                dtype=np.float32
-            )
+            pos = np.asarray(np.random.random((self.num_nodes, self.dim)), dtype=np.float32)
         else:
             pos = self.pos.astype(np.float32)
 
         # Yield initial positions
-        line_vertices, arrows = _straight_line_vertices(adjacency_mat, pos,
-                                                        directed)
+        line_vertices, arrows = _straight_line_vertices(adjacency_mat, pos, directed)
         yield pos, line_vertices, arrows
 
         # The initial "temperature"  is about .1 of domain area (=1x1)
@@ -120,13 +118,12 @@ class fruchterman_reingold(object):
         # Simple cooling scheme.
         # Linearly step down by dt on each iteration so last iteration is
         # size dt.
-        dt = t / float(self.iterations+1)
+        dt = t / float(self.iterations + 1)
         # The inscrutable (but fast) version
         # This is still O(V^2)
         # Could use multilevel methods to speed this up significantly
         for iteration in range(self.iterations):
-            delta_pos = _calculate_delta_pos(adjacency_mat, pos, t,
-                                             self.optimal)
+            delta_pos = _calculate_delta_pos(adjacency_mat, pos, t, self.optimal)
             pos += delta_pos
             _rescale_layout(pos)
 
@@ -134,8 +131,7 @@ class fruchterman_reingold(object):
             t -= dt
 
             # Calculate edge vertices and arrows
-            line_vertices, arrows = _straight_line_vertices(adjacency_mat,
-                                                            pos, directed)
+            line_vertices, arrows = _straight_line_vertices(adjacency_mat, pos, directed)
 
             yield pos, line_vertices, arrows
 
@@ -151,16 +147,12 @@ class fruchterman_reingold(object):
 
         if self.pos is None:
             # Random initial positions
-            pos = np.asarray(
-                np.random.random((self.num_nodes, self.dim)),
-                dtype=np.float32
-            )
+            pos = np.asarray(np.random.random((self.num_nodes, self.dim)), dtype=np.float32)
         else:
             pos = self.pos.astype(np.float32)
 
         # Yield initial positions
-        line_vertices, arrows = _straight_line_vertices(adjacency_coo, pos,
-                                                        directed)
+        line_vertices, arrows = _straight_line_vertices(adjacency_coo, pos, directed)
         yield pos, line_vertices, arrows
 
         # The initial "temperature"  is about .1 of domain area (=1x1)
@@ -169,10 +161,9 @@ class fruchterman_reingold(object):
         # Simple cooling scheme.
         # Linearly step down by dt on each iteration so last iteration is
         # size dt.
-        dt = t / float(self.iterations+1)
+        dt = t / float(self.iterations + 1)
         for iteration in range(self.iterations):
-            delta_pos = _calculate_delta_pos(adjacency_arr, pos, t,
-                                             self.optimal)
+            delta_pos = _calculate_delta_pos(adjacency_arr, pos, t, self.optimal)
             pos += delta_pos
             _rescale_layout(pos)
 
@@ -180,8 +171,7 @@ class fruchterman_reingold(object):
             t -= dt
 
             # Calculate line vertices
-            line_vertices, arrows = _straight_line_vertices(adjacency_coo,
-                                                            pos, directed)
+            line_vertices, arrows = _straight_line_vertices(adjacency_coo, pos, directed)
 
             yield pos, line_vertices, arrows
 
@@ -193,7 +183,7 @@ def _calculate_delta_pos(adjacency_arr, pos, t, optimal):
     delta = pos[:, np.newaxis, :] - pos
 
     # Distance between points
-    distance2 = (delta*delta).sum(axis=-1)
+    distance2 = (delta * delta).sum(axis=-1)
     # Enforce minimum distance of 0.01
     distance2 = np.where(distance2 < 0.0001, 0.0001, distance2)
     distance = np.sqrt(distance2)
@@ -201,9 +191,9 @@ def _calculate_delta_pos(adjacency_arr, pos, t, optimal):
     displacement = np.zeros((len(delta), 2))
     for ii in range(2):
         displacement[:, ii] = (
-            delta[:, :, ii] *
-            ((optimal * optimal) / (distance*distance) -
-             (adjacency_arr * distance) / optimal)).sum(axis=1)
+            delta[:, :, ii]
+            * ((optimal * optimal) / (distance * distance) - (adjacency_arr * distance) / optimal)
+        ).sum(axis=1)
 
     length = np.sqrt((displacement**2).sum(axis=1))
     length = np.where(length < 0.01, 0.1, length)

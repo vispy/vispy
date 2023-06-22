@@ -62,6 +62,7 @@ class BaseCanvasBackend(object):
         # the __init__ of the mro - we don't call super().__init__() here.
 
         from .canvas import Canvas  # Avoid circular import
+
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
         self._last_time = 0
@@ -74,10 +75,10 @@ class BaseCanvasBackend(object):
 
         # Data used in the construction of new mouse events
         self._vispy_mouse_data = {
-            'buttons': [],
-            'press_event': None,
-            'last_event': None,
-            'last_mouse_press': None,
+            "buttons": [],
+            "press_event": None,
+            "last_event": None,
+            "last_mouse_press": None,
         }
 
     def _process_backend_kwargs(self, kwargs):
@@ -88,22 +89,33 @@ class BaseCanvasBackend(object):
         # Verify given argument with capability of the backend
         app = self._vispy_canvas.app
         capability = app.backend_module.capability
-        if kwargs['context'].shared.name:  # name already assigned: shared
-            if not capability['context']:
-                raise RuntimeError('Cannot share context with this backend')
+        if kwargs["context"].shared.name:  # name already assigned: shared
+            if not capability["context"]:
+                raise RuntimeError("Cannot share context with this backend")
         for key in [key for (key, val) in capability.items() if not val]:
-            if key in ['context', 'multi_window', 'scroll']:
+            if key in ["context", "multi_window", "scroll"]:
                 continue
-            invert = key in ['resizable', 'decorate']
+            invert = key in ["resizable", "decorate"]
             if bool(kwargs[key]) - invert:
-                raise RuntimeError('Config %s is not supported by backend %s'
-                                   % (key, app.backend_name))
+                raise RuntimeError(
+                    "Config %s is not supported by backend %s" % (key, app.backend_name)
+                )
 
         # Return items in sequence
         out = SimpleBunch()
-        keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorate', 'fullscreen', 'parent', 'context', 'always_on_top',
-                ]
+        keys = [
+            "title",
+            "size",
+            "position",
+            "show",
+            "vsync",
+            "resizable",
+            "decorate",
+            "fullscreen",
+            "parent",
+            "context",
+            "always_on_top",
+        ]
         for key in keys:
             out[key] = kwargs[key]
         return out
@@ -182,13 +194,13 @@ class BaseCanvasBackend(object):
         # default method for delivering mouse press events to the canvas
         kwargs.update(self._vispy_mouse_data)
         ev = self._vispy_canvas.events.mouse_press(**kwargs)
-        if self._vispy_mouse_data['press_event'] is None:
-            self._vispy_mouse_data['press_event'] = ev
+        if self._vispy_mouse_data["press_event"] is None:
+            self._vispy_mouse_data["press_event"] = ev
 
-        self._vispy_mouse_data['buttons'].append(ev.button)
-        self._vispy_mouse_data['last_event'] = ev
+        self._vispy_mouse_data["buttons"].append(ev.button)
+        self._vispy_mouse_data["last_event"] = ev
 
-        if not getattr(self, '_double_click_supported', False):
+        if not getattr(self, "_double_click_supported", False):
             # double-click events are not supported by this backend, so we
             # detect them manually
             self._vispy_detect_double_click(ev)
@@ -196,7 +208,7 @@ class BaseCanvasBackend(object):
         return ev
 
     def _vispy_mouse_move(self, **kwargs):
-        if default_timer() - self._last_time < .01:
+        if default_timer() - self._last_time < 0.01:
             return
         self._last_time = default_timer()
 
@@ -206,15 +218,15 @@ class BaseCanvasBackend(object):
         # Break the chain of prior mouse events if no buttons are pressed
         # (this means that during a mouse drag, we have full access to every
         # move event generated since the drag started)
-        if self._vispy_mouse_data['press_event'] is None:
-            last_event = self._vispy_mouse_data['last_event']
+        if self._vispy_mouse_data["press_event"] is None:
+            last_event = self._vispy_mouse_data["last_event"]
             if last_event is not None:
                 last_event._forget_last_event()
         else:
-            kwargs['button'] = self._vispy_mouse_data['press_event'].button
+            kwargs["button"] = self._vispy_mouse_data["press_event"].button
 
         ev = self._vispy_canvas.events.mouse_move(**kwargs)
-        self._vispy_mouse_data['last_event'] = ev
+        self._vispy_mouse_data["last_event"] = ev
         return ev
 
     def _vispy_mouse_release(self, **kwargs):
@@ -222,13 +234,15 @@ class BaseCanvasBackend(object):
         kwargs.update(self._vispy_mouse_data)
 
         ev = self._vispy_canvas.events.mouse_release(**kwargs)
-        if (self._vispy_mouse_data['press_event']
-                and self._vispy_mouse_data['press_event'].button == ev.button):
-            self._vispy_mouse_data['press_event'] = None
+        if (
+            self._vispy_mouse_data["press_event"]
+            and self._vispy_mouse_data["press_event"].button == ev.button
+        ):
+            self._vispy_mouse_data["press_event"] = None
 
-        if ev.button in self._vispy_mouse_data['buttons']:
-            self._vispy_mouse_data['buttons'].remove(ev.button)
-        self._vispy_mouse_data['last_event'] = ev
+        if ev.button in self._vispy_mouse_data["buttons"]:
+            self._vispy_mouse_data["buttons"].remove(ev.button)
+        self._vispy_mouse_data["last_event"] = ev
 
         return ev
 
@@ -237,7 +251,7 @@ class BaseCanvasBackend(object):
         kwargs.update(self._vispy_mouse_data)
 
         ev = self._vispy_canvas.events.mouse_double_click(**kwargs)
-        self._vispy_mouse_data['last_event'] = ev
+        self._vispy_mouse_data["last_event"] = ev
         return ev
 
     def _vispy_detect_double_click(self, ev, **kwargs):
@@ -248,25 +262,27 @@ class BaseCanvasBackend(object):
 
         dt_max = 0.3  # time in seconds for a double-click detection
 
-        lastev = self._vispy_mouse_data['last_mouse_press']
+        lastev = self._vispy_mouse_data["last_mouse_press"]
 
         if lastev is None:
-            self._vispy_mouse_data['last_mouse_press'] = ev
+            self._vispy_mouse_data["last_mouse_press"] = ev
             return
 
-        assert lastev.type == 'mouse_press'
-        assert ev.type == 'mouse_press'
+        assert lastev.type == "mouse_press"
+        assert ev.type == "mouse_press"
 
         # For a double-click to be detected, the button should be the same,
         # the position should be the same, and the two mouse-presses should
         # be within dt_max.
-        if ((ev.time - lastev.time <= dt_max) &
-            (lastev.pos[0] - ev.pos[0] == 0) &
-            (lastev.pos[1] - ev.pos[1] == 0) &
-                (lastev.button == ev.button)):
+        if (
+            (ev.time - lastev.time <= dt_max)
+            & (lastev.pos[0] - ev.pos[0] == 0)
+            & (lastev.pos[1] - ev.pos[1] == 0)
+            & (lastev.button == ev.button)
+        ):
             self._vispy_mouse_double_click(**kwargs)
 
-        self._vispy_mouse_data['last_mouse_press'] = ev
+        self._vispy_mouse_data["last_mouse_press"] = ev
 
 
 class BaseTimerBackend(object):

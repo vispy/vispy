@@ -18,7 +18,7 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
 
         self.resize(1000, 500)
-        self.setWindowTitle('vispy example ...')
+        self.setWindowTitle("vispy example ...")
 
         self.splitter_h = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
 
@@ -38,7 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(splitter1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     appQt = QtWidgets.QApplication(sys.argv)
     win = MainWindow()
     win.show()

@@ -28,8 +28,15 @@ class IsosurfaceVisual(MeshVisual):
         Keyword arguments to pass to the mesh construction.
     """
 
-    def __init__(self, data=None, level=None, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), **kwargs):
+    def __init__(
+        self,
+        data=None,
+        level=None,
+        vertex_colors=None,
+        face_colors=None,
+        color=(0.5, 0.5, 1, 1),
+        **kwargs,
+    ):
         self._data = None
         self._level = level
         self._vertex_colors = vertex_colors
@@ -45,8 +52,7 @@ class IsosurfaceVisual(MeshVisual):
 
         MeshVisual.__init__(self, **kwargs)
         if data is not None:
-            self.set_data(data, vertex_colors=vertex_colors,
-                          face_colors=face_colors, color=color)
+            self.set_data(data, vertex_colors=vertex_colors, face_colors=face_colors, color=color)
 
     @property
     def level(self):
@@ -59,8 +65,7 @@ class IsosurfaceVisual(MeshVisual):
         self._recompute = True
         self.update()
 
-    def set_data(self, data=None, vertex_colors=None, face_colors=None,
-                 color=None):
+    def set_data(self, data=None, vertex_colors=None, face_colors=None, color=None):
         """Set the scalar array data
 
         Parameters
@@ -91,23 +96,23 @@ class IsosurfaceVisual(MeshVisual):
         self.update()
 
     def _prepare_draw(self, view):
-
         if self._data is None or self._level is None:
             return False
 
         if self._recompute:
-            self._vertices_cache, self._faces_cache = isosurface(self._data,
-                                                                 self._level)
+            self._vertices_cache, self._faces_cache = isosurface(self._data, self._level)
             self._recompute = False
             self._update_meshvisual = True
 
         if self._update_meshvisual:
-            MeshVisual.set_data(self,
-                                vertices=self._vertices_cache,
-                                faces=self._faces_cache,
-                                vertex_colors=self._vertex_colors,
-                                face_colors=self._face_colors,
-                                color=self._color)
+            MeshVisual.set_data(
+                self,
+                vertices=self._vertices_cache,
+                faces=self._faces_cache,
+                vertex_colors=self._vertex_colors,
+                face_colors=self._face_colors,
+                color=self._color,
+            )
             self._update_meshvisual = False
 
         return MeshVisual._prepare_draw(self, view)

@@ -20,7 +20,6 @@ def test_offscreen_context():
 
 
 class FakeCanvas(object):
-
     def __init__(self):
         self.context = gloo.GLContext()
         gloo.context.set_current_canvas(self)

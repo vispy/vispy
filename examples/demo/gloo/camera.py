@@ -44,11 +44,11 @@ fragment = """
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(640, 480), keys='interactive')
+        app.Canvas.__init__(self, size=(640, 480), keys="interactive")
         self.program = gloo.Program(vertex, fragment, count=4)
-        self.program['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-        self.program['texcoord'] = [(1, 1), (1, 0), (0, 1), (0, 0)]
-        self.program['texture'] = np.zeros((480, 640, 3)).astype(np.uint8)
+        self.program["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.program["texcoord"] = [(1, 1), (1, 0), (0, 1), (0, 0)]
+        self.program["texture"] = np.zeros((480, 640, 3)).astype(np.uint8)
 
         width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
@@ -56,7 +56,7 @@ class Canvas(app.Canvas):
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
             raise Exception("There's no available camera.")
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self._timer = app.Timer("auto", connect=self.on_timer, start=True)
 
         self.show()
 
@@ -65,13 +65,14 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-        gloo.clear('black')
+        gloo.clear("black")
         _, im = self.cap.read()
-        self.program['texture'][...] = im
-        self.program.draw('triangle_strip')
+        self.program["texture"][...] = im
+        self.program.draw("triangle_strip")
 
     def on_timer(self, event):
         self.update()
+
 
 c = Canvas()
 app.run()

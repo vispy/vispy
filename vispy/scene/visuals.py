@@ -29,8 +29,7 @@ class VisualNode(Node):
     _visual_ids = weakref.WeakValueDictionary()
 
     def __init__(self, parent=None, name=None):
-        Node.__init__(self, parent=parent, name=name,
-                      transforms=self.transforms)
+        Node.__init__(self, parent=parent, name=name, transforms=self.transforms)
         self.interactive = False
         self._opacity_filter = Alpha()
         self.attach(self._opacity_filter)
@@ -111,10 +110,10 @@ def create_visual_node(subclass: _T) -> _T:
 
     # Decide on new class name
     clsname = subclass.__name__
-    if not (clsname.endswith('Visual') and
-            issubclass(subclass, visuals.BaseVisual)):
-        raise RuntimeError('Class "%s" must end with Visual, and must '
-                           'subclass BaseVisual' % clsname)
+    if not (clsname.endswith("Visual") and issubclass(subclass, visuals.BaseVisual)):
+        raise RuntimeError(
+            'Class "%s" must end with Visual, and must ' "subclass BaseVisual" % clsname
+        )
     clsname = clsname[:-6]
 
     # Generate new docstring based on visual docstring
@@ -126,8 +125,8 @@ def create_visual_node(subclass: _T) -> _T:
 
     # New __init__ method
     def __init__(self, *args, **kwargs):
-        parent = kwargs.pop('parent', None)
-        name = kwargs.pop('name', None)
+        parent = kwargs.pop("parent", None)
+        name = kwargs.pop("name", None)
         self.name = name  # to allow __str__ before Node.__init__
         self._visual_superclass = subclass
 
@@ -137,8 +136,7 @@ def create_visual_node(subclass: _T) -> _T:
         self.freeze()
 
     # Create new class
-    cls = type(clsname, (VisualNode, subclass),
-               {'__init__': __init__, '__doc__': doc})
+    cls = type(clsname, (VisualNode, subclass), {"__init__": __init__, "__doc__": doc})
 
     return cls
 
@@ -155,7 +153,7 @@ def generate_docstring(subclass, clsname):
     lines = sc_doc.split("\n")
 
     # discard blank lines at start
-    while lines and lines[0].strip() == '':
+    while lines and lines[0].strip() == "":
         lines.pop(0)
 
     i = 0
@@ -166,7 +164,7 @@ def generate_docstring(subclass, clsname):
     while i < len(lines):
         line = lines[i]
         # ignore blank lines and '------' lines
-        if re.search(r'\w', line):
+        if re.search(r"\w", line):
             indent = len(line) - len(line.lstrip())
             # If Params section has already started, check for end of params
             # (that is where we will insert new params)
@@ -175,12 +173,12 @@ def generate_docstring(subclass, clsname):
                     break
                 elif indent == param_indent:
                     # might be end of parameters block..
-                    if re.match(r'\s*[a-zA-Z0-9_]+\s*:\s*\S+', line) is None:
+                    if re.match(r"\s*[a-zA-Z0-9_]+\s*:\s*\S+", line) is None:
                         break
                 param_end = i + 1
 
             # Check for beginning of params section
-            elif re.match(r'\s*Parameters\s*', line):
+            elif re.match(r"\s*Parameters\s*", line):
                 params_started = True
                 param_indent = indent
                 if first_blank is None:
@@ -189,7 +187,7 @@ def generate_docstring(subclass, clsname):
         # Check for first blank line
         # (this is where the Node inheritance description will be
         # inserted)
-        elif first_blank is None and line.strip() == '':
+        elif first_blank is None and line.strip() == "":
             first_blank = i
 
         i += 1
@@ -206,24 +204,31 @@ def generate_docstring(subclass, clsname):
         params_started = True
 
     # build class and parameter description strings
-    class_desc = ("\n    This class inherits from visuals.%sVisual and "
-                  "scene.Node, allowing the visual to be placed inside a "
-                  "scenegraph.\n" % (clsname))
-    parm_doc = ("    parent : Node\n"
-                "        The parent node to assign to this node (optional).\n"
-                "    name : string\n"
-                "        A name for this node, used primarily for debugging\n"
-                "        (optional).")
+    class_desc = (
+        "\n    This class inherits from visuals.%sVisual and "
+        "scene.Node, allowing the visual to be placed inside a "
+        "scenegraph.\n" % (clsname)
+    )
+    parm_doc = (
+        "    parent : Node\n"
+        "        The parent node to assign to this node (optional).\n"
+        "    name : string\n"
+        "        A name for this node, used primarily for debugging\n"
+        "        (optional)."
+    )
 
     # assemble all docstring parts
-    lines = (lines[:first_blank] +
-             [class_desc] +
-             lines[first_blank:param_end] +
-             [parm_doc] +
-             lines[param_end:])
+    lines = (
+        lines[:first_blank]
+        + [class_desc]
+        + lines[first_blank:param_end]
+        + [parm_doc]
+        + lines[param_end:]
+    )
 
-    doc = '\n'.join(lines)
+    doc = "\n".join(lines)
     return doc
+
 
 # This is _not_ automated to help with auto-completion of IDEs,
 # python REPL and IPython.
@@ -272,5 +277,8 @@ Volume = create_visual_node(visuals.VolumeVisual)
 Windbarb = create_visual_node(visuals.WindbarbVisual)
 XYZAxis = create_visual_node(visuals.XYZAxisVisual)
 
-__all__ = [name for (name, obj) in globals().items()
-           if isinstance(obj, type) and issubclass(obj, VisualNode)]
+__all__ = [
+    name
+    for (name, obj) in globals().items()
+    if isinstance(obj, type) and issubclass(obj, VisualNode)
+]

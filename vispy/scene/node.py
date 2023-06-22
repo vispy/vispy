@@ -8,23 +8,27 @@ import weakref
 from contextlib import contextmanager
 
 from ..util.event import Event, EmitterGroup
-from ..visuals.transforms import (NullTransform, BaseTransform, 
-                                  ChainTransform, create_transform,
-                                  TransformSystem)
+from ..visuals.transforms import (
+    NullTransform,
+    BaseTransform,
+    ChainTransform,
+    create_transform,
+    TransformSystem,
+)
 
 
 class Node(object):
     """Base class representing an object in a scene.
 
-    A group of nodes connected through parent-child relationships define a 
+    A group of nodes connected through parent-child relationships define a
     scenegraph. Nodes may have any number of children.
 
     Each Node defines a ``transform`` property, which describes the position,
     orientation, scale, etc. of the Node relative to its parent. The Node's
     children inherit this property, and then further apply their own
-    transformations on top of that. 
+    transformations on top of that.
 
-    With the ``transform`` property, each Node implicitly defines a "local" 
+    With the ``transform`` property, each Node implicitly defines a "local"
     coordinate system, and the Nodes and edges in the scenegraph can be thought
     of as coordinate systems connected by transformation functions.
 
@@ -58,19 +62,27 @@ class Node(object):
         self._clip_children = False
         self._clipper = None
 
-        self.transforms = (TransformSystem() if transforms is None else 
-                           transforms)
+        self.transforms = TransformSystem() if transforms is None else transforms
 
         # Add some events to the emitter groups:
-        events = ['canvas_change', 'parent_change', 'children_change', 
-                  'transform_change', 'mouse_press', 'mouse_move',
-                  'mouse_release', 'mouse_wheel', 'key_press', 'key_release',
-                  'gesture_zoom', 'gesture_rotate']
+        events = [
+            "canvas_change",
+            "parent_change",
+            "children_change",
+            "transform_change",
+            "mouse_press",
+            "mouse_move",
+            "mouse_release",
+            "mouse_wheel",
+            "key_press",
+            "key_release",
+            "gesture_zoom",
+            "gesture_rotate",
+        ]
         # Create event emitter if needed (in subclasses that inherit from
         # Visual, we already have an emitter to share)
-        if not hasattr(self, 'events'):
-            self.events = EmitterGroup(source=self, auto_connect=True,
-                                       update=Event)
+        if not hasattr(self, "events"):
+            self.events = EmitterGroup(source=self, auto_connect=True, update=Event)
         self.events.add(**dict([(ev, Event) for ev in events]))
 
         self._children = []
@@ -134,7 +146,7 @@ class Node(object):
         self._clip_children = clip
 
         for ch in self.children:
-            ch._set_clipper(self, self.clipper) 
+            ch._set_clipper(self, self.clipper)
 
     @property
     def clipper(self):
@@ -183,8 +195,9 @@ class Node(object):
     @parent.setter
     def parent(self, parent):
         if not isinstance(parent, (Node, type(None))):
-            raise ValueError('Parent must be Node instance or None (got %s).'
-                             % parent.__class__.__name__)
+            raise ValueError(
+                "Parent must be Node instance or None (got %s)." % parent.__class__.__name__
+            )
         prev = self.parent
         if parent is prev:
             return
@@ -283,6 +296,7 @@ class Node(object):
         """
         if self._scene_node is None:
             from .subscene import SubScene
+
             p = self.parent
             while True:
                 if isinstance(p, SubScene) or p is None:
@@ -329,15 +343,15 @@ class Node(object):
         changed. Also request a canvas update.
         """
         self.events.update()
-        c = getattr(self, 'canvas', None)
+        c = getattr(self, "canvas", None)
         if c is not None:
             c.update(node=self)
 
     @property
     def document(self):
         """The document is an optional property that is an node representing
-        the coordinate system from which this node should make physical 
-        measurements such as px, mm, pt, in, etc. This coordinate system 
+        the coordinate system from which this node should make physical
+        measurements such as px, mm, pt, in, etc. This coordinate system
         should be used when determining line widths, font sizes, and any
         other lengths specified in physical units.
 
@@ -430,22 +444,22 @@ class Node(object):
             The tree diagram.
         """
         # inspired by https://github.com/mbr/asciitree/blob/master/asciitree.py
-        return self._describe_tree('', with_transform)
+        return self._describe_tree("", with_transform)
 
     def _describe_tree(self, prefix, with_transform):
         """Helper function to actuall construct the tree"""
-        extra = ': "%s"' % self.name if self.name is not None else ''
+        extra = ': "%s"' % self.name if self.name is not None else ""
         if with_transform:
-            extra += (' [%s]' % self.transform.__class__.__name__)
-        output = ''
+            extra += " [%s]" % self.transform.__class__.__name__
+        output = ""
         if len(prefix) > 0:
             output += prefix[:-3]
-            output += '  +--'
-        output += '%s%s\n' % (self.__class__.__name__, extra)
+            output += "  +--"
+        output += "%s%s\n" % (self.__class__.__name__, extra)
 
         n_children = len(self.children)
         for ii, child in enumerate(self.children):
-            sub_prefix = prefix + ('   ' if ii+1 == n_children else '  |')
+            sub_prefix = prefix + ("   " if ii + 1 == n_children else "  |")
             output += child._describe_tree(sub_prefix, with_transform)
         return output
 
@@ -502,7 +516,7 @@ class Node(object):
 
         # Verify that we're not cut off
         if path1[-1].parent is None:
-            raise RuntimeError('%r is not a child of %r' % (node, self))
+            raise RuntimeError("%r is not a child of %r" % (node, self))
 
         def _is_child(path, parent, child):
             path.append(parent)
@@ -518,7 +532,7 @@ class Node(object):
         # Search from the parent towards the child
         path2 = _is_child([], self, path1[-1])
         if not path2:
-            raise RuntimeError('%r is not a child of %r' % (node, self))
+            raise RuntimeError("%r is not a child of %r" % (node, self))
 
         # Return
         return path2 + list(reversed(path1))
@@ -563,18 +577,19 @@ class Node(object):
                 cp = p
                 break
         if cp is None:
-            raise RuntimeError("No single-path common parent between nodes %s "
-                               "and %s." % (self, node))
+            raise RuntimeError(
+                "No single-path common parent between nodes %s " "and %s." % (self, node)
+            )
 
-        p1 = p1[:p1.index(cp)+1]
-        p2 = p2[:p2.index(cp)][::-1]
+        p1 = p1[: p1.index(cp) + 1]
+        p2 = p2[: p2.index(cp)][::-1]
         return p1, p2
 
     def node_path_transforms(self, node):
         """Return the list of transforms along the path to another node.
 
-        The transforms are listed in reverse order, such that the last 
-        transform should be applied first when mapping from this node to 
+        The transforms are listed in reverse order, such that the last
+        transform should be applied first when mapping from this node to
         the other.
 
         Parameters
@@ -588,8 +603,7 @@ class Node(object):
             A list of Transform instances.
         """
         a, b = self.node_path(node)
-        return ([n.transform for n in a[:-1]] + 
-                [n.transform.inverse for n in b])[::-1]
+        return ([n.transform for n in a[:-1]] + [n.transform.inverse for n in b])[::-1]
 
     def node_transform(self, node):
         """
@@ -612,7 +626,7 @@ class Node(object):
         return ChainTransform(self.node_path_transforms(node))
 
     def __repr__(self):
-        name = "" if self.name is None else " name="+self.name
+        name = "" if self.name is None else " name=" + self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))
 
     @property

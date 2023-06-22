@@ -6,36 +6,35 @@ _data_cache = None
 def isosurface(data, level):
     """
     Generate isosurface from volumetric data using marching cubes algorithm.
-    See Paul Bourke, "Polygonising a Scalar Field"  
+    See Paul Bourke, "Polygonising a Scalar Field"
     (http://paulbourke.net/geometry/polygonise/)
 
     *data*   3D numpy array of scalar values
     *level*  The level at which to generate an isosurface
 
-    Returns an array of vertex coordinates (Nv, 3) and an array of 
-    per-face vertex indexes (Nf, 3)    
+    Returns an array of vertex coordinates (Nv, 3) and an array of
+    per-face vertex indexes (Nf, 3)
     """
     # For improvement, see:
-    # 
-    # Efficient implementation of Marching Cubes' cases with topological 
+    #
+    # Efficient implementation of Marching Cubes' cases with topological
     # guarantees.
     # Thomas Lewiner, Helio Lopes, Antonio Wilson Vieira and Geovan Tavares.
     # Journal of Graphics Tools 8(2): pp. 1-15 (december 2003)
 
-    (face_shift_tables, edge_shifts, 
-     edge_table, n_table_faces) = _get_data_cache()
+    (face_shift_tables, edge_shifts, edge_table, n_table_faces) = _get_data_cache()
 
     # mark everything below the isosurface level
     mask = data < level
 
-    # Because we make use of the strides data attribute below, we have to make 
-    # sure that the data is contiguous (which it won't be if the user did 
-    # data.transpose() for example). Note that this doesn't copy the data if it 
+    # Because we make use of the strides data attribute below, we have to make
+    # sure that the data is contiguous (which it won't be if the user did
+    # data.transpose() for example). Note that this doesn't copy the data if it
     # is already contiguous.
     data = np.ascontiguousarray(data)
 
     # make eight sub-fields and compute indexes for grid cells
-    index = np.zeros([x-1 for x in data.shape], dtype=np.ubyte)
+    index = np.zeros([x - 1 for x in data.shape], dtype=np.ubyte)
     fields = np.empty((2, 2, 2), dtype=object)
     slices = [slice(0, -1), slice(1, None)]
     for i in [0, 1]:
@@ -43,44 +42,41 @@ def isosurface(data, level):
             for k in [0, 1]:
                 fields[i, j, k] = mask[slices[i], slices[j], slices[k]]
                 # this is just to match Bourk's vertex numbering scheme:
-                vertIndex = i - 2*j*i + 3*j + 4*k
+                vertIndex = i - 2 * j * i + 3 * j + 4 * k
                 index += (fields[i, j, k] * 2**vertIndex).astype(np.ubyte)
 
     # Generate table of edges that have been cut
-    cut_edges = np.zeros([x+1 for x in index.shape]+[3], dtype=np.uint32)
+    cut_edges = np.zeros([x + 1 for x in index.shape] + [3], dtype=np.uint32)
     edges = edge_table[index]
-    for i, shift in enumerate(edge_shifts[:12]):        
-        slices = [slice(shift[j], cut_edges.shape[j]+(shift[j]-1)) 
-                  for j in range(3)]
+    for i, shift in enumerate(edge_shifts[:12]):
+        slices = [slice(shift[j], cut_edges.shape[j] + (shift[j] - 1)) for j in range(3)]
         cut_edges[slices[0], slices[1], slices[2], shift[3]] += edges & 2**i
 
-    # for each cut edge, interpolate to see where exactly the edge is cut and 
+    # for each cut edge, interpolate to see where exactly the edge is cut and
     # generate vertex positions
     m = cut_edges > 0
     vertex_inds = np.argwhere(m)  # argwhere is slow!
     vertexes = vertex_inds[:, :3].astype(np.float32).copy()
-    dataFlat = data.reshape(data.shape[0]*data.shape[1]*data.shape[2])
+    dataFlat = data.reshape(data.shape[0] * data.shape[1] * data.shape[2])
 
     # re-use the cut_edges array as a lookup table for vertex IDs
-    cut_edges[vertex_inds[:, 0], 
-              vertex_inds[:, 1], 
-              vertex_inds[:, 2], 
-              vertex_inds[:, 3]] = np.arange(vertex_inds.shape[0])
+    cut_edges[
+        vertex_inds[:, 0], vertex_inds[:, 1], vertex_inds[:, 2], vertex_inds[:, 3]
+    ] = np.arange(vertex_inds.shape[0])
 
     for i in [0, 1, 2]:
         vim = vertex_inds[:, 3] == i
         vi = vertex_inds[vim, :3]
-        vi_flat = (vi * (np.array(data.strides[:3]) // 
-                         data.itemsize)[np.newaxis, :]).sum(axis=1)
+        vi_flat = (vi * (np.array(data.strides[:3]) // data.itemsize)[np.newaxis, :]).sum(axis=1)
         v1 = dataFlat[vi_flat]
-        v2 = dataFlat[vi_flat + data.strides[i]//data.itemsize]
-        vertexes[vim, i] += (level-v1) / (v2-v1)
+        v2 = dataFlat[vi_flat + data.strides[i] // data.itemsize]
+        vertexes[vim, i] += (level - v1) / (v2 - v1)
 
-    # compute the set of vertex indexes for each face. 
+    # compute the set of vertex indexes for each face.
 
     # This works, but runs a bit slower.
     # all cells with at least one face:
-    # cells = np.argwhere((index != 0) & (index != 255))  
+    # cells = np.argwhere((index != 0) & (index != 255))
     # cellInds = index[cells[:, 0], cells[:, 1], cells[:, 2]]
     # verts = faceTable[cellInds]
     # mask = verts[..., 0, 0] != 9
@@ -88,11 +84,11 @@ def isosurface(data, level):
     # verts[...,:3] += cells[:, np.newaxis, np.newaxis,:]
     # verts = verts[mask]
     # and these are the vertex indexes we want:
-    # faces = cut_edges[verts[..., 0], verts[..., 1], verts[..., 2], 
-    #                  verts[..., 3]]  
+    # faces = cut_edges[verts[..., 0], verts[..., 1], verts[..., 2],
+    #                  verts[..., 3]]
 
-    # To allow this to be vectorized efficiently, we count the number of faces 
-    # in each grid cell and handle each group of cells with the same number 
+    # To allow this to be vectorized efficiently, we count the number of faces
+    # in each grid cell and handle each group of cells with the same number
     # together.
 
     # determine how many faces to assign to each grid cell
@@ -102,7 +98,7 @@ def isosurface(data, level):
     ptr = 0
 
     # this helps speed up an indexing operation later on
-    cs = np.array(cut_edges.strides)//cut_edges.itemsize
+    cs = np.array(cut_edges.strides) // cut_edges.itemsize
     cut_edges = cut_edges.flatten()
 
     # this, strangely, does not seem to help.
@@ -112,7 +108,7 @@ def isosurface(data, level):
     for i in range(1, 6):
         # expensive:
         # all cells which require i faces  (argwhere is expensive)
-        cells = np.argwhere(n_faces == i)  
+        cells = np.argwhere(n_faces == i)
         if cells.shape[0] == 0:
             continue
         # index values of cells to process for this round:
@@ -121,15 +117,14 @@ def isosurface(data, level):
         # expensive:
         verts = face_shift_tables[i][cellInds]
         # we now have indexes into cut_edges:
-        verts[..., :3] += (cells[:, np.newaxis,
-                                 np.newaxis, :]).astype(np.uint16)
-        verts = verts.reshape((verts.shape[0]*i,)+verts.shape[2:])
+        verts[..., :3] += (cells[:, np.newaxis, np.newaxis, :]).astype(np.uint16)
+        verts = verts.reshape((verts.shape[0] * i,) + verts.shape[2:])
 
         # expensive:
         verts = (verts * cs[np.newaxis, np.newaxis, :]).sum(axis=2)
         vert_inds = cut_edges[verts]
         nv = vert_inds.shape[0]
-        faces[ptr:ptr+nv] = vert_inds  # .reshape((nv, 3))
+        faces[ptr : ptr + nv] = vert_inds  # .reshape((nv, 3))
         ptr += nv
 
     return vertexes, faces
@@ -145,27 +140,267 @@ def _get_data_cache():
         # grid cell index tells us which corners are below the isosurface,
         # edge index tells us which edges are cut by the isosurface.
         # (Data stolen from Bourk; see above.)
-        edge_table = np.array([
-            0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a,
-            0xd03, 0xe09, 0xf00, 0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 
-            0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90, 0x230, 0x339, 0x33, 0x13a, 0x636, 0x73f, 0x435, 
-            0x53c, 0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0xaa, 
-            0x7a6, 0x6af, 0x5a5, 0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0, 0x460, 
-            0x569, 0x663, 0x76a, 0x66, 0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 
-            0xa69, 0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff, 0x3f5, 0x2fc, 0xdfc, 0xcf5, 0xfff, 
-            0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55, 0x15c, 
-            0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 
-            0x2cf, 0x1c5, 0xcc, 0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9, 
-            0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc, 0xcc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 
-            0x7c0, 0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c, 0x15c, 0x55, 0x35f, 0x256, 
-            0x55a, 0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc, 0x2fc, 
-            0x3f5, 0xff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0, 0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 
-            0xd65, 0xc6c, 0x36c, 0x265, 0x16f, 0x66, 0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3, 
-            0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa, 0x1a3, 0x2a9, 0x3a0, 
-            0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636, 0x13a, 
-            0x33, 0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c, 0x69c, 0x795, 
-            0x49f, 0x596, 0x29a, 0x393, 0x99, 0x190, 0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 
-            0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0], dtype=np.uint16)
+        edge_table = np.array(
+            [
+                0x0,
+                0x109,
+                0x203,
+                0x30A,
+                0x406,
+                0x50F,
+                0x605,
+                0x70C,
+                0x80C,
+                0x905,
+                0xA0F,
+                0xB06,
+                0xC0A,
+                0xD03,
+                0xE09,
+                0xF00,
+                0x190,
+                0x99,
+                0x393,
+                0x29A,
+                0x596,
+                0x49F,
+                0x795,
+                0x69C,
+                0x99C,
+                0x895,
+                0xB9F,
+                0xA96,
+                0xD9A,
+                0xC93,
+                0xF99,
+                0xE90,
+                0x230,
+                0x339,
+                0x33,
+                0x13A,
+                0x636,
+                0x73F,
+                0x435,
+                0x53C,
+                0xA3C,
+                0xB35,
+                0x83F,
+                0x936,
+                0xE3A,
+                0xF33,
+                0xC39,
+                0xD30,
+                0x3A0,
+                0x2A9,
+                0x1A3,
+                0xAA,
+                0x7A6,
+                0x6AF,
+                0x5A5,
+                0x4AC,
+                0xBAC,
+                0xAA5,
+                0x9AF,
+                0x8A6,
+                0xFAA,
+                0xEA3,
+                0xDA9,
+                0xCA0,
+                0x460,
+                0x569,
+                0x663,
+                0x76A,
+                0x66,
+                0x16F,
+                0x265,
+                0x36C,
+                0xC6C,
+                0xD65,
+                0xE6F,
+                0xF66,
+                0x86A,
+                0x963,
+                0xA69,
+                0xB60,
+                0x5F0,
+                0x4F9,
+                0x7F3,
+                0x6FA,
+                0x1F6,
+                0xFF,
+                0x3F5,
+                0x2FC,
+                0xDFC,
+                0xCF5,
+                0xFFF,
+                0xEF6,
+                0x9FA,
+                0x8F3,
+                0xBF9,
+                0xAF0,
+                0x650,
+                0x759,
+                0x453,
+                0x55A,
+                0x256,
+                0x35F,
+                0x55,
+                0x15C,
+                0xE5C,
+                0xF55,
+                0xC5F,
+                0xD56,
+                0xA5A,
+                0xB53,
+                0x859,
+                0x950,
+                0x7C0,
+                0x6C9,
+                0x5C3,
+                0x4CA,
+                0x3C6,
+                0x2CF,
+                0x1C5,
+                0xCC,
+                0xFCC,
+                0xEC5,
+                0xDCF,
+                0xCC6,
+                0xBCA,
+                0xAC3,
+                0x9C9,
+                0x8C0,
+                0x8C0,
+                0x9C9,
+                0xAC3,
+                0xBCA,
+                0xCC6,
+                0xDCF,
+                0xEC5,
+                0xFCC,
+                0xCC,
+                0x1C5,
+                0x2CF,
+                0x3C6,
+                0x4CA,
+                0x5C3,
+                0x6C9,
+                0x7C0,
+                0x950,
+                0x859,
+                0xB53,
+                0xA5A,
+                0xD56,
+                0xC5F,
+                0xF55,
+                0xE5C,
+                0x15C,
+                0x55,
+                0x35F,
+                0x256,
+                0x55A,
+                0x453,
+                0x759,
+                0x650,
+                0xAF0,
+                0xBF9,
+                0x8F3,
+                0x9FA,
+                0xEF6,
+                0xFFF,
+                0xCF5,
+                0xDFC,
+                0x2FC,
+                0x3F5,
+                0xFF,
+                0x1F6,
+                0x6FA,
+                0x7F3,
+                0x4F9,
+                0x5F0,
+                0xB60,
+                0xA69,
+                0x963,
+                0x86A,
+                0xF66,
+                0xE6F,
+                0xD65,
+                0xC6C,
+                0x36C,
+                0x265,
+                0x16F,
+                0x66,
+                0x76A,
+                0x663,
+                0x569,
+                0x460,
+                0xCA0,
+                0xDA9,
+                0xEA3,
+                0xFAA,
+                0x8A6,
+                0x9AF,
+                0xAA5,
+                0xBAC,
+                0x4AC,
+                0x5A5,
+                0x6AF,
+                0x7A6,
+                0xAA,
+                0x1A3,
+                0x2A9,
+                0x3A0,
+                0xD30,
+                0xC39,
+                0xF33,
+                0xE3A,
+                0x936,
+                0x83F,
+                0xB35,
+                0xA3C,
+                0x53C,
+                0x435,
+                0x73F,
+                0x636,
+                0x13A,
+                0x33,
+                0x339,
+                0x230,
+                0xE90,
+                0xF99,
+                0xC93,
+                0xD9A,
+                0xA96,
+                0xB9F,
+                0x895,
+                0x99C,
+                0x69C,
+                0x795,
+                0x49F,
+                0x596,
+                0x29A,
+                0x393,
+                0x99,
+                0x190,
+                0xF00,
+                0xE09,
+                0xD03,
+                0xC0A,
+                0xB06,
+                0xA0F,
+                0x905,
+                0x80C,
+                0x70C,
+                0x605,
+                0x50F,
+                0x406,
+                0x30A,
+                0x203,
+                0x109,
+                0x0,
+            ],
+            dtype=np.uint16,
+        )
 
         # Table of triangles to use for filling each grid cell.
         # Each set of three integers tells us which three edges to
@@ -427,39 +662,40 @@ def _get_data_cache():
             [1, 3, 8, 9, 1, 8],
             [0, 9, 1],
             [0, 3, 8],
-            []
+            [],
         ]
 
         # maps edge ID (0-11) to (x, y, z) cell offset and edge ID (0-2)
-        edge_shifts = np.array([
-            [0, 0, 0, 0],   
-            [1, 0, 0, 1],
-            [0, 1, 0, 0],
-            [0, 0, 0, 1],
-            [0, 0, 1, 0],
-            [1, 0, 1, 1],
-            [0, 1, 1, 0],
-            [0, 0, 1, 1],
-            [0, 0, 0, 2],
-            [1, 0, 0, 2],
-            [1, 1, 0, 2],
-            [0, 1, 0, 2],
-            # [9, 9, 9, 9] fake
-            # don't use ubyte here! This value gets added to cell index later; 
-            # will need the extra precision.
-        ], dtype=np.uint16) 
-        n_table_faces = np.array([len(f)/3 for f in triTable], dtype=np.ubyte)
+        edge_shifts = np.array(
+            [
+                [0, 0, 0, 0],
+                [1, 0, 0, 1],
+                [0, 1, 0, 0],
+                [0, 0, 0, 1],
+                [0, 0, 1, 0],
+                [1, 0, 1, 1],
+                [0, 1, 1, 0],
+                [0, 0, 1, 1],
+                [0, 0, 0, 2],
+                [1, 0, 0, 2],
+                [1, 1, 0, 2],
+                [0, 1, 0, 2],
+                # [9, 9, 9, 9] fake
+                # don't use ubyte here! This value gets added to cell index later;
+                # will need the extra precision.
+            ],
+            dtype=np.uint16,
+        )
+        n_table_faces = np.array([len(f) / 3 for f in triTable], dtype=np.ubyte)
         face_shift_tables = [None]
         for i in range(1, 6):
             # compute lookup table of index: vertexes mapping
-            faceTableI = np.zeros((len(triTable), i*3), dtype=np.ubyte)
+            faceTableI = np.zeros((len(triTable), i * 3), dtype=np.ubyte)
             faceTableInds = np.argwhere(n_table_faces == i)[:, 0]
-            faceTableI[faceTableInds] = np.array([triTable[j] for j in
-                                                  faceTableInds])
+            faceTableI[faceTableInds] = np.array([triTable[j] for j in faceTableInds])
             faceTableI = faceTableI.reshape((len(triTable), i, 3))
             face_shift_tables.append(edge_shifts[faceTableI])
 
-        _data_cache = (face_shift_tables, edge_shifts, edge_table, 
-                       n_table_faces)
+        _data_cache = (face_shift_tables, edge_shifts, edge_table, n_table_faces)
 
     return _data_cache

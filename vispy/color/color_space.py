@@ -13,36 +13,38 @@ def _check_color_dim(val):
     """Ensure val is Nx(n_col), usually Nx3"""
     val = np.atleast_2d(val)
     if val.shape[1] not in (3, 4):
-        raise RuntimeError('Value must have second dimension of size 3 or 4')
+        raise RuntimeError("Value must have second dimension of size 3 or 4")
     return val, val.shape[1]
 
 
 ###############################################################################
 # RGB<->HEX conversion
 
+
 def _hex_to_rgba(hexs):
     """Convert hex to rgba, permitting alpha values in hex"""
-    hexs = np.atleast_1d(np.array(hexs, '|U9'))
+    hexs = np.atleast_1d(np.array(hexs, "|U9"))
     out = np.ones((len(hexs), 4), np.float32)
     for hi, h in enumerate(hexs):
         assert isinstance(h, str)
-        off = 1 if h[0] == '#' else 0
-        assert len(h) in (6+off, 8+off)
-        e = (len(h)-off) // 2
-        out[hi, :e] = [int(h[i:i+2], 16) / 255.
-                       for i in range(off, len(h), 2)]
+        off = 1 if h[0] == "#" else 0
+        assert len(h) in (6 + off, 8 + off)
+        e = (len(h) - off) // 2
+        out[hi, :e] = [int(h[i : i + 2], 16) / 255.0 for i in range(off, len(h), 2)]
     return out
 
 
 def _rgb_to_hex(rgbs):
     """Convert rgb to hex triplet"""
     rgbs, n_dim = _check_color_dim(rgbs)
-    return np.array(['#%02x%02x%02x' % tuple((255*rgb[:3]).astype(np.uint8))
-                     for rgb in rgbs], '|U7')
+    return np.array(
+        ["#%02x%02x%02x" % tuple((255 * rgb[:3]).astype(np.uint8)) for rgb in rgbs], "|U7"
+    )
 
 
 ###############################################################################
 # RGB<->HSV conversion
+
 
 def _rgb_to_hsv(rgbs):
     """Convert Nx3 or Nx4 rgb to hsv"""
@@ -117,18 +119,26 @@ def _hsv_to_rgb(hsvs):
 # _white_norm = np.array([0.950456, 1.0, 1.088754])
 # _rgb2xyz /= _white_norm[:, np.newaxis]
 # _rgb2xyz_norm = _rgb2xyz.T
-_rgb2xyz_norm = np.array([[0.43395276, 0.212671, 0.01775791],
-                          [0.37621941, 0.71516, 0.10947652],
-                          [0.18982783, 0.072169, 0.87276557]])
+_rgb2xyz_norm = np.array(
+    [
+        [0.43395276, 0.212671, 0.01775791],
+        [0.37621941, 0.71516, 0.10947652],
+        [0.18982783, 0.072169, 0.87276557],
+    ]
+)
 
 # _xyz2rgb = np.array([[3.240479, -1.537150, -0.498535],
 #                     [-0.969256, 1.875992, 0.041556],
 #                     [0.055648, -0.204043, 1.057311]])
 # _white_norm = np.array([0.950456, 1., 1.088754])
 # _xyz2rgb *= _white_norm[np.newaxis, :]
-_xyz2rgb_norm = np.array([[3.07993271, -1.53715, -0.54278198],
-                          [-0.92123518, 1.875992, 0.04524426],
-                          [0.05289098, -0.204043, 1.15115158]])
+_xyz2rgb_norm = np.array(
+    [
+        [3.07993271, -1.53715, -0.54278198],
+        [-0.92123518, 1.875992, 0.04524426],
+        [0.05289098, -0.204043, 1.15115158],
+    ]
+)
 
 
 def _rgb_to_lab(rgbs):
@@ -140,18 +150,18 @@ def _rgb_to_lab(rgbs):
     xyz[~over] /= 12.92
     xyz = np.dot(xyz, _rgb2xyz_norm)
     over = xyz > 0.008856
-    xyz[over] = xyz[over] ** (1. / 3.)
+    xyz[over] = xyz[over] ** (1.0 / 3.0)
     xyz[~over] = 7.787 * xyz[~over] + 0.13793103448275862
 
     # Convert XYZ->LAB
-    L = (116. * xyz[:, 1]) - 16
+    L = (116.0 * xyz[:, 1]) - 16
     a = 500 * (xyz[:, 0] - xyz[:, 1])
     b = 200 * (xyz[:, 1] - xyz[:, 2])
     labs = [L, a, b]
     # Append alpha if necessary
     if n_dim == 4:
         labs.append(np.atleast1d(rgbs[:, 3]))
-    labs = np.array(labs, order='F').T  # Becomes 'C' order b/c of .T
+    labs = np.array(labs, order="F").T  # Becomes 'C' order b/c of .T
     return labs
 
 
@@ -162,20 +172,20 @@ def _lab_to_rgb(labs):
     labs, n_dim = _check_color_dim(labs)
 
     # Convert Lab->XYZ (silly indexing used to preserve dimensionality)
-    y = (labs[:, 0] + 16.) / 116.
-    x = (labs[:, 1] / 500.) + y
-    z = y - (labs[:, 2] / 200.)
+    y = (labs[:, 0] + 16.0) / 116.0
+    x = (labs[:, 1] / 500.0) + y
+    z = y - (labs[:, 2] / 200.0)
     xyz = np.concatenate(([x], [y], [z]))  # 3xN
     over = xyz > 0.2068966
-    xyz[over] = xyz[over] ** 3.
+    xyz[over] = xyz[over] ** 3.0
     xyz[~over] = (xyz[~over] - 0.13793103448275862) / 7.787
 
     # Convert XYZ->LAB
     rgbs = np.dot(_xyz2rgb_norm, xyz).T
     over = rgbs > 0.0031308
-    rgbs[over] = 1.055 * (rgbs[over] ** (1. / 2.4)) - 0.055
+    rgbs[over] = 1.055 * (rgbs[over] ** (1.0 / 2.4)) - 0.055
     rgbs[~over] *= 12.92
     if n_dim == 4:
         rgbs = np.concatenate((rgbs, labs[:, 3]), axis=1)
-    rgbs = np.clip(rgbs, 0., 1.)
+    rgbs = np.clip(rgbs, 0.0, 1.0)
     return rgbs

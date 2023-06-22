@@ -33,7 +33,7 @@ def eq(a, b):
                 return False
         except Exception:
             return False
-        if (hasattr(e, 'implements') and e.implements('MetaArray')):
+        if hasattr(e, "implements") and e.implements("MetaArray"):
             return e.asarray().all()
         else:
             return e.all()
