@@ -33,7 +33,9 @@ def convert_dtype_and_clip(data, dtype, copy=False):
     else:
         # to reduce copying, we clip into a pre-generated array of the right dtype
         new_data = np.empty_like(data, dtype=dtype)
-        np.clip(data, new_min, new_max, out=new_data)
+        # allow "unsafe" casting here as we're explicitly clipping to the
+        # range of the new dtype - this was a default before numpy 1.25
+        np.clip(data, new_min, new_max, out=new_data, casting="unsafe")
         return new_data
 
 
