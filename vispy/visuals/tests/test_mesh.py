@@ -5,8 +5,7 @@ from vispy import scene
 
 from vispy.color import Color
 from vispy.geometry import create_cube, create_sphere
-from vispy.testing import (TestingCanvas, requires_application,
-                           run_tests_if_main, requires_pyopengl)
+from vispy.testing import TestingCanvas, requires_application, run_tests_if_main, requires_pyopengl
 from vispy.visuals.filters import ShadingFilter, WireframeFilter
 from vispy.visuals.filters.mesh import _as_rgba
 
@@ -17,8 +16,7 @@ import pytest
 def test_mesh_color():
     # Create visual
     vertices, filled_indices, outline_indices = create_cube()
-    axis = scene.visuals.Mesh(vertices['position'], outline_indices,
-                              color='black', mode='lines')
+    axis = scene.visuals.Mesh(vertices["position"], outline_indices, color="black", mode="lines")
 
     # Change color (regression test for a bug that caused this to reset
     # the vertex data to None)
@@ -28,7 +26,7 @@ def test_mesh_color():
     new_vertices = axis.mesh_data.get_vertices()
 
     np.testing.assert_allclose(axis.color.rgba, (0.1, 0.3, 0.7, 0.9))
-    np.testing.assert_allclose(vertices['position'], new_vertices)
+    np.testing.assert_allclose(vertices["position"], new_vertices)
 
 
 @requires_pyopengl()
@@ -50,7 +48,7 @@ def test_mesh_with_vertex_values():
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
+@pytest.mark.parametrize("shading", [None, "flat", "smooth"])
 def test_mesh_shading_change_from_none(shading):
     # Regression test for #2041: exception raised when changing the shading
     # mode with shading=None initially.
@@ -69,16 +67,14 @@ def test_mesh_shading_change_from_none(shading):
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
+@pytest.mark.parametrize("shading", [None, "flat", "smooth"])
 def test_mesh_shading_filter(shading):
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
-        v.camera = 'arcball'
+        v.camera = "arcball"
         mdata = create_sphere(20, 30, radius=1)
-        mesh = scene.visuals.Mesh(meshdata=mdata,
-                                  shading=shading,
-                                  color=(0.2, 0.3, 0.7, 1.0))
+        mesh = scene.visuals.Mesh(meshdata=mdata, shading=shading, color=(0.2, 0.3, 0.7, 1.0))
         v.add(mesh)
 
         rendered = c.render()[..., 0]  # R channel only
@@ -102,16 +98,14 @@ def test_intensity_or_color_as_rgba():
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('shading', [None, 'flat', 'smooth'])
+@pytest.mark.parametrize("shading", [None, "flat", "smooth"])
 def test_mesh_shading_filter_enabled(shading):
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
-        v.camera = 'arcball'
+        v.camera = "arcball"
         mdata = create_sphere(20, 30, radius=1)
-        mesh = scene.visuals.Mesh(meshdata=mdata,
-                                  shading=None,
-                                  color=(0.2, 0.3, 0.7, 1.0))
+        mesh = scene.visuals.Mesh(meshdata=mdata, shading=None, color=(0.2, 0.3, 0.7, 1.0))
         shading_filter = ShadingFilter(shading=shading)
         mesh.attach(shading_filter)
         v.add(mesh)
@@ -128,18 +122,22 @@ def test_mesh_shading_filter_enabled(shading):
             assert np.allclose(rendered_without_shading, rendered_with_shading)
         else:
             # The result should be different with shading applied.
-            assert not np.allclose(rendered_without_shading,
-                                   rendered_with_shading)
+            assert not np.allclose(rendered_without_shading, rendered_with_shading)
 
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('attribute', ['ambient_coefficient',
-                                       'diffuse_coefficient',
-                                       'specular_coefficient',
-                                       'ambient_light',
-                                       'diffuse_light',
-                                       'specular_light'])
+@pytest.mark.parametrize(
+    "attribute",
+    [
+        "ambient_coefficient",
+        "diffuse_coefficient",
+        "specular_coefficient",
+        "ambient_light",
+        "diffuse_light",
+        "specular_light",
+    ],
+)
 def test_mesh_shading_filter_colors(attribute):
     size = (45, 40)
     with TestingCanvas(size=size, bgcolor="k") as c:
@@ -147,24 +145,26 @@ def test_mesh_shading_filter_colors(attribute):
         overlay_color_red = (1.0, 0.0, 0.0, 1.0)
 
         v = c.central_widget.add_view(border_width=0)
-        v.camera = 'arcball'
+        v.camera = "arcball"
         mdata = create_sphere(20, 30, radius=1)
         mesh = scene.visuals.Mesh(meshdata=mdata, color=base_color_white)
         v.add(mesh)
 
-        shading_filter = ShadingFilter(shading='smooth',
-                                       # Set the light source on the side of
-                                       # and around the camera to get a clearly
-                                       # visible reflection.
-                                       light_dir=(-5, -5, 5),
-                                       # Activate all illumination types as
-                                       # white light but reduce the intensity
-                                       # to prevent saturation.
-                                       ambient_light=0.3,
-                                       diffuse_light=0.3,
-                                       specular_light=0.3,
-                                       # Get a wide highlight.
-                                       shininess=4)
+        shading_filter = ShadingFilter(
+            shading="smooth",
+            # Set the light source on the side of
+            # and around the camera to get a clearly
+            # visible reflection.
+            light_dir=(-5, -5, 5),
+            # Activate all illumination types as
+            # white light but reduce the intensity
+            # to prevent saturation.
+            ambient_light=0.3,
+            diffuse_light=0.3,
+            specular_light=0.3,
+            # Get a wide highlight.
+            shininess=4,
+        )
         mesh.attach(shading_filter)
 
         rendered_white = c.render()
@@ -190,16 +190,16 @@ def test_mesh_shading_filter_colors(attribute):
 def test_mesh_bounds():
     # Create 3D visual
     vertices, filled_indices, outline_indices = create_cube()
-    axis = scene.visuals.Mesh(vertices['position'], outline_indices,
-                              color='black', mode='lines')
+    axis = scene.visuals.Mesh(vertices["position"], outline_indices, color="black", mode="lines")
 
     # Test bounds for all 3 axes
     for i in range(3):
         np.testing.assert_allclose(axis.bounds(i), (-1.0, 1.0))
 
     # Create 2D visual using projection of cube
-    axis = scene.visuals.Mesh(vertices['position'][:, :2], outline_indices,
-                              color='black', mode='lines')
+    axis = scene.visuals.Mesh(
+        vertices["position"][:, :2], outline_indices, color="black", mode="lines"
+    )
 
     # Test bounds for first 2 axes
     for i in range(2):
@@ -216,13 +216,12 @@ def test_mesh_wireframe_filter():
         v = c.central_widget.add_view(border_width=0)
         # Create visual
         mdata = create_sphere(20, 40, radius=20)
-        mesh = scene.visuals.Mesh(meshdata=mdata,
-                                  shading=None,
-                                  color=(0.1, 0.3, 0.7, 0.9))
-        wireframe_filter = WireframeFilter(color='red')
+        mesh = scene.visuals.Mesh(meshdata=mdata, shading=None, color=(0.1, 0.3, 0.7, 0.9))
+        wireframe_filter = WireframeFilter(color="red")
         mesh.attach(wireframe_filter)
         v.add(mesh)
         from vispy.visuals.transforms import STTransform
+
         mesh.transform = STTransform(translate=(20, 20))
         mesh.transforms.scene_transform = STTransform(scale=(1, 1, 0.01))
 
@@ -233,29 +232,36 @@ def test_mesh_wireframe_filter():
         rendered_wo_wf = c.render()
         # the result should be completely different
         # assert not allclose
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_with_wf, rendered_wo_wf)
+        pytest.raises(AssertionError, np.testing.assert_allclose, rendered_with_wf, rendered_wo_wf)
 
         wireframe_filter.enabled = True
         wireframe_filter.wireframe_only = True
         rendered_with_wf_only = c.render()
         # the result should be different from the two cases above
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_with_wf_only, rendered_with_wf)
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_with_wf_only, rendered_wo_wf)
+        pytest.raises(
+            AssertionError, np.testing.assert_allclose, rendered_with_wf_only, rendered_with_wf
+        )
+        pytest.raises(
+            AssertionError, np.testing.assert_allclose, rendered_with_wf_only, rendered_wo_wf
+        )
 
         wireframe_filter.enabled = True
         wireframe_filter.wireframe_only = False
         wireframe_filter.faces_only = True
         rendered_with_faces_only = c.render()
         # the result should be different from the cases above
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_with_faces_only, rendered_with_wf)
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_with_faces_only, rendered_wo_wf)
-        pytest.raises(AssertionError, np.testing.assert_allclose,
-                      rendered_with_faces_only, rendered_with_wf_only)
+        pytest.raises(
+            AssertionError, np.testing.assert_allclose, rendered_with_faces_only, rendered_with_wf
+        )
+        pytest.raises(
+            AssertionError, np.testing.assert_allclose, rendered_with_faces_only, rendered_wo_wf
+        )
+        pytest.raises(
+            AssertionError,
+            np.testing.assert_allclose,
+            rendered_with_faces_only,
+            rendered_with_wf_only,
+        )
 
 
 run_tests_if_main()

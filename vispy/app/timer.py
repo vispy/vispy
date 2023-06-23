@@ -29,13 +29,9 @@ class Timer(object):
         The application to attach the timer to.
     """
 
-    def __init__(self, interval='auto', connect=None, iterations=-1,
-                 start=False, app=None):
+    def __init__(self, interval="auto", connect=None, iterations=-1, start=False, app=None):
         """Initiallize timer method."""
-        self.events = EmitterGroup(source=self,
-                                   start=Event,
-                                   stop=Event,
-                                   timeout=Event)
+        self.events = EmitterGroup(source=self, start=Event, stop=Event, timeout=Event)
         # self.connect = self.events.timeout.connect
         # self.disconnect = self.events.timeout.disconnect
 
@@ -47,7 +43,7 @@ class Timer(object):
         elif isinstance(app, str):
             self._app = Application(app)
         else:
-            raise ValueError('Invalid value for app %r' % app)
+            raise ValueError("Invalid value for app %r" % app)
 
         # Ensure app has backend app object
         self._app.native
@@ -55,7 +51,7 @@ class Timer(object):
         # Instantiate the backed with the right class
         self._backend = self._app.backend_module.TimerBackend(self)
 
-        if interval == 'auto':
+        if interval == "auto":
             interval = 1.0 / 60
         self._interval = float(interval)
         self._running = False
@@ -119,24 +115,24 @@ class Timer(object):
         self._running = True
         self._first_emit_time = precision_time()
         self._last_emit_time = precision_time()
-        self.events.start(type='timer_start')
+        self.events.start(type="timer_start")
 
     def stop(self):
         """Stop the timer."""
         self._backend._vispy_stop()
         self._running = False
-        self.events.stop(type='timer_stop')
+        self.events.stop(type="timer_stop")
 
     # use timer.app.run() and .quit() instead.
     # def run_event_loop(self):
-        # """Execute the event loop for this Timer's backend.
-        # """
-        # return self._backend._vispy_run()
+    # """Execute the event loop for this Timer's backend.
+    # """
+    # return self._backend._vispy_run()
 
     # def quit_event_loop(self):
-        # """Exit the event loop for this Timer's backend.
-        # """
-        # return self._backend._vispy_quit()
+    # """Exit the event loop for this Timer's backend.
+    # """
+    # return self._backend._vispy_quit()
 
     @property
     def native(self):
@@ -158,11 +154,12 @@ class Timer(object):
         self._last_emit_time = now
 
         self.events.timeout(
-            type='timer_timeout',
+            type="timer_timeout",
             iteration=self.iter_count,
             elapsed=elapsed,
             dt=dt,
-            count=self.iter_count)
+            count=self.iter_count,
+        )
         self.iter_count += 1
 
     def connect(self, callback):

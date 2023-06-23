@@ -13,8 +13,8 @@ interface.
 
 import numpy as np
 from ... import gloo
-from . util import fetchcode
-from . base_collection import BaseCollection
+from .util import fetchcode
+from .base_collection import BaseCollection
 from ..shaders import ModularProgram
 from ...util.event import EventEmitter
 
@@ -50,19 +50,19 @@ class Collection(BaseCollection):
         where parameter name must be one of the dtype.
     """
 
-    _gtypes = {('float32', 1): "float",
-               ('float32', 2): "vec2",
-               ('float32', 3): "vec3",
-               ('float32', 4): "vec4",
-               ('int32', 1): "int",
-               ('int32', 2): "ivec2",
-               ('int32', 3): "ivec3",
-               ('int32', 4): "ivec4"}
+    _gtypes = {
+        ("float32", 1): "float",
+        ("float32", 2): "vec2",
+        ("float32", 3): "vec3",
+        ("float32", 4): "vec4",
+        ("int32", 1): "int",
+        ("int32", 2): "ivec2",
+        ("int32", 3): "ivec3",
+        ("int32", 4): "ivec4",
+    }
 
-    def __init__(self, dtype, itype, mode, vertex, fragment, program=None, 
-                 **kwargs):
-        """
-        """
+    def __init__(self, dtype, itype, mode, vertex, fragment, program=None, **kwargs):
+        """ """
 
         self._uniforms = {}
         self._attributes = {}
@@ -71,12 +71,10 @@ class Collection(BaseCollection):
         vtype = []
         utype = []
 
-        self.update = EventEmitter(source=self, type='collection_update')
+        self.update = EventEmitter(source=self, type="collection_update")
 
         # Build vtype and utype according to parameters
-        declarations = {"uniforms": "",
-                        "attributes": "",
-                        "varyings": ""}
+        declarations = {"uniforms": "", "attributes": "", "varyings": ""}
         defaults = {}
         for item in dtype:
             name, (basetype, count), scope, default = item
@@ -90,8 +88,7 @@ class Collection(BaseCollection):
             if scope == "local":
                 # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
                 vtype.append((name, basetype, count) if count != 1 else (name, basetype))
-                declarations[
-                    "attributes"] += "attribute %s %s;\n" % (gtype, name)
+                declarations["attributes"] += "attribute %s %s;\n" % (gtype, name)
             elif scope == "shared":
                 # numpy dtypes with size 1 are ambiguous, only add size if it is greater than 1
                 utype.append((name, basetype, count) if count != 1 else (name, basetype))
@@ -101,8 +98,7 @@ class Collection(BaseCollection):
                 self._uniforms[name] = None
 
         if len(kwargs) > 0:
-            raise NameError("Invalid keyword argument(s): %s" % 
-                            list(kwargs.keys()))
+            raise NameError("Invalid keyword argument(s): %s" % list(kwargs.keys()))
 
         vtype = np.dtype(vtype)
         itype = np.dtype(itype) if itype else None
@@ -132,7 +128,7 @@ class Collection(BaseCollection):
         else:
             program.vert = vertex
             program.frag = fragment
-        if hasattr(program, 'changed'):
+        if hasattr(program, "changed"):
             program.changed.connect(self.update)
         self._programs.append(program)
 
@@ -179,10 +175,9 @@ class Collection(BaseCollection):
         # return program
 
     def __getitem__(self, key):
-
         program = self._programs[0]
         for name, (storage, _, _) in program._code_variables.items():
-            if name == key and storage == 'uniform':
+            if name == key and storage == "uniform":
                 return program[key]
         return BaseCollection.__getitem__(self, key)
 
@@ -208,17 +203,15 @@ class Collection(BaseCollection):
 
 
 class CollectionView(object):
-
     def __init__(self, collection, transform=None, viewport=None):
-
         vertex = collection._vertex
         fragment = collection._fragment
         program = gloo.Program(vertex, fragment)
 
-#        if "transform" in program.hooks and transform is not None:
-#            program["transform"] = transform
-#        if "viewport" in program.hooks and viewport is not None:
-#            program["viewport"] = viewport
+        #        if "transform" in program.hooks and transform is not None:
+        #            program["transform"] = transform
+        #        if "viewport" in program.hooks and viewport is not None:
+        #            program["viewport"] = viewport
 
         program.bind(collection._vertices_buffer)
         for name in collection._uniforms.keys():
@@ -235,7 +228,6 @@ class CollectionView(object):
         self._program[key] = value
 
     def draw(self):
-
         program = self._program
         collection = self._collection
         mode = collection._mode

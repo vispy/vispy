@@ -19,18 +19,26 @@ from vispy.visuals.transforms import STTransform
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, title="Simple NetworkX Graph",
-                            keys="interactive", size=(600, 600))
+        app.Canvas.__init__(
+            self, title="Simple NetworkX Graph", keys="interactive", size=(600, 600)
+        )
 
-        graph = nx.adjacency_matrix(
-            nx.fast_gnp_random_graph(500, 0.005, directed=True))
-        layout = layouts.get_layout('force_directed', iterations=100)
+        graph = nx.adjacency_matrix(nx.fast_gnp_random_graph(500, 0.005, directed=True))
+        layout = layouts.get_layout("force_directed", iterations=100)
 
         self.visual = visuals.GraphVisual(
-            graph, layout=layout, line_color='black', arrow_type="stealth",
-            arrow_size=30, node_symbol="disc", node_size=20,
-            face_color=(1, 0, 0, 0.5), border_width=0.0, animate=True,
-            directed=False)
+            graph,
+            layout=layout,
+            line_color="black",
+            arrow_type="stealth",
+            arrow_size=30,
+            node_symbol="disc",
+            node_size=20,
+            face_color=(1, 0, 0, 0.5),
+            border_width=0.0,
+            animate=True,
+            directed=False,
+        )
 
         self.visual.transform = STTransform(self.visual_size, (20, 20))
         self.show()
@@ -46,13 +54,13 @@ class Canvas(app.Canvas):
         self.visual.transforms.configure(canvas=self, viewport=vp)
 
     def on_draw(self, event):
-        self.context.clear('white')
+        self.context.clear("white")
         self.visual.draw()
         if not self.visual.animate_layout():
             self.update()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     win = Canvas()
 
     if sys.flags.interactive != 1:

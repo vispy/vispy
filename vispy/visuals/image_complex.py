@@ -37,13 +37,12 @@ class ComplexImageVisual(ImageVisual):
             * 'magnitude': show the magnitude (`np.abs`) of the complex value.
             * 'phase': show the phase (`np.angle`) of the complex value.
     """
+
     COMPLEX_MODES = set(COMPLEX_TRANSFORMS)
 
     def __init__(self, data=None, complex_mode="magnitude", **kwargs):
         if complex_mode not in self.COMPLEX_MODES:
-            raise ValueError(
-                "complex_mode must be one of %s" % ", ".join(self.COMPLEX_MODES)
-            )
+            raise ValueError("complex_mode must be one of %s" % ", ".join(self.COMPLEX_MODES))
         self._data_is_complex = np.iscomplexobj(data)
         self._complex_mode = complex_mode
 
@@ -82,7 +81,7 @@ class ComplexImageVisual(ImageVisual):
     def _convert_complex_to_float_view(complex_arr):
         # turn complex128 into complex64 if needed
         complex64_arr = complex_arr.astype(np.complex64, copy=False)
-        float_view_arr = complex64_arr.view(dtype=np.float32).reshape((complex64_arr.shape + (2, )))
+        float_view_arr = complex64_arr.view(dtype=np.float32).reshape((complex64_arr.shape + (2,)))
         return float_view_arr
 
     @property
@@ -92,9 +91,7 @@ class ComplexImageVisual(ImageVisual):
     @complex_mode.setter
     def complex_mode(self, value):
         if value not in self.COMPLEX_MODES:
-            raise ValueError(
-                "complex_mode must be one of %s" % ", ".join(self.COMPLEX_MODES)
-            )
+            raise ValueError("complex_mode must be one of %s" % ", ".join(self.COMPLEX_MODES))
         if self._complex_mode != value:
             self._complex_mode = value
             self._need_colortransform_update = True

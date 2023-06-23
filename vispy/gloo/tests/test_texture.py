@@ -16,7 +16,6 @@ Texture = Texture2D
 
 # ----------------------------------------------------------------- Texture ---
 class TextureTest(unittest.TestCase):
-
     # No data, no dtype : forbidden
     # ---------------------------------
     def test_init_none(self):
@@ -26,18 +25,17 @@ class TextureTest(unittest.TestCase):
     # ---------------------------------
     def test_init_data(self):
         data = np.zeros((10, 10, 3), dtype=np.uint8)
-        T = Texture(data=data, interpolation='linear', wrapping='repeat')
+        T = Texture(data=data, interpolation="linear", wrapping="repeat")
         assert T._shape == (10, 10, 3)
-        assert T._interpolation == ('linear', 'linear')
-        assert T._wrapping == ('repeat', 'repeat')
+        assert T._interpolation == ("linear", "linear")
+        assert T._wrapping == ("repeat", "repeat")
 
     # Setting data and shape
     # ---------------------------------
     def test_init_dtype_shape(self):
         T = Texture((10, 10))
         assert T._shape == (10, 10, 1)
-        self.assertRaises(ValueError, Texture, shape=(10, 10),
-                          data=np.zeros((10, 10), np.float32))
+        self.assertRaises(ValueError, Texture, shape=(10, 10), data=np.zeros((10, 10), np.float32))
 
     # Set data with store
     # ---------------------------------
@@ -46,7 +44,7 @@ class TextureTest(unittest.TestCase):
         T = Texture(data=data)
         T[...] = np.ones((10, 10, 1))
         glir_cmd = T._glir.clear()[-1]
-        assert glir_cmd[0] == 'DATA'
+        assert glir_cmd[0] == "DATA"
         assert np.allclose(glir_cmd[3], np.ones((10, 10, 1)))
 
     # Set data without store
@@ -60,12 +58,11 @@ class TextureTest(unittest.TestCase):
     # Set a single data
     # ---------------------------------
     def test_setitem_single(self):
-
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
         T[0, 0, 0] = 1
         glir_cmd = T._glir.clear()[-1]
-        assert glir_cmd[0] == 'DATA'
+        assert glir_cmd[0] == "DATA"
         assert np.allclose(glir_cmd[3], np.array([1]))
 
         # We apparently support this
@@ -74,12 +71,11 @@ class TextureTest(unittest.TestCase):
     # Set some data
     # ---------------------------------
     def test_setitem_partial(self):
-
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
         T[5:, 5:] = 1
         glir_cmd = T._glir.clear()[-1]
-        assert glir_cmd[0] == 'DATA'
+        assert glir_cmd[0] == "DATA"
         assert np.allclose(glir_cmd[3], np.ones((5, 5)))
 
     # Set non contiguous data
@@ -92,47 +88,47 @@ class TextureTest(unittest.TestCase):
         s = slice(None, None, 2)
         self.assertRaises(IndexError, T.__setitem__, (s, s), 1)
         self.assertRaises(IndexError, T.__setitem__, (-100, 3), 1)
-        self.assertRaises(TypeError, T.__setitem__, ('foo', 'bar'), 1)
+        self.assertRaises(TypeError, T.__setitem__, ("foo", "bar"), 1)
 
     # Set properties
     def test_set_texture_properties(self):
         T = Texture((10, 10))
 
         # Interpolation
-        T.interpolation = 'nearest'
-        assert T.interpolation == 'nearest'
-        T.interpolation = 'linear'
-        assert T.interpolation == 'linear'
-        T.interpolation = ['linear'] * 2
-        assert T.interpolation == 'linear'
-        T.interpolation = ['linear', 'nearest']
-        assert T.interpolation == ('linear', 'nearest')
+        T.interpolation = "nearest"
+        assert T.interpolation == "nearest"
+        T.interpolation = "linear"
+        assert T.interpolation == "linear"
+        T.interpolation = ["linear"] * 2
+        assert T.interpolation == "linear"
+        T.interpolation = ["linear", "nearest"]
+        assert T.interpolation == ("linear", "nearest")
 
         # Wrong interpolation
         iset = Texture.interpolation.fset
-        self.assertRaises(ValueError, iset, T, ['linear'] * 3)
+        self.assertRaises(ValueError, iset, T, ["linear"] * 3)
         self.assertRaises(ValueError, iset, T, True)
         self.assertRaises(ValueError, iset, T, [])
-        self.assertRaises(ValueError, iset, T, 'linearios')
+        self.assertRaises(ValueError, iset, T, "linearios")
 
         # Wrapping
-        T.wrapping = 'clamp_to_edge'
-        assert T.wrapping == 'clamp_to_edge'
-        T.wrapping = 'repeat'
-        assert T.wrapping == 'repeat'
-        T.wrapping = 'mirrored_repeat'
-        assert T.wrapping == 'mirrored_repeat'
-        T.wrapping = 'repeat', 'repeat'
-        assert T.wrapping == 'repeat'
-        T.wrapping = 'repeat', 'clamp_to_edge'
-        assert T.wrapping == ('repeat', 'clamp_to_edge')
+        T.wrapping = "clamp_to_edge"
+        assert T.wrapping == "clamp_to_edge"
+        T.wrapping = "repeat"
+        assert T.wrapping == "repeat"
+        T.wrapping = "mirrored_repeat"
+        assert T.wrapping == "mirrored_repeat"
+        T.wrapping = "repeat", "repeat"
+        assert T.wrapping == "repeat"
+        T.wrapping = "repeat", "clamp_to_edge"
+        assert T.wrapping == ("repeat", "clamp_to_edge")
 
         # Wrong wrapping
         wset = Texture.wrapping.fset
-        self.assertRaises(ValueError, wset, T, ['repeat'] * 3)
+        self.assertRaises(ValueError, wset, T, ["repeat"] * 3)
         self.assertRaises(ValueError, wset, T, True)
         self.assertRaises(ValueError, wset, T, [])
-        self.assertRaises(ValueError, wset, T, 'repeatos')
+        self.assertRaises(ValueError, wset, T, "repeatos")
 
 
 # --------------------------------------------------------------- Texture2D ---
@@ -145,9 +141,9 @@ class Texture2DTest(unittest.TestCase):
     def test_init(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture2D(data=data)
-        assert 'Texture2D' in repr(T)
+        assert "Texture2D" in repr(T)
         assert T._shape == (10, 10, 1)
-        assert T.glsl_type == ('uniform', 'sampler2D')
+        assert T.glsl_type == ("uniform", "sampler2D")
 
     # Width & height
     # ---------------------------------
@@ -165,7 +161,7 @@ class Texture2DTest(unittest.TestCase):
         T.resize((5, 5))
         assert T.shape == (5, 5, 1)
         glir_cmd = T._glir.clear()[-1]
-        assert glir_cmd[0] == 'SIZE'
+        assert glir_cmd[0] == "SIZE"
 
         # Wong arg
         self.assertRaises(ValueError, T.resize, (5, 5), 4)
@@ -198,8 +194,8 @@ class Texture2DTest(unittest.TestCase):
         T.set_data(np.ones((20, 20), np.uint8))
         assert T.shape == (20, 20, 1)
         glir_cmds = T._glir.clear()
-        assert glir_cmds[-2][0] == 'SIZE'
-        assert glir_cmds[-1][0] == 'DATA'
+        assert glir_cmds[-2][0] == "SIZE"
+        assert glir_cmds[-1][0] == "DATA"
 
     # Set undersized data
     # ---------------------------------
@@ -209,8 +205,8 @@ class Texture2DTest(unittest.TestCase):
         T.set_data(np.ones((5, 5), np.uint8))
         assert T.shape == (5, 5, 1)
         glir_cmds = T._glir.clear()
-        assert glir_cmds[-2][0] == 'SIZE'
-        assert glir_cmds[-1][0] == 'DATA'
+        assert glir_cmds[-2][0] == "SIZE"
+        assert glir_cmds[-1][0] == "DATA"
 
     # Set misplaced data
     # ---------------------------------
@@ -219,8 +215,7 @@ class Texture2DTest(unittest.TestCase):
         T = Texture2D(data=data)
         # with self.assertRaises(ValueError):
         #    T.set_data(np.ones((5, 5)), offset=(8, 8))
-        self.assertRaises(ValueError, T.set_data,
-                          np.ones((5, 5)), offset=(8, 8))
+        self.assertRaises(ValueError, T.set_data, np.ones((5, 5)), offset=(8, 8))
 
     # Set misshaped data
     # ---------------------------------
@@ -230,7 +225,11 @@ class Texture2DTest(unittest.TestCase):
         # with self.assertRaises(ValueError):
         #    T.set_data(np.ones((10, 10)))
         self.assertRaises(ValueError, T.set_data, np.ones((10,)))
-        self.assertRaises(ValueError, T.set_data, np.ones((5, 5, 5, 1)),)
+        self.assertRaises(
+            ValueError,
+            T.set_data,
+            np.ones((5, 5, 5, 1)),
+        )
 
     # Set whole data (clear pending data)
     # ---------------------------------
@@ -250,45 +249,45 @@ class Texture2DTest(unittest.TestCase):
         data = np.zeros((10, 10, 1), dtype=np.uint8)
         T = Texture2D(data=data)
         assert T.shape == (10, 10, 1)
-        assert T.format == 'luminance'
+        assert T.format == "luminance"
 
         # Set data to rgb
         T.set_data(np.zeros(shape3, np.uint8))
         assert T.shape == (10, 10, 3)
-        assert T.format == 'rgb'
+        assert T.format == "rgb"
 
         # Set data to grayscale
         T.set_data(np.zeros(shape1, np.uint8))
         assert T.shape == (10, 10, 1)
-        assert T.format == 'luminance'
+        assert T.format == "luminance"
 
         # Set size to rgb
         T.resize(shape3)
         assert T.shape == (10, 10, 3)
-        assert T._format == 'rgb'
+        assert T._format == "rgb"
 
         # Set size to grayscale
         T.resize(shape1)
         assert T.shape == (10, 10, 1)
-        assert T._format == 'luminance'
+        assert T._format == "luminance"
 
         # Keep using old format
-        T.resize(shape1, 'alpha')
+        T.resize(shape1, "alpha")
         T.resize(shape1)
-        assert T._format == 'alpha'
+        assert T._format == "alpha"
 
         # Use luminance as default
         T.resize(shape3)
         T.resize(shape1)
-        assert T._format == 'luminance'
+        assert T._format == "luminance"
 
         # Too large
         self.assertRaises(ValueError, T.resize, (5, 5, 5, 1))
         # Cannot determine format
         self.assertRaises(ValueError, T.resize, (5, 5, 5))
         # Invalid format
-        self.assertRaises(ValueError, T.resize, shape3, 'foo')
-        self.assertRaises(ValueError, T.resize, shape3, 'alpha')
+        self.assertRaises(ValueError, T.resize, shape3, "foo")
+        self.assertRaises(ValueError, T.resize, shape3, "alpha")
         # self.assertRaises(ValueError, T.resize, shape3, 4)
 
     # Test set data with different shape and type
@@ -314,31 +313,31 @@ def test_texture_1D():
 
     # Shape extension
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
     assert T._shape == (10, 1)
-    assert 'Texture1D' in repr(T)
-    assert T.glsl_type == ('uniform', 'sampler1D')
+    assert "Texture1D" in repr(T)
+    assert T.glsl_type == ("uniform", "sampler1D")
 
     # Width
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
     assert T.width == 10
 
     # Resize
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
-    T.resize((5, ))
+    T.resize((5,))
     assert T.shape == (5, 1)
     glir_cmd = T._glir.clear()[-1]
-    assert glir_cmd[0] == 'SIZE'
+    assert glir_cmd[0] == "SIZE"
     assert glir_cmd[2] == (5, 1)
 
     # Resize with bad shape
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
     # with self.assertRaises(ValueError):
     #    T.resize((5, 5, 5, 5))
@@ -346,38 +345,37 @@ def test_texture_1D():
 
     # Resize not resizable
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data, resizable=False)
     # with self.assertRaises(RuntimeError):
     #    T.resize((5, 5, 5))
-    assert_raises(RuntimeError, T.resize, (5, ))
+    assert_raises(RuntimeError, T.resize, (5,))
 
     # Set oversized data (-> resize)
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
-    T.set_data(np.ones((20, ), np.uint8))
+    T.set_data(np.ones((20,), np.uint8))
     assert T.shape == (20, 1)
 
     # Set undersized data
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
-    T.set_data(np.ones((5, ), np.uint8))
+    T.set_data(np.ones((5,), np.uint8))
     assert T.shape == (5, 1)
 
     # Set misplaced data
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
     # with self.assertRaises(ValueError):
     #    T.set_data(np.ones((5, 5, 5)), offset=(8, 8, 8))
-    assert_raises(ValueError, T.set_data,
-                  np.ones((5, )), offset=(8, ))
+    assert_raises(ValueError, T.set_data, np.ones((5,)), offset=(8,))
 
     # Set misshaped data
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
     # with self.assertRaises(ValueError):
     #    T.set_data(np.ones((10, 10, 10)))
@@ -385,53 +383,53 @@ def test_texture_1D():
 
     # Set whole data (clear pending data)
     # ---------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
-    T.set_data(np.ones((10, ), np.uint8))
+    T.set_data(np.ones((10,), np.uint8))
     assert T.shape == (10, 1)
     glir_cmd = T._glir.clear()[-1]
-    assert glir_cmd[0] == 'DATA'
+    assert glir_cmd[0] == "DATA"
 
     # Test set data with different shape
     # ---------------------------------
-    shape1 = (10, )
+    shape1 = (10,)
     shape3 = (10, 3)
 
     # Init data (explicit shape)
     data = np.zeros((10, 1), dtype=np.uint8)
     T = Texture1D(data=data)
     assert T.shape == (10, 1)
-    assert T._format == 'luminance'
+    assert T._format == "luminance"
 
     # Set data to rgb
     T.set_data(np.zeros(shape3, np.uint8))
     assert T.shape == (10, 3)
-    assert T._format == 'rgb'
+    assert T._format == "rgb"
 
     # Set data to grayscale
     T.set_data(np.zeros(shape1, np.uint8))
     assert T.shape == (10, 1)
-    assert T._format == 'luminance'
+    assert T._format == "luminance"
 
     # Set size to rgb
     T.resize(shape3)
     assert T.shape == (10, 3)
-    assert T._format == 'rgb'
+    assert T._format == "rgb"
 
     # Set size to grayscale
     T.resize(shape1)
     assert T.shape == (10, 1)
-    assert T._format == 'luminance'
+    assert T._format == "luminance"
 
     # Test set data with different shape and type
     # -------------------------------------------
-    data = np.zeros((10, ), dtype=np.uint8)
+    data = np.zeros((10,), dtype=np.uint8)
     T = Texture1D(data=data)
 
-    data = np.zeros((10, ), dtype=np.float32)
+    data = np.zeros((10,), dtype=np.float32)
     T.set_data(data)
 
-    data = np.zeros((12, ), dtype=np.int32)
+    data = np.zeros((12,), dtype=np.int32)
     T.set_data(data)
 
 
@@ -446,8 +444,8 @@ def test_texture_3D():
     data = np.zeros((10, 10, 10), dtype=np.uint8)
     T = Texture3D(data=data)
     assert T._shape == (10, 10, 10, 1)
-    assert 'Texture3D' in repr(T)
-    assert T.glsl_type == ('uniform', 'sampler3D')
+    assert "Texture3D" in repr(T)
+    assert T.glsl_type == ("uniform", "sampler3D")
 
     # Width & height
     # ---------------------------------
@@ -464,7 +462,7 @@ def test_texture_3D():
     T.resize((5, 5, 5))
     assert T.shape == (5, 5, 5, 1)
     glir_cmd = T._glir.clear()[-1]
-    assert glir_cmd[0] == 'SIZE'
+    assert glir_cmd[0] == "SIZE"
     assert glir_cmd[2] == (5, 5, 5, 1)
 
     # Resize with bad shape
@@ -503,8 +501,7 @@ def test_texture_3D():
     T = Texture3D(data=data)
     # with self.assertRaises(ValueError):
     #    T.set_data(np.ones((5, 5, 5)), offset=(8, 8, 8))
-    assert_raises(ValueError, T.set_data,
-                  np.ones((5, 5, 5)), offset=(8, 8, 8))
+    assert_raises(ValueError, T.set_data, np.ones((5, 5, 5)), offset=(8, 8, 8))
 
     # Set misshaped data
     # ---------------------------------
@@ -521,7 +518,7 @@ def test_texture_3D():
     T.set_data(np.ones((10, 10, 10), np.uint8))
     assert T.shape == (10, 10, 10, 1)
     glir_cmd = T._glir.clear()[-1]
-    assert glir_cmd[0] == 'DATA'
+    assert glir_cmd[0] == "DATA"
 
     # Test set data with different shape
     # ---------------------------------
@@ -532,27 +529,27 @@ def test_texture_3D():
     data = np.zeros((10, 10, 10, 1), dtype=np.uint8)
     T = Texture3D(data=data)
     assert T.shape == (10, 10, 10, 1)
-    assert T._format == 'luminance'
+    assert T._format == "luminance"
 
     # Set data to rgb
     T.set_data(np.zeros(shape3, np.uint8))
     assert T.shape == (10, 10, 10, 3)
-    assert T._format == 'rgb'
+    assert T._format == "rgb"
 
     # Set data to grayscale
     T.set_data(np.zeros(shape1, np.uint8))
     assert T.shape == (10, 10, 10, 1)
-    assert T._format == 'luminance'
+    assert T._format == "luminance"
 
     # Set size to rgb
     T.resize(shape3)
     assert T.shape == (10, 10, 10, 3)
-    assert T._format == 'rgb'
+    assert T._format == "rgb"
 
     # Set size to grayscale
     T.resize(shape1)
     assert T.shape == (10, 10, 10, 1)
-    assert T._format == 'luminance'
+    assert T._format == "luminance"
 
     # Test set data with different shape and type
     # -------------------------------------------
@@ -567,7 +564,6 @@ def test_texture_3D():
 
 
 class TextureAtlasTest(unittest.TestCase):
-
     def test_init_atas(self):
         T = TextureAtlas((100, 100))
         assert T.shape == (128, 128, 3)  # rounds to powers of 2
@@ -582,22 +578,21 @@ class TextureAtlasTest(unittest.TestCase):
 
 # --------------------------------------------------------- Texture formats ---
 def _test_texture_formats(Texture, baseshape, formats):
-
     # valid channel count and format combinations
     for channels in range(1, 5):
         for format in [f for n, f in formats if n == channels]:
             shape = baseshape + (channels,)
             T = Texture(shape=shape, format=format)
-            assert 'Texture' in repr(T)
+            assert "Texture" in repr(T)
             assert T._shape == shape
             data = np.zeros(shape, dtype=np.uint8)
             T = Texture(data=data, format=format)
-            assert 'Texture' in repr(T)
+            assert "Texture" in repr(T)
             assert T._shape == shape
 
     # invalid channel count and format combinations
     for channels in range(1, 5):
-        for format in [f for n, f in formats + [(5, 'junk')] if n != channels]:
+        for format in [f for n, f in formats + [(5, "junk")] if n != channels]:
             shape = baseshape + (channels,)
             assert_raises(ValueError, Texture, shape=shape, format=format)
             data = np.zeros(shape, dtype=np.uint8)
@@ -607,21 +602,15 @@ def _test_texture_formats(Texture, baseshape, formats):
 # --------------------------------------------------------- Texture formats ---
 def _test_texture_basic_formats(Texture, baseshape):
     _test_texture_formats(
-        Texture, 
-        baseshape, 
-        [
-            (1, 'alpha'),
-            (1, 'luminance'),
-            (2, 'luminance_alpha'),
-            (3, 'rgb'),
-            (4, 'rgba')
-        ]
+        Texture,
+        baseshape,
+        [(1, "alpha"), (1, "luminance"), (2, "luminance_alpha"), (3, "rgb"), (4, "rgba")],
     )
 
 
 # ------------------------------------------------------- Texture1D formats ---
 def test_texture_1D_formats():
-    _test_texture_basic_formats(Texture1D, (10, ))
+    _test_texture_basic_formats(Texture1D, (10,))
 
 
 # ------------------------------------------------------- Texture2D formats ---
@@ -640,19 +629,19 @@ def _test_texture_opengl_formats(Texture, baseshape):
         Texture,
         baseshape,
         [
-            (1, 'red'),
-            (2, 'rg'),
-            (3, 'rgb'),
-            (4, 'rgba'),
-            (1, 'depth_component'),
-        ]
+            (1, "red"),
+            (2, "rg"),
+            (3, "rgb"),
+            (4, "rgba"),
+            (1, "depth_component"),
+        ],
     )
 
 
 # ------------------------------------------------ Texture1D OpenGL formats ---
 @requires_pyopengl()
 def test_texture_1D_opengl_formats():
-    _test_texture_opengl_formats(Texture1D, (10, ))
+    _test_texture_opengl_formats(Texture1D, (10,))
 
 
 # ------------------------------------------------ Texture2D OpenGL formats ---
@@ -673,11 +662,11 @@ def _test_texture_internalformats(Texture, baseshape):
     # Test internalformats valid with desktop OpenGL
 
     formats = [
-        (1, 'red', ['red', 'r8', 'r16', 'r16f', 'r32f']),
-        (2, 'rg', ['rg', 'rg8', 'rg16', 'rg16f', 'rg32f']),
-        (3, 'rgb', ['rgb', 'rgb8', 'rgb16', 'rgb16f', 'rgb32f']),
-        (4, 'rgba', ['rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f']),
-        (1, 'depth_component', ['depth_component']),
+        (1, "red", ["red", "r8", "r16", "r16f", "r32f"]),
+        (2, "rg", ["rg", "rg8", "rg16", "rg16f", "rg32f"]),
+        (3, "rgb", ["rgb", "rgb8", "rgb16", "rgb16f", "rgb32f"]),
+        (4, "rgba", ["rgba", "rgba8", "rgba16", "rgba16f", "rgba32f"]),
+        (1, "depth_component", ["depth_component"]),
     ]
 
     for channels in range(1, 5):
@@ -686,10 +675,10 @@ def _test_texture_internalformats(Texture, baseshape):
             data = np.zeros(shape, dtype=np.uint8)
             for ifmt in ifmts:
                 T = Texture(shape=shape, format=fmt, internalformat=ifmt)
-                assert 'Texture' in repr(T)
+                assert "Texture" in repr(T)
                 assert T._shape == shape
                 T = Texture(data=data, format=fmt, internalformat=ifmt)
-                assert 'Texture' in repr(T)
+                assert "Texture" in repr(T)
                 assert T._shape == shape
 
     for channels in range(1, 5):
@@ -697,10 +686,8 @@ def _test_texture_internalformats(Texture, baseshape):
             shape = baseshape + (channels,)
             data = np.zeros(shape, dtype=np.uint8)
             for ifmt in ifmts:
-                assert_raises(ValueError, Texture, shape=shape, format=fmt,
-                              internalformat=ifmt)
-                assert_raises(ValueError, Texture, data=data, format=fmt,
-                              internalformat=ifmt)
+                assert_raises(ValueError, Texture, shape=shape, format=fmt, internalformat=ifmt)
+                assert_raises(ValueError, Texture, data=data, format=fmt, internalformat=ifmt)
 
 
 # ---------------------------------------- Texture2D OpenGL internalformats ---
@@ -716,9 +703,9 @@ def test_texture_3D_internalformats():
 
 
 @requires_pyopengl()
-@pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
-@pytest.mark.parametrize('output_dtype', [np.uint8, np.uint16, np.float32, np.float64])
-@pytest.mark.parametrize('ndim', [2, 3])
+@pytest.mark.parametrize("input_dtype", [np.uint8, np.uint16, np.float32, np.float64])
+@pytest.mark.parametrize("output_dtype", [np.uint8, np.uint16, np.float32, np.float64])
+@pytest.mark.parametrize("ndim", [2, 3])
 def test_texture_set_data_different_dtype(input_dtype, output_dtype, ndim):
     shape = (20,) * ndim
     data = np.random.rand(*shape).astype(input_dtype)

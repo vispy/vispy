@@ -4,7 +4,8 @@ from vispy.color import get_colormap
 
 # load example data
 from vispy.io import load_data_file
-data = np.load(load_data_file('electrophys/iv_curve.npz'))['arr_0']
+
+data = np.load(load_data_file("electrophys/iv_curve.npz"))["arr_0"]
 data *= 1000  # V -> mV
 dt = 1e-4  # this data is sampled at 10 kHz
 
@@ -12,13 +13,13 @@ dt = 1e-4  # this data is sampled at 10 kHz
 fig = vp.Fig()
 plt = fig[0, 0]
 plt._configure_2d()
-plt.title.text = 'Current Clamp Recording'
-plt.ylabel.text = 'Membrane Potential (mV)'
-plt.xlabel.text = 'Time (ms)'
+plt.title.text = "Current Clamp Recording"
+plt.ylabel.text = "Membrane Potential (mV)"
+plt.xlabel.text = "Time (ms)"
 selected = None
 
 # plot data
-cmap = get_colormap('hsl', value=0.5)
+cmap = get_colormap("hsl", value=0.5)
 colors = cmap.map(np.linspace(0.1, 0.9, data.shape[0]))
 t = np.arange(data.shape[1]) * (dt * 1000)
 for i, y in enumerate(data):
@@ -30,8 +31,9 @@ for i, y in enumerate(data):
 
 
 # Build visuals used for cursor
-cursor_text = vp.Text("", pos=(0, 0), anchor_x='left', anchor_y='center',
-                      font_size=8, parent=plt.view.scene)
+cursor_text = vp.Text(
+    "", pos=(0, 0), anchor_x="left", anchor_y="center", font_size=8, parent=plt.view.scene
+)
 cursor_line = vp.Line(parent=plt.view.scene)
 cursor_symbol = vp.Markers(pos=np.array([[0, 0]]), parent=plt.view.scene)
 cursor_line.visible = False
@@ -82,7 +84,7 @@ def update_cursor(pos):
         ind = x / (dt * 1000)
         i = int(np.floor(ind))
         s = ind - i
-        y = trace[i] * (1 - s) + trace[i + 1] * s 
+        y = trace[i] * (1 - s) + trace[i + 1] * s
 
         # update cursor
         cursor_text.text = "x=%0.2f ms, y=%0.2f mV" % (x, y)
@@ -90,12 +92,11 @@ def update_cursor(pos):
         cursor_text.pos = x + offset, y
         rect = plt.view.camera.rect
         cursor_line.set_data(np.array([[x, rect.bottom], [x, rect.top]]))
-        cursor_symbol.set_data(pos=np.array([[x, y]]), symbol='+',
-                               face_color='b')
+        cursor_symbol.set_data(pos=np.array([[x, y]]), symbol="+", face_color="b")
         cursor_text.visible = True
         cursor_line.visible = True
         cursor_symbol.visible = True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     fig.app.run()

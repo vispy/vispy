@@ -5,18 +5,25 @@
 Cameras are responsible for determining which part of a scene is displayed
 in a viewbox and for handling user input to change the view.
 
-Several Camera subclasses are available to customize the projection of the 
-scene such as 3D perspective and orthographic projections, 2D 
+Several Camera subclasses are available to customize the projection of the
+scene such as 3D perspective and orthographic projections, 2D
 scale/translation, and other specialty cameras. A variety of user interaction
-styles are available for each camera including arcball, turntable, 
+styles are available for each camera including arcball, turntable,
 first-person, and pan/zoom interactions.
 
-Internally, Cameras work by setting the transform of a SubScene object such 
-that a certain part of the scene is mapped to the bounding rectangle of the 
+Internally, Cameras work by setting the transform of a SubScene object such
+that a certain part of the scene is mapped to the bounding rectangle of the
 ViewBox.
 """
-__all__ = ['ArcballCamera', 'BaseCamera', 'FlyCamera', 'MagnifyCamera',
-           'Magnify1DCamera', 'PanZoomCamera', 'TurntableCamera']
+__all__ = [
+    "ArcballCamera",
+    "BaseCamera",
+    "FlyCamera",
+    "MagnifyCamera",
+    "Magnify1DCamera",
+    "PanZoomCamera",
+    "TurntableCamera",
+]
 
 from ._base import make_camera  # noqa
 from .base_camera import BaseCamera  # noqa

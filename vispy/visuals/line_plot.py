@@ -52,25 +52,41 @@ class LinePlotVisual(CompoundVisual):
     LineVisual, MarkersVisual
     """
 
-    _line_kwargs = ('color', 'width', 'connect')
-    _marker_kwargs = ('edge_color', 'face_color', 'edge_width',
-                      'marker_size', 'symbol')
+    _line_kwargs = ("color", "width", "connect")
+    _marker_kwargs = ("edge_color", "face_color", "edge_width", "marker_size", "symbol")
     _valid_kwargs = set(_line_kwargs).union(set(_marker_kwargs))
-    _kw_trans = dict(marker_size='size')
+    _kw_trans = dict(marker_size="size")
 
-    def __init__(self, data=None, color='k', symbol=None, line_kind='-',
-                 width=1., marker_size=10., edge_color='k', face_color='w',
-                 edge_width=1., connect='strip'):
-        if line_kind != '-':
-            raise ValueError('Only solid lines currently supported')
-        self._line = LineVisual(method='gl', antialias=False)
+    def __init__(
+        self,
+        data=None,
+        color="k",
+        symbol=None,
+        line_kind="-",
+        width=1.0,
+        marker_size=10.0,
+        edge_color="k",
+        face_color="w",
+        edge_width=1.0,
+        connect="strip",
+    ):
+        if line_kind != "-":
+            raise ValueError("Only solid lines currently supported")
+        self._line = LineVisual(method="gl", antialias=False)
         self._markers = MarkersVisual()
         self._kwargs = {}
         CompoundVisual.__init__(self, [self._line, self._markers])
-        self.set_data(data, color=color, symbol=symbol,
-                      width=width, marker_size=marker_size,
-                      edge_color=edge_color, face_color=face_color,
-                      edge_width=edge_width, connect=connect)
+        self.set_data(
+            data,
+            color=color,
+            symbol=symbol,
+            width=width,
+            marker_size=marker_size,
+            edge_color=edge_color,
+            face_color=face_color,
+            edge_width=edge_width,
+            connect=connect,
+        )
 
     def set_data(self, data=None, **kwargs):
         """Set the line data
@@ -99,7 +115,7 @@ class LinePlotVisual(CompoundVisual):
             if pos.ndim == 1:
                 pos = pos[:, np.newaxis]
             elif pos.ndim > 2:
-                raise ValueError('data must have at most two dimensions')
+                raise ValueError("data must have at most two dimensions")
 
             if pos.size == 0:
                 pos = self._line.pos
@@ -107,15 +123,13 @@ class LinePlotVisual(CompoundVisual):
                 # if both args and keywords are zero, then there is no
                 # point in calling this function.
                 if len(self._kwargs) == 0:
-                    raise TypeError("neither line points nor line properties"
-                                    "are provided")
+                    raise TypeError("neither line points nor line properties" "are provided")
             elif pos.shape[1] == 1:
                 x = np.arange(pos.shape[0], dtype=np.float32)[:, np.newaxis]
                 pos = np.concatenate((x, pos), axis=1)
             # if args are empty, don't modify position
             elif pos.shape[1] > 3:
-                raise TypeError("Too many coordinates given (%s; max is 3)."
-                                % pos.shape[1])
+                raise TypeError("Too many coordinates given (%s; max is 3)." % pos.shape[1])
 
         # todo: have both sub-visuals share the same buffers.
         line_kwargs = {}

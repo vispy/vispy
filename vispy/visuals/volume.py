@@ -679,41 +679,53 @@ class VolumeVisual(Visual):
     """
 
     _rendering_methods = {
-        'mip': _MIP_SNIPPETS,
-        'minip': _MINIP_SNIPPETS,
-        'attenuated_mip': _ATTENUATED_MIP_SNIPPETS,
-        'iso': _ISO_SNIPPETS,
-        'translucent': _TRANSLUCENT_SNIPPETS,
-        'additive': _ADDITIVE_SNIPPETS,
-        'average': _AVG_SNIPPETS
+        "mip": _MIP_SNIPPETS,
+        "minip": _MINIP_SNIPPETS,
+        "attenuated_mip": _ATTENUATED_MIP_SNIPPETS,
+        "iso": _ISO_SNIPPETS,
+        "translucent": _TRANSLUCENT_SNIPPETS,
+        "additive": _ADDITIVE_SNIPPETS,
+        "average": _AVG_SNIPPETS,
     }
 
-    _raycasting_modes = {
-        'volume': _RAYCASTING_SETUP_VOLUME,
-        'plane': _RAYCASTING_SETUP_PLANE
-    }
+    _raycasting_modes = {"volume": _RAYCASTING_SETUP_VOLUME, "plane": _RAYCASTING_SETUP_PLANE}
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
     _func_templates = {
-        'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
-        'texture_lookup': _TEXTURE_LOOKUP,
+        "texture_lookup_interpolated": _INTERPOLATION_TEMPLATE,
+        "texture_lookup": _TEXTURE_LOOKUP,
     }
 
-    def __init__(self, vol, clim="auto", method='mip', threshold=None,
-                 attenuation=1.0, relative_step_size=0.8, cmap='grays',
-                 gamma=1.0, interpolation='linear', texture_format=None,
-                 raycasting_mode='volume', plane_position=None,
-                 plane_normal=None, plane_thickness=1.0, clipping_planes=None,
-                 clipping_planes_coord_system='scene', mip_cutoff=None,
-                 minip_cutoff=None):
-
-        tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
+    def __init__(
+        self,
+        vol,
+        clim="auto",
+        method="mip",
+        threshold=None,
+        attenuation=1.0,
+        relative_step_size=0.8,
+        cmap="grays",
+        gamma=1.0,
+        interpolation="linear",
+        texture_format=None,
+        raycasting_mode="volume",
+        plane_position=None,
+        plane_normal=None,
+        plane_thickness=1.0,
+        clipping_planes=None,
+        clipping_planes_coord_system="scene",
+        mip_cutoff=None,
+        minip_cutoff=None,
+    ):
+        tr = ["visual", "scene", "document", "canvas", "framebuffer", "render"]
         if clipping_planes_coord_system not in tr:
-            raise ValueError(f'Invalid coordinate system {clipping_planes_coord_system}. Must be one of {tr}.')
+            raise ValueError(
+                f"Invalid coordinate system {clipping_planes_coord_system}. Must be one of {tr}."
+            )
         self._clipping_planes_coord_system = clipping_planes_coord_system
         self._clip_transform = None
         # Storage of information of volume
@@ -729,15 +741,15 @@ class VolumeVisual(Visual):
         self._vertices = VertexBuffer()
 
         kernel, interpolation_methods = load_spatial_filters()
-        self._kerneltex = Texture2D(kernel, interpolation='nearest')
-        interpolation_methods, interpolation_fun = self._init_interpolation(
-            interpolation_methods)
+        self._kerneltex = Texture2D(kernel, interpolation="nearest")
+        interpolation_methods, interpolation_fun = self._init_interpolation(interpolation_methods)
         self._interpolation_methods = interpolation_methods
         self._interpolation_fun = interpolation_fun
         self._interpolation = interpolation
         if self._interpolation not in self._interpolation_methods:
-            raise ValueError("interpolation must be one of %s" %
-                             ', '.join(self._interpolation_methods))
+            raise ValueError(
+                "interpolation must be one of %s" % ", ".join(self._interpolation_methods)
+            )
         self._data_lookup_fn = None
         self._need_interpolation_update = True
 
@@ -747,17 +759,17 @@ class VolumeVisual(Visual):
         self._last_data = None
 
         # Create program
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
-        self.shared_program['u_volumetex'] = self._texture
-        self.shared_program['a_position'] = self._vertices
-        self.shared_program['gamma'] = self._gamma
-        self._draw_mode = 'triangle_strip'
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
+        self.shared_program["u_volumetex"] = self._texture
+        self.shared_program["a_position"] = self._vertices
+        self.shared_program["gamma"] = self._gamma
+        self._draw_mode = "triangle_strip"
         self._index_buffer = IndexBuffer()
 
         # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
-        self.set_gl_state('translucent', cull_face=False)
+        self.set_gl_state("translucent", cull_face=False)
 
         # Apply clim and set data at the same time
         self.set_data(vol, clim or "auto")
@@ -789,8 +801,10 @@ class VolumeVisual(Visual):
     def _init_interpolation(self, interpolation_methods):
         # create interpolation shader functions for available
         # interpolations
-        fun = [Function(self._func_templates['texture_lookup_interpolated'] % (n + '3D'))
-               for n in interpolation_methods]
+        fun = [
+            Function(self._func_templates["texture_lookup_interpolated"] % (n + "3D"))
+            for n in interpolation_methods
+        ]
         interpolation_methods = [n.lower() for n in interpolation_methods]
 
         interpolation_fun = dict(zip(interpolation_methods, fun))
@@ -798,11 +812,11 @@ class VolumeVisual(Visual):
 
         # overwrite "nearest" and "linear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
-        hardware_lookup = Function(self._func_templates['texture_lookup'])
-        interpolation_fun['nearest'] = hardware_lookup
-        interpolation_fun['linear'] = hardware_lookup
+        hardware_lookup = Function(self._func_templates["texture_lookup"])
+        interpolation_fun["nearest"] = hardware_lookup
+        interpolation_fun["linear"] = hardware_lookup
         # alias bicubic to cubic (but deprecate)
-        interpolation_methods = interpolation_methods + ('bicubic',)
+        interpolation_methods = interpolation_methods + ("bicubic",)
         return interpolation_methods, interpolation_fun
 
     def _create_texture(self, texture_format, data):
@@ -811,19 +825,22 @@ class VolumeVisual(Visual):
         else:
             tex_cls = CPUScaledTexture3D
 
-        if self._interpolation == 'linear':
-            texture_interpolation = 'linear'
+        if self._interpolation == "linear":
+            texture_interpolation = "linear"
         else:
-            texture_interpolation = 'nearest'
+            texture_interpolation = "nearest"
 
         # clamp_to_edge means any texture coordinates outside of 0-1 should be
         # clamped to 0 and 1.
         # NOTE: This doesn't actually set the data in the texture. Only
         # creates a placeholder texture that will be resized later on.
-        return tex_cls(data, interpolation=texture_interpolation,
-                       internalformat=texture_format,
-                       format='luminance',
-                       wrapping='clamp_to_edge')
+        return tex_cls(
+            data,
+            interpolation=texture_interpolation,
+            internalformat=texture_format,
+            format="luminance",
+            wrapping="clamp_to_edge",
+        )
 
     def set_data(self, vol, clim=None, copy=True):
         """Set the volume data.
@@ -847,9 +864,9 @@ class VolumeVisual(Visual):
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
-            raise ValueError('Volume visual needs a numpy array.')
+            raise ValueError("Volume visual needs a numpy array.")
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] > 1)):
-            raise ValueError('Volume visual needs a 3D array.')
+            raise ValueError("Volume visual needs a 3D array.")
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
 
@@ -860,9 +877,8 @@ class VolumeVisual(Visual):
         self._texture.check_data_format(vol)
         self._last_data = vol
         self._texture.scale_and_set_data(vol, copy=copy)
-        self.shared_program['clim'] = self._texture.clim_normalized
-        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
-                                          vol.shape[0])
+        self.shared_program["clim"] = self._texture.clim_normalized
+        self.shared_program["u_shape"] = (vol.shape[2], vol.shape[1], vol.shape[0])
 
         shape = vol.shape[:3]
         if self._vol_shape != shape:
@@ -898,7 +914,7 @@ class VolumeVisual(Visual):
         """
         if self._texture.set_clim(value):
             self.set_data(self._last_data, clim=value)
-        self.shared_program['clim'] = self._texture.clim_normalized
+        self.shared_program["clim"] = self._texture.clim_normalized
         self.update()
 
     @property
@@ -912,7 +928,7 @@ class VolumeVisual(Visual):
         if value <= 0:
             raise ValueError("gamma must be > 0")
         self._gamma = float(value)
-        self.shared_program['gamma'] = self._gamma
+        self.shared_program["gamma"] = self._gamma
         self.update()
 
     @property
@@ -922,8 +938,8 @@ class VolumeVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
-        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
-        self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
+        self.shared_program.frag["cmap"] = Function(self._cmap.glsl_map)
+        self.shared_program["texture2D_LUT"] = self.cmap.texture_lut()
         self.update()
 
     @property
@@ -938,8 +954,9 @@ class VolumeVisual(Visual):
     @interpolation.setter
     def interpolation(self, i):
         if i not in self._interpolation_methods:
-            raise ValueError("interpolation must be one of %s" %
-                             ', '.join(self._interpolation_methods))
+            raise ValueError(
+                "interpolation must be one of %s" % ", ".join(self._interpolation_methods)
+            )
         if self._interpolation != i:
             self._interpolation = i
             self._need_interpolation_update = True
@@ -951,34 +968,34 @@ class VolumeVisual(Visual):
         """Rebuild the _data_lookup_fn for different interpolations."""
         interpolation = self._interpolation
         # alias bicubic to cubic
-        if interpolation == 'bicubic':
+        if interpolation == "bicubic":
             warnings.warn(
                 "'bicubic' interpolation is Deprecated. Use 'cubic' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            interpolation = 'cubic'
+            interpolation = "cubic"
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         try:
-            self.shared_program.frag['get_data'] = self._data_lookup_fn
+            self.shared_program.frag["get_data"] = self._data_lookup_fn
         except Exception as e:
             print(e)
 
         # only 'linear' uses 'linear' texture interpolation
-        if interpolation == 'linear':
-            texture_interpolation = 'linear'
+        if interpolation == "linear":
+            texture_interpolation = "linear"
         else:
             # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
             # so u_kernel and shape setting is skipped
-            texture_interpolation = 'nearest'
-            if interpolation != 'nearest':
-                self.shared_program['u_kernel'] = self._kerneltex
-                self._data_lookup_fn['shape'] = self._last_data.shape[:3][::-1]
+            texture_interpolation = "nearest"
+            if interpolation != "nearest":
+                self.shared_program["u_kernel"] = self._kerneltex
+                self._data_lookup_fn["shape"] = self._last_data.shape[:3][::-1]
 
         if self._texture.interpolation != texture_interpolation:
             self._texture.interpolation = texture_interpolation
 
-        self._data_lookup_fn['texture'] = self._texture
+        self._data_lookup_fn["texture"] = self._texture
 
         self._need_interpolation_update = False
 
@@ -986,32 +1003,35 @@ class VolumeVisual(Visual):
     @lru_cache(maxsize=10)
     def _build_clipping_planes_glsl(n_planes: int) -> str:
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
-        func_template = '''
+        func_template = """
             float clip_planes(vec3 loc, vec3 vol_shape) {{
                 vec3 loc_transf = $clip_transform(vec4(loc * vol_shape, 1)).xyz;
                 float distance_from_clip = 3.4e38; // max float
                 {clips};
                 return distance_from_clip;
             }}
-        '''
+        """
         # the vertex is considered clipped if on the "negative" side of the plane
-        clip_template = '''
+        clip_template = """
             vec3 relative_vec{idx} = loc_transf - $clipping_plane_pos{idx};
             float distance_from_clip{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
             distance_from_clip = min(distance_from_clip{idx}, distance_from_clip);
-            '''
+            """
         all_clips = []
         for idx in range(n_planes):
             all_clips.append(clip_template.format(idx=idx))
-        formatted_code = func_template.format(clips=''.join(all_clips))
+        formatted_code = func_template.format(clips="".join(all_clips))
         return formatted_code
 
     @property
     def clipping_planes(self) -> np.ndarray:
-        """The set of planes used to clip the volume. Values on the negative side of the normal are discarded.
+        """The set of planes used to clip the volume.
 
-        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3).
-        The order is xyz, as opposed to data's zyx (for consistency with the rest of vispy)
+        Values on the negative side of the normal are discarded. Each plane is
+        defined by a position and a normal vector (magnitude is irrelevant).
+
+        Shape: (n_planes, 2, 3). The order is xyz, as opposed to data's zyx
+        (for consistency with the rest of vispy)
 
         Example: one plane in position (0, 0, 0) and with normal (0, 0, 1),
         and a plane in position (1, 1, 1) with normal (0, 1, 0):
@@ -1031,12 +1051,12 @@ class VolumeVisual(Visual):
         self._clipping_planes = value
 
         self._clip_func = Function(self._build_clipping_planes_glsl(len(value)))
-        self.shared_program.frag['clip_with_planes'] = self._clip_func
+        self.shared_program.frag["clip_with_planes"] = self._clip_func
 
-        self._clip_func['clip_transform'] = self._clip_transform
+        self._clip_func["clip_transform"] = self._clip_transform
         for idx, plane in enumerate(value):
-            self._clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
-            self._clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
+            self._clip_func[f"clipping_plane_pos{idx}"] = tuple(plane[0])
+            self._clip_func[f"clipping_plane_norm{idx}"] = tuple(plane[1])
         self.update()
 
     @property
@@ -1048,15 +1068,15 @@ class VolumeVisual(Visual):
 
     @property
     def _before_loop_snippet(self):
-        return self._rendering_methods[self.method]['before_loop']
+        return self._rendering_methods[self.method]["before_loop"]
 
     @property
     def _in_loop_snippet(self):
-        return self._rendering_methods[self.method]['in_loop']
+        return self._rendering_methods[self.method]["in_loop"]
 
     @property
     def _after_loop_snippet(self):
-        return self._rendering_methods[self.method]['after_loop']
+        return self._rendering_methods[self.method]["after_loop"]
 
     @property
     def method(self):
@@ -1088,22 +1108,23 @@ class VolumeVisual(Visual):
         # Check and save
         known_methods = list(self._rendering_methods.keys())
         if method not in known_methods:
-            raise ValueError('Volume render method should be in %r, not %r' %
-                             (known_methods, method))
+            raise ValueError(
+                "Volume render method should be in %r, not %r" % (known_methods, method)
+            )
         self._method = method
 
         # $get_data needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
-        self.shared_program.frag['get_data'] = None
-        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
-        self.shared_program.frag['before_loop'] = self._before_loop_snippet
-        self.shared_program.frag['in_loop'] = self._in_loop_snippet
-        self.shared_program.frag['after_loop'] = self._after_loop_snippet
-        self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
-        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
-        self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
-        self.shared_program['u_mip_cutoff'] = self._mip_cutoff
-        self.shared_program['u_minip_cutoff'] = self._minip_cutoff
+        self.shared_program.frag["get_data"] = None
+        self.shared_program.frag["raycasting_setup"] = self._raycasting_setup_snippet
+        self.shared_program.frag["before_loop"] = self._before_loop_snippet
+        self.shared_program.frag["in_loop"] = self._in_loop_snippet
+        self.shared_program.frag["after_loop"] = self._after_loop_snippet
+        self.shared_program.frag["sampler_type"] = self._texture.glsl_sampler_type
+        self.shared_program.frag["cmap"] = Function(self._cmap.glsl_map)
+        self.shared_program["texture2D_LUT"] = self.cmap.texture_lut()
+        self.shared_program["u_mip_cutoff"] = self._mip_cutoff
+        self.shared_program["u_minip_cutoff"] = self._minip_cutoff
         self._need_interpolation_update = True
         self.update()
 
@@ -1127,7 +1148,7 @@ class VolumeVisual(Visual):
         if value not in valid_raycasting_modes:
             raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
         self._raycasting_mode = value
-        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
+        self.shared_program.frag["raycasting_setup"] = self._raycasting_setup_snippet
         self.update()
 
     @property
@@ -1138,7 +1159,7 @@ class VolumeVisual(Visual):
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
-        self.shared_program['u_threshold'] = self._threshold
+        self.shared_program["u_threshold"] = self._threshold
         self.update()
 
     @property
@@ -1149,7 +1170,7 @@ class VolumeVisual(Visual):
     @attenuation.setter
     def attenuation(self, value):
         self._attenuation = float(value)
-        self.shared_program['u_attenuation'] = self._attenuation
+        self.shared_program["u_attenuation"] = self._attenuation
         self.update()
 
     @property
@@ -1167,9 +1188,9 @@ class VolumeVisual(Visual):
     def relative_step_size(self, value):
         value = float(value)
         if value < 0.1:
-            raise ValueError('relative_step_size cannot be smaller than 0.1')
+            raise ValueError("relative_step_size cannot be smaller than 0.1")
         self._relative_step_size = value
-        self.shared_program['u_relative_step_size'] = value
+        self.shared_program["u_relative_step_size"] = value
 
     @property
     def plane_position(self):
@@ -1184,10 +1205,10 @@ class VolumeVisual(Visual):
     @plane_position.setter
     def plane_position(self, value):
         value = np.array(value, dtype=np.float32).ravel()
-        if value.shape != (3, ):
-            raise ValueError('plane_position must be a 3 element array-like object')
+        if value.shape != (3,):
+            raise ValueError("plane_position must be a 3 element array-like object")
         self._plane_position = value
-        self.shared_program['u_plane_position'] = value[::-1]
+        self.shared_program["u_plane_position"] = value[::-1]
         self.update()
 
     @property
@@ -1203,10 +1224,10 @@ class VolumeVisual(Visual):
     @plane_normal.setter
     def plane_normal(self, value):
         value = np.array(value, dtype=np.float32).ravel()
-        if value.shape != (3, ):
-            raise ValueError('plane_normal must be a 3 element array-like object')
+        if value.shape != (3,):
+            raise ValueError("plane_normal must be a 3 element array-like object")
         self._plane_normal = value
-        self.shared_program['u_plane_normal'] = value[::-1]
+        self.shared_program["u_plane_normal"] = value[::-1]
         self.update()
 
     @property
@@ -1223,9 +1244,9 @@ class VolumeVisual(Visual):
     def plane_thickness(self, value: float):
         value = float(value)
         if value < 1:
-            raise ValueError('plane_thickness should be at least 1.0')
+            raise ValueError("plane_thickness should be at least 1.0")
         self._plane_thickness = value
-        self.shared_program['u_plane_thickness'] = value
+        self.shared_program["u_plane_thickness"] = value
         self.update()
 
     @property
@@ -1240,9 +1261,9 @@ class VolumeVisual(Visual):
     @mip_cutoff.setter
     def mip_cutoff(self, value):
         if value is None:
-            value = np.finfo('float32').min
+            value = np.finfo("float32").min
         self._mip_cutoff = float(value)
-        self.shared_program['u_mip_cutoff'] = self._mip_cutoff
+        self.shared_program["u_mip_cutoff"] = self._mip_cutoff
         self.update()
 
     @property
@@ -1257,9 +1278,9 @@ class VolumeVisual(Visual):
     @minip_cutoff.setter
     def minip_cutoff(self, value):
         if value is None:
-            value = np.finfo('float32').max
+            value = np.finfo("float32").max
         self._minip_cutoff = float(value)
-        self.shared_program['u_minip_cutoff'] = self._minip_cutoff
+        self.shared_program["u_minip_cutoff"] = self._minip_cutoff
         self.update()
 
     def _create_vertex_data(self):
@@ -1276,16 +1297,19 @@ class VolumeVisual(Visual):
         y0, y1 = -0.5, shape[1] - 0.5
         z0, z1 = -0.5, shape[0] - 0.5
 
-        pos = np.array([
-            [x0, y0, z0],
-            [x1, y0, z0],
-            [x0, y1, z0],
-            [x1, y1, z0],
-            [x0, y0, z1],
-            [x1, y0, z1],
-            [x0, y1, z1],
-            [x1, y1, z1],
-        ], dtype=np.float32)
+        pos = np.array(
+            [
+                [x0, y0, z0],
+                [x1, y0, z0],
+                [x0, y1, z0],
+                [x1, y1, z0],
+                [x0, y0, z1],
+                [x1, y0, z1],
+                [x0, y1, z1],
+                [x1, y1, z1],
+            ],
+            dtype=np.float32,
+        )
 
         """
           6-------7
@@ -1299,8 +1323,7 @@ class VolumeVisual(Visual):
 
         # Order is chosen such that normals face outward; front faces will be
         # culled.
-        indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7],
-                           dtype=np.uint32)
+        indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7], dtype=np.uint32)
 
         # Apply
         self._vertices.set_data(pos)
@@ -1317,15 +1340,15 @@ class VolumeVisual(Visual):
 
     def _prepare_transforms(self, view):
         trs = view.transforms
-        view.view_program.vert['transform'] = trs.get_transform()
+        view.view_program.vert["transform"] = trs.get_transform()
 
-        view_tr_f = trs.get_transform('visual', 'document')
+        view_tr_f = trs.get_transform("visual", "document")
         view_tr_i = view_tr_f.inverse
-        view.view_program.vert['viewtransformf'] = view_tr_f
-        view.view_program.vert['viewtransformi'] = view_tr_i
-        view.view_program.frag['viewtransformf'] = view_tr_f
+        view.view_program.vert["viewtransformf"] = view_tr_f
+        view.view_program.vert["viewtransformi"] = view_tr_i
+        view.view_program.frag["viewtransformf"] = view_tr_f
 
-        self._clip_transform = trs.get_transform('visual', self._clipping_planes_coord_system)
+        self._clip_transform = trs.get_transform("visual", self._clipping_planes_coord_system)
 
     def _prepare_draw(self, view):
         if self._need_vertex_update:

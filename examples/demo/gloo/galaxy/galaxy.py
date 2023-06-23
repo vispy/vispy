@@ -91,8 +91,7 @@ dt = (t1 - t0) / n
 colors = np.zeros(n, dtype=(np.float32, 3))
 for i in range(n):
     temperature = t0 + i * dt
-    x, y, z = galaxy_specrend.spectrum_to_xyz(galaxy_specrend.bb_spectrum,
-                                              temperature)
+    x, y, z = galaxy_specrend.spectrum_to_xyz(galaxy_specrend.bb_spectrum, temperature)
     r, g, b = galaxy_specrend.xyz_to_rgb(galaxy_specrend.SMPTEsystem, x, y, z)
     r = min((max(r, 0), 1))
     g = min((max(g, 0), 1))
@@ -103,39 +102,36 @@ for i in range(n):
 # load the PNG that we use to blend the star with
 # to provide a circular look to each star.
 def load_galaxy_star_image():
-    fname = io.load_data_file('galaxy/star-particle.png')
+    fname = io.load_data_file("galaxy/star-particle.png")
     raw_image = io.read_png(fname)
 
     return raw_image
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
         # setup initial width, height
-        app.Canvas.__init__(self, keys='interactive', size=(800, 600))
+        app.Canvas.__init__(self, keys="interactive", size=(800, 600))
 
         # create a new shader program
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER,
-                                    count=len(galaxy))
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER, count=len(galaxy))
 
         # load the star texture
-        self.texture = gloo.Texture2D(load_galaxy_star_image(),
-                                      interpolation='linear')
-        self.program['u_texture'] = self.texture
+        self.texture = gloo.Texture2D(load_galaxy_star_image(), interpolation="linear")
+        self.program["u_texture"] = self.texture
 
         # construct the model, view and projection matrices
         self.view = transforms.translate((0, 0, -5))
-        self.program['u_view'] = self.view
+        self.program["u_view"] = self.view
 
         self.model = np.eye(4, dtype=np.float32)
-        self.program['u_model'] = self.model
+        self.program["u_model"] = self.model
 
-        self.program['u_colormap'] = colors
+        self.program["u_colormap"] = colors
 
         w, h = self.size
         self.projection = perspective(45.0, w / float(h), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.program["u_projection"] = self.projection
 
         # start the galaxy to some decent point in the future
         galaxy.update(100000)
@@ -147,28 +143,35 @@ class Canvas(app.Canvas):
         self.program.bind(self.data_vbo)
 
         # setup blending
-        gloo.set_state(clear_color=(0.0, 0.0, 0.03, 1.0),
-                       depth_test=False, blend=True,
-                       blend_func=('src_alpha', 'one'))
+        gloo.set_state(
+            clear_color=(0.0, 0.0, 0.03, 1.0),
+            depth_test=False,
+            blend=True,
+            blend_func=("src_alpha", "one"),
+        )
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
+        self._timer = app.Timer("auto", connect=self.update, start=True)
 
     def __create_galaxy_vertex_data(self):
-        data = np.zeros(len(galaxy),
-                        dtype=[('a_size', np.float32),
-                               ('a_position', np.float32, 2),
-                               ('a_color_index', np.float32),
-                               ('a_brightness', np.float32),
-                               ('a_type', np.float32)])
+        data = np.zeros(
+            len(galaxy),
+            dtype=[
+                ("a_size", np.float32),
+                ("a_position", np.float32, 2),
+                ("a_color_index", np.float32),
+                ("a_brightness", np.float32),
+                ("a_type", np.float32),
+            ],
+        )
 
         # see shader for parameter explanations
         pw, ph = self.physical_size
-        data['a_size'] = galaxy['size'] * max(pw / 800.0, ph / 800.0)
-        data['a_position'] = galaxy['position'] / 13000.0
+        data["a_size"] = galaxy["size"] * max(pw / 800.0, ph / 800.0)
+        data["a_position"] = galaxy["position"] / 13000.0
 
-        data['a_color_index'] = (galaxy['temperature'] - t0) / (t1 - t0)
-        data['a_brightness'] = galaxy['brightness']
-        data['a_type'] = galaxy['type']
+        data["a_color_index"] = (galaxy["temperature"] - t0) / (t1 - t0)
+        data["a_brightness"] = galaxy["brightness"]
+        data["a_type"] = galaxy["type"]
 
         return data
 
@@ -177,9 +180,8 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *event.physical_size)
         # recompute the projection matrix
         w, h = event.size
-        self.projection = perspective(45.0, w / float(h),
-                                      1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.projection = perspective(45.0, w / float(h), 1.0, 1000.0)
+        self.program["u_projection"] = self.projection
 
     def on_draw(self, event):
         # update the galaxy
@@ -194,10 +196,10 @@ class Canvas(app.Canvas):
 
         # clear the screen and render
         gloo.clear(color=True, depth=True)
-        self.program.draw('points')
+        self.program.draw("points")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = Canvas()
     c.show()
 

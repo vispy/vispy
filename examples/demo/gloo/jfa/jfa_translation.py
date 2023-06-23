@@ -35,10 +35,10 @@ this_dir = op.abspath(op.dirname(__file__))
 
 def createShader(vert_fname, frag_fname):
     """createShader - create, load, compile and link the shader object"""
-    with open(op.join(this_dir, vert_fname), 'rb') as fid:
-        vert = fid.read().decode('ASCII')
-    with open(op.join(this_dir, frag_fname), 'rb') as fid:
-        frag = fid.read().decode('ASCII')
+    with open(op.join(this_dir, vert_fname), "rb") as fid:
+        vert = fid.read().decode("ASCII")
+    with open(op.join(this_dir, frag_fname), "rb") as fid:
+        frag = fid.read().decode("ASCII")
     vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
     gl.glShaderSource(vertexShader, vert)
     gl.glCompileShader(vertexShader)
@@ -66,7 +66,7 @@ def setUniformVariables(programObj, texture, texw, texh, step):
     if location_texh != -1:
         gl.glUniform1f(location_texh, texh)
     location_step = gl.glGetUniformLocation(programObj, "step")
-    if(location_step != -1):
+    if location_step != -1:
         gl.glUniform1f(location_step, step)
     gl.glUseProgram(0)
     checkGLError()
@@ -83,18 +83,25 @@ def loadImage(filename):  # adapted for Python
 def loadShapeTexture(filename, texID):
     """loadShapeTexture - load 8-bit shape texture data
     from a TGA file and set up the corresponding texture object."""
-    data, texw, texh = loadImage(load_data_file('jfa/' + filename))
+    data, texw, texh = loadImage(load_data_file("jfa/" + filename))
     gl.glActiveTexture(gl.GL_TEXTURE0)
     gl.glBindTexture(gl.GL_TEXTURE_2D, texID)
     # Load image into texture
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, texw, texh, 0,
-                    gl.GL_LUMINANCE, gl.GL_UNSIGNED_BYTE, data)
+    gl.glTexImage2D(
+        gl.GL_TEXTURE_2D,
+        0,
+        gl.GL_LUMINANCE,
+        texw,
+        texh,
+        0,
+        gl.GL_LUMINANCE,
+        gl.GL_UNSIGNED_BYTE,
+        data,
+    )
     # This is the input image. We want unaltered 1-to-1 pixel values,
     # so specify nearest neighbor sampling to be sure.
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER,
-                       gl.GL_NEAREST)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER,
-                       gl.GL_NEAREST)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
     checkGLError()
@@ -105,7 +112,7 @@ def createBufferTexture(texID, texw, texh):
     """createBufferTexture - create an 8-bit texture render target"""
     gl.glActiveTexture(gl.GL_TEXTURE0)
     gl.glBindTexture(gl.GL_TEXTURE_2D, texID)
-    black = (0., 0., 0., 0.)
+    black = (0.0, 0.0, 0.0, 0.0)
     # The special shader used to render this texture performs a
     # per-pixel image processing where point sampling is required,
     # so specify nearest neighbor sampling.
@@ -114,17 +121,22 @@ def createBufferTexture(texID, texw, texh):
     # texture mode GL_REPEAT is inconsequential. "Zero outside" would
     # be useful, but separate edge values are deprecated in OpenGL.
     #
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER,
-                       gl.GL_NEAREST)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER,
-                       gl.GL_NEAREST)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S,
-                       gl.GL_CLAMP_TO_EDGE)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T,
-                       gl.GL_CLAMP_TO_EDGE)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
     gl.glTexParameterfv(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BORDER_COLOR, black)
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, texw, texh, 0,
-                    gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, '\x00' * texw*texh*4)
+    gl.glTexImage2D(
+        gl.GL_TEXTURE_2D,
+        0,
+        gl.GL_RGBA,
+        texw,
+        texh,
+        0,
+        gl.GL_RGBA,
+        gl.GL_UNSIGNED_BYTE,
+        "\x00" * texw * texh * 4,
+    )
     gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
     checkGLError()
 
@@ -138,7 +150,7 @@ def showFPS(texw, texh):
     in the window title bar (updated once per second)"""
     global frames, t0
     t = time.time()
-    if (t - t0) > 1.:
+    if (t - t0) > 1.0:
         fps = frames / (t - t0)
         titlestr = "%sx%s texture, %.1f FPS" % (texw, texh, fps)
         glfw.glfwSetWindowTitle(window, titlestr)
@@ -150,7 +162,7 @@ def showFPS(texw, texh):
 def checkGLError():
     status = gl.glGetError()
     if status != gl.GL_NO_ERROR:
-        raise RuntimeError('gl error %s' % (status,))
+        raise RuntimeError("gl error %s" % (status,))
 
 
 def renderScene(programObj, width, height):
@@ -164,14 +176,14 @@ def renderScene(programObj, width, height):
     gl.glUseProgram(programObj)
     # Draw one texture mapped quad in the (x,y) plane
     gl.glBegin(gl.GL_QUADS)
-    gl.glTexCoord2f(0., 0.)
-    gl.glVertex2f(0., 0.)
-    gl.glTexCoord2f(1., 0.)
-    gl.glVertex2f(float(width), 0.)
-    gl.glTexCoord2f(1., 1.)
+    gl.glTexCoord2f(0.0, 0.0)
+    gl.glVertex2f(0.0, 0.0)
+    gl.glTexCoord2f(1.0, 0.0)
+    gl.glVertex2f(float(width), 0.0)
+    gl.glTexCoord2f(1.0, 1.0)
     gl.glVertex2f(float(width), float(height))
-    gl.glTexCoord2f(0., 1.)
-    gl.glVertex2f(0., float(height))
+    gl.glTexCoord2f(0.0, 1.0)
+    gl.glVertex2f(0.0, float(height))
     gl.glEnd()
     gl.glUseProgram(0)
     checkGLError()
@@ -207,20 +219,26 @@ while running:
         gl.glBindTexture(gl.GL_TEXTURE_2D, textureID[0])
         gl.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, fboID)
         lastRendered = 1
-        gl.glFramebufferTexture2D(gl.GL_DRAW_FRAMEBUFFER,
-                                  gl.GL_COLOR_ATTACHMENT0,
-                                  gl.GL_TEXTURE_2D,
-                                  textureID[lastRendered], 0)
+        gl.glFramebufferTexture2D(
+            gl.GL_DRAW_FRAMEBUFFER,
+            gl.GL_COLOR_ATTACHMENT0,
+            gl.GL_TEXTURE_2D,
+            textureID[lastRendered],
+            0,
+        )
         renderScene(programObj0, texw, texh)
-        stepsize = texw//2 if texw > texh else texh//2
+        stepsize = texw // 2 if texw > texh else texh // 2
         while stepsize > 0:
             setUniformVariables(programObj1, 0, texw, texh, stepsize)
             gl.glBindTexture(gl.GL_TEXTURE_2D, textureID[lastRendered])
             lastRendered = 1 if lastRendered == 2 else 2
-            gl.glFramebufferTexture2D(gl.GL_DRAW_FRAMEBUFFER,
-                                      gl.GL_COLOR_ATTACHMENT0,
-                                      gl.GL_TEXTURE_2D,
-                                      textureID[lastRendered], 0)
+            gl.glFramebufferTexture2D(
+                gl.GL_DRAW_FRAMEBUFFER,
+                gl.GL_COLOR_ATTACHMENT0,
+                gl.GL_TEXTURE_2D,
+                textureID[lastRendered],
+                0,
+            )
             renderScene(programObj1, texw, texh)
             stepsize = stepsize // 2
         gl.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, 0)

@@ -10,7 +10,9 @@ try:
     from jupyter_rfb import RemoteFrameBuffer
 except Exception:
     RemoteFrameBuffer = object
-    _msg = 'The jupyter_rfb backend relies on a the jupyter_rfb library: ``pip install jupyter_rfb``'
+    _msg = (
+        "The jupyter_rfb backend relies on a the jupyter_rfb library: ``pip install jupyter_rfb``"
+    )
     available, testable, why_not, which = False, False, _msg, None
 else:
     available, testable, why_not = True, False, None
@@ -46,12 +48,11 @@ capability = dict(
 
 
 class ApplicationBackend(BaseApplicationBackend):
-
     def __init__(self):
         super().__init__()
 
     def _vispy_get_backend_name(self):
-        return 'jupyter_rfb'
+        return "jupyter_rfb"
 
     def _vispy_process_events(self):
         raise RuntimeError("Cannot process events while asyncio event-loop is running.")
@@ -68,8 +69,8 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
-class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
+class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
     _double_click_supported = True
 
     def __init__(self, vispy_canvas, **kwargs):
@@ -131,7 +132,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             self._vispy_canvas.events.mouse_wheel(
                 native=ev,
                 pos=(ev["x"], ev["y"]),
-                delta=(ev["dx"] / 100, - ev["dy"] / 100),
+                delta=(ev["dx"] / 100, -ev["dy"] / 100),
                 modifiers=self._modifiers(ev),
             )
         elif type == "key_down":
@@ -240,8 +241,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend):
 
+class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):
         super().__init__(vispy_timer)
         self._loop = asyncio.get_event_loop()

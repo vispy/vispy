@@ -44,8 +44,12 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self._connect_controls()
 
     def _connect_controls(self):
-        self._controls.colormap_chooser.currentTextChanged.connect(self._canvas_wrapper.set_image_colormap)
-        self._controls.line_color_chooser.currentTextChanged.connect(self._canvas_wrapper.set_line_color)
+        self._controls.colormap_chooser.currentTextChanged.connect(
+            self._canvas_wrapper.set_image_colormap
+        )
+        self._controls.line_color_chooser.currentTextChanged.connect(
+            self._canvas_wrapper.set_line_color
+        )
 
 
 class Controls(QtWidgets.QWidget):
@@ -73,7 +77,7 @@ class CanvasWrapper:
         self.canvas = SceneCanvas(size=CANVAS_SIZE)
         self.grid = self.canvas.central_widget.add_grid()
 
-        self.view_top = self.grid.add_view(0, 0, bgcolor='cyan')
+        self.view_top = self.grid.add_view(0, 0, bgcolor="cyan")
         image_data = _generate_random_image_data(IMAGE_SHAPE)
         self.image = visuals.Image(
             image_data,
@@ -84,7 +88,7 @@ class CanvasWrapper:
         self.view_top.camera = "panzoom"
         self.view_top.camera.set_range(x=(0, IMAGE_SHAPE[1]), y=(0, IMAGE_SHAPE[0]), margin=0)
 
-        self.view_bot = self.grid.add_view(1, 0, bgcolor='#c0c0c0')
+        self.view_bot = self.grid.add_view(1, 0, bgcolor="#c0c0c0")
         line_data = _generate_random_line_positions(NUM_LINE_POINTS)
         self.line = visuals.Line(line_data, parent=self.view_bot.scene, color=LINE_COLOR_CHOICES[0])
         self.view_bot.camera = "panzoom"

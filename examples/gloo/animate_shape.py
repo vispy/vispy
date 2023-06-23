@@ -18,18 +18,26 @@ from vispy import app
 
 
 # Create a texture
-im1 = np.zeros((100, 100, 3), 'float32')
+im1 = np.zeros((100, 100, 3), "float32")
 im1[:50, :, 0] = 1.0
 im1[:, :50, 1] = 1.0
 im1[50:, 50:, 2] = 1.0
 
 # Create vertices and texture coords, combined in one array for high performance
-vertex_data = np.zeros(4, dtype=[('a_position', np.float32, 3),
-                                 ('a_texcoord', np.float32, 2)])
-vertex_data['a_position'] = np.array([[-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],
-                                      [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0, ]])
-vertex_data['a_texcoord'] = np.array([[0.0, 0.0], [0.0, 1.0],
-                                      [1.0, 0.0], [1.0, 1.0]])
+vertex_data = np.zeros(4, dtype=[("a_position", np.float32, 3), ("a_texcoord", np.float32, 2)])
+vertex_data["a_position"] = np.array(
+    [
+        [-0.8, -0.8, 0.0],
+        [+0.7, -0.7, 0.0],
+        [-0.7, +0.7, 0.0],
+        [
+            +0.8,
+            +0.8,
+            0.0,
+        ],
+    ]
+)
+vertex_data["a_texcoord"] = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
 
 # Create indices and an ElementBuffer for it
 indices = np.array([0, 1, 2, 1, 2, 3], np.uint16)
@@ -64,9 +72,8 @@ void main()
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys="interactive")
 
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
@@ -77,14 +84,14 @@ class Canvas(app.Canvas):
         # Set uniforms, samplers, attributes
         # We create one VBO with all vertex data (array of structures)
         # and create two views from it for the attributes.
-        self._program['texture1'] = gloo.Texture2D(im1)
+        self._program["texture1"] = gloo.Texture2D(im1)
         self._program.bind(self._vbo)  # This does:
         # self._program['a_position'] = self._vbo['a_position']
         # self._program['a_texcoords'] = self._vbo['a_texcoords']
 
-        gloo.set_clear_color('white')
+        gloo.set_clear_color("white")
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
+        self._timer = app.Timer("auto", connect=self.update, start=True)
 
         self.show()
 
@@ -93,20 +100,19 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-
         # Clear
         gloo.clear()
 
         # Draw
-        self._program['sizeFactor'] = 0.5 + np.sin(time.time() * 3) * 0.2
+        self._program["sizeFactor"] = 0.5 + np.sin(time.time() * 3) * 0.2
 
         # Draw (pick one!)
         # self._program.draw('triangle_strip')
-        self._program.draw('triangles', indices_buffer)
+        self._program.draw("triangles", indices_buffer)
         # self._program.draw('triangles', client_indices_buffer)  # Not
         # recommended
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

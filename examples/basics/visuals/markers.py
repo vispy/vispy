@@ -29,13 +29,17 @@ for i in range(500):
     r = 10.1 - i * 0.02
     radius -= 0.45
     pos[i] = x, y
-    colors[i] = (i/500, 1.0-i/500, 0, 1)
+    colors[i] = (i / 500, 1.0 - i / 500, 0, 1)
 
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(512, 512),
-                            title="Marker demo [press space to change marker]")
+        app.Canvas.__init__(
+            self,
+            keys="interactive",
+            size=(512, 512),
+            title="Marker demo [press space to change marker]",
+        )
         self.index = 0
         self.markers = visuals.MarkersVisual()
         self.markers.set_data(pos, face_color=colors)
@@ -45,13 +49,12 @@ class Canvas(app.Canvas):
         self.show()
 
     def on_draw(self, event):
-        self.context.clear(color='white')
+        self.context.clear(color="white")
         self.markers.draw()
 
     def on_mouse_wheel(self, event):
         """Use the mouse wheel to zoom."""
-        self.markers.transform.zoom((1.25**event.delta[1],)*2, 
-                                    center=event.pos)
+        self.markers.transform.zoom((1.25 ** event.delta[1],) * 2, center=event.pos)
         self.update()
 
     def on_resize(self, event):
@@ -61,16 +64,16 @@ class Canvas(app.Canvas):
         self.markers.transforms.configure(viewport=vp, canvas=self)
 
     def on_key_press(self, event):
-        if event.text == ' ':
+        if event.text == " ":
             self.index = (self.index + 1) % (len(self.markers.symbols))
             self.markers.symbol = self.markers.symbols[self.index]
             self.update()
-        elif event.text == 's':
+        elif event.text == "s":
             self.markers.scaling = "fixed" if self.markers.scaling != "fixed" else "scene"
             self.update()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(__doc__)
     canvas = Canvas()
     app.run()

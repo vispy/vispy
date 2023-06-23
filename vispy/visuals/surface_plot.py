@@ -50,7 +50,7 @@ class SurfacePlotVisual(MeshVisual):
         self.__vertices = None
         self.__faces = None
         self.__meshdata = MeshData()
-        kwargs.setdefault('shading', 'smooth')
+        kwargs.setdefault("shading", "smooth")
         MeshVisual.__init__(self, **kwargs)
         self.set_data(x, y, z, colors)
 
@@ -69,12 +69,11 @@ class SurfacePlotVisual(MeshVisual):
     def _update_z_data(self, z):
         if z is not None:
             if self._x is not None and z.shape[0] != len(self._x):
-                raise TypeError('Z values must have shape (len(x), len(y))')
+                raise TypeError("Z values must have shape (len(x), len(y))")
             if self._y is not None and z.shape[1] != len(self._y):
-                raise TypeError('Z values must have shape (len(x), len(y))')
+                raise TypeError("Z values must have shape (len(x), len(y))")
             self._z = z
-            if (self.__vertices is not None and
-                    self._z.shape != self.__vertices.shape[:2]):
+            if self.__vertices is not None and self._z.shape != self.__vertices.shape[:2]:
                 self.__vertices = None
 
     def _update_mesh_vertices(self, x_is_new, y_is_new, z_is_new):
@@ -84,8 +83,7 @@ class SurfacePlotVisual(MeshVisual):
 
         # Generate vertex and face array
         if self.__vertices is None:
-            self.__vertices = np.empty((self._z.shape[0], self._z.shape[1], 3),
-                                       dtype=np.float32)
+            self.__vertices = np.empty((self._z.shape[0], self._z.shape[1], 3), dtype=np.float32)
             self.__faces = self._generate_faces()
             new_vertices = True
             update_faces = True
@@ -158,9 +156,7 @@ class SurfacePlotVisual(MeshVisual):
             return
 
         update_faces, update_vertices = self._update_mesh_vertices(
-            x is not None,
-            y is not None,
-            z is not None
+            x is not None, y is not None, z is not None
         )
 
         colors = self._prepare_mesh_colors(colors)
@@ -171,8 +167,8 @@ class SurfacePlotVisual(MeshVisual):
             self.__meshdata.set_faces(self.__faces)
         if update_vertices:
             self.__meshdata.set_vertices(
-                self.__vertices.reshape(self.__vertices.shape[0] *
-                                        self.__vertices.shape[1], 3))
+                self.__vertices.reshape(self.__vertices.shape[0] * self.__vertices.shape[1], 3)
+            )
         if update_faces or update_vertices or update_colors:
             MeshVisual.set_data(self, meshdata=self.__meshdata)
 
@@ -180,13 +176,10 @@ class SurfacePlotVisual(MeshVisual):
         cols = self._z.shape[1] - 1
         rows = self._z.shape[0] - 1
         faces = np.empty((cols * rows * 2, 3), dtype=np.uint)
-        rowtemplate1 = (np.arange(cols).reshape(cols, 1) +
-                        np.array([[0, 1, cols + 1]]))
-        rowtemplate2 = (np.arange(cols).reshape(cols, 1) +
-                        np.array([[cols + 1, 1, cols + 2]]))
+        rowtemplate1 = np.arange(cols).reshape(cols, 1) + np.array([[0, 1, cols + 1]])
+        rowtemplate2 = np.arange(cols).reshape(cols, 1) + np.array([[cols + 1, 1, cols + 2]])
         for row in range(rows):
             start = row * cols * 2
-            faces[start:start + cols] = rowtemplate1 + row * (cols + 1)
-            faces[start + cols:start + (cols * 2)] =\
-                rowtemplate2 + row * (cols + 1)
+            faces[start : start + cols] = rowtemplate1 + row * (cols + 1)
+            faces[start + cols : start + (cols * 2)] = rowtemplate2 + row * (cols + 1)
         return faces

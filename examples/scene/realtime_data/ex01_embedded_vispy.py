@@ -64,7 +64,7 @@ class CanvasWrapper:
         self.canvas = SceneCanvas(size=CANVAS_SIZE)
         self.grid = self.canvas.central_widget.add_grid()
 
-        self.view_top = self.grid.add_view(0, 0, bgcolor='cyan')
+        self.view_top = self.grid.add_view(0, 0, bgcolor="cyan")
         image_data = _generate_random_image_data(IMAGE_SHAPE)
         self.image = visuals.Image(
             image_data,
@@ -75,9 +75,9 @@ class CanvasWrapper:
         self.view_top.camera = "panzoom"
         self.view_top.camera.set_range(x=(0, IMAGE_SHAPE[1]), y=(0, IMAGE_SHAPE[0]), margin=0)
 
-        self.view_bot = self.grid.add_view(1, 0, bgcolor='#c0c0c0')
+        self.view_bot = self.grid.add_view(1, 0, bgcolor="#c0c0c0")
         line_data = _generate_random_line_positions(NUM_LINE_POINTS)
-        self.line = visuals.Line(line_data, parent=self.view_bot.scene, color='black')
+        self.line = visuals.Line(line_data, parent=self.view_bot.scene, color="black")
         self.view_bot.camera = "panzoom"
         self.view_bot.camera.set_range(x=(0, NUM_LINE_POINTS), y=(0, 1))
 

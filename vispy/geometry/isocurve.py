@@ -21,17 +21,17 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         The level at which to generate an isosurface
     connected : bool
         If False, return a single long list of point pairs
-        If True, return multiple long lists of connected point 
-        locations. (This is slower but better for drawing 
+        If True, return multiple long lists of connected point
+        locations. (This is slower but better for drawing
         continuous lines)
     extend_to_edge : bool
-        If True, extend the curves to reach the exact edges of 
-        the data. 
-    """    
+        If True, extend the curves to reach the exact edges of
+        the data.
+    """
     # This function is SLOW; plenty of room for optimization here.
 
     if extend_to_edge:
-        d2 = np.empty((data.shape[0]+2, data.shape[1]+2), dtype=data.dtype)
+        d2 = np.empty((data.shape[0] + 2, data.shape[1] + 2), dtype=data.dtype)
         d2[1:-1, 1:-1] = data
         d2[0, 1:-1] = data[0]
         d2[-1, 1:-1] = data[-1]
@@ -59,15 +59,10 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         [0, 2],
         [1, 2],
         [0, 1],
-        []
+        [],
     ]
 
-    edge_key = [
-        [(0, 1), (0, 0)],
-        [(0, 0), (1, 0)],
-        [(1, 0), (1, 1)],
-        [(1, 1), (0, 1)]
-    ]
+    edge_key = [[(0, 1), (0, 0)], [(0, 0), (1, 0)], [(1, 0), (1, 1)], [(1, 1), (0, 1)]]
 
     level = float(level)
     lines = []
@@ -76,43 +71,46 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
     mask = data < level
 
     # make four sub-fields and compute indexes for grid cells
-    index = np.zeros([x-1 for x in data.shape], dtype=np.ubyte)
+    index = np.zeros([x - 1 for x in data.shape], dtype=np.ubyte)
     fields = np.empty((2, 2), dtype=object)
     slices = [slice(0, -1), slice(1, None)]
     for i in [0, 1]:
         for j in [0, 1]:
             fields[i, j] = mask[slices[i], slices[j]]
-            vertIndex = i+2*j
+            vertIndex = i + 2 * j
             index += (fields[i, j] * 2**vertIndex).astype(np.ubyte)
 
     # add lines
-    for i in range(index.shape[0]):                 # data x-axis
-        for j in range(index.shape[1]):             # data y-axis     
+    for i in range(index.shape[0]):  # data x-axis
+        for j in range(index.shape[1]):  # data y-axis
             sides = side_table[index[i, j]]
             for side_idx in range(0, len(sides), 2):  # faces for this grid cell
-                edges = sides[side_idx:side_idx+2]
+                edges = sides[side_idx : side_idx + 2]
                 pts = []
-                for m in [0, 1]:      # points in this face
+                for m in [0, 1]:  # points in this face
                     # p1, p2 are points at either side of an edge
-                    p1 = edge_key[edges[m]][0] 
+                    p1 = edge_key[edges[m]][0]
                     p2 = edge_key[edges[m]][1]
                     # v1 and v2 are the values at p1 and p2
-                    v1 = data[i+p1[0], j+p1[1]] 
-                    v2 = data[i+p2[0], j+p2[1]]
-                    f = (level-v1) / (v2-v1)
+                    v1 = data[i + p1[0], j + p1[1]]
+                    v2 = data[i + p2[0], j + p2[1]]
+                    f = (level - v1) / (v2 - v1)
                     fi = 1.0 - f
                     # interpolate between corners
-                    p = (p1[0]*fi + p2[0]*f + i + 0.5, 
-                         p1[1]*fi + p2[1]*f + j + 0.5)
+                    p = (p1[0] * fi + p2[0] * f + i + 0.5, p1[1] * fi + p2[1] * f + j + 0.5)
                     if extend_to_edge:
                         # check bounds
-                        p = (min(data.shape[0]-2, max(0, p[0]-1)),
-                             min(data.shape[1]-2, max(0, p[1]-1)))
+                        p = (
+                            min(data.shape[0] - 2, max(0, p[0] - 1)),
+                            min(data.shape[1] - 2, max(0, p[1] - 1)),
+                        )
                     if connected:
-                        gridKey = (i + (1 if edges[m] == 2 else 0), 
-                                   j + (1 if edges[m] == 3 else 0), 
-                                   edges[m] % 2)
-                        # give the actual position and a key identifying the 
+                        gridKey = (
+                            i + (1 if edges[m] == 2 else 0),
+                            j + (1 if edges[m] == 3 else 0),
+                            edges[m] % 2,
+                        )
+                        # give the actual position and a key identifying the
                         # grid location (for connecting segments)
                         pts.append((p, gridKey))
                     else:
@@ -162,7 +160,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
                 chains.pop()
                 break
 
-    # extract point locations 
+    # extract point locations
     lines = []
     for chain in points.values():
         if len(chain) == 2:

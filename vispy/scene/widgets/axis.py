@@ -20,11 +20,12 @@ class AxisWidget(Widget):
         Keyword arguments to pass to AxisVisual.
     """
 
-    def __init__(self, orientation='left', **kwargs):
-        if 'tick_direction' not in kwargs:
-            tickdir = {'left': (-1, 0), 'right': (1, 0), 'bottom': (0, 1),
-                       'top': (0, -1)}[orientation]
-            kwargs['tick_direction'] = tickdir
+    def __init__(self, orientation="left", **kwargs):
+        if "tick_direction" not in kwargs:
+            tickdir = {"left": (-1, 0), "right": (1, 0), "bottom": (0, 1), "top": (0, -1)}[
+                orientation
+            ]
+            kwargs["tick_direction"] = tickdir
         self.axis = AxisVisual(**kwargs)
         self.orientation = orientation
         self._linked_view = None
@@ -46,17 +47,16 @@ class AxisWidget(Widget):
 
     def _axis_ends(self):
         r = self.rect
-        if self.orientation == 'left':
+        if self.orientation == "left":
             return np.array([[r.right, r.top], [r.right, r.bottom]])
-        elif self.orientation == 'bottom':
+        elif self.orientation == "bottom":
             return np.array([[r.left, r.bottom], [r.right, r.bottom]])
-        elif self.orientation == 'right':
+        elif self.orientation == "right":
             return np.array([[r.left, r.top], [r.left, r.bottom]])
-        elif self.orientation == 'top':
+        elif self.orientation == "top":
             return np.array([[r.left, r.top], [r.right, r.top]])
         else:
-            raise RuntimeError(
-                'Orientation %s not supported.' % self.orientation)
+            raise RuntimeError("Orientation %s not supported." % self.orientation)
 
     def link_view(self, view):
         """Link this axis to a ViewBox
@@ -72,8 +72,7 @@ class AxisWidget(Widget):
         if view is self._linked_view:
             return
         if self._linked_view is not None:
-            self._linked_view.scene.transform.changed.disconnect(
-                self._view_changed)
+            self._linked_view.scene.transform.changed.disconnect(self._view_changed)
         self._linked_view = view
         view.scene.transform.changed.connect(self._view_changed)
         self._view_changed()
@@ -82,7 +81,7 @@ class AxisWidget(Widget):
         """Linked view transform has changed; update ticks."""
         tr = self.node_transform(self._linked_view.scene)
         p1, p2 = tr.map(self._axis_ends())
-        if self.orientation in ('left', 'right'):
+        if self.orientation in ("left", "right"):
             self.axis.domain = (p1[1], p2[1])
         else:
             self.axis.domain = (p1[0], p2[0])

@@ -11,6 +11,7 @@ from functools import lru_cache
 import numpy as np
 
 from . import Visual, TextVisual, CompoundVisual, _BorderVisual
+
 # from .border import _BorderVisual
 from .shaders import Function
 from ..color import get_colormap
@@ -78,103 +79,117 @@ class _CoreColorBarVisual(Visual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
-    def __init__(self, pos, halfdim,
-                 cmap,
-                 orientation,
-                 **kwargs):
-
+    def __init__(self, pos, halfdim, cmap, orientation, **kwargs):
         self._check_orientation(orientation)
         self._cmap = get_colormap(cmap)
         self._pos = pos
         self._halfdim = halfdim
         self._orientation = orientation
 
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
 
         texcoord_func = self._get_texcoord_func(orientation)
-        self.shared_program.frag['orient_texcoord'] = texcoord_func
+        self.shared_program.frag["orient_texcoord"] = texcoord_func
 
-        tex_coords = np.array([[0, 0], [1, 0], [1, 1],
-                               [0, 0], [1, 1], [0, 1]],
-                              dtype=np.float32)
+        tex_coords = np.array([[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32)
 
         glsl_map_fn = Function(self._cmap.glsl_map)
 
-        self.shared_program.frag['color_transform'] = glsl_map_fn
-        self.shared_program['a_texcoord'] = tex_coords.astype(np.float32)
+        self.shared_program.frag["color_transform"] = glsl_map_fn
+        self.shared_program["a_texcoord"] = tex_coords.astype(np.float32)
 
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
+        """Rebuilds the shaders, and repositions the objects used internally by ColorBarVisual"""
         x, y = self._pos
         halfw, halfh = self._halfdim
 
         # test that width and height are non-zero
         if halfw <= 0:
-            raise ValueError("half-width must be positive and non-zero"
-                             ", not %s" % halfw)
+            raise ValueError("half-width must be positive and non-zero" ", not %s" % halfw)
         if halfh <= 0:
-            raise ValueError("half-height must be positive and non-zero"
-                             ", not %s" % halfh)
+            raise ValueError("half-height must be positive and non-zero" ", not %s" % halfh)
 
         # test that the given width and height is consistent
         # with the orientation
-        if (self._orientation == "bottom" or self._orientation == "top"):
+        if self._orientation == "bottom" or self._orientation == "top":
             if halfw < halfh:
-                raise ValueError("half-width(%s) < half-height(%s) for"
-                                 "%s orientation,"
-                                 " expected half-width >= half-height" %
-                                 (halfw, halfh, self._orientation, ))
+                raise ValueError(
+                    "half-width(%s) < half-height(%s) for"
+                    "%s orientation,"
+                    " expected half-width >= half-height"
+                    % (
+                        halfw,
+                        halfh,
+                        self._orientation,
+                    )
+                )
         else:  # orientation == left or orientation == right
             if halfw > halfh:
-                raise ValueError("half-width(%s) > half-height(%s) for"
-                                 "%s orientation,"
-                                 " expected half-width <= half-height" %
-                                 (halfw, halfh, self._orientation, ))
+                raise ValueError(
+                    "half-width(%s) > half-height(%s) for"
+                    "%s orientation,"
+                    " expected half-width <= half-height"
+                    % (
+                        halfw,
+                        halfh,
+                        self._orientation,
+                    )
+                )
 
         # Set up the attributes that the shaders require
-        vertices = np.array([[x - halfw, y - halfh],
-                             [x + halfw, y - halfh],
-                             [x + halfw, y + halfh],
-                             # tri 2
-                             [x - halfw, y - halfh],
-                             [x + halfw, y + halfh],
-                             [x - halfw, y + halfh]],
-                            dtype=np.float32)
+        vertices = np.array(
+            [
+                [x - halfw, y - halfh],
+                [x + halfw, y - halfh],
+                [x + halfw, y + halfh],
+                # tri 2
+                [x - halfw, y - halfh],
+                [x + halfw, y + halfh],
+                [x - halfw, y + halfh],
+            ],
+            dtype=np.float32,
+        )
 
-        self.shared_program['a_position'] = vertices
+        self.shared_program["a_position"] = vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
+        self.shared_program["texture2D_LUT"] = self._cmap.texture_lut()
 
     @staticmethod
     @lru_cache(maxsize=4)
     def _get_texcoord_func(orientation):
         if orientation == "top" or orientation == "bottom":
-            func = Function("""
+            func = Function(
+                """
                 float orient_texcoord(vec2 texcoord) {
                     return texcoord.x;
                 }
-            """)
+            """
+            )
         elif orientation == "left" or orientation == "right":
-            func = Function("""
+            func = Function(
+                """
                 float orient_texcoord(vec2 texcoord) {
                     return 1 - texcoord.y;
                 }
-            """)
+            """
+            )
         return func
 
     @staticmethod
     def _check_orientation(orientation):
-        if orientation not in ('top', 'bottom', 'left', 'right'):
-            raise ValueError("orientation must"
-                             " be one of 'top', 'bottom', "
-                             "'left', or 'right', "
-                             "not '%s'" % (orientation, ))
+        if orientation not in ("top", "bottom", "left", "right"):
+            raise ValueError(
+                "orientation must"
+                " be one of 'top', 'bottom', "
+                "'left', or 'right', "
+                "not '%s'" % (orientation,)
+            )
 
     @property
     def pos(self):
@@ -201,7 +216,7 @@ class _CoreColorBarVisual(Visual):
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
-        self._program.frag['color_transform'] = Function(self._cmap.glsl_map)
+        self._program.frag["color_transform"] = Function(self._cmap.glsl_map)
 
     @staticmethod
     def _prepare_transforms(view):
@@ -209,7 +224,7 @@ class _CoreColorBarVisual(Visual):
         # on the width and height
         program = view.view_program
         total_transform = view.transforms.get_transform()
-        program.vert['transform'] = total_transform
+        program.vert["transform"] = total_transform
 
     def _prepare_draw(self, view):
         self._draw_mode = "triangles"
@@ -293,14 +308,18 @@ class ColorBarVisual(CompoundVisual):
     # visually "sticking" to the Colorbar
     text_padding_factor = 1.05
 
-    def __init__(self, cmap, orientation, size,
-                 pos=[0, 0],
-                 label="",
-                 label_color='black',
-                 clim=(0.0, 1.0),
-                 border_width=1.0,
-                 border_color="black"):
-
+    def __init__(
+        self,
+        cmap,
+        orientation,
+        size,
+        pos=[0, 0],
+        label="",
+        label_color="black",
+        clim=(0.0, 1.0),
+        border_width=1.0,
+        border_color="black",
+    ):
         _CoreColorBarVisual._check_orientation(orientation)
         self._cmap = get_colormap(cmap)
         self._clim = clim
@@ -313,10 +332,8 @@ class ColorBarVisual(CompoundVisual):
         self._label = label
 
         self._ticks = []
-        self._ticks.append(TextVisual(str(self._clim[0]),
-                                      color=label_color))
-        self._ticks.append(TextVisual(str(self._clim[1]),
-                                      color=label_color))
+        self._ticks.append(TextVisual(str(self._clim[0]), color=label_color))
+        self._ticks.append(TextVisual(str(self._clim[1]), color=label_color))
 
         if orientation in ["top", "bottom"]:
             (width, height) = size
@@ -325,22 +342,24 @@ class ColorBarVisual(CompoundVisual):
 
         self._halfdim = (width * 0.5, height * 0.5)
 
-        self._colorbar = _CoreColorBarVisual(pos, self._halfdim,
-                                             cmap, orientation)
+        self._colorbar = _CoreColorBarVisual(pos, self._halfdim, cmap, orientation)
 
-        self._border = _BorderVisual(pos, self._halfdim,
-                                     border_width, border_color)
+        self._border = _BorderVisual(pos, self._halfdim, border_width, border_color)
 
-        CompoundVisual.__init__(self, [self._colorbar,
-                                       self._border,
-                                       self._ticks[0],
-                                       self._ticks[1],
-                                       self._label,
-                                       ])
+        CompoundVisual.__init__(
+            self,
+            [
+                self._colorbar,
+                self._border,
+                self._ticks[0],
+                self._ticks[1],
+                self._label,
+            ],
+        )
         self._update()
 
     def _update(self):
-        """Rebuilds the shaders, and repositions the objects that are used internally by the ColorBarVisual"""
+        """Rebuilds the shaders, and repositions the objects used internally by ColorBarVisual"""
         self._colorbar.halfdim = self._halfdim
         self._border.halfdim = self._halfdim
 
@@ -363,28 +382,31 @@ class ColorBarVisual(CompoundVisual):
         x, y = self._pos
         halfw, halfh = self._halfdim
 
-        label_anchors = \
-            ColorBarVisual._get_label_anchors(center=self._pos,
-                                              halfdim=self._halfdim,
-                                              orientation=self._orientation,
-                                              transforms=self.label.transforms)
+        label_anchors = ColorBarVisual._get_label_anchors(
+            center=self._pos,
+            halfdim=self._halfdim,
+            orientation=self._orientation,
+            transforms=self.label.transforms,
+        )
         self._label.anchors = label_anchors
 
-        ticks_anchors = \
-            ColorBarVisual._get_ticks_anchors(center=self._pos,
-                                              halfdim=self._halfdim,
-                                              orientation=self._orientation,
-                                              transforms=self.label.transforms)
+        ticks_anchors = ColorBarVisual._get_ticks_anchors(
+            center=self._pos,
+            halfdim=self._halfdim,
+            orientation=self._orientation,
+            transforms=self.label.transforms,
+        )
 
         self._ticks[0].anchors = ticks_anchors
         self._ticks[1].anchors = ticks_anchors
 
-        (label_pos, ticks_pos) = \
-            ColorBarVisual._calc_positions(center=self._pos,
-                                           halfdim=self._halfdim,
-                                           border_width=self.border_width,
-                                           orientation=self._orientation,
-                                           transforms=self.transforms)
+        (label_pos, ticks_pos) = ColorBarVisual._calc_positions(
+            center=self._pos,
+            halfdim=self._halfdim,
+            border_width=self.border_width,
+            orientation=self._orientation,
+            transforms=self.transforms,
+        )
 
         self._label.pos = label_pos
         self._ticks[0].pos = ticks_pos[0]
@@ -392,7 +414,7 @@ class ColorBarVisual(CompoundVisual):
 
     @staticmethod
     def _get_label_anchors(center, halfdim, orientation, transforms):
-        visual_to_doc = transforms.get_transform('visual', 'document')
+        visual_to_doc = transforms.get_transform("visual", "document")
 
         doc_x = visual_to_doc.map(np.array([1, 0, 0, 0], dtype=np.float32))
         doc_y = visual_to_doc.map(np.array([0, 1, 0, 0], dtype=np.float32))
@@ -427,23 +449,23 @@ class ColorBarVisual(CompoundVisual):
         # use the document (pixel) coord system to set text anchors
         anchors = []
         if perp_direction[0] < 0:
-            anchors.append('right')
+            anchors.append("right")
         elif perp_direction[0] > 0:
-            anchors.append('left')
+            anchors.append("left")
         else:
-            anchors.append('center')
+            anchors.append("center")
         if perp_direction[1] < 0:
-            anchors.append('bottom')
+            anchors.append("bottom")
         elif perp_direction[1] > 0:
-            anchors.append('top')
+            anchors.append("top")
         else:
-            anchors.append('middle')
+            anchors.append("middle")
 
         return anchors
 
     @staticmethod
     def _get_ticks_anchors(center, halfdim, orientation, transforms):
-        visual_to_doc = transforms.get_transform('visual', 'document')
+        visual_to_doc = transforms.get_transform("visual", "document")
 
         doc_x = visual_to_doc.map(np.array([1, 0, 0, 0], dtype=np.float32))
         doc_y = visual_to_doc.map(np.array([0, 1, 0, 0], dtype=np.float32))
@@ -470,23 +492,22 @@ class ColorBarVisual(CompoundVisual):
         # use the document (pixel) coord system to set text anchors
         anchors = []
         if perp_direction[0] < 0:
-            anchors.append('right')
+            anchors.append("right")
         elif perp_direction[0] > 0:
-            anchors.append('left')
+            anchors.append("left")
         else:
-            anchors.append('center')
+            anchors.append("center")
         if perp_direction[1] < 0:
-            anchors.append('bottom')
+            anchors.append("bottom")
         elif perp_direction[1] > 0:
-            anchors.append('top')
+            anchors.append("top")
         else:
-            anchors.append('middle')
+            anchors.append("middle")
 
         return anchors
 
     @staticmethod
-    def _calc_positions(center, halfdim, border_width,
-                        orientation, transforms):
+    def _calc_positions(center, halfdim, border_width, orientation, transforms):
         """
         Calculate the text centeritions given the ColorBar
         parameters.
@@ -514,8 +535,8 @@ class ColorBarVisual(CompoundVisual):
         (x, y) = center
         (halfw, halfh) = halfdim
 
-        visual_to_doc = transforms.get_transform('visual', 'document')
-        doc_to_visual = transforms.get_transform('document', 'visual')
+        visual_to_doc = transforms.get_transform("visual", "document")
+        doc_to_visual = transforms.get_transform("document", "visual")
 
         # doc_widths = visual_to_doc.map(np.array([halfw, halfh, 0, 0],
         #                                         dtype=np.float32))
@@ -548,18 +569,15 @@ class ColorBarVisual(CompoundVisual):
         perp_len *= ColorBarVisual.text_padding_factor
         doc_perp_vector *= perp_len
 
-        doc_center = visual_to_doc.map(np.array([x, y, 0, 0],
-                                                dtype=np.float32))
+        doc_center = visual_to_doc.map(np.array([x, y, 0, 0], dtype=np.float32))
         doc_label_pos = doc_center + doc_perp_vector
         visual_label_pos = doc_to_visual.map(doc_label_pos)[:3]
 
         # next, calculate tick positions
         if orientation in ["top", "bottom"]:
-            doc_ticks_pos = [doc_label_pos - doc_x,
-                             doc_label_pos + doc_x]
+            doc_ticks_pos = [doc_label_pos - doc_x, doc_label_pos + doc_x]
         else:
-            doc_ticks_pos = [doc_label_pos + doc_y,
-                             doc_label_pos - doc_y]
+            doc_ticks_pos = [doc_label_pos + doc_y, doc_label_pos - doc_y]
 
         visual_ticks_pos = []
         visual_ticks_pos.append(doc_to_visual.map(doc_ticks_pos[0])[:3])
@@ -667,33 +685,33 @@ class ColorBarVisual(CompoundVisual):
         """
         (halfw, halfh) = self._halfdim
         if self.orientation in ["top", "bottom"]:
-            return (halfw * 2., halfh * 2.)
+            return (halfw * 2.0, halfh * 2.0)
         else:
-            return (halfh * 2., halfw * 2.)
+            return (halfh * 2.0, halfw * 2.0)
 
     @size.setter
     def size(self, size):
         if size[0] < size[1]:
-            raise ValueError("Major axis must be greater than or equal to "
-                             "Minor axis. Given "
-                             "Major axis: (%s) < Minor axis (%s)" % (size[0],
-                                                                     size[1]))
+            raise ValueError(
+                "Major axis must be greater than or equal to "
+                "Minor axis. Given "
+                "Major axis: (%s) < Minor axis (%s)" % (size[0], size[1])
+            )
 
         if self.orientation in ["top", "bottom"]:
             (width, height) = size
         else:
             (height, width) = size
 
-        if width < 0.:
-            raise ValueError("width must be non-negative, not %s " % (width, ))
-        elif width == 0.:
-            raise ValueError("width must be non-zero, not %s" % (width, ))
+        if width < 0.0:
+            raise ValueError("width must be non-negative, not %s " % (width,))
+        elif width == 0.0:
+            raise ValueError("width must be non-zero, not %s" % (width,))
 
-        if height < 0.:
-            raise ValueError("height must be non-negative, not %s " %
-                             (height, ))
-        elif height == 0.:
-            raise ValueError("height must be non-zero, not %s" % (height, ))
+        if height < 0.0:
+            raise ValueError("height must be non-negative, not %s " % (height,))
+        elif height == 0.0:
+            raise ValueError("height must be non-zero, not %s" % (height,))
 
-        self._halfdim = (width / 2., height / 2.)
+        self._halfdim = (width / 2.0, height / 2.0)
         self._update()

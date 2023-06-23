@@ -22,30 +22,29 @@ from vispy.visuals.filters import TextureFilter
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--shading', default='smooth',
-                    choices=['none', 'flat', 'smooth'],
-                    help="shading mode")
+parser.add_argument(
+    "--shading", default="smooth", choices=["none", "flat", "smooth"], help="shading mode"
+)
 args, _ = parser.parse_known_args()
 
-mesh_path = load_data_file('spot/spot.obj.gz')
-texture_path = load_data_file('spot/spot.png')
+mesh_path = load_data_file("spot/spot.obj.gz")
+texture_path = load_data_file("spot/spot.png")
 vertices, faces, normals, texcoords = read_mesh(mesh_path)
 texture = np.flipud(imread(texture_path))
 
-canvas = scene.SceneCanvas(keys='interactive', bgcolor='white',
-                           size=(800, 600))
+canvas = scene.SceneCanvas(keys="interactive", bgcolor="white", size=(800, 600))
 view = canvas.central_widget.add_view()
 
-view.camera = 'arcball'
+view.camera = "arcball"
 # Adapt the depth to the scale of the mesh to avoid rendering artefacts.
 view.camera.depth_value = 10 * (vertices.max() - vertices.min())
 
-shading = None if args.shading == 'none' else args.shading
-mesh = Mesh(vertices, faces, shading=shading, color='white')
+shading = None if args.shading == "none" else args.shading
+mesh = Mesh(vertices, faces, shading=shading, color="white")
 mesh.transform = transforms.MatrixTransform()
 mesh.transform.rotate(90, (1, 0, 0))
 mesh.transform.rotate(135, (0, 0, 1))
-mesh.shading_filter.shininess = 1e+1
+mesh.shading_filter.shininess = 1e1
 view.add(mesh)
 
 texture_filter = TextureFilter(texture, texcoords)

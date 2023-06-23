@@ -11,8 +11,7 @@ from vispy.gloo import clear
 
 # app.use_app('pyqt5')  # or pyside, glut, pyglet, sdl2, etc.
 
-canvas = app.Canvas(size=(512, 512), title="Do nothing benchmark (vispy)",
-                    keys='interactive')
+canvas = app.Canvas(size=(512, 512), title="Do nothing benchmark (vispy)", keys="interactive")
 
 
 @canvas.connect
@@ -20,7 +19,8 @@ def on_draw(event):
     clear(color=True, depth=True)
     canvas.update()  # Draw frames as fast as possible
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     canvas.show()
     canvas.measure_fps()
     if sys.flags.interactive == 0:

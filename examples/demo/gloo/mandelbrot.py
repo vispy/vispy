@@ -35,7 +35,7 @@ vec3 hot(float t)
 
 void main()
 {
-    
+
     const int n = 300;
     const float log_2 = 0.6931471805599453;
 
@@ -72,15 +72,13 @@ void main()
 # vispy Canvas
 # -----------------------------------------------------------------------------
 class Canvas(app.Canvas):
-
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
         self.program = gloo.Program(vertex, fragment)
 
         # Draw a rectangle that takes up the whole screen. All of the work is
         # done in the shader.
-        self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
-                                    (-1, -1), (1, 1), (1, -1)]
+        self.program["position"] = [(-1, -1), (-1, 1), (1, 1), (-1, -1), (1, 1), (1, -1)]
 
         self.scale = self.program["scale"] = 3
         self.center = self.program["center"] = [-0.5, 0]
@@ -90,9 +88,9 @@ class Canvas(app.Canvas):
         self.min_scale = 0.00005
         self.max_scale = 4
 
-        gloo.set_clear_color(color='black')
+        gloo.set_clear_color(color="black")
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
+        self._timer = app.Timer("auto", connect=self.update, start=True)
 
         self.show()
 
@@ -105,7 +103,7 @@ class Canvas(app.Canvas):
     def apply_zoom(self):
         width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
-        self.program['resolution'] = [width, height]
+        self.program["resolution"] = [width, height]
 
     def on_mouse_move(self, event):
         """Pan the view based on the change in mouse position."""
@@ -150,10 +148,10 @@ class Canvas(app.Canvas):
 
         """
 
-        if event.text == '+' or event.text == '=':
+        if event.text == "+" or event.text == "=":
             self.zoom(0.9)
-        elif event.text == '-':
-            self.zoom(1/0.9)
+        elif event.text == "-":
+            self.zoom(1 / 0.9)
 
     def zoom(self, factor, mouse_coords=None):
         """Factors less than zero zoom in, and greater than zero zoom out.
@@ -176,6 +174,6 @@ class Canvas(app.Canvas):
             self.translate_center(x1 - x0, y1 - y0)
 
 
-if __name__ == '__main__':
-    canvas = Canvas(size=(800, 800), keys='interactive')
+if __name__ == "__main__":
+    canvas = Canvas(size=(800, 800), keys="interactive")
     app.run()

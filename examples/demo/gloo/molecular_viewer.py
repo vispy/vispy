@@ -41,10 +41,10 @@ void main (void) {
 
     // stackoverflow.com/questions/8608844/...
     //  ... resizing-point-sprites-based-on-distance-from-the-camera
-    vec4  proj_corner = u_projection * vec4(a_radius, a_radius, v_eye_position.z, v_eye_position.w);  // # noqa
+    vec4  proj_corner = u_projection * vec4(a_radius, a_radius, v_eye_position.z, v_eye_position.w);
     gl_PointSize = 512.0 * proj_corner.x / proj_corner.w;
 }
-"""
+"""  # noqa
 
 fragment = """
 #version 120
@@ -94,10 +94,8 @@ void main()
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, title='Molecular viewer',
-                            keys='interactive', size=(1200, 800))
+        app.Canvas.__init__(self, title="Molecular viewer", keys="interactive", size=(1200, 800))
         self.ps = self.pixel_scale
 
         self.translate = 40
@@ -108,20 +106,20 @@ class Canvas(app.Canvas):
 
         self.apply_zoom()
 
-        fname = load_data_file('molecular_viewer/micelle.npz')
+        fname = load_data_file("molecular_viewer/micelle.npz")
         self.load_molecule(fname)
         self.load_data()
 
         self.theta = 0
         self.phi = 0
 
-        gloo.set_state(depth_test=True, clear_color='black')
-        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+        gloo.set_state(depth_test=True, clear_color="black")
+        self.timer = app.Timer("auto", connect=self.on_timer, start=True)
 
         self.show()
 
     def load_molecule(self, fname):
-        molecule = np.load(fname)['molecule']
+        molecule = np.load(fname)["molecule"]
         self._nAtoms = molecule.shape[0]
 
         # The x,y,z values store in one array
@@ -136,61 +134,60 @@ class Canvas(app.Canvas):
     def load_data(self):
         n = self._nAtoms
 
-        data = np.zeros(n, [('a_position', np.float32, 3),
-                            ('a_color', np.float32, 3),
-                            ('a_radius', np.float32)])
+        data = np.zeros(
+            n, [("a_position", np.float32, 3), ("a_color", np.float32, 3), ("a_radius", np.float32)]
+        )
 
-        data['a_position'] = self.coords
-        data['a_color'] = self.atomsColours
-        data['a_radius'] = self.atomsScales*self.ps
+        data["a_position"] = self.coords
+        data["a_color"] = self.atomsColours
+        data["a_radius"] = self.atomsScales * self.ps
 
         self.program.bind(gloo.VertexBuffer(data))
 
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
-        self.program['u_light_position'] = 0., 0., 2.
-        self.program['u_light_spec_position'] = -5., 5., -5.
+        self.program["u_model"] = self.model
+        self.program["u_view"] = self.view
+        self.program["u_light_position"] = 0.0, 0.0, 2.0
+        self.program["u_light_spec_position"] = -5.0, 5.0, -5.0
 
     def on_key_press(self, event):
-        if event.text == ' ':
+        if event.text == " ":
             if self.timer.running:
                 self.timer.stop()
             else:
                 self.timer.start()
 
     def on_timer(self, event):
-        self.theta += .25
-        self.phi += .25
-        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
-                            rotate(self.phi, (0, 1, 0)))
-        self.program['u_model'] = self.model
+        self.theta += 0.25
+        self.phi += 0.25
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)), rotate(self.phi, (0, 1, 0)))
+        self.program["u_model"] = self.model
         self.update()
 
     def on_resize(self, event):
         width, height = event.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(25.0, width / float(height), 2.0, 100.0)
-        self.program['u_projection'] = self.projection
+        self.program["u_projection"] = self.projection
 
     def apply_zoom(self):
         width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(25.0, width / float(height), 2.0, 100.0)
-        self.program['u_projection'] = self.projection
+        self.program["u_projection"] = self.projection
 
     def on_mouse_wheel(self, event):
         self.translate -= event.delta[1]
         self.translate = max(-1, self.translate)
         self.view = translate((0, 0, -self.translate))
 
-        self.program['u_view'] = self.view
+        self.program["u_view"] = self.view
         self.update()
 
     def on_draw(self, event):
         gloo.clear()
-        self.program.draw('points')
+        self.program.draw("points")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mvc = Canvas()
     app.run()

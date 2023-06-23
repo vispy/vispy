@@ -19,7 +19,7 @@ import sys
 
 from vispy import scene, app
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys="interactive")
 canvas.size = 600, 600
 canvas.show()
 
@@ -38,5 +38,5 @@ grid.add_widget(row=1, col=0, col_span=2, bgcolor="#0000dd")
 grid.add_widget(row=1, col=2, bgcolor="#00dd00")
 
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()

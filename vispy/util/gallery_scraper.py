@@ -59,7 +59,7 @@ class VisPyGalleryScraper:
         """
         example_fn = block_vars["src_file"]
         frame_num_list = self._get_frame_list_from_source(example_fn)
-        image_path_iterator = block_vars['image_path_iterator']
+        image_path_iterator = block_vars["image_path_iterator"]
         canvas_or_widget = get_canvaslike_from_globals(block_vars["example_globals"])
         if not frame_num_list:
             image_paths = []
@@ -72,13 +72,16 @@ class VisPyGalleryScraper:
                 image_paths.append(image_path)
         else:
             image_paths = self._save_example_to_files(
-                canvas_or_widget, frame_num_list, gallery_conf, image_path_iterator)
+                canvas_or_widget, frame_num_list, gallery_conf, image_path_iterator
+            )
 
         fig_titles = ""  # alt text
         # FUTURE: Handle non-images (ex. MP4s) with raw HTML
-        return figure_rst(image_paths, gallery_conf['src_dir'], fig_titles)
+        return figure_rst(image_paths, gallery_conf["src_dir"], fig_titles)
 
-    def _save_example_to_files(self, canvas_or_widget, frame_num_list, gallery_conf, image_path_iterator):
+    def _save_example_to_files(
+        self, canvas_or_widget, frame_num_list, gallery_conf, image_path_iterator
+    ):
         image_path = next(image_path_iterator)
         frame_grabber = FrameGrabber(canvas_or_widget, frame_num_list)
         frame_grabber.collect_frames()
@@ -90,22 +93,22 @@ class VisPyGalleryScraper:
         else:
             frame_grabber.save_frame(image_path)
         frame_grabber.cleanup()
-        if 'images' in gallery_conf['compress_images']:
-            optipng(image_path, gallery_conf['compress_images_args'])
+        if "images" in gallery_conf["compress_images"]:
+            optipng(image_path, gallery_conf["compress_images_args"])
         return [image_path]
 
     def _get_frame_list_from_source(self, filename):
-        lines = open(filename, 'rb').read().decode('utf-8').splitlines()
+        lines = open(filename, "rb").read().decode("utf-8").splitlines()
         for line in lines[:10]:
             if not line.startswith("# vispy:"):
                 continue
             if "gallery-exports" in line:
-                _frames = line.split('gallery-exports')[1].split(',')[0].strip()
+                _frames = line.split("gallery-exports")[1].split(",")[0].strip()
                 frames = self._frame_exports_to_list(_frames)
                 break
             if "gallery " in line:
                 # Get what frames to grab
-                _frames = line.split('gallery')[1].split(',')[0].strip()
+                _frames = line.split("gallery")[1].split(",")[0].strip()
                 frames = self._frame_specifier_to_list(_frames)
                 break
         else:
@@ -114,8 +117,8 @@ class VisPyGalleryScraper:
         return frames
 
     def _frame_specifier_to_list(self, frame_specifier):
-        _frames = frame_specifier or '0'
-        frames = [int(i) for i in _frames.split(':')]
+        _frames = frame_specifier or "0"
+        frames = [int(i) for i in _frames.split(":")]
         if not frames:
             frames = [5]
         if len(frames) > 1:
@@ -130,7 +133,8 @@ class VisPyGalleryScraper:
             if not os.path.isfile(frame_fn):
                 raise FileNotFoundError(
                     "Example gallery frame specifier must be a frame number, "
-                    "frame range, or relative filename produced by the example.")
+                    "frame range, or relative filename produced by the example."
+                )
             frame_paths.append(frame_fn)
         return frame_paths
 
@@ -151,14 +155,21 @@ def get_canvaslike_from_globals(globals_dict):
 
 
 def _get_qt_top_parent(globals_dict):
-    if "QWidget" not in globals_dict and "QMainWindow" not in globals_dict and "QtWidgets" not in globals_dict:
+    if (
+        "QWidget" not in globals_dict
+        and "QMainWindow" not in globals_dict
+        and "QtWidgets" not in globals_dict
+    ):
         return None
 
     qtwidgets = globals_dict.get("QtWidgets")
     qmainwindow = globals_dict.get("QMainWindow", getattr(qtwidgets, "QMainWindow", None))
     qwidget = globals_dict.get("QWidget", getattr(qtwidgets, "QWidget", qmainwindow))
-    all_qt_widgets = [widget for widget in globals_dict.values()
-                      if isinstance(widget, qwidget) and widget is not None]
+    all_qt_widgets = [
+        widget
+        for widget in globals_dict.values()
+        if isinstance(widget, qwidget) and widget is not None
+    ]
     all_qt_mains = [widget for widget in all_qt_widgets if isinstance(widget, qmainwindow)]
     if all_qt_mains:
         return all_qt_mains[0]
@@ -179,8 +190,9 @@ class FrameGrabber:
 
     def cleanup(self):
         from PyQt5.QtWidgets import QApplication
+
         for child_widget in QApplication.allWidgets():
-            if hasattr(child_widget, 'close'):
+            if hasattr(child_widget, "close"):
                 child_widget.close()
         QApplication.processEvents()
 
@@ -215,6 +227,7 @@ class FrameGrabber:
     def _grab_qt_screenshot(self):
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import QTimer
+
         self._canvas.show()
         # Qt is going to grab from the screen so we need the window on top
         self._canvas.raise_()
@@ -227,6 +240,7 @@ class FrameGrabber:
 
     def _grab_widget_screenshot(self):
         from PyQt5.QtWidgets import QApplication
+
         screen = QApplication.screenAt(self._canvas.pos())
         screenshot = screen.grabWindow(int(self._canvas.windowHandle().winId()))
         arr = self._qpixmap_to_ndarray(screenshot)
@@ -236,6 +250,7 @@ class FrameGrabber:
     def _qpixmap_to_ndarray(pixmap):
         from PyQt5 import QtGui
         import numpy as np
+
         im = pixmap.toImage().convertToFormat(QtGui.QImage.Format.Format_RGB32)
         size = pixmap.size()
         width = size.width()
@@ -246,8 +261,8 @@ class FrameGrabber:
         return np.array(im_bits).reshape((height, width, 4))[:, :, 2::-1]
 
     def _grab_vispy_screenshots(self):
-        os.environ['VISPY_IGNORE_OLD_VERSION'] = 'true'
-        self._canvas.events.draw.connect(self.on_draw, position='last')
+        os.environ["VISPY_IGNORE_OLD_VERSION"] = "true"
+        self._canvas.events.draw.connect(self.on_draw, position="last")
         with self._canvas as c:
             self._collect_frames(c)
 
@@ -265,4 +280,5 @@ class FrameGrabber:
 
     def save_animation(self, filename):
         import imageio  # multiple gif not properly supported yet
+
         imageio.mimsave(filename, self._collected_images)

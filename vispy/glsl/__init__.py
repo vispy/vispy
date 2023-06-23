@@ -14,9 +14,9 @@ def find(name):
     if op.exists(name):
         return name
 
-    path = op.dirname(__file__) or '.'
+    path = op.dirname(__file__) or "."
 
-    paths = [path] + config['include_path']
+    paths = [path] + config["include_path"]
 
     for path in paths:
         filename = op.abspath(op.join(path, name))
@@ -37,6 +37,6 @@ def get(name):
     """Retrieve code from the given filename."""
     filename = find(name)
     if filename is None:
-        raise RuntimeError('Could not find %s' % name)
+        raise RuntimeError("Could not find %s" % name)
     with open(filename) as fid:
         return fid.read()

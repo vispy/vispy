@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from vispy.scene.node import Node
-from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, raises)
+from vispy.testing import requires_application, TestingCanvas, run_tests_if_main, raises
 from vispy.visuals.transforms import STTransform
 import numpy as np
 
@@ -27,7 +26,7 @@ def test_topology():
     c = TestingCanvas()
     assert c.scene.canvas is c
     with raises(AttributeError):
-        c.foo = 'bar'
+        c.foo = "bar"
 
     w = c.central_widget
     assert w.parent is c.scene
@@ -36,7 +35,7 @@ def test_topology():
 
     g = w.add_grid()
     with raises(AttributeError):
-        g.foo = 'bar'
+        g.foo = "bar"
 
     grid_check = EventCheck(g.events.children_change)
 
@@ -96,12 +95,11 @@ def test_transforms():
     assert np.allclose(n1.transform.map((0, 0))[:2], (7, 6))
     assert np.allclose(n1.node_transform(root).map((0, 0))[:2], (7, 6))
     assert np.allclose(n2.transform.map((0, 0))[:2], (5, 4))
-    assert np.allclose(n2.node_transform(root).map((0, 0))[:2], 
-                       (5*0.1+7, 4*0.1+6))
-    assert np.allclose(root.node_transform(n1).map((0, 0))[:2],
-                       (-7/0.1, -6/0.1))
-    assert np.allclose(root.node_transform(n2).map((0, 0))[:2],
-                       ((-7/0.1-5)/0.2, (-6/0.1-4)/0.3))
+    assert np.allclose(n2.node_transform(root).map((0, 0))[:2], (5 * 0.1 + 7, 4 * 0.1 + 6))
+    assert np.allclose(root.node_transform(n1).map((0, 0))[:2], (-7 / 0.1, -6 / 0.1))
+    assert np.allclose(
+        root.node_transform(n2).map((0, 0))[:2], ((-7 / 0.1 - 5) / 0.2, (-6 / 0.1 - 4) / 0.3)
+    )
 
     # just check that we can assemble transforms correctly mapping across the
     # scenegraph
@@ -109,34 +107,43 @@ def test_transforms():
     assert n4.node_path(n2) == ([n4, n3, root], [n1, n2])
     assert n2.node_path(root) == ([n2, n1, root], [])
     assert root.node_path(n4) == ([root], [n3, n4])
-    assert n2.node_path_transforms(n4) == [n4.transform.inverse, 
-                                           n3.transform.inverse, 
-                                           n1.transform, n2.transform]
-    assert n4.node_path_transforms(n2) == [n2.transform.inverse,
-                                           n1.transform.inverse,
-                                           n3.transform, n4.transform]
+    assert n2.node_path_transforms(n4) == [
+        n4.transform.inverse,
+        n3.transform.inverse,
+        n1.transform,
+        n2.transform,
+    ]
+    assert n4.node_path_transforms(n2) == [
+        n2.transform.inverse,
+        n1.transform.inverse,
+        n3.transform,
+        n4.transform,
+    ]
 
     pts = np.array([[0, 0], [1, 1], [-56.3, 800.2]])
     assert np.all(n2.node_transform(n1).map(pts) == n2.transform.map(pts))
-    assert np.all(n2.node_transform(root).map(pts) == 
-                  n1.transform.map(n2.transform.map(pts)))
-    assert np.all(n1.node_transform(n3).map(pts) == 
-                  n3.transform.inverse.map(n1.transform.map(pts)))
-    assert np.all(n2.node_transform(n3).map(pts) == 
-                  n3.transform.inverse.map(
-                      n1.transform.map(n2.transform.map(pts))))
-    assert np.all(n2.node_transform(n4).map(pts) == 
-                  n4.transform.inverse.map(n3.transform.inverse.map(
-                      n1.transform.map(n2.transform.map(pts)))))
+    assert np.all(n2.node_transform(root).map(pts) == n1.transform.map(n2.transform.map(pts)))
+    assert np.all(n1.node_transform(n3).map(pts) == n3.transform.inverse.map(n1.transform.map(pts)))
+    assert np.all(
+        n2.node_transform(n3).map(pts)
+        == n3.transform.inverse.map(n1.transform.map(n2.transform.map(pts)))
+    )
+    assert np.all(
+        n2.node_transform(n4).map(pts)
+        == n4.transform.inverse.map(
+            n3.transform.inverse.map(n1.transform.map(n2.transform.map(pts)))
+        )
+    )
 
     # test transforms still work after reparenting
     n3.parent = n1
-    assert np.all(n2.node_transform(n4).map(pts) == n4.transform.inverse.map(
-        n3.transform.inverse.map(n2.transform.map(pts))))
+    assert np.all(
+        n2.node_transform(n4).map(pts)
+        == n4.transform.inverse.map(n3.transform.inverse.map(n2.transform.map(pts)))
+    )
 
     # test transform simplification
-    assert np.all(n2.node_transform(n4).map(pts) == 
-                  n2.node_transform(n4).simplified.map(pts))    
+    assert np.all(n2.node_transform(n4).map(pts) == n2.node_transform(n4).simplified.map(pts))
 
 
 run_tests_if_main()

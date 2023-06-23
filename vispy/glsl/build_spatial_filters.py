@@ -103,14 +103,15 @@ class SpatialFilter:
             kernel[i] = self.weight(X[i])
         N = np.zeros(samples)
         for i in range(self.radius):
-            N += kernel[::+1][i * samples:(i + 1) * samples]
-            N += kernel[::-1][i * samples:(i + 1) * samples]
+            N += kernel[::+1][i * samples : (i + 1) * samples]
+            N += kernel[::-1][i * samples : (i + 1) * samples]
         for i in range(self.radius):
-            kernel[i * samples:(i + 1) * samples] /= N
+            kernel[i * samples : (i + 1) * samples] /= N
         return kernel
 
     def call_code(self, index):
-        code = cleandoc(f'''
+        code = cleandoc(
+            f"""
             vec4 {self.__class__.__name__}2D(sampler2D texture, vec2 shape, vec2 uv) {{
                 return filter2D_radius{self.radius}(texture, u_kernel, {index}, uv, 1 / shape);
             }}
@@ -118,7 +119,8 @@ class SpatialFilter:
             vec4 {self.__class__.__name__}3D(sampler3D texture, vec3 shape, vec3 uv) {{
                 return filter3D_radius{self.radius}(texture, u_kernel, {index}, uv, 1 / shape);
             }}
-        ''')
+        """
+        )
 
         return code
 
@@ -215,12 +217,7 @@ class Cubic(SpatialFilter):
         super().__init__(radius=2)
 
     def weight(self, x):
-        return (1 / 6) * (
-            (x + 2)**3
-            - 4 * (x + 1)**3
-            + 6 * x**3
-            - 4 * (x - 1)**3
-        )
+        return (1 / 6) * ((x + 2) ** 3 - 4 * (x + 1) ** 3 + 6 * x**3 - 4 * (x - 1) ** 3)
 
 
 class Kaiser(SpatialFilter):
@@ -293,7 +290,7 @@ class Mitchell(SpatialFilter):
 
     """
 
-    def __init__(self, b=1/3, c=1/3):
+    def __init__(self, b=1 / 3, c=1 / 3):
         self.p0 = (6 - 2 * b) / 6
         self.p2 = (-18 + 12 * b + 6 * c) / 6
         self.p3 = (12 - 9 * b - 6 * c) / 6
@@ -329,9 +326,9 @@ class Spline16(SpatialFilter):
 
     def weight(self, x):
         if x < 1:
-            return ((x - 9/5) * x - 1/5) * x + 1
+            return ((x - 9 / 5) * x - 1 / 5) * x + 1
         else:
-            return ((-1/3 * (x - 1) + 4/5) * (x - 1) - 7/15) * (x - 1)
+            return ((-1 / 3 * (x - 1) + 4 / 5) * (x - 1) - 7 / 15) * (x - 1)
 
 
 class Spline36(SpatialFilter):
@@ -350,11 +347,11 @@ class Spline36(SpatialFilter):
 
     def weight(self, x):
         if x < 1:
-            return ((13/11 * x - 453/209) * x - 3/209) * x + 1
+            return ((13 / 11 * x - 453 / 209) * x - 3 / 209) * x + 1
         elif x < 2:
-            return ((-6/11 * (x - 1) + 270/209) * (x - 1) - 156 / 209) * (x - 1)
+            return ((-6 / 11 * (x - 1) + 270 / 209) * (x - 1) - 156 / 209) * (x - 1)
         else:
-            return ((1/11 * (x - 2) - 45/209) * (x - 2) + 26/209) * (x - 2)
+            return ((1 / 11 * (x - 2) - 45 / 209) * (x - 2) + 26 / 209) * (x - 2)
 
 
 class Gaussian(SpatialFilter):
@@ -490,7 +487,7 @@ class Sinc(SpatialFilter):
         if x == 0:
             return 1
         x *= math.pi
-        return (math.sin(x) / x)
+        return math.sin(x) / x
 
 
 class Lanczos(SpatialFilter):
@@ -528,8 +525,9 @@ class Blackman(SpatialFilter):
 def generate_filter_code(radius):
     n = int(math.ceil(radius))
 
-    nl = '\n'  # cannot use backslash in fstring
-    code = cleandoc(f'''
+    nl = "\n"  # cannot use backslash in fstring
+    code = cleandoc(
+        f'''
     vec4 filter1D_radius{n}(sampler2D kernel, float index, float x{''.join(f', vec4 c{i}' for i in range(n * 2))}) {{
         float w, w_sum = 0;
         vec4 r = vec4(0);
@@ -549,7 +547,7 @@ def generate_filter_code(radius):
         vec2 f = fract(texel);
         texel = (texel - fract(texel) + vec2(0.001)) * pixel;
         {''.join(f"""
-        vec4 t{i} = filter1D_radius{n}(kernel, index, f.x{f''.join(
+        vec4 t{i} = filter1D_radius{n}(kernel, index, f.x{''.join(
             f',{nl}            texture2D(texture, texel + vec2({-n + 1 + j}, {-n + 1 + i}) * pixel)'
             for j in range(n * 2))});"""
         for i in range(n * 2))}
@@ -561,26 +559,42 @@ def generate_filter_code(radius):
         vec3 f = fract(texel);
         texel = (texel - fract(texel) + vec3(0.001)) * pixel;
         {''.join(f"""
-        vec4 t{i}{j} = filter1D_radius{n}(kernel, index, f.x{f''.join(
+        vec4 t{i}{j} = filter1D_radius{n}(kernel, index, f.x{''.join(
             f',{nl}            texture3D(texture, texel + vec3({-n + 1 + k}, {-n + 1 + j}, {-n + 1 + i}) * pixel)'
             for k in range(n * 2))});"""
         for i, j in product(range(n * 2), range(n * 2)))}
-        {f''.join(f"""
+        {''.join(f"""
         vec4 t{i} = filter1D_radius{n}(kernel, index, f.y{"".join(
             f", t{i}{j}" for j in range(n * 2))});"""
         for i in range(n * 2))}
         return filter1D_radius{n}(kernel, index, f.z{''.join(f', t{i}' for i in range(2*n))});
     }}
-    ''')
+    '''  # noqa
+    )
 
     return code
 
 
 def main():
     # Generate kernels texture (16 x 1024)
-    filters = [Linear(), Hanning(), Hamming(), Hermite(), Kaiser(), Quadric(),
-               Cubic(), CatRom(), Mitchell(), Spline16(), Spline36(), Gaussian(),
-               Bessel(), Sinc(), Lanczos(), Blackman()]
+    filters = [
+        Linear(),
+        Hanning(),
+        Hamming(),
+        Hermite(),
+        Kaiser(),
+        Quadric(),
+        Cubic(),
+        CatRom(),
+        Mitchell(),
+        Spline16(),
+        Spline36(),
+        Gaussian(),
+        Bessel(),
+        Sinc(),
+        Lanczos(),
+        Blackman(),
+    ]
 
     n = 1024
     K = np.zeros((len(filters), n))
@@ -592,7 +606,8 @@ def main():
     K = (K - bias) / scale
     np.save("spatial-filters.npy", K.astype(np.float32))
 
-    code = cleandoc(f'''
+    code = cleandoc(
+        f"""
         // ------------------------------------
         // Automatically generated, do not edit
         // ------------------------------------
@@ -601,10 +616,12 @@ def main():
         const float kernel_size = {n};
         const vec4 bits = vec4(1, {1 / 256}, {1 / (256 * 256)}, {1 / (256 * 256 * 256)});
         uniform sampler2D u_kernel;
-    ''')
+    """
+    )
 
     # add basic unpack functions
-    code += '\n\n' + cleandoc('''
+    code += "\n\n" + cleandoc(
+        """
         float unpack_unit(vec4 rgba) {
             // return rgba.r;  // uncomment this for r32f debugging
             return dot(rgba, bits);
@@ -631,15 +648,17 @@ def main():
             float d1 = unpack_unit(texture2D(kernel, vec2(u + 1. * kpixel, v)));
             return mix(d0, d1, uf);
         }
-    ''')
+    """
+    )
 
     # add 1d, 2d and 3d filter code
     for radius in range(4):
-        code += '\n\n' + generate_filter_code(radius + 1)
+        code += "\n\n" + generate_filter_code(radius + 1)
 
     # add call functions for 2D and 3D filters
     # special case for nearest
-    code += '\n\n' + cleandoc('''
+    code += "\n\n" + cleandoc(
+        """
         vec4 Nearest2D(sampler2D texture, vec2 shape, vec2 uv) {
             return texture2D(texture, uv);
         }
@@ -647,14 +666,16 @@ def main():
         vec4 Nearest3D(sampler3D texture, vec3 shape, vec3 uv) {
             return texture3D(texture, uv);
         }
-    ''')
+    """
+    )
 
     for i, f in enumerate(filters):
-        code += '\n\n' + f.call_code((i + 0.5) / 16)
+        code += "\n\n" + f.call_code((i + 0.5) / 16)
 
     print(code)
 
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

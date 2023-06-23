@@ -48,9 +48,16 @@ class PolygonVisual(CompoundVisual):
         Keyword arguments to pass to `CompoundVisual`.
     """
 
-    def __init__(self, pos=None, color='black',
-                 border_color=None, border_width=1, border_method='gl',
-                 triangulate=True, **kwargs):
+    def __init__(
+        self,
+        pos=None,
+        color="black",
+        border_color=None,
+        border_width=1,
+        border_method="gl",
+        triangulate=True,
+        **kwargs,
+    ):
         self._mesh = MeshVisual()
         self._border = LineVisual(method=border_method)
         self._pos = pos
@@ -61,8 +68,7 @@ class PolygonVisual(CompoundVisual):
 
         self._update()
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
-        self._mesh.set_gl_state(polygon_offset_fill=True,
-                                polygon_offset=(1, 1), cull_face=False)
+        self._mesh.set_gl_state(polygon_offset_fill=True, polygon_offset=(1, 1), cull_face=False)
         self.freeze()
 
     def _update(self):
@@ -72,21 +78,18 @@ class PolygonVisual(CompoundVisual):
             data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
             pts, tris = data.triangulate()
             set_state(polygon_offset_fill=False)
-            self._mesh.set_data(vertices=pts, faces=tris.astype(np.uint32),
-                                color=self._color.rgba)
+            self._mesh.set_data(vertices=pts, faces=tris.astype(np.uint32), color=self._color.rgba)
         elif not self._color.is_blank:
-            self.mesh.set_data(vertices=self._pos,
-                               color=self._color.rgba)
+            self.mesh.set_data(vertices=self._pos, color=self._color.rgba)
 
         if not self._border_color.is_blank:
             # Close border if it is not already.
             border_pos = self._pos
             if np.any(border_pos[0] != border_pos[-1]):
-                border_pos = np.concatenate([border_pos, border_pos[:1]],
-                                            axis=0)
-            self._border.set_data(pos=border_pos,
-                                  color=self._border_color.rgba,
-                                  width=self._border_width)
+                border_pos = np.concatenate([border_pos, border_pos[:1]], axis=0)
+            self._border.set_data(
+                pos=border_pos, color=self._border_color.rgba, width=self._border_width
+            )
 
             self._border.update()
 

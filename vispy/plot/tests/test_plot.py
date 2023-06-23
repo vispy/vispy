@@ -3,8 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import vispy.plot as vp
-from vispy.testing import (assert_raises, requires_application,
-                           run_tests_if_main)
+from vispy.testing import assert_raises, requires_application, run_tests_if_main
 from vispy.visuals.axis import AxisVisual
 from unittest import mock
 

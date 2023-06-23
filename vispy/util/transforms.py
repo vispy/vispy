@@ -27,10 +27,9 @@ def translate(offset, dtype=None):
     """
     assert len(offset) == 3
     x, y, z = offset
-    M = np.array([[1., 0., 0., 0.],
-                  [0., 1., 0., 0.],
-                  [0., 0., 1., 0.],
-                  [x, y, z, 1.0]], dtype)
+    M = np.array(
+        [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [x, y, z, 1.0]], dtype
+    )
     return M
 
 
@@ -50,7 +49,7 @@ def scale(s, dtype=None):
         Transformation matrix describing the scaling.
     """
     assert len(s) == 3
-    return np.array(np.diag(np.concatenate([s, (1.,)])), dtype)
+    return np.array(np.diag(np.concatenate([s, (1.0,)])), dtype)
 
 
 def rotate(angle, axis, dtype=None):
@@ -73,10 +72,15 @@ def rotate(angle, axis, dtype=None):
     x, y, z = axis / np.linalg.norm(axis)
     c, s = math.cos(angle), math.sin(angle)
     cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
-    M = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s, .0],
-                  [cx * y + z * s, cy * y + c, cz * y - x * s, 0.],
-                  [cx * z - y * s, cy * z + x * s, cz * z + c, 0.],
-                  [0., 0., 0., 1.]], dtype).T
+    M = np.array(
+        [
+            [cx * x + c, cy * x - z * s, cz * x + y * s, 0.0],
+            [cx * y + z * s, cy * y + c, cz * y - x * s, 0.0],
+            [cx * z - y * s, cy * z + x * s, cz * z + c, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
+        dtype,
+    ).T
     return M
 
 
@@ -103,9 +107,9 @@ def ortho(left, right, bottom, top, znear, zfar):
     M : ndarray
         Orthographic projection matrix (4x4).
     """
-    assert(right != left)
-    assert(bottom != top)
-    assert(znear != zfar)
+    assert right != left
+    assert bottom != top
+    assert znear != zfar
 
     M = np.zeros((4, 4), dtype=np.float32)
     M[0, 0] = +2.0 / (right - left)
@@ -141,9 +145,9 @@ def frustum(left, right, bottom, top, znear, zfar):
     M : ndarray
         View frustum matrix (4x4).
     """
-    assert(right != left)
-    assert(bottom != top)
-    assert(znear != zfar)
+    assert right != left
+    assert bottom != top
+    assert znear != zfar
 
     M = np.zeros((4, 4), dtype=np.float32)
     M[0, 0] = +2.0 * znear / float(right - left)
@@ -175,7 +179,7 @@ def perspective(fovy, aspect, znear, zfar):
     M : ndarray
         Perspective projection matrix (4x4).
     """
-    assert(znear != zfar)
+    assert znear != zfar
     h = math.tan(fovy / 360.0 * math.pi) * znear
     w = h * aspect
     return frustum(-w, w, -h, h, znear, zfar)

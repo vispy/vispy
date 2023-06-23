@@ -18,8 +18,9 @@ from vispy.scene.visuals import XYZAxis
 
 
 def create_cylinder(radius, length, center=(0.0, 0.0, 0.0)):
-    """ Creates the data of a cylinder oriented along z axis whose center, radius and length are given as inputs
-        Based on the example given at: https://stackoverflow.com/a/49311446/2602319
+    """Creates the data of a cylinder oriented along z axis.
+
+    Based on the example given at: https://stackoverflow.com/a/49311446/2602319
     """
     z = np.linspace(0, length, 100)
     theta = np.linspace(0, 2 * np.pi, 100)
@@ -67,14 +68,18 @@ def create_sphere(radius=1.0, center=(0.0, 0.0, 0.0)):
 
 
 def create_circular_hole(x_grid, y_grid, hole_radius=0.5, center=(0.0, 0.0)):
-    X = np.where((x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius ** 2, np.NAN, x_grid)
-    Y = np.where((x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius ** 2, np.NAN, y_grid)
+    X = np.where(
+        (x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius**2, np.NAN, x_grid
+    )
+    Y = np.where(
+        (x_grid - center[0]) ** 2 + (y_grid - center[1]) ** 2 <= hole_radius**2, np.NAN, y_grid
+    )
 
     return X, Y
 
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
+canvas = scene.SceneCanvas(keys="interactive", size=(800, 600), show=True)
 
 view = canvas.central_widget.add_view()
 
@@ -94,7 +99,7 @@ x_grid, y_grid, z_grid = create_cylinder(1, 3, center=(0, 0, 0))
 SurfacePlot(x_grid, y_grid, z_grid, color="lightgreen", parent=view.scene)
 
 x_grid, y_grid, z_grid = create_sphere(0.5, center=(0, 0, 4))
-SurfacePlot(x_grid, y_grid, z_grid, color='lightseagreen', parent=view.scene)
+SurfacePlot(x_grid, y_grid, z_grid, color="lightseagreen", parent=view.scene)
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+if __name__ == "__main__" and sys.flags.interactive == 0:
     canvas.app.run()

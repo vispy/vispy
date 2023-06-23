@@ -33,39 +33,48 @@ def read_mesh(fname):
     """
     # Check format
     fmt = op.splitext(fname)[1].lower()
-    if fmt == '.gz':
+    if fmt == ".gz":
         fmt = op.splitext(op.splitext(fname)[0])[1].lower()
 
-    if fmt in ('.obj'):
+    if fmt in (".obj"):
         return WavefrontReader.read(fname)
-    elif fmt in ('.stl'):
-        file_obj = open(fname, mode='rb')
+    elif fmt in (".stl"):
+        file_obj = open(fname, mode="rb")
         mesh = load_stl(file_obj)
-        vertices = mesh['vertices']
-        faces = mesh['faces']
-        normals = mesh['face_normals']
+        vertices = mesh["vertices"]
+        faces = mesh["faces"]
+        normals = mesh["face_normals"]
         texcoords = None
         return vertices, faces, normals, texcoords
     else:
         try:
             import meshio
         except ImportError:
-            raise ValueError('read_mesh does not understand format %s.' % fmt)
+            raise ValueError("read_mesh does not understand format %s." % fmt)
 
         try:
             mesh = meshio.read(fname)
         except meshio.ReadError:
-            raise ValueError('read_mesh does not understand format %s.' % fmt)
+            raise ValueError("read_mesh does not understand format %s." % fmt)
 
         triangles = mesh.get_cells_type("triangle")
         if len(triangles) == 0:
-            raise ValueError('mesh file does not contain triangles.')
+            raise ValueError("mesh file does not contain triangles.")
 
         return mesh.points, triangles, None, None
 
 
-def write_mesh(fname, vertices, faces, normals, texcoords, name='',
-               format=None, overwrite=False, reshape_faces=True):
+def write_mesh(
+    fname,
+    vertices,
+    faces,
+    normals,
+    texcoords,
+    name="",
+    format=None,
+    overwrite=False,
+    reshape_faces=True,
+):
     """Write mesh data to file.
 
     Parameters
@@ -98,15 +107,14 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
         format = os.path.splitext(fname)[1][1:]
 
     # Check format
-    if format == 'obj':
-        WavefrontWriter.write(fname, vertices, faces,
-                              normals, texcoords, name, reshape_faces)
+    if format == "obj":
+        WavefrontWriter.write(fname, vertices, faces, normals, texcoords, name, reshape_faces)
         return
 
     try:
         import meshio
     except ImportError:
-        raise ValueError('write_mesh does not understand format %s.' % format)
+        raise ValueError("write_mesh does not understand format %s." % format)
 
     cell_data = {}
     if normals is not None:
@@ -119,4 +127,4 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
     try:
         mesh.write(fname, file_format=format)
     except meshio.WriteError:
-        raise ValueError('write_mesh does not understand format %s.' % format)
+        raise ValueError("write_mesh does not understand format %s." % format)

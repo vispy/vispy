@@ -49,54 +49,94 @@ import math
 
 GAMMA_REC709 = 0
 
-NTSCsystem = {"name": "NTSC",
-              "xRed": 0.67, "yRed": 0.33,
-              "xGreen": 0.21, "yGreen": 0.71,
-              "xBlue": 0.14, "yBlue": 0.08,
-              "xWhite": 0.3101, "yWhite": 0.3163, "gamma": GAMMA_REC709}
+NTSCsystem = {
+    "name": "NTSC",
+    "xRed": 0.67,
+    "yRed": 0.33,
+    "xGreen": 0.21,
+    "yGreen": 0.71,
+    "xBlue": 0.14,
+    "yBlue": 0.08,
+    "xWhite": 0.3101,
+    "yWhite": 0.3163,
+    "gamma": GAMMA_REC709,
+}
 
-EBUsystem = {"name": "SUBU (PAL/SECAM)",
-             "xRed": 0.64, "yRed": 0.33,
-             "xGreen": 0.29, "yGreen": 0.60,
-             "xBlue": 0.15, "yBlue": 0.06,
-             "xWhite": 0.3127, "yWhite": 0.3291, "gamma": GAMMA_REC709}
-SMPTEsystem = {"name": "SMPTE",
-               "xRed": 0.63, "yRed": 0.34,
-               "xGreen": 0.31, "yGreen": 0.595,
-               "xBlue": 0.155, "yBlue": 0.07,
-               "xWhite": 0.3127, "yWhite": 0.3291, "gamma": GAMMA_REC709}
+EBUsystem = {
+    "name": "SUBU (PAL/SECAM)",
+    "xRed": 0.64,
+    "yRed": 0.33,
+    "xGreen": 0.29,
+    "yGreen": 0.60,
+    "xBlue": 0.15,
+    "yBlue": 0.06,
+    "xWhite": 0.3127,
+    "yWhite": 0.3291,
+    "gamma": GAMMA_REC709,
+}
+SMPTEsystem = {
+    "name": "SMPTE",
+    "xRed": 0.63,
+    "yRed": 0.34,
+    "xGreen": 0.31,
+    "yGreen": 0.595,
+    "xBlue": 0.155,
+    "yBlue": 0.07,
+    "xWhite": 0.3127,
+    "yWhite": 0.3291,
+    "gamma": GAMMA_REC709,
+}
 
-HDTVsystem = {"name": "HDTV",
-              "xRed": 0.67, "yRed": 0.33,
-              "xGreen": 0.21, "yGreen": 0.71,
-              "xBlue": 0.15, "yBlue": 0.06,
-              "xWhite": 0.3127, "yWhite": 0.3291, "gamma": GAMMA_REC709}
+HDTVsystem = {
+    "name": "HDTV",
+    "xRed": 0.67,
+    "yRed": 0.33,
+    "xGreen": 0.21,
+    "yGreen": 0.71,
+    "xBlue": 0.15,
+    "yBlue": 0.06,
+    "xWhite": 0.3127,
+    "yWhite": 0.3291,
+    "gamma": GAMMA_REC709,
+}
 
-CIEsystem = {"name": "CIE",
-             "xRed": 0.7355, "yRed": 0.2645,
-             "xGreen": 0.2658, "yGreen": 0.7243,
-             "xBlue": 0.1669, "yBlue": 0.0085,
-             "xWhite": 0.3333333333, "yWhite": 0.3333333333,
-             "gamma": GAMMA_REC709}
+CIEsystem = {
+    "name": "CIE",
+    "xRed": 0.7355,
+    "yRed": 0.2645,
+    "xGreen": 0.2658,
+    "yGreen": 0.7243,
+    "xBlue": 0.1669,
+    "yBlue": 0.0085,
+    "xWhite": 0.3333333333,
+    "yWhite": 0.3333333333,
+    "gamma": GAMMA_REC709,
+}
 
-Rec709system = {"name": "CIE REC709",
-                "xRed": 0.64, "yRed": 0.33,
-                "xGreen": 0.30, "yGreen": 0.60,
-                "xBlue": 0.15, "yBlue": 0.06,
-                "xWhite": 0.3127, "yWhite": 0.3291,
-                "gamma": GAMMA_REC709}
+Rec709system = {
+    "name": "CIE REC709",
+    "xRed": 0.64,
+    "yRed": 0.33,
+    "xGreen": 0.30,
+    "yGreen": 0.60,
+    "xBlue": 0.15,
+    "yBlue": 0.06,
+    "xWhite": 0.3127,
+    "yWhite": 0.3291,
+    "gamma": GAMMA_REC709,
+}
 
 
 def upvp_to_xy(up, vp):
     xc = (9 * up) / ((6 * up) - (16 * vp) + 12)
     yc = (4 * vp) / ((6 * up) - (16 * vp) + 12)
-    return(xc, yc)
+    return (xc, yc)
 
 
 def xy_toupvp(xc, yc):
     up = (4 * xc) / ((-2 * xc) + (12 * yc) + 3)
     vp = (9 * yc) / ((-2 * xc) + (12 * yc) + 3)
-    return(up, vp)
+    return (up, vp)
 
 
 def xyz_to_rgb(cs, xc, yc, zc):
@@ -157,15 +197,15 @@ def xyz_to_rgb(cs, xc, yc, zc):
     g = (gx * xc) + (gy * yc) + (gz * zc)
     b = (bx * xc) + (by * yc) + (bz * zc)
 
-    return(r, g, b)
+    return (r, g, b)
 
 
 def inside_gamut(r, g, b):
     """
-     Test whether a requested colour is within the gamut
-     achievable with the primaries of the current colour
-     system.  This amounts simply to testing whether all the
-     primary weights are non-negative. */
+    Test whether a requested colour is within the gamut
+    achievable with the primaries of the current colour
+    system.  This amounts simply to testing whether all the
+    primary weights are non-negative. */
     """
     return (r >= 0) and (g >= 0) and (b >= 0)
 
@@ -187,7 +227,7 @@ def constrain_rgb(r, g, b):
         r += w
         g += w
         b += w
-    return(r, g, b)
+    return (r, g, b)
 
 
 def gamma_correct(cs, c):
@@ -211,7 +251,7 @@ def gamma_correct(cs, c):
             c = (1.099 * math.pow(c, 0.45)) - 0.099
     else:
         c = math.pow(c, 1.0 / gamma)
-    return(c)
+    return c
 
 
 def gamma_correct_rgb(cs, r, g, b):
@@ -232,7 +272,7 @@ def norm_rgb(r, g, b):
         r /= greatest
         g /= greatest
         b /= greatest
-    return(r, g, b)
+    return (r, g, b)
 
 
 # spec_intens is a function
@@ -350,7 +390,8 @@ def spectrum_to_xyz(spec_intens, temp):
         [0.0001, 0.0000, 0.0000],
         [0.0001, 0.0000, 0.0000],
         [0.0001, 0.0000, 0.0000],
-        [0.0000, 0.0000, 0.0000]]
+        [0.0000, 0.0000, 0.0000],
+    ]
 
     X = 0
     Y = 0
@@ -361,12 +402,12 @@ def spectrum_to_xyz(spec_intens, temp):
         X += Me * cie_colour_match[i][0]
         Y += Me * cie_colour_match[i][1]
         Z += Me * cie_colour_match[i][2]
-    XYZ = (X + Y + Z)
+    XYZ = X + Y + Z
     x = X / XYZ
     y = Y / XYZ
     z = Z / XYZ
 
-    return(x, y, z)
+    return (x, y, z)
 
 
 def bb_spectrum(wavelength, bbTemp=5000):
@@ -375,8 +416,7 @@ def bb_spectrum(wavelength, bbTemp=5000):
     of temperature bbTemp at the given wavelength (in metres).  */
     """
     wlm = wavelength * 1e-9  # Convert to metres
-    return (3.74183e-16 *
-            math.pow(wlm, -5.0)) / (math.exp(1.4388e-2 / (wlm * bbTemp)) - 1.0)
+    return (3.74183e-16 * math.pow(wlm, -5.0)) / (math.exp(1.4388e-2 / (wlm * bbTemp)) - 1.0)
 
     """  Built-in test program which displays the x, y, and Z and RGB
     values for black body spectra from 1000 to 10000 degrees kelvin.
@@ -404,6 +444,7 @@ def bb_spectrum(wavelength, bbTemp=5000):
        9500 K      0.2836 0.2918 0.4246   0.632 0.714 1.000
       10000 K      0.2807 0.2884 0.4310   0.602 0.693 1.000
 """
+
 
 if __name__ == "__main__":
     print("Temperature       x      y      z       R     G     B\n")

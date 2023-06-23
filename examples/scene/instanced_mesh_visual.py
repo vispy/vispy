@@ -21,18 +21,18 @@ from vispy.scene.visuals import InstancedMesh
 from vispy.visuals.filters import InstancedShadingFilter, WireframeFilter, TextureFilter
 
 # needed for instanced rendering to work
-use(gl='gl+')
+use(gl="gl+")
 
 
-mesh_path = load_data_file('spot/spot.obj.gz')
-texture_path = load_data_file('spot/spot.png')
+mesh_path = load_data_file("spot/spot.obj.gz")
+texture_path = load_data_file("spot/spot.png")
 vertices, faces, normals, texcoords = read_mesh(mesh_path)
 texture = np.flipud(imread(texture_path))
 
-canvas = scene.SceneCanvas(keys='interactive', bgcolor='white', show=True)
+canvas = scene.SceneCanvas(keys="interactive", bgcolor="white", show=True)
 view = canvas.central_widget.add_view()
 
-view.camera = 'arcball'
+view.camera = "arcball"
 view.camera.depth_value = 10 * (vertices.max() - vertices.min())
 
 n_instances = 100
@@ -55,7 +55,7 @@ mesh = InstancedMesh(
 
 
 wireframe_filter = WireframeFilter(width=1)
-shading_filter = InstancedShadingFilter('smooth', shininess=1)
+shading_filter = InstancedShadingFilter("smooth", shininess=1)
 texture_filter = TextureFilter(texture, texcoords)
 mesh.attach(wireframe_filter)
 mesh.attach(shading_filter)
@@ -76,7 +76,7 @@ def attach_headlight(view):
 attach_headlight(view)
 
 
-shading_cycle = cycle(['flat', None, 'smooth'])
+shading_cycle = cycle(["flat", None, "smooth"])
 color_cycle = cycle([None, instance_colors])
 face_color_cycle = cycle([None, face_colors])
 
@@ -86,20 +86,20 @@ def on_key_press(event):
     if event.key == "t":
         texture_filter.enabled = not texture_filter.enabled
         canvas.update()
-    if event.key == 's':
+    if event.key == "s":
         shading_filter.shading = next(shading_cycle)
         canvas.update()
-    if event.key == 'c':
+    if event.key == "c":
         mesh.instance_colors = next(color_cycle)
         canvas.update()
-    if event.key == 'f':
+    if event.key == "f":
         mesh.set_data(
             vertices=vertices,
             faces=faces,
             face_colors=next(face_color_cycle),
         )
         canvas.update()
-    if event.key == 'w':
+    if event.key == "w":
         wireframe_filter.enabled = not wireframe_filter.enabled
         canvas.update()
 

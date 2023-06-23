@@ -24,7 +24,7 @@ def test_visual_node_generation():
         if isinstance(obj, type) and issubclass(obj, Node):
             if obj is Node:
                 continue
-            assert name.endswith('Visual')
+            assert name.endswith("Visual")
             vis_node = getattr(visuals, name[:-6])
             assert issubclass(vis_node, Node)
             assert issubclass(vis_node, obj)

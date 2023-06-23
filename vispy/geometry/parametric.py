@@ -8,17 +8,24 @@ import numpy as np
 from .normals import normals
 
 
-def surface(func, umin=0, umax=2 * np.pi, ucount=64, urepeat=1.0,
-            vmin=0, vmax=2 * np.pi, vcount=64, vrepeat=1.0):
+def surface(
+    func,
+    umin=0,
+    umax=2 * np.pi,
+    ucount=64,
+    urepeat=1.0,
+    vmin=0,
+    vmax=2 * np.pi,
+    vcount=64,
+    vrepeat=1.0,
+):
     """
     Computes the parameterization of a parametric surface
 
     func: function(u,v)
         Parametric function used to build the surface
     """
-    vtype = [('position', np.float32, 3),
-             ('texcoord', np.float32, 2),
-             ('normal', np.float32, 3)]
+    vtype = [("position", np.float32, 3), ("texcoord", np.float32, 2), ("normal", np.float32, 3)]
     itype = np.uint32
 
     # umin, umax, ucount = 0, 2*np.pi, 64
@@ -50,7 +57,6 @@ def surface(func, umin=0, umax=2 * np.pi, ucount=64, urepeat=1.0,
             indices.append(i * (vcount) + j + vcount + 1)
             indices.append(i * (vcount) + j)
     indices = np.array(indices, dtype=itype)
-    vertices["normal"] = normals(vertices["position"],
-                                 indices.reshape(len(indices)//3, 3))
+    vertices["normal"] = normals(vertices["position"], indices.reshape(len(indices) // 3, 3))
 
     return vertices, indices

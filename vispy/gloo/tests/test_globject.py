@@ -22,14 +22,14 @@ def test_globject():
         commands.extend(ob._glir.clear())
     assert len(commands) == len(objects)
     for cmd in commands:
-        assert cmd[0] == 'CREATE'
+        assert cmd[0] == "CREATE"
 
     # Delete
     ob = objects[-1]
     q = ob._glir  # get it now, because its gone after we delete it
     ob.delete()
     cmd = q.clear()[-1]
-    assert cmd[0] == 'DELETE'
+    assert cmd[0] == "DELETE"
 
 
 run_tests_if_main()

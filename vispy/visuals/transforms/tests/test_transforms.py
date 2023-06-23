@@ -108,8 +108,8 @@ def test_transform_chain():
     t2 = tr.STTransform(translate=(3, 4))
     t3 = tr.STTransform(translate=(3, 4))
     # Create multiplied versions
-    t123 = t1*t2*t3
-    t321 = t3*t2*t1
+    t123 = t1 * t2 * t3
+    t321 = t3 * t2 * t1
     c123 = tr.ChainTransform(t1, t2, t3)
     c321 = tr.ChainTransform(t3, t2, t1)
     c123s = c123.simplified
@@ -129,8 +129,8 @@ def test_transform_chain():
     assert chain1.transforms == [t1, t2]  # or the test is useless
     assert chain2.transforms == [t2, t1]  # or the test is useless
     #
-    m12 = (t1*t2).map((1, 1)).tolist()
-    m21 = (t2*t1).map((1, 1)).tolist()
+    m12 = (t1 * t2).map((1, 1)).tolist()
+    m21 = (t2 * t1).map((1, 1)).tolist()
     m12_ = chain1.map((1, 1)).tolist()
     m21_ = chain2.map((1, 1)).tolist()
     #
@@ -175,44 +175,38 @@ def test_st_transform():
 
 
 def test_st_mapping():
-    p1 = [[5., 7.], [23., 8.]]
+    p1 = [[5.0, 7.0], [23.0, 8.0]]
     p2 = [[-1.3, -1.4], [1.1, 1.2]]
 
     t = tr.STTransform()
     t.set_mapping(p1, p2)
 
-    assert np.allclose(t.map(p1)[:, :len(p2)], p2)
+    assert np.allclose(t.map(p1)[:, : len(p2)], p2)
 
 
 def test_affine_mapping():
     t = tr.MatrixTransform()
-    p1 = np.array([[0, 0, 0],
-                   [1, 0, 0],
-                   [0, 1, 0],
-                   [0, 0, 1]])
+    p1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
     # test pure translation
     p2 = p1 + 5.5
     t.set_mapping(p1, p2)
-    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+    assert np.allclose(t.map(p1)[:, : p2.shape[1]], p2)
 
     # test pure scaling
     p2 = p1 * 5.5
     t.set_mapping(p1, p2)
-    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+    assert np.allclose(t.map(p1)[:, : p2.shape[1]], p2)
 
     # test scale + translate
     p2 = (p1 * 5.5) + 3.5
     t.set_mapping(p1, p2)
-    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+    assert np.allclose(t.map(p1)[:, : p2.shape[1]], p2)
 
     # test SRT
-    p2 = np.array([[10, 5, 3],
-                   [10, 15, 3],
-                   [30, 5, 3],
-                   [10, 5, 3.5]])
+    p2 = np.array([[10, 5, 3], [10, 15, 3], [30, 5, 3], [10, 5, 3.5]])
     t.set_mapping(p1, p2)
-    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+    assert np.allclose(t.map(p1)[:, : p2.shape[1]], p2)
 
 
 m = np.random.RandomState(0).normal(size=(4, 4))
@@ -224,13 +218,13 @@ transforms = [
 ]
 
 
-@pytest.mark.parametrize('trn', transforms)
+@pytest.mark.parametrize("trn", transforms)
 def test_inverse(trn):
     rng = np.random.RandomState(0)
     N = 20
     x = rng.normal(size=(N, 3))
     pw = rng.normal(size=(N, 3), scale=3)
-    pos = x * 10 ** pw
+    pos = x * 10**pw
 
     assert_allclose(pos, trn.inverse.map(trn.map(pos))[:, :3], atol=1e-7)
 

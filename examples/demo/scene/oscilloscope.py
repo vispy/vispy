@@ -25,19 +25,21 @@ try:
             self.rate = rate
             self.chunksize = chunksize
             self.p = pyaudio.PyAudio()
-            self.stream = self.p.open(format=pyaudio.paInt16,
-                                      channels=1,
-                                      rate=self.rate,
-                                      input=True,
-                                      frames_per_buffer=self.chunksize,
-                                      stream_callback=self.new_frame)
+            self.stream = self.p.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=self.rate,
+                input=True,
+                frames_per_buffer=self.chunksize,
+                stream_callback=self.new_frame,
+            )
             self.lock = threading.Lock()
             self.stop = False
             self.frames = []
             atexit.register(self.close)
 
         def new_frame(self, data, frame_count, time_info, status):
-            data = np.fromstring(data, 'int16')
+            data = np.fromstring(data, "int16")
             with self.lock:
                 self.frames.append(data)
                 if self.stop:
@@ -60,27 +62,26 @@ try:
             self.p.terminate()
 
 except ImportError:
+
     class MicrophoneRecorder(object):
         def __init__(self):
             self.chunksize = 1024
             self.rate = rate = 44100
-            t = np.linspace(0, 10, rate*10)
-            self.data = (np.sin(t * 10.) * 0.3).astype('float32')
-            self.data += np.sin((t + 0.3) * 20.) * 0.15
-            self.data += gaussian_filter(np.random.normal(size=self.data.shape)
-                                         * 0.2, (0.4, 8))
-            self.data += gaussian_filter(np.random.normal(size=self.data.shape)
-                                         * 0.005, (0, 1))
+            t = np.linspace(0, 10, rate * 10)
+            self.data = (np.sin(t * 10.0) * 0.3).astype("float32")
+            self.data += np.sin((t + 0.3) * 20.0) * 0.15
+            self.data += gaussian_filter(np.random.normal(size=self.data.shape) * 0.2, (0.4, 8))
+            self.data += gaussian_filter(np.random.normal(size=self.data.shape) * 0.005, (0, 1))
             self.data += np.sin(t * 1760 * np.pi)  # 880 Hz
-            self.data = (self.data * 2**10 - 2**9).astype('int16')
+            self.data = (self.data * 2**10 - 2**9).astype("int16")
             self.ptr = 0
 
         def get_frames(self):
             if self.ptr + 1024 > len(self.data):
                 end = 1024 - (len(self.data) - self.ptr)
-                frame = np.concatenate((self.data[self.ptr:], self.data[:end]))
+                frame = np.concatenate((self.data[self.ptr :], self.data[:end]))
             else:
-                frame = self.data[self.ptr:self.ptr+1024]
+                frame = self.data[self.ptr : self.ptr + 1024]
             self.ptr = (self.ptr + 1024) % (len(self.data) - 1024)
             return [frame]
 
@@ -112,9 +113,15 @@ class Oscilloscope(scene.ScrollingLines):
         An optional parent scenegraph node.
     """
 
-    def __init__(self, n_lines=100, line_size=1024, dx=1e-4,
-                 color=(20, 255, 50), trigger=(0, 0.002, 1e-4), parent=None):
-
+    def __init__(
+        self,
+        n_lines=100,
+        line_size=1024,
+        dx=1e-4,
+        color=(20, 255, 50),
+        trigger=(0, 0.002, 1e-4),
+        parent=None,
+    ):
         self._trigger = trigger  # trigger_level, trigger_height, trigger_width
 
         # lateral positioning for trigger
@@ -129,12 +136,16 @@ class Oscilloscope(scene.ScrollingLines):
         self.frames = []  # running list of recently received frames
         self.plot_ptr = 0
 
-        scene.ScrollingLines.__init__(self, n_lines=n_lines,
-                                      line_size=line_size, dx=dx,
-                                      color=self.color,
-                                      pos_offset=self.pos_offset,
-                                      parent=parent)
-        self.set_gl_state('additive', line_width=2)
+        scene.ScrollingLines.__init__(
+            self,
+            n_lines=n_lines,
+            line_size=line_size,
+            dx=dx,
+            color=self.color,
+            pos_offset=self.pos_offset,
+            parent=parent,
+        )
+        self.set_gl_state("additive", line_width=2)
 
     def new_frame(self, data):
         self.frames.append(data)
@@ -151,21 +162,20 @@ class Oscilloscope(scene.ScrollingLines):
             tw = int(self._trigger[2] / self._dx)  # trigger window width
             thresh = self._trigger[0]
 
-            trig = np.argwhere((data[tw:] > thresh + th) &
-                               (data[:-tw] < thresh - th))
+            trig = np.argwhere((data[tw:] > thresh + th) & (data[:-tw] < thresh - th))
             if len(trig) > 0:
                 m = np.argmin(np.abs(trig - len(data) / 2))
                 i = trig[m, 0]
                 y1 = data[i]
                 y2 = data[min(i + tw * 2, len(data) - 1)]
                 s = y2 / (y2 - y1)
-                i = i + tw * 2 * (1-s)
+                i = i + tw * 2 * (1 - s)
                 dx = i * self._dx
             else:
                 # default trigger at center of trace
                 # (optionally we could skip plotting instead, or place this
                 # after the most recent trace)
-                dx = self._dx * len(data) / 2.
+                dx = self._dx * len(data) / 2.0
 
         # if a trigger was found, add new data to the plot
         self.plot(data, -dx)
@@ -173,8 +183,7 @@ class Oscilloscope(scene.ScrollingLines):
     def plot(self, data, dx=0):
         self.set_data(self.plot_ptr, data)
 
-        np.multiply(self.color[..., 3], 0.98, out=self.color[..., 3],
-                    casting='unsafe')
+        np.multiply(self.color[..., 3], 0.98, out=self.color[..., 3], casting="unsafe")
         self.color[self.plot_ptr, 3] = 50
         self.set_color(self.color)
         self.pos_offset[self.plot_ptr] = (dx, 0, 0)
@@ -205,16 +214,17 @@ class ScrollingImage(scene.Image):
     def __init__(self, shape, parent):
         self._shape = shape
         self._color_fn = visuals.shaders.Function(rolling_tex)
-        self._ctex = gloo.Texture2D(np.zeros(shape+(1,), dtype='float32'),
-                                    format='luminance', internalformat='r32f')
-        self._color_fn['texture'] = self._ctex
-        self._color_fn['shift'] = 0
+        self._ctex = gloo.Texture2D(
+            np.zeros(shape + (1,), dtype="float32"), format="luminance", internalformat="r32f"
+        )
+        self._color_fn["texture"] = self._ctex
+        self._color_fn["shift"] = 0
         self.ptr = 0
-        scene.Image.__init__(self, method='impostor', parent=parent)
+        scene.Image.__init__(self, method="impostor", parent=parent)
         # self.set_gl_state('additive', cull_face=False)
-        self.shared_program.frag['get_data'] = self._color_fn
+        self.shared_program.frag["get_data"] = self._color_fn
         cfun = visuals.shaders.Function(cmap)
-        self.shared_program.frag['color_transform'] = cfun
+        self.shared_program.frag["color_transform"] = cfun
 
     @property
     def size(self):
@@ -224,7 +234,7 @@ class ScrollingImage(scene.Image):
         data = data.reshape(data.shape[0], 1, 1)
 
         self._ctex[:, self.ptr] = data
-        self._color_fn['shift'] = (self.ptr+1) / self._shape[1]
+        self._color_fn["shift"] = (self.ptr + 1) / self._shape[1]
         self.ptr = (self.ptr + 1) % self._shape[1]
         self.update()
 
@@ -240,31 +250,33 @@ mic = MicrophoneRecorder()
 n_fft_frames = 8
 fft_samples = mic.chunksize * n_fft_frames
 
-win = scene.SceneCanvas(keys='interactive', show=True, fullscreen=True)
+win = scene.SceneCanvas(keys="interactive", show=True, fullscreen=True)
 grid = win.central_widget.add_grid()
 
-view3 = grid.add_view(row=0, col=0, col_span=2, camera='panzoom',
-                      border_color='grey')
+view3 = grid.add_view(row=0, col=0, col_span=2, camera="panzoom", border_color="grey")
 image = ScrollingImage((1 + fft_samples // 2, 4000), parent=view3.scene)
 image.transform = scene.LogTransform((0, 10, 0))
 # view3.camera.rect = (0, 0, image.size[1], np.log10(image.size[0]))
 view3.camera.rect = (3493.32, 1.85943, 605.554, 1.41858)
 
-view1 = grid.add_view(row=1, col=0, camera='panzoom', border_color='grey')
+view1 = grid.add_view(row=1, col=0, camera="panzoom", border_color="grey")
 view1.camera.rect = (-0.01, -0.6, 0.02, 1.2)
 gridlines = scene.GridLines(color=(1, 1, 1, 0.5), parent=view1.scene)
-scope = Oscilloscope(line_size=mic.chunksize, dx=1.0/mic.rate,
-                     parent=view1.scene)
+scope = Oscilloscope(line_size=mic.chunksize, dx=1.0 / mic.rate, parent=view1.scene)
 
-view2 = grid.add_view(row=1, col=1, camera='panzoom', border_color='grey')
-view2.camera.rect = (0.5, -0.5e6, np.log10(mic.rate/2), 5e6)
+view2 = grid.add_view(row=1, col=1, camera="panzoom", border_color="grey")
+view2.camera.rect = (0.5, -0.5e6, np.log10(mic.rate / 2), 5e6)
 lognode = scene.Node(parent=view2.scene)
 lognode.transform = scene.LogTransform((10, 0, 0))
 gridlines2 = scene.GridLines(color=(1, 1, 1, 1), parent=lognode)
 
-spectrum = Oscilloscope(line_size=1 + fft_samples // 2, n_lines=10,
-                        dx=mic.rate/fft_samples,
-                        trigger=None, parent=lognode)
+spectrum = Oscilloscope(
+    line_size=1 + fft_samples // 2,
+    n_lines=10,
+    dx=mic.rate / fft_samples,
+    trigger=None,
+    parent=lognode,
+)
 
 
 mic.start()
@@ -287,15 +299,15 @@ def update(ev):
         fft_frames.append(frame)
         if len(fft_frames) >= n_fft_frames:
             cframes = np.concatenate(fft_frames) * window
-            fft = np.abs(np.fft.rfft(cframes)).astype('float32')
+            fft = np.abs(np.fft.rfft(cframes)).astype("float32")
             fft_frames.pop(0)
 
             spectrum.new_frame(fft)
             image.roll(fft)
 
 
-timer = app.Timer(interval='auto', connect=update)
+timer = app.Timer(interval="auto", connect=update)
 timer.start()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()

@@ -26,7 +26,6 @@ class CPUScaledStub(CPUScaledTextureMixin, Stub):
 
 
 class GPUScaledStub(GPUScaledTextureMixin, Stub):
-
     internalformat = "r32f"
 
     def _get_texture_format_for_data(self, data, internalformat=None):
@@ -46,7 +45,7 @@ def test_default_clim():
     # i32
     data = ref_data.astype(np.int32)
     clim = get_default_clim_from_dtype(data.dtype)
-    assert clim == (-2**31, 2**31 - 1)
+    assert clim == (-(2**31), 2**31 - 1)
     clim = get_default_clim_from_data(data)
     assert clim == (5, 25)
 
@@ -59,7 +58,6 @@ def test_default_clim():
 
 
 def test_default_clim_non_finite():
-
     data = np.array([10, np.nan, 5, 15, 25, 15]).astype(np.float32)
     clim = get_default_clim_from_dtype(data.dtype)
     assert clim == (0, 1)

@@ -49,9 +49,9 @@ class Application(object):
     def __repr__(self):
         name = self.backend_name
         if not name:
-            return '<Vispy app with no backend>'
+            return "<Vispy app with no backend>"
         else:
-            return '<Vispy app, wrapping the %s GUI toolkit>' % name
+            return "<Vispy app, wrapping the %s GUI toolkit>" % name
 
     @property
     def backend_name(self):
@@ -59,7 +59,7 @@ class Application(object):
         if self._backend is not None:
             return self._backend._vispy_get_backend_name()
         else:
-            return ''
+            return ""
 
     @property
     def backend_module(self):
@@ -99,7 +99,7 @@ class Application(object):
 
         # IPython does not set sys.flags when -i is specified, so first
         # check it if it is already imported.
-        if not hasattr(builtins, '__IPYTHON__'):
+        if not hasattr(builtins, "__IPYTHON__"):
             return False
 
         # Then we check the application singleton and determine based on
@@ -121,7 +121,7 @@ class Application(object):
             # 'get_ipython' is available in globals when running from
             # IPython/Jupyter
             ip = get_ipython()
-            if ip.has_trait('kernel'):
+            if ip.has_trait("kernel"):
                 # There doesn't seem to be an easy way to detect the frontend
                 # That said, if using a kernel, the user can choose to have an
                 # event loop, we therefore make sure the event loop isn't
@@ -182,20 +182,22 @@ class Application(object):
         # if it's a valid backend. If it isn't, it's a good thing we
         # get an error later because we should have decorated our test
         # with requires_application()
-        test_name = os.getenv('_VISPY_TESTING_APP', None)
+        test_name = os.getenv("_VISPY_TESTING_APP", None)
 
         # Check whether the given name is valid
         if backend_name is not None:
-            if backend_name.lower() == 'default':
+            if backend_name.lower() == "default":
                 backend_name = None  # Explicitly use default, avoid using test
             elif backend_name.lower() not in BACKENDMAP:
-                raise ValueError('backend_name must be one of %s or None, not '
-                                 '%r' % (BACKEND_NAMES, backend_name))
+                raise ValueError(
+                    "backend_name must be one of %s or None, not "
+                    "%r" % (BACKEND_NAMES, backend_name)
+                )
         elif test_name is not None:
             backend_name = test_name.lower()
             assert backend_name in BACKENDMAP
         elif self.is_notebook():
-            backend_name = 'jupyter_rfb'
+            backend_name = "jupyter_rfb"
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
@@ -215,7 +217,7 @@ class Application(object):
                     imported_toolkits.append(name.lower())
                     backends_to_try.append(name.lower())
             # See if a default is given
-            default_backend = config['default_backend'].lower()
+            default_backend = config["default_backend"].lower()
             if default_backend.lower() in BACKENDMAP.keys():
                 if default_backend not in backends_to_try:
                     backends_to_try.append(default_backend)
@@ -229,22 +231,22 @@ class Application(object):
         for key in backends_to_try:
             name, module_name, native_module_name = BACKENDMAP[key]
             TRIED_BACKENDS.append(name)
-            mod_name = 'backends.' + module_name
+            mod_name = "backends." + module_name
             __import__(mod_name, globals(), level=1)
             mod = getattr(backends, module_name)
             if not mod.available:
-                msg = ('Could not import backend "%s":\n%s'
-                       % (name, str(mod.why_not)))
+                msg = 'Could not import backend "%s":\n%s' % (name, str(mod.why_not))
                 if not try_others:
                     # Fail if user wanted to use a specific backend
                     raise RuntimeError(msg)
                 elif key in imported_toolkits:
                     # Warn if were unable to use an already imported toolkit
-                    msg = ('Although %s is already imported, the %s backend '
-                           'could not\nbe used ("%s"). \nNote that running '
-                           'multiple GUI toolkits simultaneously can cause '
-                           'side effects.' %
-                           (native_module_name, name, str(mod.why_not)))
+                    msg = (
+                        "Although %s is already imported, the %s backend "
+                        'could not\nbe used ("%s"). \nNote that running '
+                        "multiple GUI toolkits simultaneously can cause "
+                        "side effects." % (native_module_name, name, str(mod.why_not))
+                    )
                     logger.warning(msg)
                 elif backend_name is not None:
                     # Inform only if one isn't available
@@ -252,12 +254,14 @@ class Application(object):
             else:
                 # Success!
                 self._backend_module = mod
-                logger.info('Selected backend %s' % module_name)
+                logger.info("Selected backend %s" % module_name)
                 break
         else:
-            raise RuntimeError('Could not import any of the backends. '
-                               'You need to install any of %s. We recommend '
-                               'PyQt' % [b[0] for b in CORE_BACKENDS])
+            raise RuntimeError(
+                "Could not import any of the backends. "
+                "You need to install any of %s. We recommend "
+                "PyQt" % [b[0] for b in CORE_BACKENDS]
+            )
 
         # Store classes for app backend and canvas backend
         self._backend = self.backend_module.ApplicationBackend()

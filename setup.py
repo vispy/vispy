@@ -31,21 +31,23 @@ import numpy as np
 from Cython.Build import cythonize
 
 log.set_verbosity(log.DEBUG)
-log.info('setup.py entered')
-log.info('$PATH=%s' % os.environ['PATH'])
+log.info("setup.py entered")
+log.info("$PATH=%s" % os.environ["PATH"])
 
-name = 'vispy'
-description = 'Interactive visualization in Python'
+name = "vispy"
+description = "Interactive visualization in Python"
 
 # Special commands for building jupyter notebook extension
 here = os.path.dirname(os.path.abspath(__file__))
-node_root = os.path.join(here, 'js')
-is_repo = os.path.exists(os.path.join(here, '.git'))
+node_root = os.path.join(here, "js")
+is_repo = os.path.exists(os.path.join(here, ".git"))
 
-npm_path = os.pathsep.join([
-    os.path.join(node_root, 'node_modules', '.bin'),
-    os.environ.get('PATH', os.defpath),
-])
+npm_path = os.pathsep.join(
+    [
+        os.path.join(node_root, "node_modules", ".bin"),
+        os.environ.get("PATH", os.defpath),
+    ]
+)
 
 
 def set_builtin(name, value):
@@ -55,101 +57,110 @@ def set_builtin(name, value):
         setattr(__builtins__, name, value)
 
 
-extensions = [Extension('vispy.visuals.text._sdf_cpu',
-                        [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')],
-                        include_dirs=[np.get_include()]),
-              ]
+extensions = [
+    Extension(
+        "vispy.visuals.text._sdf_cpu",
+        [op.join("vispy", "visuals", "text", "_sdf_cpu.pyx")],
+        include_dirs=[np.get_include()],
+    ),
+]
 
-readme = open('README.rst', 'r').read()
+readme = open("README.rst", "r").read()
 setup(
     name=name,
     use_scm_version={
-        'write_to': 'vispy/version.py',
+        "write_to": "vispy/version.py",
         # uses setuptools_scm.version.get_local_dirty_tag (+dirty or empty string)
-        'local_scheme': 'dirty-tag',
+        "local_scheme": "dirty-tag",
     },
-    author='Vispy contributors',
-    author_email='vispy@googlegroups.com',
-    license='(new) BSD',
-    url='http://vispy.org',
-    download_url='https://pypi.python.org/pypi/vispy',
+    author="Vispy contributors",
+    author_email="vispy@googlegroups.com",
+    license="(new) BSD",
+    url="http://vispy.org",
+    download_url="https://pypi.python.org/pypi/vispy",
     keywords=[
-        'visualization',
-        'OpenGl',
-        'ES',
-        'medical',
-        'imaging',
-        '3D',
-        'plotting',
-        'numpy',
-        'bigdata',
-        'ipython',
-        'jupyter',
-        'widgets',
+        "visualization",
+        "OpenGl",
+        "ES",
+        "medical",
+        "imaging",
+        "3D",
+        "plotting",
+        "numpy",
+        "bigdata",
+        "ipython",
+        "jupyter",
+        "widgets",
     ],
     description=description,
     long_description=readme,
-    long_description_content_type='text/x-rst',
-    platforms='any',
-    provides=['vispy'],
-    python_requires='>=3.6',
-    install_requires=['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging'],
-    setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive', 'packaging'],
+    long_description_content_type="text/x-rst",
+    platforms="any",
+    provides=["vispy"],
+    python_requires=">=3.6",
+    install_requires=["numpy", "freetype-py", "hsluv", "kiwisolver", "packaging"],
+    setup_requires=["numpy", "cython", "setuptools_scm", "setuptools_scm_git_archive", "packaging"],
     extras_require={
-        'ipython-static': ['ipython'],
-        'pyglet': ['pyglet>=1.2'],
-        'pyqt5': ['pyqt5'],
-        'pyqt6': ['pyqt6'],
-        'pyside': ['PySide'],
-        'pyside2': ['PySide2'],
-        'pyside6': ['PySide6'],
-        'sdl2': ['PySDL2'],
-        'wx': ['wxPython'],
-        'tk': ['pyopengltk'],
-        'doc': ['pydata-sphinx-theme', 'numpydoc', 'sphinxcontrib-apidoc',
-                'sphinx-gallery', 'myst-parser', 'pillow', 'pytest',
-                'pyopengl'],
-        'io': ['meshio', 'Pillow'],
+        "ipython-static": ["ipython"],
+        "pyglet": ["pyglet>=1.2"],
+        "pyqt5": ["pyqt5"],
+        "pyqt6": ["pyqt6"],
+        "pyside": ["PySide"],
+        "pyside2": ["PySide2"],
+        "pyside6": ["PySide6"],
+        "sdl2": ["PySDL2"],
+        "wx": ["wxPython"],
+        "tk": ["pyopengltk"],
+        "doc": [
+            "pydata-sphinx-theme",
+            "numpydoc",
+            "sphinxcontrib-apidoc",
+            "sphinx-gallery",
+            "myst-parser",
+            "pillow",
+            "pytest",
+            "pyopengl",
+        ],
+        "io": ["meshio", "Pillow"],
     },
-    packages=find_packages(exclude=['make']),
+    packages=find_packages(exclude=["make"]),
     ext_modules=cythonize(extensions, language_level=3),
-    package_dir={'vispy': 'vispy'},
+    package_dir={"vispy": "vispy"},
     data_files=[],
     include_package_data=True,
     package_data={
-        'vispy': [op.join('io', '_data', '*'),
-                  op.join('app', 'tests', 'qt-designer.ui'),
-                  op.join('util', 'fonts', 'data', '*.ttf'),
-                  ],
-
-        'vispy.glsl': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.antialias': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.arrowheads': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.arrows': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.collections': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.colormaps': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.lines': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.markers': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.math': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.misc': ['*.vert', '*.frag', "*.glsl"],
-        'vispy.glsl.transforms': ['*.vert', '*.frag', "*.glsl"],
-
+        "vispy": [
+            op.join("io", "_data", "*"),
+            op.join("app", "tests", "qt-designer.ui"),
+            op.join("util", "fonts", "data", "*.ttf"),
+        ],
+        "vispy.glsl": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.antialias": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.arrowheads": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.arrows": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.collections": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.colormaps": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.lines": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.markers": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.math": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.misc": ["*.vert", "*.frag", "*.glsl"],
+        "vispy.glsl.transforms": ["*.vert", "*.frag", "*.glsl"],
     },
     zip_safe=False,
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Science/Research',
-        'Intended Audience :: Education',
-        'Intended Audience :: Developers',
-        'Topic :: Scientific/Engineering :: Visualization',
-        'License :: OSI Approved :: BSD License',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Framework :: IPython'
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Education",
+        "Intended Audience :: Developers",
+        "Topic :: Scientific/Engineering :: Visualization",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Framework :: IPython",
     ],
 )

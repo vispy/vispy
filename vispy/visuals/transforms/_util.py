@@ -25,6 +25,7 @@ def arg_to_array(func):
     func : function
         The decorated function.
     """
+
     @wraps(func)
     def fn(self, arg, *args, **kwargs):
         """Function
@@ -44,6 +45,7 @@ def arg_to_array(func):
             The return value of the function.
         """
         return func(self, np.array(arg), *args, **kwargs)
+
     return fn
 
 
@@ -77,11 +79,10 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
     if obj.shape[-1] < 4:
         new = np.empty(obj.shape[:-1] + (4,), dtype=obj.dtype)
         new[:] = default
-        new[..., :obj.shape[-1]] = obj
+        new[..., : obj.shape[-1]] = obj
         obj = new
     elif obj.shape[-1] > 4:
-        raise TypeError("Array shape %s cannot be converted to vec4"
-                        % (obj.shape, ))
+        raise TypeError("Array shape %s cannot be converted to vec4" % (obj.shape,))
     return obj
 
 
@@ -119,7 +120,7 @@ def arg_to_vec4(func):
             if flatten and ret is not None:
                 return ret.flatten()
             return ret
-        elif hasattr(arg, '_transform_in'):
+        elif hasattr(arg, "_transform_in"):
             arr = arg._transform_in()
             ret = func(self_, arr, *args, **kwargs)
             return arg._transform_out(ret)
@@ -174,6 +175,7 @@ class TransformCache(object):
     def _create(self, path):
         # import here to avoid import cycle
         from .chain import ChainTransform
+
         return ChainTransform(path)
 
     def roll(self):

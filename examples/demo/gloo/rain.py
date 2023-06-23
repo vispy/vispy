@@ -87,61 +87,59 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, title='Rain [Move mouse]',
-                            size=(512, 512), keys='interactive')
+        app.Canvas.__init__(self, title="Rain [Move mouse]", size=(512, 512), keys="interactive")
 
         # Build data
         # --------------------------------------
         n = 500
-        self.data = np.zeros(n, [('a_position', np.float32, 2),
-                                 ('a_fg_color', np.float32, 4),
-                                 ('a_size', np.float32)])
+        self.data = np.zeros(
+            n,
+            [("a_position", np.float32, 2), ("a_fg_color", np.float32, 4), ("a_size", np.float32)],
+        )
         self.index = 0
         self.program = Program(vertex, fragment)
         self.vdata = VertexBuffer(self.data)
         self.program.bind(self.vdata)
-        self.program['u_antialias'] = 1.00
-        self.program['u_linewidth'] = 1.00
-        self.program['u_model'] = np.eye(4, dtype=np.float32)
-        self.program['u_view'] = np.eye(4, dtype=np.float32)
+        self.program["u_antialias"] = 1.00
+        self.program["u_linewidth"] = 1.00
+        self.program["u_model"] = np.eye(4, dtype=np.float32)
+        self.program["u_view"] = np.eye(4, dtype=np.float32)
 
         self.activate_zoom()
 
-        gloo.set_clear_color('white')
-        gloo.set_state(blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self.timer = app.Timer('auto', self.on_timer, start=True)
+        gloo.set_clear_color("white")
+        gloo.set_state(blend=True, blend_func=("src_alpha", "one_minus_src_alpha"))
+        self.timer = app.Timer("auto", self.on_timer, start=True)
 
         self.show()
 
     def on_draw(self, event):
         gloo.clear()
-        self.program.draw('points')
+        self.program.draw("points")
 
     def on_resize(self, event):
         self.activate_zoom()
 
     def activate_zoom(self):
         gloo.set_viewport(0, 0, *self.physical_size)
-        projection = ortho(0, self.size[0], 0,
-                           self.size[1], -1, +1)
-        self.program['u_projection'] = projection
+        projection = ortho(0, self.size[0], 0, self.size[1], -1, +1)
+        self.program["u_projection"] = projection
 
     def on_timer(self, event):
-        self.data['a_fg_color'][..., 3] -= 0.01
-        self.data['a_size'] += 1.0
+        self.data["a_fg_color"][..., 3] -= 0.01
+        self.data["a_size"] += 1.0
         self.vdata.set_data(self.data)
         self.update()
 
     def on_mouse_move(self, event):
         x, y = event.pos
         h = self.size[1]
-        self.data['a_position'][self.index] = x, h - y
-        self.data['a_size'][self.index] = 5
-        self.data['a_fg_color'][self.index] = 0, 0, 0, 1
+        self.data["a_position"][self.index] = x, h - y
+        self.data["a_size"][self.index] = 5
+        self.data["a_fg_color"][self.index] = 0, 0, 0, 1
         self.index = (self.index + 1) % 500
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

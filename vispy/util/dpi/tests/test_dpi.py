@@ -9,7 +9,7 @@ from vispy.testing import run_tests_if_main
 def test_dpi():
     """Test dpi support"""
     dpi = get_dpi()
-    assert dpi > 0.
+    assert dpi > 0.0
     assert isinstance(dpi, float)
 
 

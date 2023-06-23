@@ -21,15 +21,14 @@ pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive',
-                            size=(800, 800))
-        self.line = visuals.LinePlotVisual(pos, color='w', edge_color='w',
-                                           symbol='o', 
-                                           face_color=(0.2, 0.2, 1))
+        app.Canvas.__init__(self, keys="interactive", size=(800, 800))
+        self.line = visuals.LinePlotVisual(
+            pos, color="w", edge_color="w", symbol="o", face_color=(0.2, 0.2, 1)
+        )
         self.show()
 
     def on_draw(self, event):
-        gloo.clear('black')
+        gloo.clear("black")
         self.line.draw()
 
     def on_resize(self, event):
@@ -38,7 +37,8 @@ class Canvas(app.Canvas):
         self.context.set_viewport(*vp)
         self.line.transforms.configure(canvas=self, viewport=vp)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     win = Canvas()
     if sys.flags.interactive != 1:
         app.run()

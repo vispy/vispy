@@ -18,13 +18,13 @@ from vispy import app, scene, io
 from vispy.visuals.filters.clipping_planes import PlanesClipper
 
 # Prepare canvas
-canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
+canvas = scene.SceneCanvas(keys="interactive", size=(800, 600), show=True)
 
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
 # Create the visuals
-vol = np.load(io.load_data_file('volume/stent.npz'))['arr_0']
+vol = np.load(io.load_data_file("volume/stent.npz"))["arr_0"]
 volume = scene.visuals.Volume(vol, parent=view.scene, threshold=0.225)
 
 np.random.seed(1)
@@ -39,12 +39,8 @@ clipper = PlanesClipper()
 markers.attach(clipper)
 
 # Create and set the camera
-fov = 60.
-cam = scene.cameras.TurntableCamera(
-    parent=view.scene,
-    fov=fov,
-    name='Turntable'
-)
+fov = 60.0
+cam = scene.cameras.TurntableCamera(parent=view.scene, fov=fov, name="Turntable")
 view.camera = cam
 
 
@@ -54,10 +50,10 @@ volume_center = (np.array(vol.shape) / 2)[::-1]
 
 # clipping planes around the origin
 clip_modes = {
-    'x': np.array([[volume_center, [1, 0, 0]]]),
-    'y': np.array([[volume_center, [0, 1, 0]]]),
-    'z': np.array([[volume_center, [0, 0, 1]]]),
-    'o': np.array([[volume_center, [1, 1, 1]]]),
+    "x": np.array([[volume_center, [1, 0, 0]]]),
+    "y": np.array([[volume_center, [0, 1, 0]]]),
+    "z": np.array([[volume_center, [0, 0, 1]]]),
+    "o": np.array([[volume_center, [1, 1, 1]]]),
 }
 
 
@@ -78,12 +74,12 @@ def remove_clip():
 # Implement key presses
 @canvas.events.key_press.connect
 def on_key_press(event):
-    if event.text in 'xyzo':
+    if event.text in "xyzo":
         add_clip(event.text)
-    elif event.text == 'r':
+    elif event.text == "r":
         remove_clip()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(__doc__)
     app.run()

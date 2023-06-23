@@ -55,23 +55,33 @@ class GraphVisual(CompoundVisual):
 
     """
 
-    _arrow_attributes = ('arrow_type', 'arrow_size')
-    _arrow_kwargs = ('line_color', 'line_width')
-    _node_kwargs = ('node_symbol', 'node_size', 'border_color', 'face_color',
-                    'border_width')
+    _arrow_attributes = ("arrow_type", "arrow_size")
+    _arrow_kwargs = ("line_color", "line_width")
+    _node_kwargs = ("node_symbol", "node_size", "border_color", "face_color", "border_width")
 
-    _arrow_kw_trans = dict(line_color='color', line_width='width')
-    _node_kw_trans = dict(node_symbol='symbol', node_size='size',
-                          border_color='edge_color', border_width='edge_width')
+    _arrow_kw_trans = dict(line_color="color", line_width="width")
+    _node_kw_trans = dict(
+        node_symbol="symbol", node_size="size", border_color="edge_color", border_width="edge_width"
+    )
     _node_properties_args = ()
 
-    def __init__(self, adjacency_mat=None, directed=False, layout=None,
-                 animate=False, line_color=None, line_width=None,
-                 arrow_type=None, arrow_size=None, node_symbol=None,
-                 node_size=None, border_color=None, face_color=None,
-                 border_width=None):
-
-        self._edges = ArrowVisual(method='gl', connect='segments')
+    def __init__(
+        self,
+        adjacency_mat=None,
+        directed=False,
+        layout=None,
+        animate=False,
+        line_color=None,
+        line_width=None,
+        arrow_type=None,
+        arrow_size=None,
+        node_symbol=None,
+        node_size=None,
+        border_color=None,
+        face_color=None,
+        border_width=None,
+    ):
+        self._edges = ArrowVisual(method="gl", connect="segments")
         self._nodes = MarkersVisual()
 
         self._arrow_data = {}
@@ -92,11 +102,18 @@ class GraphVisual(CompoundVisual):
 
         CompoundVisual.__init__(self, [self._edges, self._nodes])
 
-        self.set_data(adjacency_mat, line_color=line_color,
-                      line_width=line_width, arrow_type=arrow_type,
-                      arrow_size=arrow_size, node_symbol=node_symbol,
-                      node_size=node_size, border_color=border_color,
-                      face_color=face_color, border_width=border_width)
+        self.set_data(
+            adjacency_mat,
+            line_color=line_color,
+            line_width=line_width,
+            arrow_type=arrow_type,
+            arrow_size=arrow_size,
+            node_symbol=node_symbol,
+            node_size=node_size,
+            border_color=border_color,
+            face_color=face_color,
+            border_width=border_width,
+        )
 
     @property
     def adjacency_matrix(self):
@@ -135,11 +152,12 @@ class GraphVisual(CompoundVisual):
     def animate_layout(self):
         if self._layout_iter is None:
             if self._adjacency_mat is None:
-                raise ValueError("No adjacency matrix set yet. An adjacency "
-                                 "matrix is required to calculate the layout.")
+                raise ValueError(
+                    "No adjacency matrix set yet. An adjacency "
+                    "matrix is required to calculate the layout."
+                )
 
-            self._layout_iter = iter(self._layout(self._adjacency_mat,
-                                                  self._directed))
+            self._layout_iter = iter(self._layout(self._adjacency_mat, self._directed))
 
         try:
             node_vertices, line_vertices, arrows = next(self._layout_iter)
@@ -150,19 +168,19 @@ class GraphVisual(CompoundVisual):
         for k, v in self._node_properties.items():
             setattr(self._nodes, k, v)
 
-        self._edges.set_data(pos=line_vertices, arrows=arrows,
-                             **self._arrow_data)
+        self._edges.set_data(pos=line_vertices, arrows=arrows, **self._arrow_data)
 
         return False
 
     def set_final_layout(self):
         if self._layout_iter is None:
             if self._adjacency_mat is None:
-                raise ValueError("No adjacency matrix set yet. An adjacency "
-                                 "matrix is required to calculate the layout.")
+                raise ValueError(
+                    "No adjacency matrix set yet. An adjacency "
+                    "matrix is required to calculate the layout."
+                )
 
-            self._layout_iter = iter(self._layout(self._adjacency_mat,
-                                                  self._directed))
+            self._layout_iter = iter(self._layout(self._adjacency_mat, self._directed))
 
         # Calculate the final position of the nodes and lines
         node_vertices = None
@@ -175,8 +193,7 @@ class GraphVisual(CompoundVisual):
         for k, v in self._node_properties.items():
             setattr(self._nodes, k, v)
 
-        self._edges.set_data(pos=line_vertices, arrows=arrows,
-                             **self._arrow_data)
+        self._edges.set_data(pos=line_vertices, arrows=arrows, **self._arrow_data)
 
     def reset_layout(self):
         self._layout_iter = None
@@ -199,30 +216,29 @@ class GraphVisual(CompoundVisual):
 
         for k in self._arrow_attributes:
             if k in kwargs:
-                translated = (self._arrow_kw_trans[k] if k in
-                              self._arrow_kw_trans else k)
+                translated = self._arrow_kw_trans[k] if k in self._arrow_kw_trans else k
 
                 setattr(self._edges, translated, kwargs.pop(k))
 
         arrow_kwargs = {}
         for k in self._arrow_kwargs:
             if k in kwargs:
-                translated = (self._arrow_kw_trans[k] if k in
-                              self._arrow_kw_trans else k)
+                translated = self._arrow_kw_trans[k] if k in self._arrow_kw_trans else k
 
                 arrow_kwargs[translated] = kwargs.pop(k)
 
         node_kwargs = {}
         for k in self._node_kwargs:
             if k in kwargs:
-                translated = (self._node_kw_trans[k] if k in
-                              self._node_kw_trans else k)
+                translated = self._node_kw_trans[k] if k in self._node_kw_trans else k
 
                 node_kwargs[translated] = kwargs.pop(k)
 
         if len(kwargs) > 0:
-            raise TypeError("%s.set_data() got invalid keyword arguments: %s"
-                            % (self.__class__.__name__, list(kwargs.keys())))
+            raise TypeError(
+                "%s.set_data() got invalid keyword arguments: %s"
+                % (self.__class__.__name__, list(kwargs.keys()))
+            )
 
         # some attributes should be set as properties
         node_properties = {}

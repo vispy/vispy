@@ -16,12 +16,33 @@ from vispy import app
 import numpy as np
 
 # Create vertices
-vPosition = np.array([[-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],
-                      [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0, ]], np.float32)
-vPosition_full = np.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
-                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], np.float32)
-vTexcoord = np.array([[0.0, 0.0], [0.0, 1.0],
-                      [1.0, 0.0], [1.0, 1.0]], np.float32)
+vPosition = np.array(
+    [
+        [-0.8, -0.8, 0.0],
+        [+0.7, -0.7, 0.0],
+        [-0.7, +0.7, 0.0],
+        [
+            +0.8,
+            +0.8,
+            0.0,
+        ],
+    ],
+    np.float32,
+)
+vPosition_full = np.array(
+    [
+        [-1.0, -1.0, 0.0],
+        [+1.0, -1.0, 0.0],
+        [-1.0, +1.0, 0.0],
+        [
+            +1.0,
+            +1.0,
+            0.0,
+        ],
+    ],
+    np.float32,
+)
+vTexcoord = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]], np.float32)
 
 # For initial quad
 VERT_SHADER1 = """
@@ -76,9 +97,8 @@ SIZE = 50
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(560, 420))
+        app.Canvas.__init__(self, keys="interactive", size=(560, 420))
 
         # Create texture to render to
         shape = self.physical_size[1], self.physical_size[0]
@@ -89,14 +109,14 @@ class Canvas(app.Canvas):
 
         # Create program to render a shape
         self._program1 = gloo.Program(VERT_SHADER1, FRAG_SHADER1)
-        self._program1['u_color'] = 0.9, 1.0, 0.4, 1
-        self._program1['a_position'] = gloo.VertexBuffer(vPosition)
+        self._program1["u_color"] = 0.9, 1.0, 0.4, 1
+        self._program1["a_position"] = gloo.VertexBuffer(vPosition)
 
         # Create program to render FBO result
         self._program2 = gloo.Program(VERT_SHADER2, FRAG_SHADER2)
-        self._program2['a_position'] = gloo.VertexBuffer(vPosition)
-        self._program2['a_texcoord'] = gloo.VertexBuffer(vTexcoord)
-        self._program2['u_texture1'] = self._rendertex
+        self._program2["a_position"] = gloo.VertexBuffer(vPosition)
+        self._program2["a_texcoord"] = gloo.VertexBuffer(vTexcoord)
+        self._program2["u_texture1"] = self._rendertex
 
         self.show()
 
@@ -110,15 +130,15 @@ class Canvas(app.Canvas):
             gloo.set_clear_color((0.0, 0.0, 0.5, 1))
             gloo.clear(color=True, depth=True)
             gloo.set_viewport(0, 0, *self.physical_size)
-            self._program1.draw('triangle_strip')
+            self._program1.draw("triangle_strip")
 
         # Now draw result to a full-screen quad
         # Init
-        gloo.set_clear_color('white')
+        gloo.set_clear_color("white")
         gloo.clear(color=True, depth=True)
-        self._program2.draw('triangle_strip')
+        self._program2.draw("triangle_strip")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

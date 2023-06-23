@@ -74,14 +74,28 @@ class MeshNormalsVisual(LineVisual):
     >>> MeshNormalsVisual(..., length_method='max_extent', length_scale=0.1)
     """
 
-    def __init__(self, meshdata=None, primitive='face', length=None,
-                 length_method='median_edge', length_scale=1.0, **kwargs):
+    def __init__(
+        self,
+        meshdata=None,
+        primitive="face",
+        length=None,
+        length_method="median_edge",
+        length_scale=1.0,
+        **kwargs,
+    ):
         self._previous_meshdata = None
-        super().__init__(connect='segments')
+        super().__init__(connect="segments")
         self.set_data(meshdata, primitive, length, length_method, length_scale, **kwargs)
 
-    def set_data(self, meshdata=None, primitive='face', length=None,
-                 length_method='median_edge', length_scale=1.0, **kwargs):
+    def set_data(
+        self,
+        meshdata=None,
+        primitive="face",
+        length=None,
+        length_method="median_edge",
+        length_scale=1.0,
+        **kwargs,
+    ):
         """Set the data used to draw this visual
 
         Parameters
@@ -108,45 +122,46 @@ class MeshNormalsVisual(LineVisual):
 
         if meshdata is None or meshdata.is_empty():
             normals = None
-        elif primitive == 'face':
+        elif primitive == "face":
             normals = meshdata.get_face_normals()
-        elif primitive == 'vertex':
+        elif primitive == "vertex":
             normals = meshdata.get_vertex_normals()
         else:
-            raise ValueError('primitive must be "face" or "vertex", got %s'
-                             % primitive)
+            raise ValueError('primitive must be "face" or "vertex", got %s' % primitive)
 
         # remove connect from kwargs to make sure we don't change it
-        kwargs.pop('connect', None)
+        kwargs.pop("connect", None)
 
         if normals is None:
-            super().set_data(pos=np.empty((0, 3), dtype=np.float32), connect='segments', **kwargs)
+            super().set_data(pos=np.empty((0, 3), dtype=np.float32), connect="segments", **kwargs)
             return
 
         self._previous_meshdata = meshdata
 
-        norms = np.sqrt((normals ** 2).sum(axis=-1, keepdims=True))
+        norms = np.sqrt((normals**2).sum(axis=-1, keepdims=True))
         unit_normals = normals / norms
 
-        if length is None and length_method == 'median_edge':
-            face_corners = meshdata.get_vertices(indexed='faces')
-            edges = np.stack((
-                face_corners[:, 1, :] - face_corners[:, 0, :],
-                face_corners[:, 2, :] - face_corners[:, 1, :],
-                face_corners[:, 0, :] - face_corners[:, 2, :],
-            ))
-            edge_lengths = np.sqrt((edges ** 2).sum(axis=-1))
+        if length is None and length_method == "median_edge":
+            face_corners = meshdata.get_vertices(indexed="faces")
+            edges = np.stack(
+                (
+                    face_corners[:, 1, :] - face_corners[:, 0, :],
+                    face_corners[:, 2, :] - face_corners[:, 1, :],
+                    face_corners[:, 0, :] - face_corners[:, 2, :],
+                )
+            )
+            edge_lengths = np.sqrt((edges**2).sum(axis=-1))
             length = np.median(edge_lengths)
-        elif length is None and length_method == 'max_extent':
+        elif length is None and length_method == "max_extent":
             vertices = meshdata.get_vertices()
             max_extent = np.max(vertices.max(axis=0) - vertices.min(axis=0))
             length = max_extent
         length *= length_scale
 
-        if primitive == 'face':
-            origins = meshdata.get_vertices(indexed='faces')
+        if primitive == "face":
+            origins = meshdata.get_vertices(indexed="faces")
             origins = origins.mean(axis=1)
-        elif primitive == 'vertex':
+        elif primitive == "vertex":
             origins = meshdata.get_vertices()
 
         # Ensure the broadcasting if the input is an `(n,)` array.
@@ -156,4 +171,4 @@ class MeshNormalsVisual(LineVisual):
         ends = origins + length * unit_normals
         segments = np.hstack((origins, ends)).reshape(-1, 3)
 
-        super().set_data(pos=segments, connect='segments', **kwargs)
+        super().set_data(pos=segments, connect="segments", **kwargs)

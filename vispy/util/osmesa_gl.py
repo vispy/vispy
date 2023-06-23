@@ -11,7 +11,6 @@ def fix_osmesa_gl_lib():
     This modification must be done before vispy.gloo is imported for the
     first time.
     """
-    if 'VISPY_GL_LIB' in os.environ:
-        logger.warning('VISPY_GL_LIB is ignored when using OSMesa. Use '
-                       'OSMESA_LIBRARY instead.')
-    os.environ['VISPY_GL_LIB'] = os.getenv('OSMESA_LIBRARY', 'libOSMesa.so')
+    if "VISPY_GL_LIB" in os.environ:
+        logger.warning("VISPY_GL_LIB is ignored when using OSMesa. Use " "OSMESA_LIBRARY instead.")
+    os.environ["VISPY_GL_LIB"] = os.getenv("OSMESA_LIBRARY", "libOSMesa.so")

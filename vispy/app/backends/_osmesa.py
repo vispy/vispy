@@ -5,8 +5,7 @@
 """OSMesa backend for offscreen rendering on Linux/Unix."""
 from __future__ import division
 from ...util.ptime import time
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...gloo import gl
 from time import sleep
 
@@ -15,23 +14,23 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    available, testable, why_not, which = True, True, None, 'OSMesa'
+    available, testable, why_not, which = True, True, None, "OSMesa"
 
 # -------------------------------------------------------------- capability ---
 capability = dict(
     # if True they mean:
-    title=True,          # can set title on the fly
-    size=True,           # can set size on the fly
-    position=False,       # can set position on the fly
-    show=True,           # can show/hide window XXX ?
-    vsync=False,          # can set window to sync to blank
-    resizable=False,      # can toggle resizability (e.g., no user resizing)
-    decorate=True,       # can toggle decorations
-    fullscreen=False,     # fullscreen window support
-    context=True,        # can share contexts between windows
-    multi_window=True,   # can use multiple windows at once
-    scroll=False,         # scroll-wheel events are supported
-    parent=False,         # can pass native widget backend parent
+    title=True,  # can set title on the fly
+    size=True,  # can set size on the fly
+    position=False,  # can set position on the fly
+    show=True,  # can show/hide window XXX ?
+    vsync=False,  # can set window to sync to blank
+    resizable=False,  # can toggle resizability (e.g., no user resizing)
+    decorate=True,  # can toggle decorations
+    fullscreen=False,  # fullscreen window support
+    context=True,  # can share contexts between windows
+    multi_window=True,  # can use multiple windows at once
+    scroll=False,  # scroll-wheel events are supported
+    parent=False,  # can pass native widget backend parent
     always_on_top=False,  # can be made always-on-top
 )
 
@@ -40,13 +39,11 @@ _VP_OSMESA_ALL_WINDOWS = []
 
 
 def _get_osmesa_windows():
-    return [win for win in _VP_OSMESA_ALL_WINDOWS
-            if isinstance(win, CanvasBackend)]
+    return [win for win in _VP_OSMESA_ALL_WINDOWS if isinstance(win, CanvasBackend)]
 
 
 # ------------------------------------------------------------- application ---
 class ApplicationBackend(BaseApplicationBackend):
-
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._timers = list()
@@ -56,7 +53,7 @@ class ApplicationBackend(BaseApplicationBackend):
             self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
-        return 'osmesa'
+        return "osmesa"
 
     def _vispy_process_events(self):
         for timer in self._timers:
@@ -115,7 +112,7 @@ class CanvasBackend(BaseCanvasBackend):
         # TODO: We do not support setting config
         # ... use context.config
         # Deal with context
-        p.context.shared.add_ref('osmesa', self)
+        p.context.shared.add_ref("osmesa", self)
         if p.context.shared.ref is self:
             self._native_context = OSMesaContext()
         else:
@@ -131,18 +128,17 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_current(self):
         if self._native_context is None:
-            raise RuntimeError('Native context is None')
+            raise RuntimeError("Native context is None")
         if self._pixels is None:
-            raise RuntimeError('Pixel buffer has already been deleted')
+            raise RuntimeError("Pixel buffer has already been deleted")
 
-        ok = self._native_context.make_current(self._pixels, self._size[0],
-                                               self._size[1])
+        ok = self._native_context.make_current(self._pixels, self._size[0], self._size[1])
         if not ok:
-            raise RuntimeError('Failed attaching OSMesa rendering buffer')
+            raise RuntimeError("Failed attaching OSMesa rendering buffer")
 
     def _vispy_swap_buffers(self):
         if self._pixels is None:
-            raise RuntimeError('No pixel buffer')
+            raise RuntimeError("No pixel buffer")
         gl.glFinish()
 
     def _vispy_set_title(self, title):
@@ -208,7 +204,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_draw(self):
         # This is called by the osmesa ApplicationBackend
         if self._vispy_canvas is None or self._pixels is None:
-            raise RuntimeError('draw with no canvas or pixels attached')
+            raise RuntimeError("draw with no canvas or pixels attached")
             return
         self._vispy_set_current()
         self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h)
@@ -216,7 +212,6 @@ class CanvasBackend(BaseCanvasBackend):
 
 # ------------------------------------------------------------------- timer ---
 class TimerBackend(BaseTimerBackend):
-
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
         vispy_timer._app._backend._add_timer(self)
@@ -227,7 +222,7 @@ class TimerBackend(BaseTimerBackend):
         self._next_time = time() + self._interval
 
     def _vispy_stop(self):
-        self._next_time = float('inf')
+        self._next_time = float("inf")
 
     def _tick(self):
         if time() > self._next_time:

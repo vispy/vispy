@@ -24,16 +24,17 @@ pos[:, 0] = np.linspace(10, 390, N)
 pos[:, 1] = np.random.normal(size=N, scale=20, loc=0)
 
 
-canvas = scene.SceneCanvas(keys='interactive', size=(400, 200), show=True)
+canvas = scene.SceneCanvas(keys="interactive", size=(400, 200), show=True)
 
 # Create a visual that updates the line with different colormaps
 color = next(colormaps)
-line = scene.Line(pos=pos, color=color, method='gl')
+line = scene.Line(pos=pos, color=color, method="gl")
 line.transform = STTransform(translate=[0, 140])
 line.parent = canvas.central_widget
 
-text = scene.Text(color, bold=True, font_size=24, color='w',
-                  pos=(200, 40), parent=canvas.central_widget)
+text = scene.Text(
+    color, bold=True, font_size=24, color="w", pos=(200, 40), parent=canvas.central_widget
+)
 
 
 def on_timer(event):
@@ -42,8 +43,9 @@ def on_timer(event):
     line.set_data(pos=pos, color=color)
     text.text = color
 
-timer = app.Timer(.5, connect=on_timer, start=True)
+
+timer = app.Timer(0.5, connect=on_timer, start=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas.app.run()

@@ -74,19 +74,16 @@ void main(void)
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(800, 600), keys='interactive')
+        app.Canvas.__init__(self, size=(800, 600), keys="interactive")
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program["u_global_time"] = 0
-        self.program['a_position'] = [(-1, -1), (-1, +1),
-                                      (+1, -1), (+1, +1)]
+        self.program["a_position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 
         self.apply_zoom()
 
-        gloo.set_state(blend=True,
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        gloo.set_state(blend=True, blend_func=("src_alpha", "one_minus_src_alpha"))
 
-        self._timer = app.Timer('auto', connect=self.on_timer_event,
-                                start=True)
+        self._timer = app.Timer("auto", connect=self.on_timer_event, start=True)
 
         self.show()
 
@@ -94,8 +91,8 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
     def on_draw(self, event):
-        gloo.clear('white')
-        self.program.draw(mode='triangle_strip')
+        gloo.clear("white")
+        self.program.draw(mode="triangle_strip")
 
     def on_timer_event(self, event):
         if self._timer.running:
@@ -114,6 +111,6 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = Canvas()
     app.run()

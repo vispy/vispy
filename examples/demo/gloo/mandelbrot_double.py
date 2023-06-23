@@ -177,15 +177,13 @@ void main() {
 # vispy Canvas
 # -----------------------------------------------------------------------------
 class Canvas(app.Canvas):
-
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
         self.program = gloo.Program(vertex, fragment)
 
         # Draw a rectangle that takes up the whole screen. All of the work is
         # done in the shader.
-        self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
-                                    (-1, -1), (1, 1), (1, -1)]
+        self.program["position"] = [(-1, -1), (-1, 1), (1, 1), (-1, -1), (1, 1), (1, -1)]
 
         self.scale = 3
         self.program["scale"] = set_emulated_double(self.scale)
@@ -199,7 +197,7 @@ class Canvas(app.Canvas):
         self.min_scale = 1e-12
         self.max_scale = 4
 
-        gloo.set_clear_color(color='black')
+        gloo.set_clear_color(color="black")
 
         self.show()
 
@@ -212,8 +210,8 @@ class Canvas(app.Canvas):
     def apply_zoom(self):
         width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
-        self.program['inv_resolution_x'] = set_emulated_double(1 / width)
-        self.program['inv_resolution_y'] = set_emulated_double(1 / height)
+        self.program["inv_resolution_x"] = set_emulated_double(1 / width)
+        self.program["inv_resolution_y"] = set_emulated_double(1 / height)
 
     def on_mouse_move(self, event):
         """Pan the view based on the change in mouse position."""
@@ -264,10 +262,10 @@ class Canvas(app.Canvas):
         wheels :)
 
         """
-        if event.text == '+' or event.text == '=':
+        if event.text == "+" or event.text == "=":
             self.zoom(0.9)
-        elif event.text == '-':
-            self.zoom(1/0.9)
+        elif event.text == "-":
+            self.zoom(1 / 0.9)
         self.update()
 
     def zoom(self, factor, mouse_coords=None):
@@ -297,6 +295,6 @@ def set_emulated_double(number):
     return double
 
 
-if __name__ == '__main__':
-    canvas = Canvas(size=(800, 800), keys='interactive')
+if __name__ == "__main__":
+    canvas = Canvas(size=(800, 800), keys="interactive")
     app.run()

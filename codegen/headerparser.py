@@ -252,7 +252,6 @@ class ConstantDefinition(Definition):
 
 
 class FunctionDefinition(Definition):
-
     SKIPTYPECHARS = "if"  # 'bsifd'
     ALLSKIPCHARS = SKIPTYPECHARS + "v1234"
 
@@ -329,9 +328,7 @@ class Argument:
             name = components[-1]
             type = components[-2]
             if "const" in type:
-                type = components[
-                    -3
-                ]  # glShaderSource has "const GLchar* const* string"
+                type = components[-3]  # glShaderSource has "const GLchar* const* string"
         # Store stuff
         self.orig = tuple(components)
         self.name = name.lstrip("*")

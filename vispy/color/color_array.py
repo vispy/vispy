@@ -9,30 +9,38 @@ from copy import deepcopy
 
 from ..util import logger
 from ._color_dict import _color_dict
-from .color_space import (_hex_to_rgba, _rgb_to_hex, _rgb_to_hsv,  # noqa
-                          _hsv_to_rgb, _rgb_to_lab, _lab_to_rgb)  # noqa
+from .color_space import (
+    _hex_to_rgba,
+    _rgb_to_hex,
+    _rgb_to_hsv,  # noqa
+    _hsv_to_rgb,
+    _rgb_to_lab,
+    _lab_to_rgb,
+)  # noqa
 
 
 ###############################################################################
 # User-friendliness helpers
 
+
 def _string_to_rgb(color):
     """Convert user string or hex color to color array (length 3 or 4)"""
-    if not color.startswith('#'):
+    if not color.startswith("#"):
         if color.lower() not in _color_dict:
             raise ValueError('Color "%s" unknown' % color)
         color = _color_dict[color.lower()]
-        assert color[0] == '#'
+        assert color[0] == "#"
     # hex color
     color = color[1:]
     lc = len(color)
     if lc in (3, 4):
-        color = ''.join(c + c for c in color)
+        color = "".join(c + c for c in color)
         lc = len(color)
     if lc not in (6, 8):
-        raise ValueError('Hex color must have exactly six or eight '
-                         'elements following the # sign')
-    color = np.array([int(color[i:i+2], 16) / 255. for i in range(0, lc, 2)])
+        raise ValueError(
+            "Hex color must have exactly six or eight " "elements following the # sign"
+        )
+    color = np.array([int(color[i : i + 2], 16) / 255.0 for i in range(0, lc, 2)])
     return color
 
 
@@ -49,20 +57,21 @@ def _user_to_rgba(color, expand=True, clip=False):
         if any(isinstance(c, (str, ColorArray)) for c in color):
             color = [_user_to_rgba(c, expand=expand, clip=clip) for c in color]
             if any(len(c) > 1 for c in color):
-                raise RuntimeError('could not parse colors, are they nested?')
+                raise RuntimeError("could not parse colors, are they nested?")
             color = [c[0] for c in color]
     color = np.atleast_2d(color).astype(np.float32)
     if color.shape[1] not in (3, 4):
-        raise ValueError('color must have three or four elements')
+        raise ValueError("color must have three or four elements")
     if expand and color.shape[1] == 3:  # only expand if requested
-        color = np.concatenate((color, np.ones((color.shape[0], 1))),
-                               axis=1)
+        color = np.concatenate((color, np.ones((color.shape[0], 1))), axis=1)
     if color.min() < 0 or color.max() > 1:
         if clip:
             color = np.clip(color, 0, 1)
         else:
-            raise ValueError("Color values must be between 0 and 1 (or use "
-                             "clip=True to automatically clip the values).")
+            raise ValueError(
+                "Color values must be between 0 and 1 (or use "
+                "clip=True to automatically clip the values)."
+            )
     return color
 
 
@@ -70,7 +79,7 @@ def _array_clip_val(val):
     """Helper to turn val into array and clip between 0 and 1"""
     val = np.array(val)
     if val.max() > 1 or val.min() < 0:
-        logger.warning('value will be clipped between 0 and 1')
+        logger.warning("value will be clipped between 0 and 1")
     val[...] = np.clip(val, 0, 1)
     return val
 
@@ -132,17 +141,14 @@ class ColorArray(object):
     on the GPU.
     """
 
-    def __init__(self, color=(0., 0., 0.), alpha=None,
-                 clip=False, color_space='rgb'):
-
+    def __init__(self, color=(0.0, 0.0, 0.0), alpha=None, clip=False, color_space="rgb"):
         # if color is RGB, then set the default color to black
         color = (0,) * 4 if color is None else color
-        if color_space == 'hsv':
+        if color_space == "hsv":
             # if the color space is hsv, convert hsv to rgb
             color = _hsv_to_rgb(color)
-        elif color_space != 'rgb':
-            raise ValueError('color_space should be either "rgb" or'
-                             '"hsv", it is ' + color_space)
+        elif color_space != "rgb":
+            raise ValueError('color_space should be either "rgb" or' '"hsv", it is ' + color_space)
 
         # Parse input type, and set attribute"""
         rgba = _user_to_rgba(color, clip=clip)
@@ -175,14 +181,13 @@ class ColorArray(object):
 
     def __repr__(self):
         nice_str = str(tuple(self._rgba[0]))
-        plural = ''
+        plural = ""
         if len(self) > 1:
-            plural = 's'
-            nice_str += ' ... ' + str(tuple(self.rgba[-1]))
+            plural = "s"
+            nice_str += " ... " + str(tuple(self.rgba[-1]))
         # use self._name() here instead of hard-coding name in case
         # we eventually subclass this class
-        return ('<%s: %i color%s (%s)>' % (self._name(), len(self),
-                                           plural, nice_str))
+        return "<%s: %i color%s (%s)>" % (self._name(), len(self), plural, nice_str)
 
     def __eq__(self, other):
         return np.array_equal(self._rgba, other._rgba)
@@ -190,8 +195,7 @@ class ColorArray(object):
     ###########################################################################
     def __getitem__(self, item):
         if isinstance(item, tuple):
-            raise ValueError('ColorArray indexing is only allowed along '
-                             'the first dimension.')
+            raise ValueError("ColorArray indexing is only allowed along " "the first dimension.")
         subrgba = self._rgba[item]
         if subrgba.ndim == 1:
             assert len(subrgba) == 4
@@ -201,8 +205,7 @@ class ColorArray(object):
 
     def __setitem__(self, item, value):
         if isinstance(item, tuple):
-            raise ValueError('ColorArray indexing is only allowed along '
-                             'the first dimension.')
+            raise ValueError("ColorArray indexing is only allowed along " "the first dimension.")
         # value should be a RGBA array, or a ColorArray instance
         if isinstance(value, ColorArray):
             value = value.rgba
@@ -235,7 +238,7 @@ class ColorArray(object):
         if self._rgba is None:
             self._rgba = rgba  # only on init
         else:
-            self._rgba[:, :rgba.shape[1]] = rgba
+            self._rgba[:, : rgba.shape[1]] = rgba
 
     @property
     def rgb(self):
@@ -268,7 +271,7 @@ class ColorArray(object):
     def RGB(self, val):
         """Set the color using an Nx3 array of RGB uint8 values"""
         # need to convert to normalized float
-        val = np.atleast_1d(val).astype(np.float32) / 255.
+        val = np.atleast_1d(val).astype(np.float32) / 255.0
         self.rgba = val
 
     @property
@@ -389,13 +392,13 @@ class Color(ColorArray):
         If True, clip the color values.
     """
 
-    def __init__(self, color='black', alpha=None, clip=False):
+    def __init__(self, color="black", alpha=None, clip=False):
         """Parse input type, and set attribute"""
         if isinstance(color, (list, tuple)):
             color = np.array(color, np.float32)
         rgba = _user_to_rgba(color, clip=clip)
         if rgba.shape[0] != 1:
-            raise ValueError('color must be of correct shape')
+            raise ValueError("color must be of correct shape")
         if alpha is not None:
             rgba[:, 3] = alpha
         self._rgba = None
@@ -444,4 +447,4 @@ class Color(ColorArray):
 
     def __repr__(self):
         nice_str = str(tuple(self._rgba[0]))
-        return ('<%s: %s>' % (self._name(), nice_str))
+        return "<%s: %s>" % (self._name(), nice_str)

@@ -66,22 +66,35 @@ class ColorBarWidget(Widget):
         ratio of minor axis to major axis
     """
 
-    def __init__(self, cmap, orientation,
-                 label="", label_color='black', clim=("", ""),
-                 border_width=0.0, border_color="black",
-                 padding=(0.2, 0.2), axis_ratio=0.05, **kwargs):
-
+    def __init__(
+        self,
+        cmap,
+        orientation,
+        label="",
+        label_color="black",
+        clim=("", ""),
+        border_width=0.0,
+        border_color="black",
+        padding=(0.2, 0.2),
+        axis_ratio=0.05,
+        **kwargs,
+    ):
         dummy_size = (1, 1)
         self._major_axis_padding = padding[0]
         self._minor_axis_padding = padding[1]
         self._minor_axis_ratio = axis_ratio
 
-        self._colorbar = ColorBarVisual(size=dummy_size, cmap=cmap,
-                                        orientation=orientation,
-                                        label=label, clim=clim,
-                                        label_color=label_color,
-                                        border_width=border_width,
-                                        border_color=border_color, **kwargs)
+        self._colorbar = ColorBarVisual(
+            size=dummy_size,
+            cmap=cmap,
+            orientation=orientation,
+            label=label,
+            clim=clim,
+            label_color=label_color,
+            border_width=border_width,
+            border_color=border_color,
+            **kwargs,
+        )
 
         Widget.__init__(self)
 
@@ -110,14 +123,11 @@ class ColorBarWidget(Widget):
         else:
             (total_major_axis, total_minor_axis) = (total_halfy, total_halfx)
 
-        major_axis = total_major_axis * (1.0 -
-                                         self._major_axis_padding)
+        major_axis = total_major_axis * (1.0 - self._major_axis_padding)
         minor_axis = major_axis * self._minor_axis_ratio
 
         # if the minor axis is "leaking" from the padding, then clamp
-        minor_axis = np.minimum(minor_axis,
-                                total_minor_axis *
-                                (1.0 - self._minor_axis_padding))
+        minor_axis = np.minimum(minor_axis, total_minor_axis * (1.0 - self._minor_axis_padding))
 
         return (major_axis, minor_axis)
 

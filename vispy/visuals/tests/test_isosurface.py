@@ -8,7 +8,6 @@ from vispy.testing import run_tests_if_main, requires_pyopengl
 
 @requires_pyopengl()
 def test_isosurface():
-
     # Create data
     vol = np.arange(1000).reshape((10, 10, 10)).astype(np.float32)
 

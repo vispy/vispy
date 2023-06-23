@@ -24,13 +24,13 @@ def _update_process_check(canvas, val, draw=True):
         canvas.app.process_events()
         sleep(0.03)  # give it time to swap (Qt?)
     canvas._backend._vispy_set_current()
-    print('           check %s' % val)
+    print("           check %s" % val)
     # check screenshot to see if it's all one color
     ss = _screenshot()
     try:
         assert_allclose(ss.shape[:2], _win_size[::-1])
     except Exception:
-        print('!!!!!!!!!! FAIL  bad size %s' % list(ss.shape[:2]))
+        print("!!!!!!!!!! FAIL  bad size %s" % list(ss.shape[:2]))
         raise
     goal = val * np.ones(ss.shape)
     try:
@@ -38,19 +38,21 @@ def _update_process_check(canvas, val, draw=True):
         # It can be off by 1 due to rounding
         assert_allclose(ss[:, :, :3], goal[:, :, :3], atol=1)
     except Exception:
-        print('!!!!!!!!!! FAIL  %s' % np.unique(ss))
+        print("!!!!!!!!!! FAIL  %s" % np.unique(ss))
         raise
 
 
-@pytest.mark.xfail(IS_TRAVIS_CI and 'darwin' in sys.platform,
-                   reason='Travis OSX causes segmentation fault on this test for an unknown reason.')
+@pytest.mark.xfail(
+    IS_TRAVIS_CI and "darwin" in sys.platform,
+    reason="Travis OSX causes segmentation fault on this test for an unknown reason.",
+)
 @requires_application()
 def test_multiple_canvases():
     """Testing multiple canvases"""
     n_check = 3
     app = use_app()
-    with Canvas(app=app, size=_win_size, title='same_0') as c0:
-        with Canvas(app=app, size=_win_size, title='same_1') as c1:
+    with Canvas(app=app, size=_win_size, title="same_0") as c0:
+        with Canvas(app=app, size=_win_size, title="same_1") as c1:
             ct = [0, 0]
 
             @c0.events.draw.connect
@@ -82,26 +84,25 @@ def test_multiple_canvases():
             def on_timer(_):
                 global timer_ran
                 timer_ran = True
-            t = Timer(0.1, app=app, connect=on_timer, iterations=1,  # noqa
-                      start=True)
+
+            t = Timer(0.1, app=app, connect=on_timer, iterations=1, start=True)  # noqa
             app.process_events()
             sleep(0.5)  # long for slow systems
             app.process_events()
             app.process_events()
             assert timer_ran
 
-    if app.backend_name.lower() == 'wx':
-        raise SkipTest('wx fails test #2')  # XXX TODO Fix this
+    if app.backend_name.lower() == "wx":
+        raise SkipTest("wx fails test #2")  # XXX TODO Fix this
 
-    kwargs = dict(app=app, autoswap=False, size=_win_size,
-                  show=True)
-    with Canvas(title='0', **kwargs) as c0:
-        with Canvas(title='1', **kwargs) as c1:
+    kwargs = dict(app=app, autoswap=False, size=_win_size, show=True)
+    with Canvas(title="0", **kwargs) as c0:
+        with Canvas(title="1", **kwargs) as c1:
             bgcolors = [None] * 2
 
             @c0.events.draw.connect
             def draw00(event):
-                print('  {0:7}: {1}'.format('0', bgcolors[0]))
+                print("  {0:7}: {1}".format("0", bgcolors[0]))
                 if bgcolors[0] is not None:
                     gl.glViewport(0, 0, *list(_win_size))
                     gl.glClearColor(*bgcolors[0])
@@ -110,7 +111,7 @@ def test_multiple_canvases():
 
             @c1.events.draw.connect
             def draw11(event):
-                print('  {0:7}: {1}'.format('1', bgcolors[1]))
+                print("  {0:7}: {1}".format("1", bgcolors[1]))
                 if bgcolors[1] is not None:
                     gl.glViewport(0, 0, *list(_win_size))
                     gl.glClearColor(*bgcolors[1])
@@ -118,14 +119,14 @@ def test_multiple_canvases():
                     gl.glFinish()
 
             for ci, canvas in enumerate((c0, c1)):
-                print('draw %s' % canvas.title)
+                print("draw %s" % canvas.title)
                 bgcolors[ci] = [0.5, 0.5, 0.5, 1.0]
                 _update_process_check(canvas, 127)
 
             for ci, canvas in enumerate((c0, c1)):
-                print('test')
+                print("test")
                 _update_process_check(canvas, 127, draw=False)
-                bgcolors[ci] = [1., 1., 1., 1.]
+                bgcolors[ci] = [1.0, 1.0, 1.0, 1.0]
                 _update_process_check(canvas, 255)
                 bgcolors[ci] = [0.25, 0.25, 0.25, 0.25]
                 _update_process_check(canvas, 64)

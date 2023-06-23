@@ -8,7 +8,13 @@
 Sandbox for experimenting with vispy.visuals.shaders
 """
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import *  # noqa
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QGridLayout,
+    QMainWindow,
+    QSplitter,
+)
 import sys
 import traceback
 
@@ -16,7 +22,9 @@ from editor import Editor, HAVE_QSCI
 
 
 presets = [
-    ('Introduction', '''
+    (
+        "Introduction",
+        '''
 """
              ------ Shader Composition Sandbox -------
 
@@ -44,10 +52,11 @@ program = ModularProgram(vertex_shader, fragment_shader)
 program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
-'''),
-
-
-    ('Simple hook', '''
+''',
+    ),
+    (
+        "Simple hook",
+        '''
 """
 In this example we define a 'hook' in the vertex shader: a function prototype
 with no definition. By leaving this function undefined, any new function
@@ -89,10 +98,11 @@ program['input_position'] = func
 program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
-'''),
-
-
-    ('Anonymous functions', '''
+''',
+    ),
+    (
+        "Anonymous functions",
+        '''
 """
 Functions may optionally be defined with '$' in front of the function name.
 This indicates that the function is anonymous (has no name) and thus may be
@@ -139,10 +149,11 @@ program['input_position'] = func
 program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
-'''),
-
-
-    ('Program variables', '''
+''',
+    ),
+    (
+        "Program variables",
+        '''
 """
 Many Functions need to define their own program variables
 (uniform/attribute/varying) in order to operate correctly. However, with many
@@ -196,10 +207,11 @@ program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
 
-'''),
-
-
-    ('Resolving name conflicts', '''
+''',
+    ),
+    (
+        "Resolving name conflicts",
+        '''
 """
 When anonymous functions and variables have conflicting names, the
 ModularProgram will generate unique names by appending _N to the end of the
@@ -254,10 +266,11 @@ program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
 
-'''),
-
-
-    ('Function chaining', '''
+''',
+    ),
+    (
+        "Function chaining",
+        '''
 """
 Function chains are another essential component of shader composition,
 allowing a list of functions to be executed in order.
@@ -316,10 +329,11 @@ program.set_hook('vert_post_hook', post_chain)
 program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
-'''),
-
-
-    ('Function composition', '''
+''',
+    ),
+    (
+        "Function composition",
+        '''
 """
 Chains may also be used to generate a function composition where the return
 value of each function call supplies the input to the next argument.
@@ -378,10 +392,11 @@ program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
 
-'''),
-
-
-    ('Fragment shaders', '''
+''',
+    ),
+    (
+        "Fragment shaders",
+        '''
 """
 Although the prior examples focused on vertex shaders, these concepts
 apply equally well for fragment shaders.
@@ -446,10 +461,11 @@ program['vert_post_hook'] = vert_func
 program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
-'''),
-
-
-    ('Sub-hooks', '''
+''',
+    ),
+    (
+        "Sub-hooks",
+        '''
 """
 """
 
@@ -500,9 +516,8 @@ program['vert_post_hook'] = vert_func
 program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
-'''),
-
-
+''',
+    ),
 ]
 
 
@@ -523,9 +538,9 @@ win.setCentralWidget(cw)
 layout = QGridLayout()
 cw.setLayout(layout)
 
-editor = Editor(language='Python')
-vertex = Editor(language='CPP')
-fragment = Editor(language='CPP')
+editor = Editor(language="Python")
+vertex = Editor(language="CPP")
+fragment = Editor(language="CPP")
 for i in range(3):
     editor.zoomOut()
     vertex.zoomOut()
@@ -563,7 +578,7 @@ def load_example(name):
 def load_next():
     global last_loaded
     try:
-        load_example(last_loaded+1)
+        load_example(last_loaded + 1)
     except IndexError:
         pass
 
@@ -571,11 +586,11 @@ def load_next():
 def mk_load_callback(name):
     return lambda: load_example(name)
 
-example_menu = menubar.addMenu('Load example..')
+
+example_menu = menubar.addMenu("Load example..")
 for i, preset in enumerate(presets):
     name = preset[0]
-    action = example_menu.addAction("%d. %s" % (i, name),
-                                    mk_load_callback(name))
+    action = example_menu.addAction("%d. %s" % (i, name), mk_load_callback(name))
 
 next_action = menubar.addAction("Next example", load_next)
 
@@ -592,8 +607,8 @@ def update():
     glob = {}
     try:
         exec(code, local, glob)
-        vert = glob['VERTEX']
-        frag = glob['FRAGMENT']
+        vert = glob["VERTEX"]
+        frag = glob["FRAGMENT"]
         editor.clear_marker()
     except Exception:
         vert = traceback.format_exc()
@@ -602,8 +617,8 @@ def update():
         while tb is not None:
             # print(tb.tb_lineno, tb.tb_frame.f_code.co_filename)
             try:
-                if tb.tb_frame.f_code.co_filename == '<string>':
-                    editor.set_marker(tb.tb_lineno-1)
+                if tb.tb_frame.f_code.co_filename == "<string>":
+                    editor.set_marker(tb.tb_lineno - 1)
             except Exception:
                 pass
             tb = tb.tb_next
@@ -611,8 +626,9 @@ def update():
     vertex.setText(vert)
     fragment.setText(frag)
 
+
 editor.textChanged.connect(update)
 update()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.exec_()

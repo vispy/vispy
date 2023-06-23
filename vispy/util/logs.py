@@ -17,20 +17,21 @@ import numpy as np
 ###############################################################################
 # LOGGING (some adapted from mne-python)
 
+
 def _get_vispy_caller():
     """Helper to get vispy calling function from the stack"""
     records = inspect.stack()
     # first few records are vispy-based logging calls
     for record in records[5:]:
-        module = record[0].f_globals['__name__']
-        if module.startswith('vispy'):
+        module = record[0].f_globals["__name__"]
+        if module.startswith("vispy"):
             line = str(record[0].f_lineno)
             func = record[3]
-            cls = record[0].f_locals.get('self', None)
-            clsname = "" if cls is None else cls.__class__.__name__ + '.'
+            cls = record[0].f_locals.get("self", None)
+            clsname = "" if cls is None else cls.__class__.__name__ + "."
             caller = "{0}:{1}{2}({3}): ".format(module, clsname, func, line)
             return caller
-    return 'unknown'
+    return "unknown"
 
 
 # class _WrapStdOut(object):
@@ -45,7 +46,7 @@ class _VispyFormatter(logging.Formatter):
     """Formatter that optionally prepends caller"""
 
     def __init__(self):
-        logging.Formatter.__init__(self, '%(levelname)s: %(message)s')
+        logging.Formatter.__init__(self, "%(levelname)s: %(message)s")
         self._vispy_prepend_caller = False
 
     def _vispy_set_prepend(self, prepend):
@@ -83,8 +84,7 @@ class _VispyStreamHandler(logging.StreamHandler):
         """Log message emitter that optionally matches and/or records"""
         test = record.getMessage()
         match = self._vispy_match
-        if (match is None or re.search(match, test) or
-                re.search(match, _get_vispy_caller())):
+        if match is None or re.search(match, test) or re.search(match, _get_vispy_caller()):
             if self._vispy_emit_record:
                 fmt_rec = self._vispy_formatter.format(record)
                 self._vispy_emit_list.append(fmt_rec)
@@ -116,14 +116,18 @@ class _VispyStreamHandler(logging.StreamHandler):
         self._vispy_emit_list = list()
 
 
-logger = logging.getLogger('vispy')
+logger = logging.getLogger("vispy")
 _lf = _VispyFormatter()
 _lh = _VispyStreamHandler()  # needs _lf to exist
 logger.addHandler(_lh)
 
-logging_types = dict(debug=logging.DEBUG, info=logging.INFO,
-                     warning=logging.WARNING, error=logging.ERROR,
-                     critical=logging.CRITICAL)
+logging_types = dict(
+    debug=logging.DEBUG,
+    info=logging.INFO,
+    warning=logging.WARNING,
+    error=logging.ERROR,
+    critical=logging.CRITICAL,
+)
 
 
 def set_log_level(verbose, match=None, return_old=False):
@@ -161,15 +165,15 @@ def set_log_level(verbose, match=None, return_old=False):
     # via the context handler (use_log_level), so that configuration is
     # done by the context handler itself.
     if isinstance(verbose, bool):
-        verbose = 'info' if verbose else 'warning'
+        verbose = "info" if verbose else "warning"
     if isinstance(verbose, str):
         verbose = verbose.lower()
         if verbose not in logging_types:
             raise ValueError('Invalid argument "%s"' % verbose)
         verbose = logging_types[verbose]
     else:
-        raise TypeError('verbose must be a bool or string')
-    logger = logging.getLogger('vispy')
+        raise TypeError("verbose must be a bool or string")
+    logger = logging.getLogger("vispy")
     old_verbose = logger.level
     old_match = _lh._vispy_set_match(match)
     logger.setLevel(verbose)
@@ -217,12 +221,11 @@ class use_log_level(object):
         self._print_msg = print_msg
         self._record = record
         if match is not None and not isinstance(match, str):
-            raise TypeError('match must be None or str')
+            raise TypeError("match must be None or str")
 
     def __enter__(self):
         # set the log level
-        old_level, old_match = set_log_level(self._new_level,
-                                             self._new_match, return_old=True)
+        old_level, old_match = set_log_level(self._new_level, self._new_match, return_old=True)
         for key, value in logging_types.items():
             if value == old_level:
                 old_level = key
@@ -248,7 +251,7 @@ class use_log_level(object):
             _lh._vispy_print_msg = True  # set it back
 
 
-def log_exception(level='warning', tb_skip=2):
+def log_exception(level="warning", tb_skip=2):
     """
     Send an exception and traceback to the logger.
 
@@ -272,24 +275,24 @@ def log_exception(level='warning', tb_skip=2):
     msg += "".join(tb[1:]).rstrip()
     logger.log(logging_types[level], msg)
 
+
 logger.log_exception = log_exception  # make this easier to reach
 
 
-def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
-                      cb_event=None, node=None):
+def _handle_exception(ignore_callback_errors, print_callback_errors, obj, cb_event=None, node=None):
     """Helper for prining errors in callbacks
 
     See EventEmitter._invoke_callback for a use example.
     """
-    if not hasattr(obj, '_vispy_err_registry'):
+    if not hasattr(obj, "_vispy_err_registry"):
         obj._vispy_err_registry = {}
     registry = obj._vispy_err_registry
 
     if cb_event is not None:
         cb, event = cb_event
-        exp_type = 'callback'
+        exp_type = "callback"
     else:
-        exp_type = 'node'
+        exp_type = "node"
     type_, value, tb = sys.exc_info()
     tb = tb.tb_next  # Skip *this* frame
     sys.last_type = type_
@@ -300,16 +303,16 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
     if not ignore_callback_errors:
         raise
     if print_callback_errors != "never":
-        this_print = 'full'
-        if print_callback_errors in ('first', 'reminders'):
+        this_print = "full"
+        if print_callback_errors in ("first", "reminders"):
             # need to check to see if we've hit this yet
-            if exp_type == 'callback':
+            if exp_type == "callback":
                 key = repr(cb) + repr(event)
             else:
                 key = repr(node)
             if key in registry:
                 registry[key] += 1
-                if print_callback_errors == 'first':
+                if print_callback_errors == "first":
                     this_print = None
                 else:  # reminders
                     ii = registry[key]
@@ -321,37 +324,32 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
                         this_print = None
             else:
                 registry[key] = 1
-        if this_print == 'full':
+        if this_print == "full":
             logger.log_exception()
-            if exp_type == 'callback':
+            if exp_type == "callback":
                 logger.error("Invoking %s for %s" % (cb, event))
             else:  # == 'node':
                 logger.error("Drawing node %s" % node)
         elif this_print is not None:
-            if exp_type == 'callback':
-                logger.error("Invoking %s repeat %s"
-                             % (cb, this_print))
+            if exp_type == "callback":
+                logger.error("Invoking %s repeat %s" % (cb, this_print))
             else:  # == 'node':
-                logger.error("Drawing node %s repeat %s"
-                             % (node, this_print))
+                logger.error("Drawing node %s repeat %s" % (node, this_print))
 
 
 def _serialize_buffer(buffer, array_serialization=None):
     """Serialize a NumPy array."""
-    if array_serialization == 'binary':
+    if array_serialization == "binary":
         return buffer.ravel().tobytes()
-    elif array_serialization == 'base64':
-        return {'storage_type': 'base64',
-                'buffer': base64.b64encode(buffer).decode('ascii')
-                }
-    raise ValueError("The array serialization method should be 'binary' or "
-                     "'base64'.")
+    elif array_serialization == "base64":
+        return {"storage_type": "base64", "buffer": base64.b64encode(buffer).decode("ascii")}
+    raise ValueError("The array serialization method should be 'binary' or " "'base64'.")
 
 
 class NumPyJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
-            return _serialize_buffer(obj, array_serialization='base64')
+            return _serialize_buffer(obj, array_serialization="base64")
         elif isinstance(obj, np.generic):
             return obj.item()
 

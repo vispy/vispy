@@ -17,21 +17,22 @@ from vispy.util.transforms import perspective, translate, rotate
 
 # Create vertices
 n, p = 100, 150
-data = np.zeros(p * n, [('a_position', np.float32, 2),
-                        ('a_color', np.float32, 4),
-                        ('a_rotation', np.float32, 4)])
-trail = .5 * np.pi
-data['a_position'][:, 0] = np.resize(np.linspace(0, trail, n), p * n)
-data['a_position'][:, 0] += np.repeat(np.random.uniform(0, 2 * np.pi, p), n)
-data['a_position'][:, 1] = np.repeat(np.linspace(0, 2 * np.pi, p), n)
+data = np.zeros(
+    p * n,
+    [("a_position", np.float32, 2), ("a_color", np.float32, 4), ("a_rotation", np.float32, 4)],
+)
+trail = 0.5 * np.pi
+data["a_position"][:, 0] = np.resize(np.linspace(0, trail, n), p * n)
+data["a_position"][:, 0] += np.repeat(np.random.uniform(0, 2 * np.pi, p), n)
+data["a_position"][:, 1] = np.repeat(np.linspace(0, 2 * np.pi, p), n)
 
-data['a_color'] = 1, 1, 1, 1
-data['a_color'] = np.repeat(
-    np.random.uniform(0.75, 1.00, (p, 4)).astype(np.float32), n, axis=0)
-data['a_color'][:, 3] = np.resize(np.linspace(0, 1, n), p * n)
+data["a_color"] = 1, 1, 1, 1
+data["a_color"] = np.repeat(np.random.uniform(0.75, 1.00, (p, 4)).astype(np.float32), n, axis=0)
+data["a_color"][:, 3] = np.resize(np.linspace(0, 1, n), p * n)
 
-data['a_rotation'] = np.repeat(
-    np.random.uniform(0, 2 * np.pi, (p, 4)).astype(np.float32), n, axis=0)
+data["a_rotation"] = np.repeat(
+    np.random.uniform(0, 2 * np.pi, (p, 4)).astype(np.float32), n, axis=0
+)
 
 
 vert = """
@@ -100,9 +101,8 @@ void main()
 
 # ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(800, 800))
+        app.Canvas.__init__(self, keys="interactive", size=(800, 800))
         self.title = "Atom [zoom with mouse scroll]"
 
         self.translate = 6.5
@@ -113,35 +113,34 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
         self.program.bind(gloo.VertexBuffer(data))
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
-        self.program['u_size'] = 5 / self.translate
+        self.program["u_model"] = self.model
+        self.program["u_view"] = self.view
+        self.program["u_size"] = 5 / self.translate
 
         self.theta = 0
         self.phi = 0
         self.clock = 0
         self.stop_rotation = False
 
-        gloo.set_state('translucent', depth_test=False)
-        self.program['u_clock'] = 0.0
+        gloo.set_state("translucent", depth_test=False)
+        self.program["u_clock"] = 0.0
 
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self._timer = app.Timer("auto", connect=self.on_timer, start=True)
 
         self.show()
 
     def on_key_press(self, event):
-        if event.text == ' ':
+        if event.text == " ":
             self.stop_rotation = not self.stop_rotation
 
     def on_timer(self, event):
         if not self.stop_rotation:
-            self.theta += .05
-            self.phi += .05
-            self.model = np.dot(rotate(self.theta, (0, 0, 1)),
-                                rotate(self.phi, (0, 1, 0)))
-            self.program['u_model'] = self.model
+            self.theta += 0.05
+            self.phi += 0.05
+            self.model = np.dot(rotate(self.theta, (0, 0, 1)), rotate(self.phi, (0, 1, 0)))
+            self.program["u_model"] = self.model
         self.clock += np.pi / 100
-        self.program['u_clock'] = self.clock
+        self.program["u_clock"] = self.clock
         self.update()
 
     def on_resize(self, event):
@@ -151,21 +150,21 @@ class Canvas(app.Canvas):
         self.translate += event.delta[1]
         self.translate = max(2, self.translate)
         self.view = translate((0, 0, -self.translate))
-        self.program['u_view'] = self.view
-        self.program['u_size'] = 5 / self.translate
+        self.program["u_view"] = self.view
+        self.program["u_size"] = 5 / self.translate
         self.update()
 
     def on_draw(self, event):
-        gloo.clear('black')
-        self.program.draw('points')
+        gloo.clear("black")
+        self.program.draw("points")
 
     def apply_zoom(self):
         width, height = self.physical_size
         gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.program["u_projection"] = self.projection
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = Canvas()
     app.run()

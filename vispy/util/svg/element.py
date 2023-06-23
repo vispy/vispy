@@ -4,9 +4,9 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import copy
-from . style import Style
+from .style import Style
 
-namespace = '{http://www.w3.org/2000/svg}'
+namespace = "{http://www.w3.org/2000/svg}"
 
 
 class Element(object):
@@ -21,7 +21,7 @@ class Element(object):
         if isinstance(content, str):
             return
 
-        self._id = content.get('id', self._id)
+        self._id = content.get("id", self._id)
         self._style.update(content.get("style", None))
         self._computed_style = Style()
         if parent and parent.style:

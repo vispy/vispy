@@ -7,13 +7,13 @@
 
 import sys
 
-__all__ = ['get_dpi']
+__all__ = ["get_dpi"]
 
-if sys.platform.startswith('linux'):
+if sys.platform.startswith("linux"):
     from ._linux import get_dpi
-elif sys.platform == 'darwin':
+elif sys.platform == "darwin":
     from ._quartz import get_dpi
-elif sys.platform.startswith('win'):
+elif sys.platform.startswith("win"):
     from ._win32 import get_dpi  # noqa, analysis:ignore
 else:
-    raise NotImplementedError('unknown system %s' % sys.platform)
+    raise NotImplementedError("unknown system %s" % sys.platform)

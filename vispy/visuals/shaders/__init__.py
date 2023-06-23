@@ -6,8 +6,16 @@ Provides functionality for composing shaders from multiple GLSL
 code snippets.
 """
 
-__all__ = ['ModularProgram', 'Function', 'MainFunction', 'Variable', 'Varying',
-           'FunctionChain', 'Compiler', 'MultiProgram']
+__all__ = [
+    "ModularProgram",
+    "Function",
+    "MainFunction",
+    "Variable",
+    "Varying",
+    "FunctionChain",
+    "Compiler",
+    "MultiProgram",
+]
 
 from .program import ModularProgram  # noqa
 from .function import Function, MainFunction, FunctionChain  # noqa

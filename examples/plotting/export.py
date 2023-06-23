@@ -22,7 +22,7 @@ fig[0, 0].plot([1, 6, 2, 4, 3, 8, 5, 7, 6, 3])
 # Render the canvas scene to a numpy array image with higher resolution
 # than the original canvas
 scale = 4
-image = fig.render(size=(fig.size[0]*scale, fig.size[1]*scale))
+image = fig.render(size=(fig.size[0] * scale, fig.size[1] * scale))
 
 # Display the data in the array, sub-sampled down to the original canvas
 # resolution
@@ -34,5 +34,5 @@ fig_2[0, 0].image(image[::-scale, ::scale])
 # canvas:
 fig_2[0, 0].camera.set_range(margin=0)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     fig.app.run()

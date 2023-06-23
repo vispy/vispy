@@ -38,7 +38,7 @@ class Key(object):
         return self._names[0].__hash__()
 
     def __repr__(self):
-        return "<Key %s>" % ', '.join([repr(v) for v in self._names])
+        return "<Key %s>" % ", ".join([repr(v) for v in self._names])
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -50,42 +50,42 @@ class Key(object):
         elif other is None:
             return False
         else:
-            raise ValueError('Key can only be compared to str, int and Key.')
+            raise ValueError("Key can only be compared to str, int and Key.")
 
 
-SHIFT = Key('Shift')
-CONTROL = Key('Control')
-ALT = Key('Alt')
-META = Key('Meta')  # That Mac thingy
+SHIFT = Key("Shift")
+CONTROL = Key("Control")
+ALT = Key("Alt")
+META = Key("Meta")  # That Mac thingy
 
-UP = Key('Up')
-DOWN = Key('Down')
-LEFT = Key('Left')
-RIGHT = Key('Right')
-PAGEUP = Key('PageUp')
-PAGEDOWN = Key('PageDown')
+UP = Key("Up")
+DOWN = Key("Down")
+LEFT = Key("Left")
+RIGHT = Key("Right")
+PAGEUP = Key("PageUp")
+PAGEDOWN = Key("PageDown")
 
-INSERT = Key('Insert')
-DELETE = Key('Delete')
-HOME = Key('Home')
-END = Key('End')
+INSERT = Key("Insert")
+DELETE = Key("Delete")
+HOME = Key("Home")
+END = Key("End")
 
-ESCAPE = Key('Escape')
-BACKSPACE = Key('Backspace')
+ESCAPE = Key("Escape")
+BACKSPACE = Key("Backspace")
 
-F1 = Key('F1')
-F2 = Key('F2')
-F3 = Key('F3')
-F4 = Key('F4')
-F5 = Key('F5')
-F6 = Key('F6')
-F7 = Key('F7')
-F8 = Key('F8')
-F9 = Key('F9')
-F10 = Key('F10')
-F11 = Key('F11')
-F12 = Key('F12')
+F1 = Key("F1")
+F2 = Key("F2")
+F3 = Key("F3")
+F4 = Key("F4")
+F5 = Key("F5")
+F6 = Key("F6")
+F7 = Key("F7")
+F8 = Key("F8")
+F9 = Key("F9")
+F10 = Key("F10")
+F11 = Key("F11")
+F12 = Key("F12")
 
-SPACE = Key('Space', ' ')
-ENTER = Key('Enter', 'Return', '\n')
-TAB = Key('Tab', '\t')
+SPACE = Key("Space", " ")
+ENTER = Key("Enter", "Return", "\n")
+TAB = Key("Tab", "\t")

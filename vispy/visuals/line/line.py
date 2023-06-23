@@ -26,14 +26,25 @@ TODO:
 """
 
 
-joins = {'miter': 0, 'round': 1, 'bevel': 2}
+joins = {"miter": 0, "round": 1, "bevel": 2}
 
-caps = {'': 0, 'none': 0, '.': 0,
-        'round': 1, ')': 1, '(': 1, 'o': 1,
-        'triangle in': 2, '<': 2,
-        'triangle out': 3, '>': 3,
-        'square': 4, '=': 4, 'butt': 4,
-        '|': 5}
+caps = {
+    "": 0,
+    "none": 0,
+    ".": 0,
+    "round": 1,
+    ")": 1,
+    "(": 1,
+    "o": 1,
+    "triangle in": 2,
+    "<": 2,
+    "triangle out": 3,
+    ">": 3,
+    "square": 4,
+    "=": 4,
+    "butt": 4,
+    "|": 5,
+}
 
 
 class LineVisual(CompoundVisual):
@@ -79,11 +90,18 @@ class LineVisual(CompoundVisual):
 
     _cap_types = caps
 
-    def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
-                 connect='strip', method='gl', antialias=False):
+    def __init__(
+        self,
+        pos=None,
+        color=(0.5, 0.5, 0.5, 1),
+        width=1,
+        connect="strip",
+        method="gl",
+        antialias=False,
+    ):
         self._line_visual = None
 
-        self._changed = {'pos': False, 'color': False, 'connect': False}
+        self._changed = {"pos": False, "color": False, "connect": False}
 
         self._pos = None
         self._color = None
@@ -91,14 +109,13 @@ class LineVisual(CompoundVisual):
         self._connect = None
         self._bounds = None
         self._antialias = None
-        self._method = 'none'
+        self._method = "none"
 
         CompoundVisual.__init__(self, [])
 
         # don't call subclass set_data; these often have different
         # signatures.
-        LineVisual.set_data(self, pos=pos, color=color, width=width,
-                            connect=connect)
+        LineVisual.set_data(self, pos=pos, color=color, width=width, connect=connect)
         self.antialias = antialias
         self.method = method
 
@@ -126,7 +143,7 @@ class LineVisual(CompoundVisual):
 
     @method.setter
     def method(self, method):
-        if method not in ('agg', 'gl'):
+        if method not in ("agg", "gl"):
             raise ValueError('method argument must be "agg" or "gl".')
         if method == self._method:
             return
@@ -135,9 +152,9 @@ class LineVisual(CompoundVisual):
         if self._line_visual is not None:
             self.remove_subvisual(self._line_visual)
 
-        if method == 'gl':
+        if method == "gl":
             self._line_visual = _GLLineVisual(self)
-        elif method == 'agg':
+        elif method == "agg":
             self._line_visual = _AggLineVisual(self)
         self.add_subvisual(self._line_visual)
 
@@ -172,11 +189,11 @@ class LineVisual(CompoundVisual):
         if pos is not None:
             self._bounds = None
             self._pos = pos
-            self._changed['pos'] = True
+            self._changed["pos"] = True
 
         if color is not None:
             self._color = color
-            self._changed['color'] = True
+            self._changed["color"] = True
 
         if width is not None:
             # width is always updated
@@ -184,7 +201,7 @@ class LineVisual(CompoundVisual):
 
         if connect is not None:
             self._connect = connect
-            self._changed['connect'] = True
+            self._changed["connect"] = True
 
         self.update()
 
@@ -215,9 +232,10 @@ class LineVisual(CompoundVisual):
             elif self._connect.ndim == 2 and self._connect.shape[1] == 2:
                 return self._connect.astype(np.uint32)
             else:
-                raise TypeError("Got invalid connect array of shape %r and "
-                                "dtype %r" % (self._connect.shape,
-                                              self._connect.dtype))
+                raise TypeError(
+                    "Got invalid connect array of shape %r and "
+                    "dtype %r" % (self._connect.shape, self._connect.dtype)
+                )
         else:
             return self._connect
 
@@ -253,8 +271,7 @@ class LineVisual(CompoundVisual):
         # Can and should we calculate bounds?
         if (self._bounds is None) and self._pos is not None:
             pos = self._pos
-            self._bounds = [(pos[:, d].min(), pos[:, d].max())
-                            for d in range(pos.shape[1])]
+            self._bounds = [(pos[:, d].min(), pos[:, d].max()) for d in range(pos.shape[1])]
         # Return what we can
         if self._bounds is None:
             return
@@ -272,7 +289,7 @@ class LineVisual(CompoundVisual):
 
 class _GLLineVisual(Visual):
     _shaders = {
-        'vertex': """
+        "vertex": """
             varying vec4 v_color;
 
             void main(void) {
@@ -280,12 +297,12 @@ class _GLLineVisual(Visual):
                 v_color = $color;
             }
         """,
-        'fragment': """
+        "fragment": """
             varying vec4 v_color;
             void main() {
                 gl_FragColor = v_color;
             }
-        """
+        """,
     }
 
     def __init__(self, parent):
@@ -295,108 +312,113 @@ class _GLLineVisual(Visual):
         self._connect_ibo = gloo.IndexBuffer()
         self._connect = None
 
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
-        self.set_gl_state('translucent')
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
+        self.set_gl_state("translucent")
 
     @staticmethod
     @lru_cache(maxsize=2)
     def _ensure_vec4_func(dims):
         if dims == 2:
-            func = Function("""
+            func = Function(
+                """
                 vec4 vec2to4(vec2 xyz) {
                     return vec4(xyz, 0.0, 1.0);
                 }
-            """)
+            """
+            )
         elif dims == 3:
-            func = Function("""
+            func = Function(
+                """
                 vec4 vec3to4(vec3 xyz) {
                     return vec4(xyz, 1.0);
                 }
-            """)
+            """
+            )
         else:
             raise TypeError("Vertex data must have shape (...,2) or (...,3).")
         return func
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
-        view.view_program.vert['transform'] = xform
+        view.view_program.vert["transform"] = xform
 
     def _prepare_draw(self, view):
         prof = Profiler()
 
-        if self._parent._changed['pos']:
+        if self._parent._changed["pos"]:
             if self._parent._pos is None:
                 return False
             pos = np.ascontiguousarray(self._parent._pos, dtype=np.float32)
             self._pos_vbo.set_data(pos)
-            self._program.vert['position'] = self._pos_vbo
-            self._program.vert['to_vec4'] = self._ensure_vec4_func(pos.shape[-1])
-            self._parent._changed['pos'] = False
+            self._program.vert["position"] = self._pos_vbo
+            self._program.vert["to_vec4"] = self._ensure_vec4_func(pos.shape[-1])
+            self._parent._changed["pos"] = False
 
-        if self._parent._changed['color']:
+        if self._parent._changed["color"]:
             color, cmap = self._parent._interpret_color()
             # If color is not visible, just quit now
             if isinstance(color, Color) and color.is_blank:
                 return False
             if isinstance(color, Function):
                 # TODO: Change to the parametric coordinate once that is done
-                self._program.vert['color'] = color(
-                    '(gl_Position.x + 1.0) / 2.0')
+                self._program.vert["color"] = color("(gl_Position.x + 1.0) / 2.0")
             else:
                 if color.ndim == 1:
-                    self._program.vert['color'] = color
+                    self._program.vert["color"] = color
                 else:
                     self._color_vbo.set_data(color)
-                    self._program.vert['color'] = self._color_vbo
-            self._parent._changed['color'] = False
+                    self._program.vert["color"] = self._color_vbo
+            self._parent._changed["color"] = False
 
-            self.shared_program['texture2D_LUT'] = cmap and cmap.texture_lut()
+            self.shared_program["texture2D_LUT"] = cmap and cmap.texture_lut()
 
         self.update_gl_state(line_smooth=bool(self._parent._antialias))
         px_scale = self.transforms.pixel_scale
         width = px_scale * self._parent._width
         self.update_gl_state(line_width=max(width, 1.0))
 
-        if self._parent._changed['connect']:
+        if self._parent._changed["connect"]:
             self._connect = self._parent._interpret_connect()
             if isinstance(self._connect, np.ndarray):
                 self._connect_ibo.set_data(self._connect)
-            self._parent._changed['connect'] = False
+            self._parent._changed["connect"] = False
         if self._connect is None:
             return False
 
-        prof('prepare')
+        prof("prepare")
 
         # Draw
-        if isinstance(self._connect, str) and \
-                self._connect == 'strip':
-            self._draw_mode = 'line_strip'
+        if isinstance(self._connect, str) and self._connect == "strip":
+            self._draw_mode = "line_strip"
             self._index_buffer = None
-        elif isinstance(self._connect, str) and \
-                self._connect == 'segments':
-            self._draw_mode = 'lines'
+        elif isinstance(self._connect, str) and self._connect == "segments":
+            self._draw_mode = "lines"
             self._index_buffer = None
         elif isinstance(self._connect, np.ndarray):
-            self._draw_mode = 'lines'
+            self._draw_mode = "lines"
             self._index_buffer = self._connect_ibo
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
 
-        prof('draw')
+        prof("draw")
 
 
 class _AggLineVisual(Visual):
-    _agg_vtype = np.dtype([('a_position', np.float32, (2,)),
-                           ('a_tangents', np.float32, (4,)),
-                           ('a_segment', np.float32, (2,)),
-                           ('a_angles', np.float32, (2,)),
-                           ('a_texcoord', np.float32, (2,)),
-                           ('alength', np.float32),
-                           ('color', np.float32, (4,))])
+    _agg_vtype = np.dtype(
+        [
+            ("a_position", np.float32, (2,)),
+            ("a_tangents", np.float32, (4,)),
+            ("a_segment", np.float32, (2,)),
+            ("a_angles", np.float32, (2,)),
+            ("a_texcoord", np.float32, (2,)),
+            ("alength", np.float32),
+            ("color", np.float32, (4,)),
+        ]
+    )
 
     _shaders = {
-        'vertex': glsl.get('lines/agg.vert'),
-        'fragment': glsl.get('lines/agg.frag'),
+        "vertex": glsl.get("lines/agg.vert"),
+        "fragment": glsl.get("lines/agg.frag"),
     }
 
     def __init__(self, parent):
@@ -407,47 +429,51 @@ class _AggLineVisual(Visual):
         self._color = None
 
         self._da = DashAtlas()
-        dash_index, dash_period = self._da['solid']
-        self._U = dict(dash_index=dash_index, dash_period=dash_period,
-                       linejoin=joins['round'],
-                       linecaps=(caps['round'], caps['round']),
-                       dash_caps=(caps['round'], caps['round']),
-                       antialias=1.0)
+        dash_index, dash_period = self._da["solid"]
+        self._U = dict(
+            dash_index=dash_index,
+            dash_period=dash_period,
+            linejoin=joins["round"],
+            linecaps=(caps["round"], caps["round"]),
+            dash_caps=(caps["round"], caps["round"]),
+            antialias=1.0,
+        )
         self._dash_atlas = gloo.Texture2D(self._da._data)
 
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
         self._index_buffer = gloo.IndexBuffer()
         # The depth_test being disabled prevents z-ordering, but if
         # we turn it on the blending of the aa edges produces artifacts.
-        self.set_gl_state('translucent', depth_test=False)
-        self._draw_mode = 'triangles'
+        self.set_gl_state("translucent", depth_test=False)
+        self._draw_mode = "triangles"
 
     def _prepare_transforms(self, view):
-        data_doc = view.get_transform('visual', 'document')
-        doc_px = view.get_transform('document', 'framebuffer')
-        px_ndc = view.get_transform('framebuffer', 'render')
+        data_doc = view.get_transform("visual", "document")
+        doc_px = view.get_transform("document", "framebuffer")
+        px_ndc = view.get_transform("framebuffer", "render")
         vert = view.view_program.vert
-        vert['transform'] = data_doc
-        vert['doc_px_transform'] = doc_px
-        vert['px_ndc_transform'] = px_ndc
+        vert["transform"] = data_doc
+        vert["doc_px_transform"] = doc_px
+        vert["px_ndc_transform"] = px_ndc
 
     def _prepare_draw(self, view):
         bake = False
-        if self._parent._changed['pos']:
+        if self._parent._changed["pos"]:
             if self._parent._pos is None:
                 return False
             self._pos = np.ascontiguousarray(self._parent._pos, dtype=np.float32)
             bake = True
 
-        if self._parent._changed['color']:
+        if self._parent._changed["color"]:
             color, cmap = self._parent._interpret_color()
             self._color = color
             bake = True
 
-        if self._parent._changed['connect']:
-            if self._parent._connect not in [None, 'strip']:
-                raise NotImplementedError("Only 'strip' connection mode "
-                                          "allowed for agg-method lines.")
+        if self._parent._changed["connect"]:
+            if self._parent._connect not in [None, "strip"]:
+                raise NotImplementedError(
+                    "Only 'strip' connection mode " "allowed for agg-method lines."
+                )
 
         if bake:
             V, idxs = self._agg_bake(self._pos, self._color)
@@ -456,13 +482,14 @@ class _AggLineVisual(Visual):
 
         # self._program.prepare()
         self.shared_program.bind(self._vbo)
-        uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0,
-                        linewidth=self._parent._width)
+        uniforms = dict(
+            closed=False, miter_limit=4.0, dash_phase=0.0, linewidth=self._parent._width
+        )
         for n, v in uniforms.items():
             self.shared_program[n] = v
         for n, v in self._U.items():
             self.shared_program[n] = v
-        self.shared_program['u_dash_atlas'] = self._dash_atlas
+        self.shared_program["u_dash_atlas"] = self._dash_atlas
 
     @classmethod
     def _agg_bake(cls, vertices, color, closed=False):
@@ -476,61 +503,61 @@ class _AggLineVisual(Visual):
         idx = np.arange(n)  # used to eventually tile the color array
 
         dx, dy = P[0] - P[-1]
-        d = np.sqrt(dx*dx+dy*dy)
+        d = np.sqrt(dx * dx + dy * dy)
 
         # If closed, make sure first vertex = last vertex (+/- epsilon=1e-10)
         if closed and d > 1e-10:
-            P = np.append(P, P[0]).reshape(n+1, 2)
+            P = np.append(P, P[0]).reshape(n + 1, 2)
             idx = np.append(idx, idx[-1])
             n += 1
 
         V = np.zeros(len(P), dtype=cls._agg_vtype)
-        V['a_position'] = P
+        V["a_position"] = P
 
         # Tangents & norms
         T = P[1:] - P[:-1]
 
-        N = np.sqrt(T[:, 0]**2 + T[:, 1]**2)
+        N = np.sqrt(T[:, 0] ** 2 + T[:, 1] ** 2)
         # T /= N.reshape(len(T),1)
-        V['a_tangents'][+1:, :2] = T
-        V['a_tangents'][0, :2] = T[-1] if closed else T[0]
-        V['a_tangents'][:-1, 2:] = T
-        V['a_tangents'][-1, 2:] = T[0] if closed else T[-1]
+        V["a_tangents"][+1:, :2] = T
+        V["a_tangents"][0, :2] = T[-1] if closed else T[0]
+        V["a_tangents"][:-1, 2:] = T
+        V["a_tangents"][-1, 2:] = T[0] if closed else T[-1]
 
         # Angles
-        T1 = V['a_tangents'][:, :2]
-        T2 = V['a_tangents'][:, 2:]
-        A = np.arctan2(T1[:, 0]*T2[:, 1]-T1[:, 1]*T2[:, 0],
-                       T1[:, 0]*T2[:, 0]+T1[:, 1]*T2[:, 1])
-        V['a_angles'][:-1, 0] = A[:-1]
-        V['a_angles'][:-1, 1] = A[+1:]
+        T1 = V["a_tangents"][:, :2]
+        T2 = V["a_tangents"][:, 2:]
+        A = np.arctan2(
+            T1[:, 0] * T2[:, 1] - T1[:, 1] * T2[:, 0], T1[:, 0] * T2[:, 0] + T1[:, 1] * T2[:, 1]
+        )
+        V["a_angles"][:-1, 0] = A[:-1]
+        V["a_angles"][:-1, 1] = A[+1:]
 
         # Segment
         L = np.cumsum(N)
-        V['a_segment'][+1:, 0] = L
-        V['a_segment'][:-1, 1] = L
+        V["a_segment"][+1:, 0] = L
+        V["a_segment"][:-1, 1] = L
         # V['a_lengths'][:,2] = L[-1]
 
         # Step 1: A -- B -- C  =>  A -- B, B' -- C
         V = np.repeat(V, 2, axis=0)[1:-1]
-        V['a_segment'][1:] = V['a_segment'][:-1]
-        V['a_angles'][1:] = V['a_angles'][:-1]
-        V['a_texcoord'][0::2] = -1
-        V['a_texcoord'][1::2] = +1
+        V["a_segment"][1:] = V["a_segment"][:-1]
+        V["a_angles"][1:] = V["a_angles"][:-1]
+        V["a_texcoord"][0::2] = -1
+        V["a_texcoord"][1::2] = +1
         idx = np.repeat(idx, 2)[1:-1]
 
         # Step 2: A -- B, B' -- C  -> A0/A1 -- B0/B1, B'0/B'1 -- C0/C1
         V = np.repeat(V, 2, axis=0)
-        V['a_texcoord'][0::2, 1] = -1
-        V['a_texcoord'][1::2, 1] = +1
+        V["a_texcoord"][0::2, 1] = -1
+        V["a_texcoord"][1::2, 1] = +1
         idx = np.repeat(idx, 2)
 
-        idxs = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32),
-                         (n-1)*(2*3))
-        idxs += np.repeat(4*np.arange(n-1, dtype=np.uint32), 6)
+        idxs = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), (n - 1) * (2 * 3))
+        idxs += np.repeat(4 * np.arange(n - 1, dtype=np.uint32), 6)
 
         # Length
-        V['alength'] = L[-1] * np.ones(len(V))
+        V["alength"] = L[-1] * np.ones(len(V))
 
         # Color
         if color.ndim == 1:
@@ -538,8 +565,9 @@ class _AggLineVisual(Visual):
         elif color.ndim == 2 and len(color) == n:
             color = color[idx]
         else:
-            raise ValueError('Color length %s does not match number of '
-                             'vertices %s' % (len(color), n))
-        V['color'] = color
+            raise ValueError(
+                "Color length %s does not match number of " "vertices %s" % (len(color), n)
+            )
+        V["color"] = color
 
         return V, idxs

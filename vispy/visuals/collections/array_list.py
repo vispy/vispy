@@ -36,8 +36,7 @@ class ArrayList(object):
     be interpreted as a numpy data type.
     """
 
-    def __init__(self, data=None, itemsize=None, dtype=float,
-                 sizeable=True, writeable=True):
+    def __init__(self, data=None, itemsize=None, dtype=float, sizeable=True, writeable=True):
         """Create a new buffer using given data and sizes or dtype
 
         Parameters
@@ -85,8 +84,7 @@ class ArrayList(object):
                     if (self._size % itemsize) != 0:
                         raise ValueError("Cannot partition data as requested")
                     self._count = self._size // itemsize
-                    _itemsize = np.ones(
-                        self._count, dtype=int) * (self._size // self._count)
+                    _itemsize = np.ones(self._count, dtype=int) * (self._size // self._count)
                 else:
                     _itemsize = np.array(itemsize, copy=False)
                     self._count = len(itemsize)
@@ -110,7 +108,7 @@ class ArrayList(object):
     @property
     def data(self):
         """The array's elements, in memory."""
-        return self._data[:self._size]
+        return self._data[: self._size]
 
     @property
     def size(self):
@@ -120,7 +118,7 @@ class ArrayList(object):
     @property
     def itemsize(self):
         """Individual item sizes"""
-        return self._items[:self._count, 1] - self._items[:self._count, 0]
+        return self._items[: self._count, 1] - self._items[: self._count, 0]
 
     @property
     def dtype(self):
@@ -138,10 +136,10 @@ class ArrayList(object):
         return self._count
 
     def __str__(self):
-        s = '[ '
+        s = "[ "
         for item in self:
-            s += str(item) + ' '
-        s += ']'
+            s += str(item) + " "
+        s += "]"
         return s
 
     def __getitem__(self, key):
@@ -167,7 +165,7 @@ class ArrayList(object):
             return self._data[dstart:dstop]
 
         elif isinstance(key, str):
-            return self._data[key][:self._size]
+            return self._data[key][: self._size]
 
         elif key is Ellipsis:
             return self.data
@@ -220,7 +218,7 @@ class ArrayList(object):
             self.data[...] = data
 
         elif isinstance(key, str):
-            self._data[key][:self._size] = data
+            self._data[key][: self._size] = data
 
         else:
             raise TypeError("List assignment indices must be integers")
@@ -260,17 +258,16 @@ class ArrayList(object):
 
         # Remove data
         size = self._size - (dstop - dstart)
-        self._data[
-            dstart:dstart + self._size - dstop] = self._data[dstop:self._size]
+        self._data[dstart : dstart + self._size - dstop] = self._data[dstop : self._size]
         self._size -= dstop - dstart
 
         # Remove corresponding items
         size = self._count - istop
-        self._items[istart:istart + size] = self._items[istop:istop + size]
+        self._items[istart : istart + size] = self._items[istop : istop + size]
 
         # Update other items
         size = dstop - dstart
-        self._items[istart:istop + size + 1] -= size, size
+        self._items[istart : istop + size + 1] -= size, size
         self._count -= istop - istart
 
     def insert(self, index, data, itemsize=None):
@@ -342,11 +339,11 @@ class ArrayList(object):
             dstart = self._items[istart][0]
             dstop = self._items[istart][1]
             # Move data
-            Z = self._data[dstart:self._size]
-            self._data[dstart + size:self._size + size] = Z
+            Z = self._data[dstart : self._size]
+            self._data[dstart + size : self._size + size] = Z
             # Update moved items
-            items = self._items[istart:self._count] + size
-            self._items[istart + _count:self._count + _count] = items
+            items = self._items[istart : self._count] + size
+            self._items[istart + _count : self._count + _count] = items
 
         # Appending
         else:
@@ -356,7 +353,7 @@ class ArrayList(object):
         # Only one item (faster)
         if _count == 1:
             # Store data
-            self._data[dstart:dstart + size] = data
+            self._data[dstart : dstart + size] = data
             self._size += size
             # Store data location (= item)
             self._items[istart][0] = dstart

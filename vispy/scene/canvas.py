@@ -110,11 +110,28 @@ class SceneCanvas(app.Canvas, Frozen):
     time or using a dedicated double-click button will not be respected.
     """
 
-    def __init__(self, title='VisPy canvas', size=(800, 600), position=None,
-                 show=False, autoswap=True, app=None, create_native=True,
-                 vsync=False, resizable=True, decorate=True, fullscreen=False,
-                 config=None, shared=None, keys=None, parent=None, dpi=None,
-                 always_on_top=False, px_scale=1, bgcolor='black'):
+    def __init__(
+        self,
+        title="VisPy canvas",
+        size=(800, 600),
+        position=None,
+        show=False,
+        autoswap=True,
+        app=None,
+        create_native=True,
+        vsync=False,
+        resizable=True,
+        decorate=True,
+        fullscreen=False,
+        config=None,
+        shared=None,
+        keys=None,
+        parent=None,
+        dpi=None,
+        always_on_top=False,
+        px_scale=1,
+        bgcolor="black",
+    ):
         self._scene = None
         # A default widget that follows the shape of the canvas
         self._central_widget = None
@@ -133,9 +150,25 @@ class SceneCanvas(app.Canvas, Frozen):
         self._send_hover_events = False
 
         super(SceneCanvas, self).__init__(
-            title, size, position, show, autoswap, app, create_native, vsync,
-            resizable, decorate, fullscreen, config, shared, keys, parent, dpi,
-            always_on_top, px_scale)
+            title,
+            size,
+            position,
+            show,
+            autoswap,
+            app,
+            create_native,
+            vsync,
+            resizable,
+            decorate,
+            fullscreen,
+            config,
+            shared,
+            keys,
+            parent,
+            dpi,
+            always_on_top,
+            px_scale,
+        )
         self.events.mouse_press.connect(self._process_mouse_event)
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
@@ -179,7 +212,7 @@ class SceneCanvas(app.Canvas, Frozen):
     @bgcolor.setter
     def bgcolor(self, color):
         self._bgcolor = Color(color).rgba
-        if hasattr(self, '_backend'):
+        if hasattr(self, "_backend"):
             self.update()
 
     def update(self, node=None):
@@ -211,7 +244,7 @@ class SceneCanvas(app.Canvas, Frozen):
         """
         if self._scene is None:
             return  # Can happen on initialization
-        logger.debug('Canvas draw')
+        logger.debug("Canvas draw")
 
         # Now that a draw event is going to be handled, open up the
         # scheduling of further updates
@@ -257,8 +290,9 @@ class SceneCanvas(app.Canvas, Frozen):
         csize = self.size if region is None else region[2:]
         s = self.pixel_scale
         size = tuple([int(x * s) for x in csize]) if size is None else size
-        fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]),
-                               depth=gloo.RenderBuffer(size[::-1]))
+        fbo = gloo.FrameBuffer(
+            color=gloo.RenderBuffer(size[::-1]), depth=gloo.RenderBuffer(size[::-1])
+        )
 
         self.push_fbo(fbo, offset, csize)
         try:
@@ -312,7 +346,7 @@ class SceneCanvas(app.Canvas, Frozen):
                             # disable drawing until we exit this node's subtree
                             invisible_node = node
                         else:
-                            if hasattr(node, 'draw'):
+                            if hasattr(node, "draw"):
                                 node.draw()
                                 prof.mark(str(node))
                 else:
@@ -346,13 +380,13 @@ class SceneCanvas(app.Canvas, Frozen):
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
         deliver_types = [
-            'mouse_press',
-            'mouse_wheel',
-            'gesture_zoom',
-            'gesture_rotate',
+            "mouse_press",
+            "mouse_wheel",
+            "gesture_zoom",
+            "gesture_rotate",
         ]
         if self._send_hover_events:
-            deliver_types += ['mouse_move']
+            deliver_types += ["mouse_move"]
 
         picked = self._mouse_handler
         if picked is None:
@@ -370,7 +404,7 @@ class SceneCanvas(app.Canvas, Frozen):
         if picked == self._mouse_handler:
             # If we already have a mouse handler, then no other node may
             # receive the event
-            if event.type == 'mouse_release':
+            if event.type == "mouse_release":
                 self._mouse_handler = None
             getattr(picked.events, event.type)(scene_event)
         else:
@@ -379,7 +413,7 @@ class SceneCanvas(app.Canvas, Frozen):
             while picked is not None:
                 getattr(picked.events, event.type)(scene_event)
                 if scene_event.handled:
-                    if event.type == 'mouse_press':
+                    if event.type == "mouse_press":
                         self._mouse_handler = picked
                     break
                 if event.type in deliver_types:
@@ -406,7 +440,7 @@ class SceneCanvas(app.Canvas, Frozen):
         visual : instance of Visual | None
             The visual at the position, if it exists.
         """
-        tr = self.transforms.get_transform('canvas', 'framebuffer')
+        tr = self.transforms.get_transform("canvas", "framebuffer")
         fbpos = tr.map(pos)[:2]
 
         try:
@@ -428,8 +462,7 @@ class SceneCanvas(app.Canvas, Frozen):
             if hit is not None:
                 return hit
 
-        if (not isinstance(node, VisualNode) or not node.visible or
-                not node.interactive):
+        if not isinstance(node, VisualNode) or not node.visible or not node.interactive:
             return None
 
         # let nodes know we are picking to handle any special cases (picking meshes)
@@ -443,11 +476,14 @@ class SceneCanvas(app.Canvas, Frozen):
             return None
 
         tr = self.scene.node_transform(node).inverse
-        corners = np.array([
-            [bounds[0][0], bounds[1][0]],
-            [bounds[0][0], bounds[1][1]],
-            [bounds[0][1], bounds[1][0]],
-            [bounds[0][1], bounds[1][1]]])
+        corners = np.array(
+            [
+                [bounds[0][0], bounds[1][0]],
+                [bounds[0][0], bounds[1][1]],
+                [bounds[0][1], bounds[1][0]],
+                [bounds[0][1], bounds[1][1]],
+            ]
+        )
         bounds = tr.map(corners)
         xhit = bounds[:, 0].min() < pos[0] < bounds[:, 0].max()
         yhit = bounds[:, 1].min() < pos[1] < bounds[:, 1].max()
@@ -466,15 +502,16 @@ class SceneCanvas(app.Canvas, Frozen):
         radius : int
             Distance away from *pos* to search for visuals.
         """
-        tr = self.transforms.get_transform('canvas', 'framebuffer')
+        tr = self.transforms.get_transform("canvas", "framebuffer")
         pos = tr.map(pos)[:2]
 
-        id = self._render_picking((pos[0]-radius, pos[1]-radius,
-                                   radius * 2 + 1, radius * 2 + 1))
+        id = self._render_picking(
+            (pos[0] - radius, pos[1] - radius, radius * 2 + 1, radius * 2 + 1)
+        )
         ids = []
         seen = set()
         for i in range(radius):
-            subr = id[radius-i:radius+i+1, radius-i:radius+i+1]
+            subr = id[radius - i : radius + i + 1, radius - i : radius + i + 1]
             subr_ids = set(list(np.unique(subr)))
             ids.extend(list(subr_ids - seen))
             seen |= subr_ids
@@ -495,8 +532,8 @@ class SceneCanvas(app.Canvas, Frozen):
         """
         with self._scene.set_picking():
             img = self.render(bgcolor=(0, 0, 0, 0), crop=crop)
-        img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
-        id_ = img.sum(axis=2).astype('int32')
+        img = img.astype("int32") * [2**0, 2**8, 2**16, 2**24]
+        id_ = img.sum(axis=2).astype("int32")
         return id_
 
     def on_resize(self, event):
@@ -635,5 +672,4 @@ class SceneCanvas(app.Canvas, Frozen):
         else:
             viewport = self._vp_stack[-1]
 
-        self.transforms.configure(viewport=viewport, fbo_size=fb_size,
-                                  fbo_rect=fb_rect)
+        self.transforms.configure(viewport=viewport, fbo_size=fb_size, fbo_rect=fb_rect)

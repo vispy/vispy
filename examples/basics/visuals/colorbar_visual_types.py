@@ -36,9 +36,9 @@ def get_left_orientation_bar():
     pos = 50, 300
     size = 400, 10
 
-    colorbar = ColorBarVisual(pos=pos, size=size,
-                              label="orientation left",
-                              cmap=colormap, orientation="left")
+    colorbar = ColorBarVisual(
+        pos=pos, size=size, label="orientation left", cmap=colormap, orientation="left"
+    )
 
     return style_colorbar(colorbar)
 
@@ -47,9 +47,9 @@ def get_right_orientation_bar():
     pos = 200, 300
     size = 400, 10
 
-    colorbar = ColorBarVisual(pos=pos, size=size,
-                              label="orientation right",
-                              cmap=colormap, orientation="right")
+    colorbar = ColorBarVisual(
+        pos=pos, size=size, label="orientation right", cmap=colormap, orientation="right"
+    )
 
     return style_colorbar(colorbar)
 
@@ -58,9 +58,9 @@ def get_top_orientation_bar():
     pos = 600, 400
     size = 300, 10
 
-    colorbar = ColorBarVisual(pos=pos, size=size,
-                              label="orientation top",
-                              cmap=colormap, orientation="top")
+    colorbar = ColorBarVisual(
+        pos=pos, size=size, label="orientation top", cmap=colormap, orientation="top"
+    )
 
     return style_colorbar(colorbar)
 
@@ -69,15 +69,14 @@ def get_bottom_orientation_bar():
     pos = 600, 150
     size = 300, 10
 
-    colorbar = ColorBarVisual(pos=pos, size=size,
-                              label="orientation bottom",
-                              cmap=colormap, orientation="bottom")
+    colorbar = ColorBarVisual(
+        pos=pos, size=size, label="orientation bottom", cmap=colormap, orientation="bottom"
+    )
 
     return style_colorbar(colorbar)
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
         app.Canvas.__init__(self, size=(800, 600), keys="interactive")
 
@@ -104,6 +103,7 @@ class Canvas(app.Canvas):
         for bar in self.bars:
             bar.draw()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     win = Canvas()
     app.run()

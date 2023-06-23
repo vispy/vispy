@@ -41,28 +41,27 @@ def checkerboard(grid_num=8, grid_size=32):
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(512, 512), title='Textured quad',
-                            keys='interactive')
+        app.Canvas.__init__(self, size=(512, 512), title="Textured quad", keys="interactive")
 
         # Build program & data
         self.program = Program(vertex, fragment, count=4)
-        self.program['position'] = [(-1, -1), (-1, +1),
-                                    (+1, -1), (+1, +1)]
-        self.program['texcoord'] = [(0, 0), (1, 0), (0, 1), (1, 1)]
-        self.program['texture'] = checkerboard()
+        self.program["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.program["texcoord"] = [(0, 0), (1, 0), (0, 1), (1, 1)]
+        self.program["texture"] = checkerboard()
 
         gloo.set_viewport(0, 0, *self.physical_size)
 
         self.show()
 
     def on_draw(self, event):
-        gloo.set_clear_color('white')
+        gloo.set_clear_color("white")
         gloo.clear(color=True)
-        self.program.draw('triangle_strip')
+        self.program.draw("triangle_strip")
 
     def on_resize(self, event):
         gloo.set_viewport(0, 0, *event.physical_size)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     c = Canvas()
     app.run()

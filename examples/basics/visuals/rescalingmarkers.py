@@ -22,31 +22,35 @@ for i in range(500):
     y = radius * np.sin(theta)
     r = 10.1 - i * 0.02
     radius -= 0.45
-    pos[i] = x/512.+.5, 1.-(y/512.+.5)
+    pos[i] = x / 512.0 + 0.5, 1.0 - (y / 512.0 + 0.5)
 pos *= 512
 
 
 class Canvas(scene.SceneCanvas):
-
     def __init__(self):
         scene.SceneCanvas.__init__(
             self,
-            keys='interactive', size=(512, 512),
+            keys="interactive",
+            size=(512, 512),
             title="Marker demo [press space to change marker]",
-            bgcolor='white'
+            bgcolor="white",
         )
         self.unfreeze()
         self.index = 0
         self.markers = visuals.Markers(scaling=False)
         self.markers.set_data(pos, face_color=(0, 1, 0))
         self.markers.symbol = self.markers.symbols[self.index]
-        self.text = visuals.Text(self.markers.symbols[self.index],
-                                 pos=(80, 15), font_size=14,
-                                 color='black', parent=self.scene)
+        self.text = visuals.Text(
+            self.markers.symbols[self.index],
+            pos=(80, 15),
+            font_size=14,
+            color="black",
+            parent=self.scene,
+        )
         self.freeze()
 
     def on_key_press(self, event):
-        if event.text == ' ':
+        if event.text == " ":
             self.index = (self.index + 1) % (len(self.markers.symbols))
             self.markers.symbol = self.markers.symbols[self.index]
             self.text.text = self.markers.symbols[self.index]
@@ -58,6 +62,6 @@ grid = canvas.central_widget.add_grid()
 vb1 = grid.add_view(row=0, col=0)
 vb1.add(canvas.markers)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas.show()
     app.run()

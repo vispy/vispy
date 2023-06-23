@@ -15,21 +15,14 @@ import numpy as np
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive',
-                            size=(800, 800))
+        app.Canvas.__init__(self, keys="interactive", size=(800, 800))
 
         self.n_iterations = 0
 
-        self.text_parts = [
-            'This',
-            'is',
-            'a',
-            'multicolored',
-            'scattered',
-            'text']
+        self.text_parts = ["This", "is", "a", "multicolored", "scattered", "text"]
 
-        self.x = 100 + np.arange(len(self.text_parts))*100
-        self.y = 400 + (np.sin(2 * np.pi * (self.x/self.x[-1]))*100)
+        self.x = 100 + np.arange(len(self.text_parts)) * 100
+        self.y = 400 + (np.sin(2 * np.pi * (self.x / self.x[-1])) * 100)
 
         self.text_positions = np.c_[self.x, self.y]
 
@@ -39,12 +32,12 @@ class Canvas(app.Canvas):
 
         self.colors = color
 
-        self.text = visuals.TextVisual(self.text_parts, bold=True,
-                                       pos=self.text_positions,
-                                       color=self.colors)
+        self.text = visuals.TextVisual(
+            self.text_parts, bold=True, pos=self.text_positions, color=self.colors
+        )
 
     def on_draw(self, event):
-        gloo.clear(color='white')
+        gloo.clear(color="white")
         gloo.set_viewport(0, 0, *self.physical_size)
         self.text.draw()
 
@@ -55,13 +48,13 @@ class Canvas(app.Canvas):
         self.text.transforms.configure(canvas=self, viewport=vp)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = Canvas()
     c.show()
 
     def update(ev):
         x = c.text.pos[:, 0]
-        y = 400 + (np.sin(2 * np.pi * ((x/x[-1]))+(c.n_iterations/5))*100)
+        y = 400 + (np.sin(2 * np.pi * ((x / x[-1])) + (c.n_iterations / 5)) * 100)
 
         color = np.ones((len(c.text_parts), 4), dtype=np.float32)
         color[:, 0] = np.linspace(0, 1, len(c.text_parts))

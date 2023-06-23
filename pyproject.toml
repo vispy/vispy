@@ -11,6 +11,37 @@ requires = [
     "oldest-supported-numpy"
 ]
 
-[tools.setuptools_scm]
+[tool.setuptools_scm]
 write_to = "vispy/version.py"
 local_scheme = "dirty-tag"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310']
+# exclude generated code files
+force-exclude = """
+(
+  ^/vispy/gloo/gl/.*\\.py
+)
+"""
+
+[tool.ruff]
+line-length = 110  # black is lenient, so set this a little longer
+select = [
+    "E", "F", "W", # roughly equivalent to flake8
+]
+ignore = [
+    "E203",  # suggested config for Black (whitespace around :)
+]
+unfixable = [
+    "F401",  # deletes unused imports
+    "E712",  # changes '== True/False' to 'is True/False'
+]
+# exclude generated code files
+exclude = [
+    "vispy/gloo/gl",
+]
+[tool.ruff.per-file-ignores]
+# annotations.py contains underfined refs, but that code is parsed manually and
+# not executed directly
+"codegen/annotations.py" = ["F821"]  # undefined refs

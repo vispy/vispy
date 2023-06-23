@@ -43,21 +43,20 @@ def _make_png(data, level=6):
         else:
             size = len(data)
         chunk = np.empty(size + 12, dtype=np.ubyte)
-        chunk.data[0:4] = np.array(size, '>u4').tobytes()
-        chunk.data[4:8] = name.encode('ASCII')
-        chunk.data[8:8 + size] = data
+        chunk.data[0:4] = np.array(size, ">u4").tobytes()
+        chunk.data[4:8] = name.encode("ASCII")
+        chunk.data[8 : 8 + size] = data
         # and-ing may not be necessary, but is done for safety:
         # https://docs.python.org/3/library/zlib.html#zlib.crc32
-        chunk.data[-4:] = np.array(zlib.crc32(chunk[4:-4]) & 0xffffffff,
-                                   '>u4').tobytes()
+        chunk.data[-4:] = np.array(zlib.crc32(chunk[4:-4]) & 0xFFFFFFFF, ">u4").tobytes()
         return chunk
 
     if data.dtype != np.ubyte:
-        raise TypeError('data.dtype must be np.ubyte (np.uint8)')
+        raise TypeError("data.dtype must be np.ubyte (np.uint8)")
 
     dim = data.shape[2]  # Dimension
     if dim not in (3, 4):
-        raise TypeError('data.shape[2] must be in (3, 4)')
+        raise TypeError("data.shape[2] must be in (3, 4)")
 
     # www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.IHDR
     if dim == 4:
@@ -66,12 +65,12 @@ def _make_png(data, level=6):
         ctyp = 0b0010  # RGB
 
     # www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
-    header = b'\x89PNG\x0d\x0a\x1a\x0a'  # header
+    header = b"\x89PNG\x0d\x0a\x1a\x0a"  # header
 
     h, w = data.shape[:2]
     depth = data.itemsize * 8
-    ihdr = struct.pack('!IIBBBBB', w, h, depth, ctyp, 0, 0, 0)
-    c1 = mkchunk(ihdr, 'IHDR')
+    ihdr = struct.pack("!IIBBBBB", w, h, depth, ctyp, 0, 0, 0)
+    c1 = mkchunk(ihdr, "IHDR")
 
     # www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.IDAT
     # insert filter byte at each scanline
@@ -80,8 +79,8 @@ def _make_png(data, level=6):
     idat[:, 0] = 0
 
     comp_data = zlib.compress(idat, level)
-    c2 = mkchunk(comp_data, 'IDAT')
-    c3 = mkchunk(np.empty((0,), dtype=np.ubyte), 'IEND')
+    c2 = mkchunk(comp_data, "IDAT")
+    c3 = mkchunk(np.empty((0,), dtype=np.ubyte), "IEND")
 
     # concatenate
     lh = len(header)
@@ -90,7 +89,7 @@ def _make_png(data, level=6):
     p = lh
 
     for chunk in (c1, c2, c3):
-        png[p:p + len(chunk)] = chunk
+        png[p : p + len(chunk)] = chunk
         p += chunk.nbytes
 
     return png
@@ -116,6 +115,7 @@ def read_png(filename):
     """
     try:
         from PIL import Image
+
         x = Image.open(filename)
         try:
             y = np.asarray(x)
@@ -145,8 +145,8 @@ def write_png(filename, data):
     """
     data = np.asarray(data)
     if not data.ndim == 3 and data.shape[-1] in (3, 4):
-        raise ValueError('data must be a 3D array with last dimension 3 or 4')
-    with open(filename, 'wb') as f:
+        raise ValueError("data must be a 3D array with last dimension 3 or 4")
+    with open(filename, "wb") as f:
         f.write(_make_png(data))  # Save array with make_png
 
 
@@ -176,13 +176,12 @@ def imread(filename, format=None):
         return imageio.imread(filename, format)
     elif PIL is not None:
         im = PIL.Image.open(filename)
-        if im.mode == 'P':
+        if im.mode == "P":
             im = im.convert()
         # Make numpy array
         a = np.asarray(im)
         if len(a.shape) == 0:
-            raise MemoryError("Too little memory to convert PIL image to "
-                              "array")
+            raise MemoryError("Too little memory to convert PIL image to " "array")
         return a
     else:
         raise RuntimeError("imread requires the imageio or PIL package.")

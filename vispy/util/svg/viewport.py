@@ -4,35 +4,33 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 
-from . length import XLength, YLength
+from .length import XLength, YLength
 
 
 class Viewport(object):
-
     def __init__(self, content=None, parent=None):
-
         self._x = None
         self._computed_x = 0
-        if content.get('x'):
-            self._x = XLength(content.get('x'), parent)
+        if content.get("x"):
+            self._x = XLength(content.get("x"), parent)
             self._computed_x = float(self._x)
 
         self._y = None
         self._computed_y = 0
-        if content.get('y'):
-            self._y = XLength(content.get('y'), parent)
+        if content.get("y"):
+            self._y = XLength(content.get("y"), parent)
             self._computed_y = float(self._y)
 
         self._width = None
         self._computed_width = 800
-        if content.get('width'):
-            self._width = XLength(content.get('width'), parent)
+        if content.get("width"):
+            self._width = XLength(content.get("width"), parent)
             self._computed_width = float(self._width)
 
         self._height = None
         self._computed_height = 800
-        if content.get('height'):
-            self._height = YLength(content.get('height'), parent)
+        if content.get("height"):
+            self._height = YLength(content.get("height"), parent)
             self._computed_height = float(self._height)
 
     @property

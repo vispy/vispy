@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Debugging system for Triangulation class. Displays stepwise visual 
-representation of the algorithm. 
+Debugging system for Triangulation class. Displays stepwise visual
+representation of the algorithm.
 
 This system currently requires pyqtgraph for its visual output.
 """
@@ -27,18 +27,17 @@ class DebugTriangulation(Triangulation):
     def __init__(self, pts, edges, interval=0.01, skip=0):
         self.interval = interval
         self.iteration = 0
-        self.skip = skip 
+        self.skip = skip
 
         Triangulation.__init__(self, pts, edges)
 
         # visual #debugging: draw edges, front, triangles
         self.win = pg.plot()
-        self.graph = pg.GraphItem(pos=pts.copy(), adj=edges.copy(), 
-                                  pen={'width': 3, 'color': (0, 100, 0)})
+        self.graph = pg.GraphItem(
+            pos=pts.copy(), adj=edges.copy(), pen={"width": 3, "color": (0, 100, 0)}
+        )
         self.win.addItem(self.graph)
-        self.front_line = pg.PlotCurveItem(pen={'width': 2, 
-                                                'dash': [5, 5], 
-                                                'color': 'y'})
+        self.front_line = pg.PlotCurveItem(pen={"width": 2, "dash": [5, 5], "color": "y"})
         self.win.addItem(self.front_line)
         self.tri_shapes = {}
 
@@ -57,7 +56,7 @@ class DebugTriangulation(Triangulation):
 
         front_pts = self.pts[np.array(self.front)]
         self.front_line.setData(front_pts[:, 0], front_pts[:, 1])
-        self.graph.setData(pos=self.pts, adj=self.edges) 
+        self.graph.setData(pos=self.pts, adj=self.edges)
 
         # Auto-advance on timer
         if self.interval < 0:
@@ -78,9 +77,9 @@ class DebugTriangulation(Triangulation):
         # assign triangle color based on the source that generated it
         color = {
             None: (0, 255, 255, 50),
-            'smooth1': (0, 255, 0, 50),
-            'fill_hull': (255, 255, 0, 50),
-            'edge_event': (100, 100, 255, 100),
+            "smooth1": (0, 255, 0, 50),
+            "fill_hull": (255, 255, 0, 50),
+            "edge_event": (100, 100, 255, 100),
         }[source]
 
         tpts = self.pts[np.array(tri)]
@@ -100,8 +99,7 @@ class DebugTriangulation(Triangulation):
 
     def add_tri(self, *args, **kwargs):
         Triangulation._add_tri(self, *args, **kwargs)
-        self.draw_tri(list(self.tris.keys())[-1], 
-                      source=kwargs.get('source', None))
+        self.draw_tri(list(self.tris.keys())[-1], source=kwargs.get("source", None))
 
     def remove_tri(self, *args, **kwargs):
         k = Triangulation._remove_tri(self, *args, **kwargs)
@@ -113,7 +111,7 @@ class DebugTriangulation(Triangulation):
         self.draw_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import pyqtgraph as pg
 
     app = pg.mkQApp()
@@ -123,31 +121,32 @@ if __name__ == '__main__':
     #
     #  Test 1
     #
-    pts = [(0, 0),
-           (10, 0),
-           (10, 10),
-           (20, 10),
-           (20, 20),
-           (25, 20),
-           (25, 25),
-           (20, 25),
-           (20, 20),
-           (10, 17),
-           (5, 25),
-           (9, 30),
-           (6, 15),
-           (15, 12.5),
-           (0, 5)]
+    pts = [
+        (0, 0),
+        (10, 0),
+        (10, 10),
+        (20, 10),
+        (20, 20),
+        (25, 20),
+        (25, 25),
+        (20, 25),
+        (20, 20),
+        (10, 17),
+        (5, 25),
+        (9, 30),
+        (6, 15),
+        (15, 12.5),
+        (0, 5),
+    ]
     num_pts = len(pts)
-    edges = [(i, (i+1) % num_pts) for i in range(num_pts)]
-    pts += [(21, 21),
-            (24, 21),
-            (24, 24),
-            (21, 24)]
-    edges += [(num_pts, num_pts + 1),
-              (num_pts + 1, num_pts + 2),
-              (num_pts + 2, num_pts + 3),
-              (num_pts + 3, num_pts)]
+    edges = [(i, (i + 1) % num_pts) for i in range(num_pts)]
+    pts += [(21, 21), (24, 21), (24, 24), (21, 24)]
+    edges += [
+        (num_pts, num_pts + 1),
+        (num_pts + 1, num_pts + 2),
+        (num_pts + 2, num_pts + 3),
+        (num_pts + 3, num_pts),
+    ]
 
     pts = np.array(pts, dtype=float)
     edges = np.array(edges, dtype=int)

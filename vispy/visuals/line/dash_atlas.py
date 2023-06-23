@@ -7,7 +7,7 @@ import numpy as np
 
 class DashAtlas(object):
 
-    """  """
+    """ """
 
     def __init__(self, shape=(64, 1024, 4)):
         # 512 patterns at max
@@ -15,19 +15,19 @@ class DashAtlas(object):
         self._index = 0
         self._atlas = {}
 
-        self['solid'] = (1e20, 0), (1, 1)
-        self['densely dotted'] = (0, 1), (1, 1)
-        self['dotted'] = (0, 2), (1, 1)
-        self['loosely dotted'] = (0, 3), (1, 1)
-        self['densely dashed'] = (1, 1), (1, 1)
-        self['dashed'] = (1, 2), (1, 1)
-        self['loosely dashed'] = (1, 4), (1, 1)
-        self['densely dashdotted'] = (1, 1, 0, 1), (1, 1, 1, 1)
-        self['dashdotted'] = (1, 2, 0, 2), (1, 1, 1, 1)
-        self['loosely dashdotted'] = (1, 3, 0, 3), (1, 1, 1, 1)
-        self['densely dashdotdotted'] = (1, 1, 0, 1, 0, 1), (1, 1, 1, 1)
-        self['dashdotdotted'] = (1, 2, 0, 2, 0, 2), (1, 1, 1, 1, 1, 1)
-        self['loosely dashdotdotted'] = (1, 3, 0, 3, 0, 3), (1, 1, 1, 1)
+        self["solid"] = (1e20, 0), (1, 1)
+        self["densely dotted"] = (0, 1), (1, 1)
+        self["dotted"] = (0, 2), (1, 1)
+        self["loosely dotted"] = (0, 3), (1, 1)
+        self["densely dashed"] = (1, 1), (1, 1)
+        self["dashed"] = (1, 2), (1, 1)
+        self["loosely dashed"] = (1, 4), (1, 1)
+        self["densely dashdotted"] = (1, 1, 0, 1), (1, 1, 1, 1)
+        self["dashdotted"] = (1, 2, 0, 2), (1, 1, 1, 1)
+        self["loosely dashdotted"] = (1, 3, 0, 3), (1, 1, 1, 1)
+        self["densely dashdotdotted"] = (1, 1, 0, 1, 0, 1), (1, 1, 1, 1)
+        self["dashdotdotted"] = (1, 2, 0, 2, 0, 2), (1, 1, 1, 1, 1, 1)
+        self["loosely dashdotdotted"] = (1, 3, 0, 3, 0, 3), (1, 1, 1, 1)
 
         self._dirty = True
 

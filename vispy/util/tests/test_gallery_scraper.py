@@ -33,12 +33,14 @@ def _create_fake_block_vars(canvas):
 def _create_fake_gallery_conf(src_dir):
     gallery_conf = {}
     gallery_conf.update(DEFAULT_GALLERY_CONF)
-    gallery_conf.update({
-        "compress_images": "images",
-        "compress_images_args": [],
-        "src_dir": src_dir,
-        "gallery_dirs": src_dir,
-    })
+    gallery_conf.update(
+        {
+            "compress_images": "images",
+            "compress_images_args": [],
+            "src_dir": src_dir,
+            "gallery_dirs": src_dir,
+        }
+    )
     return gallery_conf
 
 
@@ -70,8 +72,10 @@ def test_single_animation(tmpdir):
     gallery_conf = _create_fake_gallery_conf(str(tmpdir))
     with tmpdir.as_cwd():
         with open("example.py", "w") as example_file:
-            example_file.write("""# vispy: gallery 10:50:5
-            """)
+            example_file.write(
+                """# vispy: gallery 10:50:5
+            """
+            )
         scraper = VisPyGalleryScraper()
         rst = scraper(None, block_vars, gallery_conf)
         assert "0.gif" in rst
@@ -87,7 +91,8 @@ def test_single_animation(tmpdir):
         ("example.png",),
         ("example.gif",),
         ("example1.png", "example2.png"),
-    ])
+    ],
+)
 def test_single_export(exported_files, tmpdir):
     canvas = TestingCanvas()
     block_vars = _create_fake_block_vars(canvas)
@@ -98,8 +103,12 @@ def test_single_export(exported_files, tmpdir):
             open(fn, "w").close()
 
         with open("example.py", "w") as example_file:
-            example_file.write("""# vispy: gallery-exports {}
-            """.format(" ".join(exported_files)))
+            example_file.write(
+                """# vispy: gallery-exports {}
+            """.format(
+                    " ".join(exported_files)
+                )
+            )
 
         scraper = VisPyGalleryScraper()
         rst = scraper(None, block_vars, gallery_conf)

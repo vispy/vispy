@@ -13,26 +13,26 @@ imported. This stuff is mostly used in the Application.use method.
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
 CORE_BACKENDS = [
-    ('PyQt4', '_pyqt4', 'PyQt4'),
-    ('PyQt5', '_pyqt5', 'PyQt5'),
-    ('PyQt6', '_pyqt6', 'PyQt6'),
-    ('PySide', '_pyside', 'PySide'),
-    ('PySide2', '_pyside2', 'PySide2'),
-    ('PySide6', '_pyside6', 'PySide6'),
-    ('Pyglet', '_pyglet', 'pyglet'),
-    ('Glfw', '_glfw', 'vispy.ext.glfw'),
-    ('SDL2', '_sdl2', 'sdl2'),
-    ('wx', '_wx', 'wx'),
-    ('EGL', '_egl', 'vispy.ext.egl'),
-    ('osmesa', '_osmesa', 'vispy.ext.osmesa'),
-    ('tkinter', '_tk', 'tkinter'),
+    ("PyQt4", "_pyqt4", "PyQt4"),
+    ("PyQt5", "_pyqt5", "PyQt5"),
+    ("PyQt6", "_pyqt6", "PyQt6"),
+    ("PySide", "_pyside", "PySide"),
+    ("PySide2", "_pyside2", "PySide2"),
+    ("PySide6", "_pyside6", "PySide6"),
+    ("Pyglet", "_pyglet", "pyglet"),
+    ("Glfw", "_glfw", "vispy.ext.glfw"),
+    ("SDL2", "_sdl2", "sdl2"),
+    ("wx", "_wx", "wx"),
+    ("EGL", "_egl", "vispy.ext.egl"),
+    ("osmesa", "_osmesa", "vispy.ext.osmesa"),
+    ("tkinter", "_tk", "tkinter"),
 ]
 
 # Whereas core backends really represents libraries that can create a
 # canvas, the pseudo backends act more like a proxy.
 PSEUDO_BACKENDS = [
-    ('jupyter_rfb', '_jupyter_rfb', None),
-    ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
+    ("jupyter_rfb", "_jupyter_rfb", None),
+    ("_test", "_test", "vispy.app.backends._test"),  # add one that will fail
 ]
 
 # Combine

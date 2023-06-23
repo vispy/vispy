@@ -58,50 +58,49 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 pos = np.empty((N, 2), np.float32)
-pos[:, 0] = np.linspace(0., 1., N)
+pos[:, 0] = np.linspace(0.0, 1.0, N)
 pos[:, 1] = np.random.normal(loc=0.5, scale=0.03, size=N)
-pos[N//2:N//2+20, 1] = 0.9  # So we can see which side is up
+pos[N // 2 : N // 2 + 20, 1] = 0.9  # So we can see which side is up
 
 
 # Create canvas
-canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
+canvas = scene.SceneCanvas(size=(800, 600), show=True, keys="interactive")
 
 #
 # Create viewboxes on left ...
 #
 
 w, h = canvas.size
-w2 = w / 2.
-h2 = h / 2.
+w2 = w / 2.0
+h2 = h / 2.0
 
 # left (+y up)
-vb1 = scene.widgets.ViewBox(parent=canvas.scene, name='vb1', 
-                            margin=2, border_color='red')
+vb1 = scene.widgets.ViewBox(parent=canvas.scene, name="vb1", margin=2, border_color="red")
 vb1.pos = 0, 0
 vb1.size = w2, h
-vb1.camera = 'panzoom'
+vb1.camera = "panzoom"
 vb1.camera.rect = (0, 0, 1, 1)
 vb1.camera.interactive = False
 
 # bottom-left (+y down)
-vb11 = scene.widgets.ViewBox(parent=vb1.scene, name='vb11', border_width=2e-3, 
-                             margin=0.02, border_color='green')
+vb11 = scene.widgets.ViewBox(
+    parent=vb1.scene, name="vb11", border_width=2e-3, margin=0.02, border_color="green"
+)
 vb11.pos = 0, 0
 vb11.size = 1, 0.5
-vb11.camera = 'panzoom'
+vb11.camera = "panzoom"
 vb11.camera.rect = (0, 0, 1, 1)
-line11 = scene.visuals.Line(pos=pos, color=color, method='gl', 
-                            parent=vb11.scene)
+line11 = scene.visuals.Line(pos=pos, color=color, method="gl", parent=vb11.scene)
 
 # top-left (+y up)
-vb12 = scene.widgets.ViewBox(parent=vb1.scene, name='vb12', border_width=2e-3, 
-                             margin=0.02, border_color='blue')
+vb12 = scene.widgets.ViewBox(
+    parent=vb1.scene, name="vb12", border_width=2e-3, margin=0.02, border_color="blue"
+)
 vb12.pos = 0, 0.5
 vb12.size = 1, 0.5
-vb12.camera = 'base'  # use parent cs
+vb12.camera = "base"  # use parent cs
 # vb12 does not apply any scaling, so we do that manually here to match vb11
-line12 = scene.visuals.Line(pos=pos * [[1.0, 0.5]], color=color, method='gl', 
-                            parent=vb12.scene)
+line12 = scene.visuals.Line(pos=pos * [[1.0, 0.5]], color=color, method="gl", parent=vb12.scene)
 
 
 #
@@ -109,32 +108,27 @@ line12 = scene.visuals.Line(pos=pos * [[1.0, 0.5]], color=color, method='gl',
 #
 
 # right (+y down)
-vb2 = scene.widgets.ViewBox(parent=canvas.scene, name='vb2', 
-                            margin=2, border_color='yellow')
+vb2 = scene.widgets.ViewBox(parent=canvas.scene, name="vb2", margin=2, border_color="yellow")
 vb2.pos = w2, 0
 vb2.size = w2, h
-vb2.camera = 'base'
+vb2.camera = "base"
 vb2.camera.interactive = False
 
 # top-right (+y up)
-vb21 = scene.widgets.ViewBox(parent=vb2.scene, name='vb21', 
-                             margin=10, border_color='purple')
+vb21 = scene.widgets.ViewBox(parent=vb2.scene, name="vb21", margin=10, border_color="purple")
 vb21.pos = 0, 0
 vb21.size = w2, h2
-vb21.camera = 'panzoom'
+vb21.camera = "panzoom"
 vb21.camera.rect = (0, 0, 1, 1)
-line21 = scene.visuals.Line(pos=pos, color=color, method='gl', 
-                            parent=vb21.scene)
+line21 = scene.visuals.Line(pos=pos, color=color, method="gl", parent=vb21.scene)
 
 # bottom-right (+y down)
-vb22 = scene.widgets.ViewBox(parent=vb2.scene, name='vb22', 
-                             margin=10, border_color='teal')
+vb22 = scene.widgets.ViewBox(parent=vb2.scene, name="vb22", margin=10, border_color="teal")
 vb22.pos = 0, h2
 vb22.size = w2, h2
-vb22.camera = 'base'  # use parent cs
+vb22.camera = "base"  # use parent cs
 # vb22 does not apply any scaling, so we do that manually here to match vb21
-line22 = scene.visuals.Line(pos=pos * [[w2, h2]], color=color, method='gl', 
-                            parent=vb22.scene)
+line22 = scene.visuals.Line(pos=pos * [[w2, h2]], color=color, method="gl", parent=vb22.scene)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()

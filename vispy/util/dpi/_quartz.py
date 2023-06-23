@@ -23,4 +23,4 @@ def get_dpi(raise_error=True):
     display = quartz.CGMainDisplayID()
     mm = quartz.CGDisplayScreenSize(display)
     px = quartz.CGDisplayBounds(display).size
-    return (px.width/mm.width + px.height/mm.height) * 0.5 * 25.4
+    return (px.width / mm.width + px.height / mm.height) * 0.5 * 25.4

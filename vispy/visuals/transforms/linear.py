@@ -86,10 +86,12 @@ class STTransform(BaseTransform):
         self._scale = np.ones(4, dtype=np.float32)
         self._translate = np.zeros(4, dtype=np.float32)
 
-        s = ((1.0, 1.0, 1.0, 1.0) if scale is None else
-             as_vec4(scale, default=(1., 1., 1., 1.)))
-        t = ((0.0, 0.0, 0.0, 0.0) if translate is None else
-             as_vec4(translate, default=(0., 0., 0., 0.)))
+        s = (1.0, 1.0, 1.0, 1.0) if scale is None else as_vec4(scale, default=(1.0, 1.0, 1.0, 1.0))
+        t = (
+            (0.0, 0.0, 0.0, 0.0)
+            if translate is None
+            else as_vec4(translate, default=(0.0, 0.0, 0.0, 0.0))
+        )
         self._set_st(s, t)
         self._update_shaders()
 
@@ -108,8 +110,10 @@ class STTransform(BaseTransform):
             Coordinates.
         """
         m = np.empty(coords.shape)
-        m[:, :3] = (coords[:, :3] * self.scale[np.newaxis, :3] +
-                    coords[:, 3:] * self.translate[np.newaxis, :3])
+        m[:, :3] = (
+            coords[:, :3] * self.scale[np.newaxis, :3]
+            + coords[:, 3:] * self.translate[np.newaxis, :3]
+        )
         m[:, 3] = coords[:, 3]
         return m
 
@@ -128,9 +132,9 @@ class STTransform(BaseTransform):
             Coordinates.
         """
         m = np.empty(coords.shape)
-        m[:, :3] = ((coords[:, :3] -
-                     coords[:, 3:] * self.translate[np.newaxis, :3]) /
-                    self.scale[np.newaxis, :3])
+        m[:, :3] = (coords[:, :3] - coords[:, 3:] * self.translate[np.newaxis, :3]) / self.scale[
+            np.newaxis, :3
+        ]
         m[:, 3] = coords[:, 3]
         return m
 
@@ -171,13 +175,13 @@ class STTransform(BaseTransform):
 
         if update and need_update:
             self._update_shaders()
-            self.update()   # inform listeners there has been a change
+            self.update()  # inform listeners there has been a change
 
     def _update_shaders(self):
-        self._shader_map['scale'] = self.scale
-        self._shader_map['translate'] = self.translate
-        self._shader_imap['scale'] = self.scale
-        self._shader_imap['translate'] = self.translate
+        self._shader_map["scale"] = self.scale
+        self._shader_map["translate"] = self.translate
+        self._shader_imap["scale"] = self.scale
+        self._shader_imap["translate"] = self.translate
 
     def move(self, move):
         """Change the translation of this transform by the amount given.
@@ -278,10 +282,8 @@ class STTransform(BaseTransform):
 
         x0 = np.asarray(x0)
         x1 = np.asarray(x1)
-        if (x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or
-                x1.shape[0] != 2):
-            raise TypeError("set_mapping requires array inputs of shape "
-                            "(2, N).")
+        if x0.ndim != 2 or x0.shape[0] != 2 or x1.ndim != 2 or x1.shape[0] != 2:
+            raise TypeError("set_mapping requires array inputs of shape " "(2, N).")
         denom = x0[1] - x0[0]
         mask = denom == 0
         denom[mask] = 1.0
@@ -309,8 +311,11 @@ class STTransform(BaseTransform):
         return super(STTransform, self).__rmul__(tr)
 
     def __repr__(self):
-        return ("<STTransform scale=%s translate=%s at 0x%s>"
-                % (self.scale, self.translate, id(self)))
+        return "<STTransform scale=%s translate=%s at 0x%s>" % (
+            self.scale,
+            self.translate,
+            id(self),
+        )
 
 
 class MatrixTransform(BaseTransform):
@@ -381,12 +386,12 @@ class MatrixTransform(BaseTransform):
 
     def shader_map(self):
         fn = super(MatrixTransform, self).shader_map()
-        fn['matrix'] = self.matrix  # uniform mat4
+        fn["matrix"] = self.matrix  # uniform mat4
         return fn
 
     def shader_imap(self):
         fn = super(MatrixTransform, self).shader_imap()
-        fn['inv_matrix'] = self.inv_matrix  # uniform mat4
+        fn["inv_matrix"] = self.inv_matrix  # uniform mat4
         return fn
 
     @property
@@ -440,8 +445,9 @@ class MatrixTransform(BaseTransform):
         scale = transforms.scale(as_vec4(scale, default=(1, 1, 1, 1))[0, :3])
         if center is not None:
             center = as_vec4(center)[0, :3]
-            scale = np.dot(np.dot(transforms.translate(-center), scale),
-                           transforms.translate(center))
+            scale = np.dot(
+                np.dot(transforms.translate(-center), scale), transforms.translate(center)
+            )
         self.matrix = np.dot(self.matrix, scale)
 
     def rotate(self, angle, axis):
@@ -498,8 +504,7 @@ class MatrixTransform(BaseTransform):
         self.matrix = np.eye(4)
 
     def __mul__(self, tr):
-        if (isinstance(tr, MatrixTransform) and not
-                any(tr.matrix[:3, 3] != 0)):
+        if isinstance(tr, MatrixTransform) and not any(tr.matrix[:3, 3] != 0):
             # don't multiply if the perspective column is used
             return MatrixTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
@@ -507,7 +512,7 @@ class MatrixTransform(BaseTransform):
 
     def __repr__(self):
         s = "%s(matrix=[" % self.__class__.__name__
-        indent = " "*len(s)
+        indent = " " * len(s)
         s += str(list(self.matrix[0])) + ",\n"
         s += indent + str(list(self.matrix[1])) + ",\n"
         s += indent + str(list(self.matrix[2])) + ",\n"

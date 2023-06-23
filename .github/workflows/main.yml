@@ -64,9 +64,7 @@ jobs:
     - name: Check line endings
       run: |
         python make test lineendings
-    - name: Lint with flake8
-      run: |
-        python make test flake
+    - uses: pre-commit/action@v3.0.0
 # FIXME: Re-enable this when all docstrings are fixed
 #    - name: Test docstring parameters
 #      run: |

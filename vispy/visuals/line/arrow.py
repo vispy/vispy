@@ -17,15 +17,15 @@ from .line import LineVisual
 
 
 ARROW_TYPES = (
-    'stealth',
-    'curved',
-    'angle_30',
-    'angle_60',
-    'angle_90',
-    'triangle_30',
-    'triangle_60',
-    'triangle_90',
-    'inhibitor_round'
+    "stealth",
+    "curved",
+    "angle_30",
+    "angle_60",
+    "angle_90",
+    "triangle_30",
+    "triangle_60",
+    "triangle_90",
+    "inhibitor_round",
 )
 
 
@@ -46,57 +46,57 @@ class _ArrowHeadVisual(Visual):
         This actual ArrowVisual this arrow head is part of.
     """
 
-    ARROWHEAD_VERTEX_SHADER = glsl.get('arrowheads/arrowheads.vert')
-    ARROWHEAD_FRAGMENT_SHADER = glsl.get('arrowheads/arrowheads.frag')
+    ARROWHEAD_VERTEX_SHADER = glsl.get("arrowheads/arrowheads.vert")
+    ARROWHEAD_FRAGMENT_SHADER = glsl.get("arrowheads/arrowheads.frag")
 
-    _arrow_vtype = np.dtype([
-        ('v1', np.float32, (4,)),
-        ('v2', np.float32, (4,)),
-        ('size', np.float32),
-        ('color', np.float32, (4,)),
-        ('linewidth', np.float32)
-    ])
+    _arrow_vtype = np.dtype(
+        [
+            ("v1", np.float32, (4,)),
+            ("v2", np.float32, (4,)),
+            ("size", np.float32),
+            ("color", np.float32, (4,)),
+            ("linewidth", np.float32),
+        ]
+    )
 
     def __init__(self, parent):
-        Visual.__init__(self, self.ARROWHEAD_VERTEX_SHADER,
-                        self.ARROWHEAD_FRAGMENT_SHADER)
+        Visual.__init__(self, self.ARROWHEAD_VERTEX_SHADER, self.ARROWHEAD_FRAGMENT_SHADER)
         self._parent = parent
-        self.set_gl_state(depth_test=False, blend=True,
-                          blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._draw_mode = 'points'
+        self.set_gl_state(
+            depth_test=False, blend=True, blend_func=("src_alpha", "one_minus_src_alpha")
+        )
+        self._draw_mode = "points"
 
-        self._arrow_vbo = gloo.VertexBuffer(
-            np.array([], dtype=self._arrow_vtype))
+        self._arrow_vbo = gloo.VertexBuffer(np.array([], dtype=self._arrow_vtype))
 
     def _prepare_transforms(self, view):
         xform = view.transforms.get_transform()
-        view.view_program.vert['transform'] = xform
+        view.view_program.vert["transform"] = xform
 
     def _prepare_draw(self, view=None):
         if self._parent._arrows_changed:
             self._prepare_vertex_data()
         self.shared_program.bind(self._arrow_vbo)
-        self.shared_program['antialias'] = 1.0
-        self.shared_program.frag['arrow_type'] = self._parent.arrow_type
-        self.shared_program.frag['fill_type'] = "filled"
+        self.shared_program["antialias"] = 1.0
+        self.shared_program.frag["arrow_type"] = self._parent.arrow_type
+        self.shared_program.frag["fill_type"] = "filled"
 
     def _prepare_vertex_data(self):
         arrows = self._parent.arrows
 
         if arrows is None or arrows.size == 0:
-            self._arrow_vbo = gloo.VertexBuffer(
-                np.array([], dtype=self._arrow_vtype))
+            self._arrow_vbo = gloo.VertexBuffer(np.array([], dtype=self._arrow_vtype))
             return
 
         v = np.zeros(len(arrows), dtype=self._arrow_vtype)
         # 2d // 3d v1 v2.
         sh = int(arrows.shape[1] / 2)
-        v['v1'] = as_vec4(arrows[:, 0:sh])
-        v['v2'] = as_vec4(arrows[:, sh:int(2 * sh)])
-        v['size'][:] = self._parent.arrow_size
+        v["v1"] = as_vec4(arrows[:, 0:sh])
+        v["v2"] = as_vec4(arrows[:, sh : int(2 * sh)])
+        v["size"][:] = self._parent.arrow_size
         color, cmap = self._parent._interpret_color(self._parent.arrow_color)
-        v['color'][:] = color
-        v['linewidth'][:] = self._parent.width
+        v["color"][:] = color
+        v["linewidth"][:] = self._parent.width
         self._arrow_vbo = gloo.VertexBuffer(v)
 
 
@@ -109,7 +109,7 @@ class ArrowVisual(LineVisual):
     You add an arrow head by specifying two vertices `v1` and `v2` which
     represent the arrow body. This visual will draw an arrow head using `v2`
     as center point, and the orientation of the arrow head is automatically
-    determined by calculating the direction vector between `v1` and `v2`. 
+    determined by calculating the direction vector between `v1` and `v2`.
     The arrow head can be detached from arrow body.
 
     Parameters
@@ -172,11 +172,19 @@ class ArrowVisual(LineVisual):
         colormap name, or appropriate `Function`.
     """
 
-    def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
-                 connect='strip', method='gl', antialias=False, arrows=None,
-                 arrow_type='stealth', arrow_size=None,
-                 arrow_color=(0.5, 0.5, 0.5, 1)):
-
+    def __init__(
+        self,
+        pos=None,
+        color=(0.5, 0.5, 0.5, 1),
+        width=1,
+        connect="strip",
+        method="gl",
+        antialias=False,
+        arrows=None,
+        arrow_type="stealth",
+        arrow_size=None,
+        arrow_color=(0.5, 0.5, 0.5, 1),
+    ):
         # Do not use the self._changed dictionary as it gets overwritten by
         # the LineVisual constructor.
         self._arrows_changed = False
@@ -195,15 +203,13 @@ class ArrowVisual(LineVisual):
         # which triggers an *update* event. This results in a redraw. After
         # that we call our own `set_data` method, which triggers another
         # redraw. This should be fixed.
-        LineVisual.__init__(self, pos, color, width, connect, method,
-                            antialias)
+        LineVisual.__init__(self, pos, color, width, connect, method, antialias)
         ArrowVisual.set_data(self, arrows=arrows)
 
         # Add marker visual for the arrow head
         self.add_subvisual(self.arrow_head)
 
-    def set_data(self, pos=None, color=None, width=None, connect=None,
-                 arrows=None):
+    def set_data(self, pos=None, color=None, width=None, connect=None, arrows=None):
         """Set the data used for this visual
 
         Parameters
@@ -247,9 +253,7 @@ class ArrowVisual(LineVisual):
     def arrow_type(self, value):
         if value not in ARROW_TYPES:
             raise ValueError(
-                "Invalid arrow type '{}'. Should be one of {}".format(
-                    value, ", ".join(ARROW_TYPES)
-                )
+                "Invalid arrow type '{}'. Should be one of {}".format(value, ", ".join(ARROW_TYPES))
             )
 
         if value == self._arrow_type:

@@ -1,27 +1,59 @@
 # -*- coding: utf-8 -*-
 
-from ctypes import (cdll, util, Structure, cast, byref, POINTER, CFUNCTYPE,
-                    c_int, c_long, c_ulong, c_ushort, c_wchar, c_uint32,
-                    c_double, c_uint, c_float, c_void_p, c_char_p, c_bool,
-                    c_buffer, c_ubyte, c_byte, c_int8, c_int16, c_int32,
-                    c_int64, c_short, c_longlong, c_size_t, sizeof,
-                    c_uint8, c_longdouble, c_char, c_ulonglong, py_object,
-                    alignment, ArgumentError)
+from ctypes import (
+    cdll,
+    util,
+    Structure,
+    cast,
+    byref,
+    POINTER,
+    CFUNCTYPE,
+    c_int,
+    c_long,
+    c_ulong,
+    c_ushort,
+    c_wchar,
+    c_uint32,
+    c_double,
+    c_uint,
+    c_float,
+    c_void_p,
+    c_char_p,
+    c_bool,
+    c_buffer,
+    c_ubyte,
+    c_byte,
+    c_int8,
+    c_int16,
+    c_int32,
+    c_int64,
+    c_short,
+    c_longlong,
+    c_size_t,
+    sizeof,
+    c_uint8,
+    c_longdouble,
+    c_char,
+    c_ulonglong,
+    py_object,
+    alignment,
+    ArgumentError,
+)
 
 import platform
 import struct
 import sys
 
 if sys.version_info[0] >= 3:
-    string_types = str,
+    string_types = (str,)
 else:
-    string_types = basestring,  # noqa
+    string_types = (basestring,)  # noqa
 
 
 # handle dlopen cache changes in macOS 11 (Big Sur)
 # ref https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
 try:
-    import OpenGL.GL   # noqa
+    import OpenGL.GL  # noqa
 except ImportError:
     # print('Drat, patching for Big Sur')
     orig_util_find_library = util.find_library
@@ -30,11 +62,9 @@ except ImportError:
         res = orig_util_find_library(name)
         if res:
             return res
-        lut = {
-            'objc': 'libobjc.dylib',
-            'quartz': 'Quartz.framework/Quartz'
-        }
-        return lut.get(name, name+'.framework/'+name)
+        lut = {"objc": "libobjc.dylib", "quartz": "Quartz.framework/Quartz"}
+        return lut.get(name, name + ".framework/" + name)
+
     util.find_library = new_util_find_library
 
 
@@ -43,57 +73,77 @@ except ImportError:
 ##############################################################################
 # cocoatypes.py
 
-__LP64__ = (8 * struct.calcsize("P") == 64)
-__i386__ = (platform.machine() == 'i386')
+__LP64__ = 8 * struct.calcsize("P") == 64
+__i386__ = platform.machine() == "i386"
 
-PyObjectEncoding = b'{PyObject=@}'
+PyObjectEncoding = b"{PyObject=@}"
 
 
 def encoding_for_ctype(vartype):
-    typecodes = {c_char: b'c', c_int: b'i', c_short: b's', c_long: b'l',
-                 c_longlong: b'q', c_ubyte: b'C', c_uint: b'I', c_ushort: b'S',
-                 c_ulong: b'L', c_ulonglong: b'Q', c_float: b'f',
-                 c_double: b'd', c_bool: b'B', c_char_p: b'*', c_void_p: b'@',
-                 py_object: PyObjectEncoding}
-    return typecodes.get(vartype, b'?')
+    typecodes = {
+        c_char: b"c",
+        c_int: b"i",
+        c_short: b"s",
+        c_long: b"l",
+        c_longlong: b"q",
+        c_ubyte: b"C",
+        c_uint: b"I",
+        c_ushort: b"S",
+        c_ulong: b"L",
+        c_ulonglong: b"Q",
+        c_float: b"f",
+        c_double: b"d",
+        c_bool: b"B",
+        c_char_p: b"*",
+        c_void_p: b"@",
+        py_object: PyObjectEncoding,
+    }
+    return typecodes.get(vartype, b"?")
+
 
 if __LP64__:
     NSInteger = c_long
     NSUInteger = c_ulong
     CGFloat = c_double
-    NSPointEncoding = b'{CGPoint=dd}'
-    NSSizeEncoding = b'{CGSize=dd}'
-    NSRectEncoding = b'{CGRect={CGPoint=dd}{CGSize=dd}}'
-    NSRangeEncoding = b'{_NSRange=QQ}'
+    NSPointEncoding = b"{CGPoint=dd}"
+    NSSizeEncoding = b"{CGSize=dd}"
+    NSRectEncoding = b"{CGRect={CGPoint=dd}{CGSize=dd}}"
+    NSRangeEncoding = b"{_NSRange=QQ}"
 else:
     NSInteger = c_int
     NSUInteger = c_uint
     CGFloat = c_float
-    NSPointEncoding = b'{_NSPoint=ff}'
-    NSSizeEncoding = b'{_NSSize=ff}'
-    NSRectEncoding = b'{_NSRect={_NSPoint=ff}{_NSSize=ff}}'
-    NSRangeEncoding = b'{_NSRange=II}'
+    NSPointEncoding = b"{_NSPoint=ff}"
+    NSSizeEncoding = b"{_NSSize=ff}"
+    NSRectEncoding = b"{_NSRect={_NSPoint=ff}{_NSSize=ff}}"
+    NSRangeEncoding = b"{_NSRange=II}"
 
 NSIntegerEncoding = encoding_for_ctype(NSInteger)
 NSUIntegerEncoding = encoding_for_ctype(NSUInteger)
 CGFloatEncoding = encoding_for_ctype(CGFloat)
 
-CGImageEncoding = b'{CGImage=}'
-NSZoneEncoding = b'{_NSZone=}'
+CGImageEncoding = b"{CGImage=}"
+NSZoneEncoding = b"{_NSZone=}"
 
 
 class NSPoint(Structure):
     _fields_ = [("x", CGFloat), ("y", CGFloat)]
+
+
 CGPoint = NSPoint
 
 
 class NSSize(Structure):
     _fields_ = [("width", CGFloat), ("height", CGFloat)]
+
+
 CGSize = NSSize
 
 
 class NSRect(Structure):
     _fields_ = [("origin", NSPoint), ("size", NSSize)]
+
+
 CGRect = NSRect
 
 
@@ -119,15 +169,15 @@ CFNumberType = c_uint32
 ##############################################################################
 # runtime.py
 
-__LP64__ = (8*struct.calcsize("P") == 64)
-__i386__ = (platform.machine() == 'i386')
+__LP64__ = 8 * struct.calcsize("P") == 64
+__i386__ = platform.machine() == "i386"
 
 if sizeof(c_void_p) == 4:
     c_ptrdiff_t = c_int32
 elif sizeof(c_void_p) == 8:
     c_ptrdiff_t = c_int64
 
-objc = cdll.LoadLibrary(util.find_library('objc'))
+objc = cdll.LoadLibrary(util.find_library("objc"))
 
 objc.class_addIvar.restype = c_bool
 objc.class_addIvar.argtypes = [c_void_p, c_char_p, c_size_t, c_uint8, c_char_p]
@@ -329,10 +379,8 @@ class OBJC_METHOD_DESCRIPTION(Structure):
     _fields_ = [("name", c_void_p), ("types", c_char_p)]
 
 
-objc.protocol_copyMethodDescriptionList.restype = \
-    POINTER(OBJC_METHOD_DESCRIPTION)
-objc.protocol_copyMethodDescriptionList.argtypes = [c_void_p, c_bool,
-                                                    c_bool, POINTER(c_uint)]
+objc.protocol_copyMethodDescriptionList.restype = POINTER(OBJC_METHOD_DESCRIPTION)
+objc.protocol_copyMethodDescriptionList.argtypes = [c_void_p, c_bool, c_bool, POINTER(c_uint)]
 
 objc.protocol_copyPropertyList.restype = c_void_p
 objc.protocol_copyPropertyList.argtypes = [c_void_p, POINTER(c_uint)]
@@ -341,8 +389,7 @@ objc.protocol_copyProtocolList = POINTER(c_void_p)
 objc.protocol_copyProtocolList.argtypes = [c_void_p, POINTER(c_uint)]
 
 objc.protocol_getMethodDescription.restype = OBJC_METHOD_DESCRIPTION
-objc.protocol_getMethodDescription.argtypes = [c_void_p, c_void_p,
-                                               c_bool, c_bool]
+objc.protocol_getMethodDescription.argtypes = [c_void_p, c_void_p, c_bool, c_bool]
 
 objc.protocol_getName.restype = c_char_p
 objc.protocol_getName.argtypes = [c_void_p]
@@ -360,7 +407,7 @@ objc.sel_registerName.argtypes = [c_char_p]
 def ensure_bytes(x):
     if isinstance(x, bytes):
         return x
-    return x.encode('ascii')
+    return x.encode("ascii")
 
 
 def get_selector(name):
@@ -408,15 +455,14 @@ def send_message(receiver, selName, *args, **kwargs):
     if isinstance(receiver, string_types):
         receiver = get_class(receiver)
     selector = get_selector(selName)
-    restype = kwargs.get('restype', c_void_p)
-    argtypes = kwargs.get('argtypes', [])
+    restype = kwargs.get("restype", c_void_p)
+    argtypes = kwargs.get("argtypes", [])
     if should_use_fpret(restype):
         objc.objc_msgSend_fpret.restype = restype
         objc.objc_msgSend_fpret.argtypes = [c_void_p, c_void_p] + argtypes
         result = objc.objc_msgSend_fpret(receiver, selector, *args)
     elif x86_should_use_stret(restype):
-        objc.objc_msgSend_stret.argtypes = [POINTER(restype), c_void_p,
-                                            c_void_p] + argtypes
+        objc.objc_msgSend_stret.argtypes = [POINTER(restype), c_void_p, c_void_p] + argtypes
         result = restype()
         objc.objc_msgSend_stret(byref(result), receiver, selector, *args)
     else:
@@ -429,19 +475,20 @@ def send_message(receiver, selName, *args, **kwargs):
 
 
 class OBJC_SUPER(Structure):
-    _fields_ = [('receiver', c_void_p), ('class', c_void_p)]
+    _fields_ = [("receiver", c_void_p), ("class", c_void_p)]
+
 
 OBJC_SUPER_PTR = POINTER(OBJC_SUPER)
 
 
 def send_super(receiver, selName, *args, **kwargs):
-    if hasattr(receiver, '_as_parameter_'):
+    if hasattr(receiver, "_as_parameter_"):
         receiver = receiver._as_parameter_
     superclass = get_superclass_of_object(receiver)
     super_struct = OBJC_SUPER(receiver, superclass)
     selector = get_selector(selName)
-    restype = kwargs.get('restype', c_void_p)
-    argtypes = kwargs.get('argtypes', None)
+    restype = kwargs.get("restype", c_void_p)
+    argtypes = kwargs.get("argtypes", None)
     objc.objc_msgSendSuper.restype = restype
     if argtypes:
         objc.objc_msgSendSuper.argtypes = [OBJC_SUPER_PTR, c_void_p] + argtypes
@@ -458,43 +505,41 @@ cfunctype_table = {}
 
 def parse_type_encoding(encoding):
     type_encodings = []
-    brace_count = 0    # number of unclosed curly braces
+    brace_count = 0  # number of unclosed curly braces
     bracket_count = 0  # number of unclosed square brackets
-    typecode = b''
+    typecode = b""
     for c in encoding:
         if isinstance(c, int):
             c = bytes([c])
 
-        if c == b'{':
-            if typecode and typecode[-1:] != b'^' and brace_count == 0 and \
-                    bracket_count == 0:
+        if c == b"{":
+            if typecode and typecode[-1:] != b"^" and brace_count == 0 and bracket_count == 0:
                 type_encodings.append(typecode)
-                typecode = b''
+                typecode = b""
             typecode += c
             brace_count += 1
-        elif c == b'}':
+        elif c == b"}":
             typecode += c
             brace_count -= 1
-            assert(brace_count >= 0)
-        elif c == b'[':
-            if typecode and typecode[-1:] != b'^' and brace_count == 0 and \
-                    bracket_count == 0:
+            assert brace_count >= 0
+        elif c == b"[":
+            if typecode and typecode[-1:] != b"^" and brace_count == 0 and bracket_count == 0:
                 type_encodings.append(typecode)
-                typecode = b''
+                typecode = b""
             typecode += c
             bracket_count += 1
-        elif c == b']':
+        elif c == b"]":
             typecode += c
             bracket_count -= 1
-            assert(bracket_count >= 0)
+            assert bracket_count >= 0
         elif brace_count or bracket_count:
             typecode += c
-        elif c in b'0123456789':
+        elif c in b"0123456789":
             pass
-        elif c in b'rnNoORV':
+        elif c in b"rnNoORV":
             pass
-        elif c in b'^cislqCISLQfdBv*@#:b?':
-            if typecode and typecode[-1:] == b'^':
+        elif c in b"^cislqCISLQfdBv*@#:b?":
+            if typecode and typecode[-1:] == b"^":
                 typecode += c
             else:
                 if typecode:
@@ -510,22 +555,39 @@ def parse_type_encoding(encoding):
 def cfunctype_for_encoding(encoding):
     if encoding in cfunctype_table:
         return cfunctype_table[encoding]
-    typecodes = {b'c': c_char, b'i': c_int, b's': c_short, b'l': c_long,
-                 b'q': c_longlong, b'C': c_ubyte, b'I': c_uint, b'S': c_ushort,
-                 b'L': c_ulong, b'Q': c_ulonglong, b'f': c_float,
-                 b'd': c_double, b'B': c_bool, b'v': None, b'*': c_char_p,
-                 b'@': c_void_p, b'#': c_void_p, b':': c_void_p,
-                 NSPointEncoding: NSPoint, NSSizeEncoding: NSSize,
-                 NSRectEncoding: NSRect, NSRangeEncoding: NSRange,
-                 PyObjectEncoding: py_object}
+    typecodes = {
+        b"c": c_char,
+        b"i": c_int,
+        b"s": c_short,
+        b"l": c_long,
+        b"q": c_longlong,
+        b"C": c_ubyte,
+        b"I": c_uint,
+        b"S": c_ushort,
+        b"L": c_ulong,
+        b"Q": c_ulonglong,
+        b"f": c_float,
+        b"d": c_double,
+        b"B": c_bool,
+        b"v": None,
+        b"*": c_char_p,
+        b"@": c_void_p,
+        b"#": c_void_p,
+        b":": c_void_p,
+        NSPointEncoding: NSPoint,
+        NSSizeEncoding: NSSize,
+        NSRectEncoding: NSRect,
+        NSRangeEncoding: NSRange,
+        PyObjectEncoding: py_object,
+    }
     argtypes = []
     for code in parse_type_encoding(encoding):
         if code in typecodes:
             argtypes.append(typecodes[code])
-        elif code[0:1] == b'^' and code[1:] in typecodes:
+        elif code[0:1] == b"^" and code[1:] in typecodes:
             argtypes.append(POINTER(typecodes[code[1:]]))
         else:
-            raise Exception('unknown type encoding: ' + code)
+            raise Exception("unknown type encoding: " + code)
 
     cfunctype = CFUNCTYPE(*argtypes)
     cfunctype_table[encoding] = cfunctype
@@ -535,8 +597,7 @@ def cfunctype_for_encoding(encoding):
 def create_subclass(superclass, name):
     if isinstance(superclass, string_types):
         superclass = get_class(superclass)
-    return c_void_p(objc.objc_allocateClassPair(superclass,
-                                                ensure_bytes(name), 0))
+    return c_void_p(objc.objc_allocateClassPair(superclass, ensure_bytes(name), 0))
 
 
 def register_subclass(subclass):
@@ -545,8 +606,8 @@ def register_subclass(subclass):
 
 def add_method(cls, selName, method, types):
     type_encodings = parse_type_encoding(types)
-    assert(type_encodings[1] == b'@')  # ensure id self typecode
-    assert(type_encodings[2] == b':')  # ensure SEL cmd typecode
+    assert type_encodings[1] == b"@"  # ensure id self typecode
+    assert type_encodings[2] == b":"  # ensure SEL cmd typecode
     selector = get_selector(selName)
     cfunctype = cfunctype_for_encoding(types)
     imp = cfunctype(method)
@@ -556,8 +617,9 @@ def add_method(cls, selName, method, types):
 
 
 def add_ivar(cls, name, vartype):
-    return objc.class_addIvar(cls, ensure_bytes(name), sizeof(vartype),
-                              alignment(vartype), encoding_for_ctype(vartype))
+    return objc.class_addIvar(
+        cls, ensure_bytes(name), sizeof(vartype), alignment(vartype), encoding_for_ctype(vartype)
+    )
 
 
 def set_instance_variable(obj, varname, value, vartype):
@@ -567,29 +629,47 @@ def set_instance_variable(obj, varname, value, vartype):
 
 def get_instance_variable(obj, varname, vartype):
     variable = vartype()
-    objc.object_getInstanceVariable(obj, ensure_bytes(varname),
-                                    byref(variable))
+    objc.object_getInstanceVariable(obj, ensure_bytes(varname), byref(variable))
     return variable.value
 
 
 class ObjCMethod(object):
     """This represents an unbound Objective-C method (really an IMP)."""
 
-    typecodes = {b'c': c_byte, b'i': c_int, b's': c_short, b'l': c_long,
-                 b'q': c_longlong, b'C': c_ubyte, b'I': c_uint, b'S': c_ushort,
-                 b'L': c_ulong, b'Q': c_ulonglong, b'f': c_float,
-                 b'd': c_double, b'B': c_bool, b'v': None, b'Vv': None,
-                 b'*': c_char_p, b'@': c_void_p, b'#': c_void_p,
-                 b':': c_void_p, b'^v': c_void_p, b'?': c_void_p,
-                 NSPointEncoding: NSPoint, NSSizeEncoding: NSSize,
-                 NSRectEncoding: NSRect, NSRangeEncoding: NSRange,
-                 PyObjectEncoding: py_object}
+    typecodes = {
+        b"c": c_byte,
+        b"i": c_int,
+        b"s": c_short,
+        b"l": c_long,
+        b"q": c_longlong,
+        b"C": c_ubyte,
+        b"I": c_uint,
+        b"S": c_ushort,
+        b"L": c_ulong,
+        b"Q": c_ulonglong,
+        b"f": c_float,
+        b"d": c_double,
+        b"B": c_bool,
+        b"v": None,
+        b"Vv": None,
+        b"*": c_char_p,
+        b"@": c_void_p,
+        b"#": c_void_p,
+        b":": c_void_p,
+        b"^v": c_void_p,
+        b"?": c_void_p,
+        NSPointEncoding: NSPoint,
+        NSSizeEncoding: NSSize,
+        NSRectEncoding: NSRect,
+        NSRangeEncoding: NSRange,
+        PyObjectEncoding: py_object,
+    }
     cfunctype_table = {}
 
     def __init__(self, method):
         self.selector = c_void_p(objc.method_getName(method))
         self.name = objc.sel_getName(self.selector)
-        self.pyname = self.name.replace(b':', b'_')
+        self.pyname = self.name.replace(b":", b"_")
         self.encoding = objc.method_getTypeEncoding(method)
         self.return_type = objc.method_copyReturnType(method)
         self.nargs = objc.method_getNumberOfArguments(method)
@@ -600,14 +680,13 @@ class ObjCMethod(object):
             objc.method_getArgumentType(method, i, buffer, len(buffer))
             self.argument_types.append(buffer.value)
         try:
-            self.argtypes = [self.ctype_for_encoding(t)
-                             for t in self.argument_types]
+            self.argtypes = [self.ctype_for_encoding(t) for t in self.argument_types]
         except ValueError:
             self.argtypes = None
         try:
-            if self.return_type == b'@':
+            if self.return_type == b"@":
                 self.restype = ObjCInstance
-            elif self.return_type == b'#':
+            elif self.return_type == b"#":
                 self.restype = ObjCClass
             else:
                 self.restype = self.ctype_for_encoding(self.return_type)
@@ -619,18 +698,16 @@ class ObjCMethod(object):
         """Return ctypes type for an encoded Objective-C type."""
         if encoding in self.typecodes:
             return self.typecodes[encoding]
-        elif encoding[0:1] == b'^' and encoding[1:] in self.typecodes:
+        elif encoding[0:1] == b"^" and encoding[1:] in self.typecodes:
             return POINTER(self.typecodes[encoding[1:]])
-        elif encoding[0:1] == b'^' and encoding[1:] in [CGImageEncoding,
-                                                        NSZoneEncoding]:
+        elif encoding[0:1] == b"^" and encoding[1:] in [CGImageEncoding, NSZoneEncoding]:
             return c_void_p
-        elif encoding[0:1] == b'r' and encoding[1:] in self.typecodes:
+        elif encoding[0:1] == b"r" and encoding[1:] in self.typecodes:
             return self.typecodes[encoding[1:]]
-        elif encoding[0:2] == b'r^' and encoding[2:] in self.typecodes:
+        elif encoding[0:2] == b"r^" and encoding[2:] in self.typecodes:
             return POINTER(self.typecodes[encoding[2:]])
         else:
-            raise ValueError('unknown encoding for %s: %s'
-                             % (self.name, encoding))
+            raise ValueError("unknown encoding for %s: %s" % (self.name, encoding))
 
     def get_prototype(self):
         if self.restype == ObjCInstance or self.restype == ObjCClass:
@@ -663,9 +740,11 @@ class ObjCMethod(object):
                 result = ObjCClass(result)
             return result
         except ArgumentError as error:
-            error.args += ('selector = ' + self.name,
-                           'argtypes =' + str(self.argtypes),
-                           'encoding = ' + self.encoding)
+            error.args += (
+                "selector = " + self.name,
+                "argtypes =" + str(self.argtypes),
+                "encoding = " + self.encoding,
+            )
             raise
 
 
@@ -675,7 +754,7 @@ class ObjCBoundMethod(object):
         self.objc_id = objc_id
 
     def __repr__(self):
-        return '<ObjCBoundMethod %s (%s)>' % (self.method.name, self.objc_id)
+        return "<ObjCBoundMethod %s (%s)>" % (self.method.name, self.objc_id)
 
     def __call__(self, *args):
         return self.method(self.objc_id, *args)
@@ -700,9 +779,9 @@ class ObjCClass(object):
         objc_class = super(ObjCClass, cls).__new__(cls)
         objc_class.ptr = ptr
         objc_class.name = name
-        objc_class.instance_methods = {}   # mapping of name -> instance method
-        objc_class.class_methods = {}      # mapping of name -> class method
-        objc_class._as_parameter_ = ptr    # for ctypes argument passing
+        objc_class.instance_methods = {}  # mapping of name -> instance method
+        objc_class.class_methods = {}  # mapping of name -> class method
+        objc_class._as_parameter_ = ptr  # for ctypes argument passing
 
         cls._registered_classes[name] = objc_class
         objc_class.cache_instance_methods()
@@ -733,7 +812,7 @@ class ObjCClass(object):
         if name in self.instance_methods:
             return self.instance_methods[name]
         else:
-            selector = get_selector(name.replace(b'_', b':'))
+            selector = get_selector(name.replace(b"_", b":"))
             method = c_void_p(objc.class_getInstanceMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
@@ -745,7 +824,7 @@ class ObjCClass(object):
         if name in self.class_methods:
             return self.class_methods[name]
         else:
-            selector = get_selector(name.replace(b'_', b':'))
+            selector = get_selector(name.replace(b"_", b":"))
             method = c_void_p(objc.class_getClassMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
@@ -761,8 +840,7 @@ class ObjCClass(object):
         method = self.get_instance_method(name)
         if method:
             return method
-        raise AttributeError('ObjCClass %s has no attribute %s'
-                             % (self.name, name))
+        raise AttributeError("ObjCClass %s has no attribute %s" % (self.name, name))
 
 
 class ObjCInstance(object):
@@ -783,21 +861,29 @@ class ObjCInstance(object):
         objc_instance.objc_class = ObjCClass(class_ptr)
 
         cls._cached_objects[object_ptr.value] = objc_instance
-        observer = send_message(send_message('DeallocationObserver', 'alloc'),
-                                'initWithObject:', objc_instance)
+        observer = send_message(
+            send_message("DeallocationObserver", "alloc"), "initWithObject:", objc_instance
+        )
         objc.objc_setAssociatedObject(objc_instance, observer, observer, 0x301)
-        send_message(observer, 'release')
+        send_message(observer, "release")
         return objc_instance
 
     def __repr__(self):
-        if self.objc_class.name == b'NSCFString':
+        if self.objc_class.name == b"NSCFString":
             from .cocoalibs import cfstring_to_string
+
             string = cfstring_to_string(self)
-            return ("<ObjCInstance %#x: %s (%s) at %s>"
-                    % (id(self), self.objc_class.name, string,
-                       str(self.ptr.value)))
-        return ("<ObjCInstance %#x: %s at %s>"
-                % (id(self), self.objc_class.name, str(self.ptr.value)))
+            return "<ObjCInstance %#x: %s (%s) at %s>" % (
+                id(self),
+                self.objc_class.name,
+                string,
+                str(self.ptr.value),
+            )
+        return "<ObjCInstance %#x: %s at %s>" % (
+            id(self),
+            self.objc_class.name,
+            str(self.ptr.value),
+        )
 
     def __getattr__(self, name):
         name = ensure_bytes(name)
@@ -808,17 +894,18 @@ class ObjCInstance(object):
         if method:
             return ObjCBoundMethod(method, self.objc_class.ptr)
         keys = list(self.objc_class.instance_methods.keys())
-        raise AttributeError('ObjCInstance %s has no attribute %s, only:\n%s'
-                             % (self.objc_class.name, name, keys))
+        raise AttributeError(
+            "ObjCInstance %s has no attribute %s, only:\n%s" % (self.objc_class.name, name, keys)
+        )
 
 
 def convert_method_arguments(encoding, args):
     new_args = []
     arg_encodings = parse_type_encoding(encoding)[3:]
     for e, a in zip(arg_encodings, args):
-        if e == b'@':
+        if e == b"@":
             new_args.append(ObjCInstance(a))
-        elif e == b'#':
+        elif e == b"#":
             new_args.append(ObjCClass(a))
         else:
             new_args.append(a)
@@ -826,7 +913,6 @@ def convert_method_arguments(encoding, args):
 
 
 class ObjCSubclass(object):
-
     def __init__(self, superclass, name, register=True):
         self._imp_table = {}
         self.name = name
@@ -853,20 +939,21 @@ class ObjCSubclass(object):
     def rawmethod(self, encoding):
         encoding = ensure_bytes(encoding)
         typecodes = parse_type_encoding(encoding)
-        typecodes.insert(1, b'@:')
-        encoding = b''.join(typecodes)
+        typecodes.insert(1, b"@:")
+        encoding = b"".join(typecodes)
 
         def decorator(f):
-            name = f.__name__.replace('_', ':')
+            name = f.__name__.replace("_", ":")
             self.add_method(f, name, encoding)
             return f
+
         return decorator
 
     def method(self, encoding):
         encoding = ensure_bytes(encoding)
         typecodes = parse_type_encoding(encoding)
-        typecodes.insert(1, b'@:')
-        encoding = b''.join(typecodes)
+        typecodes.insert(1, b"@:")
+        encoding = b"".join(typecodes)
 
         def decorator(f):
             def objc_method(objc_self, objc_cmd, *args):
@@ -879,9 +966,11 @@ class ObjCSubclass(object):
                 elif isinstance(result, ObjCInstance):
                     result = result.ptr.value
                 return result
-            name = f.__name__.replace('_', ':')
+
+            name = f.__name__.replace("_", ":")
             self.add_method(objc_method, name, encoding)
             return objc_method
+
         return decorator
 
     def classmethod(self, encoding):
@@ -889,8 +978,8 @@ class ObjCSubclass(object):
         # Add encodings for hidden self and cmd arguments.
         encoding = ensure_bytes(encoding)
         typecodes = parse_type_encoding(encoding)
-        typecodes.insert(1, b'@:')
-        encoding = b''.join(typecodes)
+        typecodes.insert(1, b"@:")
+        encoding = b"".join(typecodes)
 
         def decorator(f):
             def objc_class_method(objc_cls, objc_cmd, *args):
@@ -903,9 +992,11 @@ class ObjCSubclass(object):
                 elif isinstance(result, ObjCInstance):
                     result = result.ptr.value
                 return result
-            name = f.__name__.replace('_', ':')
+
+            name = f.__name__.replace("_", ":")
             self.add_class_method(objc_class_method, name, encoding)
             return objc_class_method
+
         return decorator
 
 
@@ -943,7 +1034,7 @@ class ObjCSubclass(object):
 ##############################################################################
 # cocoalibs.py
 
-cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
+cf = cdll.LoadLibrary(util.find_library("CoreFoundation"))
 
 kCFStringEncodingUTF8 = 0x08000100
 
@@ -951,8 +1042,7 @@ CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
 
 cf.CFStringCreateWithCString.restype = c_void_p
-cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_void_p,
-                                         CFStringEncoding]
+cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_void_p, CFStringEncoding]
 
 cf.CFRelease.restype = c_void_p
 cf.CFRelease.argtypes = [c_void_p]
@@ -964,8 +1054,7 @@ cf.CFStringGetMaximumSizeForEncoding.restype = CFIndex
 cf.CFStringGetMaximumSizeForEncoding.argtypes = [CFIndex, CFStringEncoding]
 
 cf.CFStringGetCString.restype = c_bool
-cf.CFStringGetCString.argtypes = [c_void_p, c_char_p, CFIndex,
-                                  CFStringEncoding]
+cf.CFStringGetCString.argtypes = [c_void_p, c_char_p, CFIndex, CFStringEncoding]
 
 cf.CFStringGetTypeID.restype = CFTypeID
 cf.CFStringGetTypeID.argtypes = []
@@ -974,12 +1063,11 @@ cf.CFAttributedStringCreate.restype = c_void_p
 cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
 
 cf.CFURLCreateWithFileSystemPath.restype = c_void_p
-cf.CFURLCreateWithFileSystemPath.argtypes = [CFAllocatorRef, c_void_p,
-                                             CFIndex, c_bool]
+cf.CFURLCreateWithFileSystemPath.argtypes = [CFAllocatorRef, c_void_p, CFIndex, c_bool]
 
 
 def CFSTR(string):
-    args = [None, string.encode('utf8'), kCFStringEncodingUTF8]
+    args = [None, string.encode("utf8"), kCFStringEncodingUTF8]
     return ObjCInstance(c_void_p(cf.CFStringCreateWithCString(*args)))
 
 
@@ -992,10 +1080,9 @@ def cfstring_to_string(cfstring):
     length = cf.CFStringGetLength(cfstring)
     size = cf.CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8)
     buffer = c_buffer(size + 1)
-    result = cf.CFStringGetCString(cfstring, buffer, len(buffer),
-                                   kCFStringEncodingUTF8)
+    result = cf.CFStringGetCString(cfstring, buffer, len(buffer), kCFStringEncodingUTF8)
     if result:
-        return buffer.value.decode('utf8')
+        return buffer.value.decode("utf8")
 
 
 cf.CFDataCreate.restype = c_void_p
@@ -1014,8 +1101,7 @@ cf.CFDictionaryAddValue.restype = None
 cf.CFDictionaryAddValue.argtypes = [c_void_p, c_void_p, c_void_p]
 
 cf.CFDictionaryCreateMutable.restype = c_void_p
-cf.CFDictionaryCreateMutable.argtypes = [CFAllocatorRef, CFIndex,
-                                         c_void_p, c_void_p]
+cf.CFDictionaryCreateMutable.argtypes = [CFAllocatorRef, CFIndex, c_void_p, c_void_p]
 
 cf.CFNumberCreate.restype = c_void_p
 cf.CFNumberCreate.argtypes = [CFAllocatorRef, CFNumberType, c_void_p]
@@ -1055,18 +1141,23 @@ kCFNumberMaxType = 16
 def cfnumber_to_number(cfnumber):
     """Convert CFNumber to python int or float."""
     numeric_type = cf.CFNumberGetType(cfnumber)
-    cfnum_to_ctype = {kCFNumberSInt8Type: c_int8, kCFNumberSInt16Type: c_int16,
-                      kCFNumberSInt32Type: c_int32,
-                      kCFNumberSInt64Type: c_int64,
-                      kCFNumberFloat32Type: c_float,
-                      kCFNumberFloat64Type: c_double,
-                      kCFNumberCharType: c_byte, kCFNumberShortType: c_short,
-                      kCFNumberIntType: c_int, kCFNumberLongType: c_long,
-                      kCFNumberLongLongType: c_longlong,
-                      kCFNumberFloatType: c_float,
-                      kCFNumberDoubleType: c_double,
-                      kCFNumberCFIndexType: CFIndex,
-                      kCFNumberCGFloatType: CGFloat}
+    cfnum_to_ctype = {
+        kCFNumberSInt8Type: c_int8,
+        kCFNumberSInt16Type: c_int16,
+        kCFNumberSInt32Type: c_int32,
+        kCFNumberSInt64Type: c_int64,
+        kCFNumberFloat32Type: c_float,
+        kCFNumberFloat64Type: c_double,
+        kCFNumberCharType: c_byte,
+        kCFNumberShortType: c_short,
+        kCFNumberIntType: c_int,
+        kCFNumberLongType: c_long,
+        kCFNumberLongLongType: c_longlong,
+        kCFNumberFloatType: c_float,
+        kCFNumberDoubleType: c_double,
+        kCFNumberCFIndexType: CFIndex,
+        kCFNumberCGFloatType: CGFloat,
+    }
 
     if numeric_type in cfnum_to_ctype:
         t = cfnum_to_ctype[numeric_type]
@@ -1074,12 +1165,14 @@ def cfnumber_to_number(cfnumber):
         if cf.CFNumberGetValue(cfnumber, numeric_type, byref(result)):
             return result.value
     else:
-        raise Exception(
-            'cfnumber_to_number: unhandled CFNumber type %d' % numeric_type)
+        raise Exception("cfnumber_to_number: unhandled CFNumber type %d" % numeric_type)
+
 
 # Dictionary of cftypes matched to the method converting them to python values.
-known_cftypes = {cf.CFStringGetTypeID(): cfstring_to_string,
-                 cf.CFNumberGetTypeID(): cfnumber_to_number}
+known_cftypes = {
+    cf.CFStringGetTypeID(): cfstring_to_string,
+    cf.CFNumberGetTypeID(): cfnumber_to_number,
+}
 
 
 def cftype_to_value(cftype):
@@ -1097,6 +1190,7 @@ def cftype_to_value(cftype):
     else:
         return cftype
 
+
 cf.CFSetGetCount.restype = CFIndex
 cf.CFSetGetCount.argtypes = [c_void_p]
 
@@ -1113,6 +1207,7 @@ def cfset_to_set(cfset):
     cf.CFSetGetValues(cfset, byref(buffer))
     return set([cftype_to_value(c_void_p(buffer[i])) for i in range(count)])
 
+
 cf.CFArrayGetCount.restype = CFIndex
 cf.CFArrayGetCount.argtypes = [c_void_p]
 
@@ -1123,11 +1218,10 @@ cf.CFArrayGetValueAtIndex.argtypes = [c_void_p, CFIndex]
 def cfarray_to_list(cfarray):
     """Convert CFArray to python list."""
     count = cf.CFArrayGetCount(cfarray)
-    return [cftype_to_value(c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i)))
-            for i in range(count)]
+    return [cftype_to_value(c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i))) for i in range(count)]
 
 
-kCFRunLoopDefaultMode = c_void_p.in_dll(cf, 'kCFRunLoopDefaultMode')
+kCFRunLoopDefaultMode = c_void_p.in_dll(cf, "kCFRunLoopDefaultMode")
 
 cf.CFRunLoopGetCurrent.restype = c_void_p
 cf.CFRunLoopGetCurrent.argtypes = []
@@ -1144,15 +1238,12 @@ cf.CFShow.argtypes = [c_void_p]
 
 # Even though we don't use this directly, it must be loaded so that
 # we can find the NSApplication, NSWindow, and NSView classes.
-appkit = cdll.LoadLibrary(util.find_library('AppKit'))
+appkit = cdll.LoadLibrary(util.find_library("AppKit"))
 
-NSDefaultRunLoopMode = c_void_p.in_dll(appkit, 'NSDefaultRunLoopMode')
-NSEventTrackingRunLoopMode = c_void_p.in_dll(
-    appkit, 'NSEventTrackingRunLoopMode')
-NSApplicationDidHideNotification = c_void_p.in_dll(
-    appkit, 'NSApplicationDidHideNotification')
-NSApplicationDidUnhideNotification = c_void_p.in_dll(
-    appkit, 'NSApplicationDidUnhideNotification')
+NSDefaultRunLoopMode = c_void_p.in_dll(appkit, "NSDefaultRunLoopMode")
+NSEventTrackingRunLoopMode = c_void_p.in_dll(appkit, "NSEventTrackingRunLoopMode")
+NSApplicationDidHideNotification = c_void_p.in_dll(appkit, "NSApplicationDidHideNotification")
+NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, "NSApplicationDidUnhideNotification")
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
 # NSAnyEventMask = 0xFFFFFFFFL     # NSUIntegerMax
@@ -1202,39 +1293,39 @@ NSTrackingCursorUpdate = 0x04
 NSTrackingActiveInActiveApp = 0x40
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSOpenGL.h
-NSOpenGLPFAAllRenderers = 1   # choose from all available renderers
-NSOpenGLPFADoubleBuffer = 5   # choose a double buffered pixel format
-NSOpenGLPFAStereo = 6   # stereo buffering supported
-NSOpenGLPFAAuxBuffers = 7   # number of aux buffers
-NSOpenGLPFAColorSize = 8   # number of color buffer bits
-NSOpenGLPFAAlphaSize = 11   # number of alpha component bits
-NSOpenGLPFADepthSize = 12   # number of depth buffer bits
-NSOpenGLPFAStencilSize = 13   # number of stencil buffer bits
-NSOpenGLPFAAccumSize = 14   # number of accum buffer bits
-NSOpenGLPFAMinimumPolicy = 51   # never choose smaller buffers than requested
-NSOpenGLPFAMaximumPolicy = 52   # choose largest buffers of type requested
-NSOpenGLPFAOffScreen = 53   # choose an off-screen capable renderer
-NSOpenGLPFAFullScreen = 54   # choose a full-screen capable renderer
-NSOpenGLPFASampleBuffers = 55   # number of multi sample buffers
-NSOpenGLPFASamples = 56   # number of samples per multi sample buffer
-NSOpenGLPFAAuxDepthStencil = 57   # each aux buffer has its own depth stencil
-NSOpenGLPFAColorFloat = 58   # color buffers store floating point pixels
-NSOpenGLPFAMultisample = 59   # choose multisampling
-NSOpenGLPFASupersample = 60   # choose supersampling
-NSOpenGLPFASampleAlpha = 61   # request alpha filtering
-NSOpenGLPFARendererID = 70   # request renderer by ID
-NSOpenGLPFASingleRenderer = 71   # choose a single renderer for all screens
-NSOpenGLPFANoRecovery = 72   # disable all failure recovery systems
-NSOpenGLPFAAccelerated = 73   # choose a hardware accelerated renderer
-NSOpenGLPFAClosestPolicy = 74   # choose the closest color buffer to request
-NSOpenGLPFARobust = 75   # renderer does not need failure recovery
-NSOpenGLPFABackingStore = 76   # back buffer contents are valid after swap
-NSOpenGLPFAMPSafe = 78   # renderer is multi-processor safe
-NSOpenGLPFAWindow = 80   # can be used to render to an onscreen window
-NSOpenGLPFAMultiScreen = 81   # single window can span multiple screens
-NSOpenGLPFACompliant = 83   # renderer is opengl compliant
-NSOpenGLPFAScreenMask = 84   # bit mask of supported physical screens
-NSOpenGLPFAPixelBuffer = 90   # can be used to render to a pbuffer
+NSOpenGLPFAAllRenderers = 1  # choose from all available renderers
+NSOpenGLPFADoubleBuffer = 5  # choose a double buffered pixel format
+NSOpenGLPFAStereo = 6  # stereo buffering supported
+NSOpenGLPFAAuxBuffers = 7  # number of aux buffers
+NSOpenGLPFAColorSize = 8  # number of color buffer bits
+NSOpenGLPFAAlphaSize = 11  # number of alpha component bits
+NSOpenGLPFADepthSize = 12  # number of depth buffer bits
+NSOpenGLPFAStencilSize = 13  # number of stencil buffer bits
+NSOpenGLPFAAccumSize = 14  # number of accum buffer bits
+NSOpenGLPFAMinimumPolicy = 51  # never choose smaller buffers than requested
+NSOpenGLPFAMaximumPolicy = 52  # choose largest buffers of type requested
+NSOpenGLPFAOffScreen = 53  # choose an off-screen capable renderer
+NSOpenGLPFAFullScreen = 54  # choose a full-screen capable renderer
+NSOpenGLPFASampleBuffers = 55  # number of multi sample buffers
+NSOpenGLPFASamples = 56  # number of samples per multi sample buffer
+NSOpenGLPFAAuxDepthStencil = 57  # each aux buffer has its own depth stencil
+NSOpenGLPFAColorFloat = 58  # color buffers store floating point pixels
+NSOpenGLPFAMultisample = 59  # choose multisampling
+NSOpenGLPFASupersample = 60  # choose supersampling
+NSOpenGLPFASampleAlpha = 61  # request alpha filtering
+NSOpenGLPFARendererID = 70  # request renderer by ID
+NSOpenGLPFASingleRenderer = 71  # choose a single renderer for all screens
+NSOpenGLPFANoRecovery = 72  # disable all failure recovery systems
+NSOpenGLPFAAccelerated = 73  # choose a hardware accelerated renderer
+NSOpenGLPFAClosestPolicy = 74  # choose the closest color buffer to request
+NSOpenGLPFARobust = 75  # renderer does not need failure recovery
+NSOpenGLPFABackingStore = 76  # back buffer contents are valid after swap
+NSOpenGLPFAMPSafe = 78  # renderer is multi-processor safe
+NSOpenGLPFAWindow = 80  # can be used to render to an onscreen window
+NSOpenGLPFAMultiScreen = 81  # single window can span multiple screens
+NSOpenGLPFACompliant = 83  # renderer is opengl compliant
+NSOpenGLPFAScreenMask = 84  # bit mask of supported physical screens
+NSOpenGLPFAPixelBuffer = 90  # can be used to render to a pbuffer
 # can be used to render offline to a pbuffer
 NSOpenGLPFARemotePixelBuffer = 91
 NSOpenGLPFAAllowOfflineRenderers = 96  # allow use of offline renderers
@@ -1285,18 +1376,16 @@ NSApplicationActivationPolicyProhibited = 2
 
 # QUARTZ / COREGRAPHICS
 
-quartz = cdll.LoadLibrary(util.find_library('quartz'))
+quartz = cdll.LoadLibrary(util.find_library("quartz"))
 
-CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
-CGError = c_int32                # CGError.h
-CGBitmapInfo = c_uint32          # CGImage.h
+CGDirectDisplayID = c_uint32  # CGDirectDisplay.h
+CGError = c_int32  # CGError.h
+CGBitmapInfo = c_uint32  # CGImage.h
 
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     ImageIO.framework/Headers/CGImageProperties.h
-kCGImagePropertyGIFDictionary = c_void_p.in_dll(
-    quartz, 'kCGImagePropertyGIFDictionary')
-kCGImagePropertyGIFDelayTime = c_void_p.in_dll(
-    quartz, 'kCGImagePropertyGIFDelayTime')
+kCGImagePropertyGIFDictionary = c_void_p.in_dll(quartz, "kCGImagePropertyGIFDictionary")
+kCGImagePropertyGIFDelayTime = c_void_p.in_dll(quartz, "kCGImagePropertyGIFDelayTime")
 
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     CoreGraphics.framework/Headers/CGColorSpace.h
@@ -1317,8 +1406,7 @@ quartz.CGDisplayCopyAllDisplayModes.restype = c_void_p
 quartz.CGDisplayCopyAllDisplayModes.argtypes = [CGDirectDisplayID, c_void_p]
 
 quartz.CGDisplaySetDisplayMode.restype = CGError
-quartz.CGDisplaySetDisplayMode.argtypes = [
-    CGDirectDisplayID, c_void_p, c_void_p]
+quartz.CGDisplaySetDisplayMode.argtypes = [CGDirectDisplayID, c_void_p, c_void_p]
 
 quartz.CGDisplayCapture.restype = CGError
 quartz.CGDisplayCapture.argtypes = [CGDirectDisplayID]
@@ -1348,8 +1436,7 @@ quartz.CGDisplayModeCopyPixelEncoding.restype = c_void_p
 quartz.CGDisplayModeCopyPixelEncoding.argtypes = [c_void_p]
 
 quartz.CGGetActiveDisplayList.restype = CGError
-quartz.CGGetActiveDisplayList.argtypes = [
-    c_uint32, POINTER(CGDirectDisplayID), POINTER(c_uint32)]
+quartz.CGGetActiveDisplayList.argtypes = [c_uint32, POINTER(CGDirectDisplayID), POINTER(c_uint32)]
 
 quartz.CGDisplayBounds.restype = CGRect
 quartz.CGDisplayBounds.argtypes = [CGDirectDisplayID]
@@ -1358,12 +1445,10 @@ quartz.CGImageSourceCreateWithData.restype = c_void_p
 quartz.CGImageSourceCreateWithData.argtypes = [c_void_p, c_void_p]
 
 quartz.CGImageSourceCreateImageAtIndex.restype = c_void_p
-quartz.CGImageSourceCreateImageAtIndex.argtypes = [
-    c_void_p, c_size_t, c_void_p]
+quartz.CGImageSourceCreateImageAtIndex.argtypes = [c_void_p, c_size_t, c_void_p]
 
 quartz.CGImageSourceCopyPropertiesAtIndex.restype = c_void_p
-quartz.CGImageSourceCopyPropertiesAtIndex.argtypes = [
-    c_void_p, c_size_t, c_void_p]
+quartz.CGImageSourceCopyPropertiesAtIndex.argtypes = [c_void_p, c_size_t, c_void_p]
 
 quartz.CGImageGetDataProvider.restype = c_void_p
 quartz.CGImageGetDataProvider.argtypes = [c_void_p]
@@ -1375,9 +1460,19 @@ quartz.CGDataProviderCreateWithCFData.restype = c_void_p
 quartz.CGDataProviderCreateWithCFData.argtypes = [c_void_p]
 
 quartz.CGImageCreate.restype = c_void_p
-quartz.CGImageCreate.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t,
-                                 c_size_t, c_void_p, c_uint32, c_void_p,
-                                 c_void_p, c_bool, c_int]
+quartz.CGImageCreate.argtypes = [
+    c_size_t,
+    c_size_t,
+    c_size_t,
+    c_size_t,
+    c_size_t,
+    c_void_p,
+    c_uint32,
+    c_void_p,
+    c_void_p,
+    c_bool,
+    c_int,
+]
 
 quartz.CGImageRelease.restype = None
 quartz.CGImageRelease.argtypes = [c_void_p]
@@ -1417,7 +1512,14 @@ quartz.CGAssociateMouseAndMouseCursorPosition.argtypes = [c_bool]
 
 quartz.CGBitmapContextCreate.restype = c_void_p
 quartz.CGBitmapContextCreate.argtypes = [
-    c_void_p, c_size_t, c_size_t, c_size_t, c_size_t, c_void_p, CGBitmapInfo]
+    c_void_p,
+    c_size_t,
+    c_size_t,
+    c_size_t,
+    c_size_t,
+    c_void_p,
+    CGBitmapInfo,
+]
 
 quartz.CGBitmapContextCreateImage.restype = c_void_p
 quartz.CGBitmapContextCreateImage.argtypes = [c_void_p]
@@ -1455,22 +1557,22 @@ quartz.CGDisplayBounds.restype = CGRect
 ######################################################################
 
 # CORETEXT
-ct = cdll.LoadLibrary(util.find_library('CoreText'))
+ct = cdll.LoadLibrary(util.find_library("CoreText"))
 
 # Types
-CTFontOrientation = c_uint32      # CTFontDescriptor.h
-CTFontSymbolicTraits = c_uint32   # CTFontTraits.h
+CTFontOrientation = c_uint32  # CTFontDescriptor.h
+CTFontSymbolicTraits = c_uint32  # CTFontTraits.h
 
 # CoreText constants
-kCTFontAttributeName = c_void_p.in_dll(ct, 'kCTFontAttributeName')
-kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
-kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
-kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
-kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
+kCTFontAttributeName = c_void_p.in_dll(ct, "kCTFontAttributeName")
+kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, "kCTFontFamilyNameAttribute")
+kCTFontSymbolicTrait = c_void_p.in_dll(ct, "kCTFontSymbolicTrait")
+kCTFontWeightTrait = c_void_p.in_dll(ct, "kCTFontWeightTrait")
+kCTFontTraitsAttribute = c_void_p.in_dll(ct, "kCTFontTraitsAttribute")
 
 # constants from CTFontTraits.h
-kCTFontItalicTrait = (1 << 0)
-kCTFontBoldTrait = (1 << 1)
+kCTFontItalicTrait = 1 << 0
+kCTFontBoldTrait = 1 << 1
 
 ct.CTLineCreateWithAttributedString.restype = c_void_p
 ct.CTLineCreateWithAttributedString.argtypes = [c_void_p]
@@ -1480,11 +1582,21 @@ ct.CTLineDraw.argtypes = [c_void_p, c_void_p]
 
 ct.CTFontGetBoundingRectsForGlyphs.restype = CGRect
 ct.CTFontGetBoundingRectsForGlyphs.argtypes = [
-    c_void_p, CTFontOrientation, POINTER(CGGlyph), POINTER(CGRect), CFIndex]
+    c_void_p,
+    CTFontOrientation,
+    POINTER(CGGlyph),
+    POINTER(CGRect),
+    CFIndex,
+]
 
 ct.CTFontGetAdvancesForGlyphs.restype = c_double
 ct.CTFontGetAdvancesForGlyphs.argtypes = [
-    c_void_p, CTFontOrientation, POINTER(CGGlyph), POINTER(CGSize), CFIndex]
+    c_void_p,
+    CTFontOrientation,
+    POINTER(CGGlyph),
+    POINTER(CGSize),
+    CFIndex,
+]
 
 ct.CTFontGetAscent.restype = CGFloat
 ct.CTFontGetAscent.argtypes = [c_void_p]
@@ -1496,12 +1608,10 @@ ct.CTFontGetSymbolicTraits.restype = CTFontSymbolicTraits
 ct.CTFontGetSymbolicTraits.argtypes = [c_void_p]
 
 ct.CTFontGetGlyphsForCharacters.restype = c_bool
-ct.CTFontGetGlyphsForCharacters.argtypes = [
-    c_void_p, POINTER(UniChar), POINTER(CGGlyph), CFIndex]
+ct.CTFontGetGlyphsForCharacters.argtypes = [c_void_p, POINTER(UniChar), POINTER(CGGlyph), CFIndex]
 
 ct.CTFontCreateWithGraphicsFont.restype = c_void_p
-ct.CTFontCreateWithGraphicsFont.argtypes = [c_void_p, CGFloat, c_void_p,
-                                            c_void_p]
+ct.CTFontCreateWithGraphicsFont.argtypes = [c_void_p, CGFloat, c_void_p, c_void_p]
 
 ct.CTFontCopyFamilyName.restype = c_void_p
 ct.CTFontCopyFamilyName.argtypes = [c_void_p]
@@ -1513,8 +1623,7 @@ ct.CTFontCreateWithFontDescriptor.restype = c_void_p
 ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
 
 ct.CTFontCreateCopyWithAttributes.restype = c_void_p
-ct.CTFontCreateCopyWithAttributes.argtypes = [c_void_p, CGFloat, c_void_p,
-                                              c_void_p]
+ct.CTFontCreateCopyWithAttributes.argtypes = [c_void_p, CGFloat, c_void_p, c_void_p]
 
 ct.CTFontDescriptorCreateWithAttributes.restype = c_void_p
 ct.CTFontDescriptorCreateWithAttributes.argtypes = [c_void_p]
@@ -1526,8 +1635,7 @@ ct.CTTypesetterCreateLine.restype = c_void_p
 ct.CTTypesetterCreateLine.argtypes = [c_void_p, CFRange]
 
 ct.CTLineGetOffsetForStringIndex.restype = CGFloat
-ct.CTLineGetOffsetForStringIndex.argtypes = [c_void_p, CFIndex,
-                                             POINTER(CGFloat)]
+ct.CTLineGetOffsetForStringIndex.argtypes = [c_void_p, CFIndex, POINTER(CGFloat)]
 
 ct.CTFontManagerCreateFontDescriptorsFromURL.restype = c_void_p
 ct.CTFontManagerCreateFontDescriptorsFromURL.argtypes = [c_void_p]

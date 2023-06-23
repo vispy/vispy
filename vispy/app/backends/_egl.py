@@ -8,8 +8,7 @@ from __future__ import division
 import atexit
 from time import sleep
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util.ptime import time
 from ... import config
 
@@ -17,6 +16,7 @@ from ... import config
 
 try:
     import os
+
     # XXX TODO: Add use_gl('es2') and somehow incorporate here.
     # Also would be good to have us_gl('es3'), since libGLESv2.so on linux
     # seems to support both.
@@ -26,28 +26,31 @@ try:
     # set. Temporarily unset the DISPLAY environment variable while calling
     # eglGetDisplay() in order to work around this. This should be OK since
     # only headless rendering is currently supported by this backend anyway.
-    x11_dpy = os.getenv('DISPLAY')
+    x11_dpy = os.getenv("DISPLAY")
     if x11_dpy is not None:
-        os.unsetenv('DISPLAY')
+        os.unsetenv("DISPLAY")
     from ...ext import egl
+
     _EGL_DISPLAY = egl.eglGetDisplay()
 
     if x11_dpy is not None:
-        os.environ['DISPLAY'] = x11_dpy
+        os.environ["DISPLAY"] = x11_dpy
 
     egl.eglInitialize(_EGL_DISPLAY)
-    version = [egl.eglQueryString(_EGL_DISPLAY, x) for x in
-               [egl.EGL_VERSION, egl.EGL_VENDOR, egl.EGL_CLIENT_APIS]]
-    version = [v.decode('utf-8') for v in version]
-    version = version[0] + ' ' + version[1] + ': ' + version[2].strip()
+    version = [
+        egl.eglQueryString(_EGL_DISPLAY, x)
+        for x in [egl.EGL_VERSION, egl.EGL_VENDOR, egl.EGL_CLIENT_APIS]
+    ]
+    version = [v.decode("utf-8") for v in version]
+    version = version[0] + " " + version[1] + ": " + version[2].strip()
     atexit.register(egl.eglTerminate, _EGL_DISPLAY)
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
     # XXX restore "testable" once it works properly, and
     # remove from ignore list in .coveragerc
-    available, testable, why_not = True, False, ''
-    which = 'EGL ' + str(version)
+    available, testable, why_not = True, False, ""
+    which = "EGL " + str(version)
 
 
 _VP_EGL_ALL_WINDOWS = []
@@ -82,8 +85,8 @@ capability = dict(  # things that can be set by the backend
 
 # ------------------------------------------------------------- application ---
 
-class ApplicationBackend(BaseApplicationBackend):
 
+class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._timers = list()
@@ -93,7 +96,7 @@ class ApplicationBackend(BaseApplicationBackend):
             self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
-        return 'egl'
+        return "egl"
 
     def _vispy_process_events(self):
         for timer in self._timers:
@@ -136,19 +139,26 @@ class CanvasBackend(BaseCanvasBackend):
         self._initialized = False
 
         # Deal with context
-        p.context.shared.add_ref('egl', self)
+        p.context.shared.add_ref("egl", self)
         if p.context.shared.ref is self:
             # Store context information
-            attribs = [egl.EGL_RED_SIZE, 8,
-                       egl.EGL_BLUE_SIZE, 8,
-                       egl.EGL_GREEN_SIZE, 8,
-                       egl.EGL_ALPHA_SIZE, 8,
-                       egl.EGL_COLOR_BUFFER_TYPE, egl.EGL_RGB_BUFFER,
-                       egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT]
+            attribs = [
+                egl.EGL_RED_SIZE,
+                8,
+                egl.EGL_BLUE_SIZE,
+                8,
+                egl.EGL_GREEN_SIZE,
+                8,
+                egl.EGL_ALPHA_SIZE,
+                8,
+                egl.EGL_COLOR_BUFFER_TYPE,
+                egl.EGL_RGB_BUFFER,
+                egl.EGL_SURFACE_TYPE,
+                egl.EGL_PBUFFER_BIT,
+            ]
             api = None
-            if 'es' in config['gl_backend']:
-                attribs.extend([egl.EGL_RENDERABLE_TYPE,
-                                egl.EGL_OPENGL_ES2_BIT])
+            if "es" in config["gl_backend"]:
+                attribs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT])
                 api = egl.EGL_OPENGL_ES_API
             else:
                 attribs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
@@ -156,9 +166,7 @@ class CanvasBackend(BaseCanvasBackend):
 
             self._native_config = egl.eglChooseConfig(_EGL_DISPLAY, attribs)[0]
             egl.eglBindAPI(api)
-            self._native_context = egl.eglCreateContext(_EGL_DISPLAY,
-                                                        self._native_config,
-                                                        None)
+            self._native_context = egl.eglCreateContext(_EGL_DISPLAY, self._native_config, None)
         else:
             # Reuse information from other context
             self._native_config = p.context.shared.ref._native_config
@@ -182,11 +190,9 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is not None:
             self._destroy_surface()
         attrib_list = (egl.EGL_WIDTH, w, egl.EGL_HEIGHT, h)
-        self._surface = egl.eglCreatePbufferSurface(_EGL_DISPLAY,
-                                                    self._native_config,
-                                                    attrib_list)
+        self._surface = egl.eglCreatePbufferSurface(_EGL_DISPLAY, self._native_config, attrib_list)
         if self._surface == egl.EGL_NO_SURFACE:
-            raise RuntimeError('Could not create rendering surface')
+            raise RuntimeError("Could not create rendering surface")
         self._size = (w, h)
         self._vispy_update()
 
@@ -201,8 +207,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is None:
             return
         # Make this the current context
-        egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, self._surface,
-                           self._native_context)
+        egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, self._surface, self._native_context)
 
     def _vispy_swap_buffers(self):
         if self._surface is None:
@@ -244,8 +249,8 @@ class CanvasBackend(BaseCanvasBackend):
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend):
 
+class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
         vispy_timer._app._backend._add_timer(self)
@@ -256,7 +261,7 @@ class TimerBackend(BaseTimerBackend):
         self._next_time = time() + self._interval
 
     def _vispy_stop(self):
-        self._next_time = float('inf')
+        self._next_time = float("inf")
 
     def _tick(self):
         if time() >= self._next_time:

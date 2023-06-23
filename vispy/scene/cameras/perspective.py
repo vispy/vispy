@@ -27,7 +27,7 @@ class PerspectiveCamera(BaseCamera):
         Keyword arguments to pass to `BaseCamera`.
     """
 
-    _state_props = ('scale_factor', 'center', 'fov')
+    _state_props = ("scale_factor", "center", "fov")
 
     def __init__(self, fov=60.0, scale_factor=None, center=None, **kwargs):
         super(PerspectiveCamera, self).__init__(**kwargs)
@@ -56,13 +56,13 @@ class PerspectiveCamera(BaseCamera):
             The event.
         """
         BaseCamera.viewbox_mouse_event(self, event)
-        if event.type == 'mouse_wheel':
-            s = 1.1 ** - event.delta[1]
+        if event.type == "mouse_wheel":
+            s = 1.1 ** -event.delta[1]
             self._scale_factor *= s
             if self._distance is not None:
                 self._distance *= s
             self.view_changed()
-        elif event.type == 'gesture_zoom':
+        elif event.type == "gesture_zoom":
             s = 1 - event.scale
             self._scale_factor *= s
             if self._distance is not None:
@@ -118,8 +118,8 @@ class PerspectiveCamera(BaseCamera):
         # In screen y, all three dimensions have effect. The idea of the lines
         # below is to calculate the range on screen when that will fit the
         # data under any rotation.
-        rxs = (rx**2 + ry**2)**0.5
-        rys = (rx**2 + ry**2 + rz**2)**0.5
+        rxs = (rx**2 + ry**2) ** 0.5
+        rys = (rx**2 + ry**2 + rz**2) ** 0.5
 
         self.scale_factor = max(rxs, rys) * 1.04  # 4% extra space
 
@@ -158,21 +158,18 @@ class PerspectiveCamera(BaseCamera):
         unit = [[-1, 1], [1, -1]]
         vrect = [[0, 0], self._viewbox.size]
         self._viewbox_tr.set_mapping(unit, vrect)
-        transforms = [n.transform for n in
-                      self._viewbox.scene.node_path_to_child(self)[1:]]
+        transforms = [n.transform for n in self._viewbox.scene.node_path_to_child(self)[1:]]
         camera_tr = self._transform_cache.get(transforms).inverse
-        full_tr = self._transform_cache.get([self._viewbox_tr,
-                                             self._projection,
-                                             camera_tr])
+        full_tr = self._transform_cache.get([self._viewbox_tr, self._projection, camera_tr])
         self._transform_cache.roll()
         self._set_scene_transform(full_tr)
 
     def _update_projection_transform(self, fx, fy):
         d = self.depth_value
         fov = max(0.01, self._fov)
-        dist = fy / (2 * math.tan(math.radians(fov)/2))
+        dist = fy / (2 * math.tan(math.radians(fov) / 2))
         val = math.sqrt(d)
-        self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
+        self._projection.set_perspective(fov, fx / fy, dist / val, dist * val)
 
 
 class Base3DRotationCamera(PerspectiveCamera):
@@ -213,11 +210,11 @@ class Base3DRotationCamera(PerspectiveCamera):
 
         PerspectiveCamera.viewbox_mouse_event(self, event)
 
-        if event.type == 'mouse_release':
+        if event.type == "mouse_release":
             self._event_value = None  # Reset
-        elif event.type == 'mouse_press':
+        elif event.type == "mouse_press":
             event.handled = True
-        elif event.type == 'mouse_move':
+        elif event.type == "mouse_move":
             if event.press_event is None:
                 return
             if 1 in event.buttons and 2 in event.buttons:
@@ -280,25 +277,28 @@ class Base3DRotationCamera(PerspectiveCamera):
             pp1 = np.array([(0, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0)])
             pp2 = np.array([(0, 0, 0), forward, right, up])
             pos = -self._actual_distance * forward
-            scale = [1.0/a for a in self._flip_factors]
+            scale = [1.0 / a for a in self._flip_factors]
 
-            self.transform.matrix = np.linalg.multi_dot((
-                transforms.affine_map(pp1, pp2).T,
-                transforms.translate(pos),
-                self._get_rotation_tr(),
-                transforms.scale(scale),
-                transforms.translate(self.center)
-            ))
+            self.transform.matrix = np.linalg.multi_dot(
+                (
+                    transforms.affine_map(pp1, pp2).T,
+                    transforms.translate(pos),
+                    self._get_rotation_tr(),
+                    transforms.scale(scale),
+                    transforms.translate(self.center),
+                )
+            )
 
     def _get_dim_vectors(self):
         # Specify up and forward vector
-        M = {'+z': [(0, 0, +1), (0, 1, 0)],
-             '-z': [(0, 0, -1), (0, 1, 0)],
-             '+y': [(0, +1, 0), (1, 0, 0)],
-             '-y': [(0, -1, 0), (1, 0, 0)],
-             '+x': [(+1, 0, 0), (0, 0, 1)],
-             '-x': [(-1, 0, 0), (0, 0, 1)],
-             }
+        M = {
+            "+z": [(0, 0, +1), (0, 1, 0)],
+            "-z": [(0, 0, -1), (0, 1, 0)],
+            "+y": [(0, +1, 0), (1, 0, 0)],
+            "-y": [(0, -1, 0), (1, 0, 0)],
+            "+x": [(+1, 0, 0), (0, 0, 1)],
+            "-x": [(-1, 0, 0), (0, 0, 1)],
+        }
         up, forward = M[self.up]
         right = np.cross(forward, up)
         return np.array(up), np.array(forward), right
@@ -306,16 +306,16 @@ class Base3DRotationCamera(PerspectiveCamera):
     def _update_projection_transform(self, fx, fy):
         d = self.depth_value
         if self._fov == 0:
-            self._projection.set_ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy, -d, d)
+            self._projection.set_ortho(-0.5 * fx, 0.5 * fx, -0.5 * fy, 0.5 * fy, -d, d)
             self._actual_distance = self._distance or 0.0
         else:
             # Figure distance to center in order to have correct FoV and fy.
             # Use that auto-distance, or the given distance (if not None).
             fov = max(0.01, self._fov)
-            dist = fy / (2 * math.tan(math.radians(fov)/2))
+            dist = fy / (2 * math.tan(math.radians(fov) / 2))
             self._actual_distance = dist = self._distance or dist
-            val = math.sqrt(d*10)
-            self._projection.set_perspective(fov, fx/fy, dist/val, dist*val)
+            val = math.sqrt(d * 10)
+            self._projection.set_perspective(fov, fx / fy, dist / val, dist * val)
         # Update camera pos, which will use our calculated _distance to offset
         # the camera
         self._update_camera_pos()

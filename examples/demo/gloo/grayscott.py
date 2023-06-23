@@ -13,8 +13,7 @@
 from __future__ import division
 
 import numpy as np
-from vispy.gloo import (Program, FrameBuffer, RenderBuffer, set_viewport,
-                        clear, set_state)
+from vispy.gloo import Program, FrameBuffer, RenderBuffer, set_viewport, clear, set_state
 from vispy import app
 
 
@@ -126,8 +125,9 @@ void main(void)
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, title='Grayscott Reaction-Diffusion',
-                            size=(512, 512), keys='interactive')
+        app.Canvas.__init__(
+            self, title="Grayscott Reaction-Diffusion", size=(512, 512), keys="interactive"
+        )
 
         self.scale = 4
         self.comp_size = self.size
@@ -136,28 +136,26 @@ class Canvas(app.Canvas):
         dd = 1.5
         species = {
             # name : [r_u, r_v, f, k]
-            'Bacteria 1': [0.16, 0.08, 0.035, 0.065],
-            'Bacteria 2': [0.14, 0.06, 0.035, 0.065],
-            'Coral': [0.16, 0.08, 0.060, 0.062],
-            'Fingerprint': [0.19, 0.05, 0.060, 0.062],
-            'Spirals': [0.10, 0.10, 0.018, 0.050],
-            'Spirals Dense': [0.12, 0.08, 0.020, 0.050],
-            'Spirals Fast': [0.10, 0.16, 0.020, 0.050],
-            'Unstable': [0.16, 0.08, 0.020, 0.055],
-            'Worms 1': [0.16, 0.08, 0.050, 0.065],
-            'Worms 2': [0.16, 0.08, 0.054, 0.063],
-            'Zebrafish': [0.16, 0.08, 0.035, 0.060]
+            "Bacteria 1": [0.16, 0.08, 0.035, 0.065],
+            "Bacteria 2": [0.14, 0.06, 0.035, 0.065],
+            "Coral": [0.16, 0.08, 0.060, 0.062],
+            "Fingerprint": [0.19, 0.05, 0.060, 0.062],
+            "Spirals": [0.10, 0.10, 0.018, 0.050],
+            "Spirals Dense": [0.12, 0.08, 0.020, 0.050],
+            "Spirals Fast": [0.10, 0.16, 0.020, 0.050],
+            "Unstable": [0.16, 0.08, 0.020, 0.055],
+            "Worms 1": [0.16, 0.08, 0.050, 0.065],
+            "Worms 2": [0.16, 0.08, 0.054, 0.063],
+            "Zebrafish": [0.16, 0.08, 0.035, 0.060],
         }
         P = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
-        P[:, :] = species['Unstable']
+        P[:, :] = species["Unstable"]
 
         UV = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
         UV[:, :, 0] = 1.0
         r = 32
-        UV[comp_h // 2 - r:comp_h // 2 + r,
-           comp_w // 2 - r:comp_w // 2 + r, 0] = 0.50
-        UV[comp_h // 2 - r:comp_h // 2 + r,
-           comp_w // 2 - r:comp_w // 2 + r, 1] = 0.25
+        UV[comp_h // 2 - r : comp_h // 2 + r, comp_w // 2 - r : comp_w // 2 + r, 0] = 0.50
+        UV[comp_h // 2 - r : comp_h // 2 + r, comp_w // 2 - r : comp_w // 2 + r, 1] = 0.25
         UV += np.random.uniform(0.0, 0.01, (comp_h, comp_w, 4))
         UV[:, :, 2] = UV[:, :, 0]
         UV[:, :, 3] = UV[:, :, 1]
@@ -168,35 +166,34 @@ class Canvas(app.Canvas):
         self.compute["texture"] = UV
         self.compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-        self.compute['dt'] = dt
-        self.compute['dx'] = 1.0 / comp_w
-        self.compute['dy'] = 1.0 / comp_h
-        self.compute['dd'] = dd
-        self.compute['pingpong'] = self.pingpong
+        self.compute["dt"] = dt
+        self.compute["dx"] = 1.0 / comp_w
+        self.compute["dy"] = 1.0 / comp_h
+        self.compute["dd"] = dd
+        self.compute["pingpong"] = self.pingpong
 
         self.render = Program(render_vertex, render_fragment, 4)
         self.render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         self.render["texture"] = self.compute["texture"]
-        self.render['pingpong'] = self.pingpong
+        self.render["pingpong"] = self.pingpong
 
-        self.fbo = FrameBuffer(self.compute["texture"],
-                               RenderBuffer(self.comp_size))
-        set_state(depth_test=False, clear_color='black')
+        self.fbo = FrameBuffer(self.compute["texture"], RenderBuffer(self.comp_size))
+        set_state(depth_test=False, clear_color="black")
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
+        self._timer = app.Timer("auto", connect=self.update, start=True)
 
         self.show()
 
     def on_draw(self, event):
         with self.fbo:
             set_viewport(0, 0, *self.comp_size)
-            self.compute["texture"].interpolation = 'nearest'
-            self.compute.draw('triangle_strip')
+            self.compute["texture"].interpolation = "nearest"
+            self.compute.draw("triangle_strip")
         clear(color=True)
         set_viewport(0, 0, *self.physical_size)
-        self.render["texture"].interpolation = 'linear'
-        self.render.draw('triangle_strip')
+        self.render["texture"].interpolation = "linear"
+        self.render.draw("triangle_strip")
         self.pingpong = 1 - self.pingpong
         self.compute["pingpong"] = self.pingpong
         self.render["pingpong"] = self.pingpong
@@ -205,6 +202,6 @@ class Canvas(app.Canvas):
         set_viewport(0, 0, *self.physical_size)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

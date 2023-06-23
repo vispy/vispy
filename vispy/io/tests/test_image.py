@@ -24,7 +24,7 @@ def test_make_png():
     # Get rid of the alpha for RGB
     rgb_save = rgba_save[:, :, :3]
     # Output file should be in temp
-    png_out = op.join(temp_dir, 'random.png')
+    png_out = op.join(temp_dir, "random.png")
 
     # write_png implicitly tests _make_png
     for rgb_a in (rgba_save, rgb_save):
@@ -36,9 +36,9 @@ def test_make_png():
 @requires_img_lib()
 def test_read_write_image():
     """Test reading and writing of images"""
-    fname = op.join(temp_dir, 'out.png')
+    fname = op.join(temp_dir, "out.png")
     im1 = load_crate()
-    imsave(fname, im1, format='png')
+    imsave(fname, im1, format="png")
     with warnings.catch_warnings(record=True):  # PIL unclosed file
         im2 = imread(fname)
     assert_allclose(im1, im2)

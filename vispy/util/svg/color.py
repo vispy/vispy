@@ -102,7 +102,7 @@ _keyword_colors = {
     "mediumorchid": (186, 85, 211),
     "mediumpurple": (147, 112, 219),
     "mediumseagreen": (60, 179, 113),
-    "mediumslateblue": (123, 104, 238), 
+    "mediumslateblue": (123, 104, 238),
     "mediumspringgreen": (0, 250, 154),
     "mediumturquoise": (72, 209, 204),
     "mediumvioletred": (199, 21, 133),
@@ -156,7 +156,8 @@ _keyword_colors = {
     "white": (255, 255, 255),
     "whitesmoke": (245, 245, 245),
     "yellow": (255, 255, 0),
-    "yellowgreen": (154, 205, 50)}
+    "yellowgreen": (154, 205, 50),
+}
 
 
 _HEXDEC = {}
@@ -170,20 +171,18 @@ def _rgb(triplet):
 
 
 class Color(object):
-
     def __init__(self, content):
-
         color = content.strip()
         if color.startswith("#"):
             rgb = color[1:]
             if len(rgb) == 3:
-                r, g, b = tuple(ord((c + c).decode('hex')) for c in rgb)
+                r, g, b = tuple(ord((c + c).decode("hex")) for c in rgb)
             else:
                 # r,g,b = tuple(ord(c) for c in rgb.decode('hex'))
                 r, g, b = tuple(c for c in _rgb(rgb))
         elif color.startswith("rgb("):
             rgb = color[4:-1]
-            r, g, b = [value.strip() for value in rgb.split(',')]
+            r, g, b = [value.strip() for value in rgb.split(",")]
             if r.endswith("%"):
                 r = 255 * int(r[:-1]) // 100
             else:
@@ -201,7 +200,7 @@ class Color(object):
         else:
             # text = "Unknown color (%s)" % color
             r, g, b = 0, 0, 0
-        self._rgb = r / 255., g / 255., b / 255.
+        self._rgb = r / 255.0, g / 255.0, b / 255.0
 
     @property
     def rgb(self):

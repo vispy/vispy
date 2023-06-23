@@ -41,9 +41,7 @@ class PanZoomTransform(STTransform):
 
     @property
     def canvas_tr(self):
-        return STTransform.from_mapping(
-            [(0, 0), self._canvas.size],
-            [(-1, 1), (1, -1)])
+        return STTransform.from_mapping([(0, 0), self._canvas.size], [(-1, 1), (1, -1)])
 
     def on_resize(self, event):
         """Resize handler

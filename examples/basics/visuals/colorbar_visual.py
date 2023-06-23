@@ -27,23 +27,23 @@ colormap = get_colormap("hot")
 
 def get_num_escape_turns(x, y):
     """Returns the number of iterations it took to escape
-       as normalized values.
-       Parameters
-       ----------
+    as normalized values.
+    Parameters
+    ----------
 
-       x: float
-        the x coordinates of the point
+    x: float
+     the x coordinates of the point
 
-       y: float
-        the y coordinates of the point
+    y: float
+     the y coordinates of the point
 
-       Returns
-       -------
-       float: [0, 1]
-       * 0 if it took 0 iterations to escape
-       * 1 if did not escape in MAX_ITERATIONS iterations
-       * a linearly interpolated number between 0 and 1 if the point took
-         anywhere between 0 to MAX_ITERATIONS to escape
+    Returns
+    -------
+    float: [0, 1]
+    * 0 if it took 0 iterations to escape
+    * 1 if did not escape in MAX_ITERATIONS iterations
+    * a linearly interpolated number between 0 and 1 if the point took
+      anywhere between 0 to MAX_ITERATIONS to escape
 
     """
     c = complex(x, y)
@@ -51,9 +51,8 @@ def get_num_escape_turns(x, y):
 
     num_iterations = 0
 
-    while (MIN_MAGNITUDE < np.absolute(z) < ESCAPE_MAGNITUDE and
-           num_iterations < MAX_ITERATIONS):
-        z = (z ** 2) + c
+    while MIN_MAGNITUDE < np.absolute(z) < ESCAPE_MAGNITUDE and num_iterations < MAX_ITERATIONS:
+        z = (z**2) + c
         num_iterations += 1
 
     return float(num_iterations) / float(MAX_ITERATIONS)
@@ -93,10 +92,9 @@ def get_vertical_bar(pos, size):
     A vispy.visual.ColorBarVisual object that represents the
     data of the Mandlebrot set
     """
-    vertical = ColorBarVisual(pos=pos,
-                              size=size,
-                              label="iterations to escape",
-                              cmap=colormap, orientation="left")
+    vertical = ColorBarVisual(
+        pos=pos, size=size, label="iterations to escape", cmap=colormap, orientation="left"
+    )
 
     vertical.label.font_size = 15
     vertical.label.color = "white"
@@ -130,9 +128,7 @@ class Canvas(app.Canvas):
         img_data = get_mandlebrot_escape_values(img_dim[0], img_dim[1])
         self.image = ImageVisual(img_data, cmap=colormap)
 
-        self.image.transform = \
-            STTransform(scale=1.1,
-                        translate=image_pos)
+        self.image.transform = STTransform(scale=1.1, translate=image_pos)
 
         self.vertical_bar = get_vertical_bar(colorbar_pos, colorbar_size)
 
@@ -157,6 +153,7 @@ class Canvas(app.Canvas):
         # self.horizontal_bar.draw(self.colorbar_transform_sys)
         self.vertical_bar.draw()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     win = Canvas()
     app.run()

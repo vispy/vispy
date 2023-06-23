@@ -43,7 +43,6 @@ def circular(adjacency_mat, directed=False):
     node_coords = (0.5 * np.array([np.cos(t), np.sin(t)]) + 0.5).T
     node_coords = node_coords.astype(np.float32)
 
-    line_vertices, arrows = _straight_line_vertices(adjacency_mat,
-                                                    node_coords, directed)
+    line_vertices, arrows = _straight_line_vertices(adjacency_mat, node_coords, directed)
 
     yield node_coords, line_vertices, arrows

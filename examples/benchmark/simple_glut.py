@@ -14,7 +14,7 @@ def on_display():
 
 
 def on_keyboard(key, x, y):
-    if key == '\033':
+    if key == "\033":
         sys.exit()
 
 
@@ -24,19 +24,17 @@ def on_idle():
     frames = frames + 1
     elapsed = (t - t0) / 1000.0
     if elapsed > 2.5:
-        print("FPS : %.2f (%d frames in %.2f second)"
-              % (frames / elapsed, frames, elapsed))
+        print("FPS : %.2f (%d frames in %.2f second)" % (frames / elapsed, frames, elapsed))
         t0, frames = t, 0
     glut.glutPostRedisplay()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
     import OpenGL.GLUT as glut
 
     glut.glutInit(sys.argv)
-    glut.glutInitDisplayMode(
-        glut.GLUT_DOUBLE | glut.GLUT_RGB | glut.GLUT_DEPTH)
+    glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGB | glut.GLUT_DEPTH)
     glut.glutInitWindowSize(512, 512)
     glut.glutCreateWindow("Do nothing benchmark (GLUT)")
     glut.glutDisplayFunc(on_display)

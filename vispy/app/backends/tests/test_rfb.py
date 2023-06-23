@@ -14,7 +14,6 @@ except ImportError:
 
 
 def test_rfb_app():
-
     # Raw
     app_backend = _jupyter_rfb.ApplicationBackend()
 
@@ -24,16 +23,14 @@ def test_rfb_app():
 
 
 class MyCanvas(Canvas):
-
     def on_draw(self, event):
         gloo.set_clear_color((0, 1, 0))
         gloo.clear()
 
 
-@pytest.mark.skipif(jupyter_rfb is None, reason='jupyter_rfb is not installed')
+@pytest.mark.skipif(jupyter_rfb is None, reason="jupyter_rfb is not installed")
 @requires_application()
 def test_rfb_canvas():
-
     app = Application("jupyter_rfb")
     canvas = MyCanvas(app=app)
     canvas_backend = canvas.native
@@ -45,7 +42,9 @@ def test_rfb_canvas():
     canvas.size = 42, 42
     assert canvas_backend.css_width == "42px"
     # Manually mimic what a browser would do, but round to 50
-    canvas_backend.handle_event({"event_type": "resize", "width": 50, "height": 50, "pixel_ratio": 2.0})
+    canvas_backend.handle_event(
+        {"event_type": "resize", "width": 50, "height": 50, "pixel_ratio": 2.0}
+    )
     assert canvas.size == (50, 50)
     assert canvas.physical_size == (100, 100)
 
@@ -56,7 +55,9 @@ def test_rfb_canvas():
     assert np.all(frame[:, :, 1] == 255)
 
     # Pretend that the user resized in the browser
-    canvas_backend.handle_event({"event_type": "resize", "width": 60, "height": 60, "pixel_ratio": 1.0})
+    canvas_backend.handle_event(
+        {"event_type": "resize", "width": 60, "height": 60, "pixel_ratio": 1.0}
+    )
     assert canvas.size == (60, 60)
     assert canvas.physical_size == (60, 60)
 
@@ -69,7 +70,9 @@ def test_rfb_canvas():
     # Test mouse event
     events = []
     canvas.events.mouse_press.connect(lambda e: events.append(e))
-    canvas_backend.handle_event({"event_type": "pointer_down", "x": 11, "y": 12, "button": 1, "modifiers": []})
+    canvas_backend.handle_event(
+        {"event_type": "pointer_down", "x": 11, "y": 12, "button": 1, "modifiers": []}
+    )
     assert len(events) == 1
     assert tuple(events[0].pos) == (11, 12)
 

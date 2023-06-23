@@ -21,8 +21,7 @@ class Clipper(Filter):
     """
 
     def __init__(self, bounds=(0, 0, 1, 1), transform=None):
-        super(Clipper, self).__init__(fcode=self.FRAG_SHADER,
-                                      fhook='pre', fpos=1)
+        super(Clipper, self).__init__(fcode=self.FRAG_SHADER, fhook="pre", fpos=1)
 
         self.bounds = bounds  # (x, y, w, h)
         if transform is None:
@@ -43,7 +42,7 @@ class Clipper(Filter):
     def bounds(self, b):
         self._bounds = Rect(b).normalized()
         b = self._bounds
-        self.fshader['view'] = (b.left, b.right, b.bottom, b.top)
+        self.fshader["view"] = (b.left, b.right, b.bottom, b.top)
 
     @property
     def transform(self):
@@ -57,4 +56,4 @@ class Clipper(Filter):
         if tr is self._transform:
             return
         self._transform = tr
-        self.fshader['fb_to_clip'] = tr
+        self.fshader["fb_to_clip"] = tr

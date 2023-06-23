@@ -9,7 +9,7 @@ Antigrain Geometry Point Collection
 This collection provides fast points. Output quality is perfect.
 """
 from ... import glsl
-from . raw_point_collection import RawPointCollection
+from .raw_point_collection import RawPointCollection
 
 
 class AggPointCollection(RawPointCollection):
@@ -19,8 +19,7 @@ class AggPointCollection(RawPointCollection):
     This collection provides fast points. Output quality is perfect.
     """
 
-    def __init__(self, user_dtype=None, transform=None,
-                 vertex=None, fragment=None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None, vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -47,6 +46,11 @@ class AggPointCollection(RawPointCollection):
         if fragment is None:
             fragment = glsl.get("collections/agg-point.frag")
 
-        RawPointCollection.__init__(self, user_dtype=user_dtype,
-                                    transform=transform,
-                                    vertex=vertex, fragment=fragment, **kwargs)
+        RawPointCollection.__init__(
+            self,
+            user_dtype=user_dtype,
+            transform=transform,
+            vertex=vertex,
+            fragment=fragment,
+            **kwargs,
+        )

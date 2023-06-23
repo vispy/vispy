@@ -45,7 +45,7 @@ class ArcballCamera(Base3DRotationCamera):
 
     """
 
-    _state_props = Base3DRotationCamera._state_props + ('_quaternion',)
+    _state_props = Base3DRotationCamera._state_props + ("_quaternion",)
 
     def __init__(self, fov=45.0, distance=None, translate_speed=1.0, **kwargs):
         super(ArcballCamera, self).__init__(fov=fov, **kwargs)
@@ -61,9 +61,11 @@ class ArcballCamera(Base3DRotationCamera):
         if self._event_value is None:
             self._event_value = p2
         wh = self._viewbox.size
-        self._quaternion = (Quaternion(*_arcball(p2, wh)) *
-                            Quaternion(*_arcball(self._event_value, wh)) *
-                            self._quaternion)
+        self._quaternion = (
+            Quaternion(*_arcball(p2, wh))
+            * Quaternion(*_arcball(self._event_value, wh))
+            * self._quaternion
+        )
         self._event_value = p2
         self.view_changed()
 
@@ -77,8 +79,7 @@ class ArcballCamera(Base3DRotationCamera):
         rot, x, y, z = self._quaternion.get_axis_angle()
         tr = MatrixTransform()
         tr.rotate(180 * rot / np.pi, (x, y, z))
-        dx, dz, dy = np.dot(tr.matrix[:3, :3],
-                            (dist[0], dist[1], 0.)) * self.translate_speed
+        dx, dz, dy = np.dot(tr.matrix[:3, :3], (dist[0], dist[1], 0.0)) * self.translate_speed
         return dx, dy, dz
 
     def _get_dim_vectors(self):
@@ -100,7 +101,7 @@ def _arcball(xy, wh):
     """
     x, y = xy
     w, h = wh
-    r = (w + h) / 2.
-    x, y = -(2. * x - w) / r, (2. * y - h) / r
-    h = np.sqrt(x*x + y*y)
-    return (0., x/h, y/h, 0.) if h > 1. else (0., x, y, np.sqrt(1. - h*h))
+    r = (w + h) / 2.0
+    x, y = -(2.0 * x - w) / r, (2.0 * y - h) / r
+    h = np.sqrt(x * x + y * y)
+    return (0.0, x / h, y / h, 0.0) if h > 1.0 else (0.0, x, y, np.sqrt(1.0 - h * h))

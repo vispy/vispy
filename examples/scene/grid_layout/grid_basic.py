@@ -21,7 +21,7 @@ import sys
 
 from vispy import scene, app
 
-canvas = scene.SceneCanvas(keys='interactive')
+canvas = scene.SceneCanvas(keys="interactive")
 canvas.size = 600, 600
 
 # This is the top-level widget that will hold three ViewBoxes, which will
@@ -36,5 +36,5 @@ widget_right.bgcolor = "#0000dd"
 
 canvas.show()
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
+if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()

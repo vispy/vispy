@@ -23,9 +23,17 @@ from .glir import GlirQueue, BaseGlirParser, GlirParser, glir_logger
 from .wrappers import BaseGlooFunctions
 from .. import config
 
-_default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
-                     depth_size=24, stencil_size=0, double_buffer=True,
-                     stereo=False, samples=0)
+_default_dict = dict(
+    red_size=8,
+    green_size=8,
+    blue_size=8,
+    alpha_size=8,
+    depth_size=24,
+    stencil_size=0,
+    double_buffer=True,
+    stereo=False,
+    samples=0,
+)
 
 
 canvasses = []
@@ -62,7 +70,7 @@ def get_current_canvas():
 
 def set_current_canvas(canvas):
     """Make a canvas active. Used primarily by the canvas itself."""
-    # Notify glir 
+    # Notify glir
     canvas.context._do_CURRENT_command = True
     # Try to be quick
     if canvasses and canvasses[-1]() is canvas:
@@ -111,9 +119,9 @@ class GLContext(BaseGlooFunctions):
         # Check the config dict
         for key, val in self._config.items():
             if key not in _default_dict:
-                raise KeyError('Key %r is not a valid GL config key.' % key)
+                raise KeyError("Key %r is not a valid GL config key." % key)
             if not isinstance(val, type(_default_dict[key])):
-                raise TypeError('Context value of %r has invalid type.' % key)
+                raise TypeError("Context value of %r has invalid type." % key)
 
     def create_shared(self, name, ref):
         """For the app backends to create the GLShared object.
@@ -126,7 +134,7 @@ class GLContext(BaseGlooFunctions):
             The reference.
         """
         if self._shared is not None:
-            raise RuntimeError('Can only set_shared once.')
+            raise RuntimeError("Can only set_shared once.")
         self._shared = GLShared(name, ref)
 
     @property
@@ -164,11 +172,11 @@ class GLContext(BaseGlooFunctions):
         if self._do_CURRENT_command:
             self._do_CURRENT_command = False
             canvas = get_current_canvas()
-            if canvas and hasattr(canvas, '_backend'):
+            if canvas and hasattr(canvas, "_backend"):
                 fbo = canvas._backend._vispy_get_fb_bind_location()
             else:
                 fbo = 0
-            self.shared.parser.parse([('CURRENT', 0, fbo)])
+            self.shared.parser.parse([("CURRENT", 0, fbo)])
         self.glir.flush(self.shared.parser)
 
     def set_viewport(self, *args):
@@ -192,10 +200,10 @@ class GLShared(object):
     # We keep a (weak) ref of each backend that gets associated with
     # this object. In theory, this means that multiple canvases can
     # be created and also deleted; as long as there is at least one
-    # left, things should Just Work. 
+    # left, things should Just Work.
 
     def __init__(self):
-        glir_file = config['glir_file']
+        glir_file = config["glir_file"]
 
         parser_cls = GlirParser
         if glir_file:
@@ -227,8 +235,7 @@ class GLShared(object):
         if self._name is None:
             self._name = name
         elif name != self._name:
-            raise RuntimeError('Contexts can only share between backends of '
-                               'the same type')
+            raise RuntimeError("Contexts can only share between backends of " "the same type")
         self._refs.append(weakref.ref(ref))
 
     @property
@@ -252,7 +259,7 @@ class GLShared(object):
         if ref is not None:
             return ref
         else:
-            raise RuntimeError('No reference for available for GLShared')
+            raise RuntimeError("No reference for available for GLShared")
 
 
 class FakeCanvas(object):

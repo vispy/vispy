@@ -63,8 +63,7 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(800, 600), title='GL Fireworks',
-                            keys='interactive')
+        app.Canvas.__init__(self, size=(800, 600), title="GL Fireworks", keys="interactive")
 
     def on_initialize(self, event):
         # Build & activate program
@@ -84,9 +83,9 @@ class Canvas(app.Canvas):
 
         # Build vertex buffer
         n = 10000
-        self.data = np.zeros(n, dtype=[('lifetime', np.float32),
-                                       ('start', np.float32, 3),
-                                       ('end', np.float32, 3)])
+        self.data = np.zeros(
+            n, dtype=[("lifetime", np.float32), ("start", np.float32, 3), ("end", np.float32, 3)]
+        )
         vbuffer = gl.glCreateBuffer()
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbuffer)
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data, gl.GL_DYNAMIC_DRAW)
@@ -119,7 +118,7 @@ class Canvas(app.Canvas):
         gl.glEnable(34913)  # gl.GL_POINT_SPRITE
         gl.glViewport(0, 0, *self.physical_size)
         self.new_explosion()
-        self.timer = app.Timer('auto', self.on_timer, start=True)
+        self.timer = app.Timer("auto", self.on_timer, start=True)
 
     def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -129,7 +128,7 @@ class Canvas(app.Canvas):
         gl.glViewport(0, 0, *event.physical_size)
 
     def on_timer(self, event):
-        self.elapsed_time += 1. / 60.
+        self.elapsed_time += 1.0 / 60.0
         if self.elapsed_time > 1.5:
             self.new_explosion()
             self.elapsed_time = 0.0
@@ -141,7 +140,7 @@ class Canvas(app.Canvas):
     def new_explosion(self):
         n = len(self.data)
         color = np.random.uniform(0.1, 0.9, 4).astype(np.float32)
-        color[3] = 1.0 / n ** 0.08
+        color[3] = 1.0 / n**0.08
         loc = gl.glGetUniformLocation(self.program, "color")
         gl.glUniform4f(loc, *color)
 
@@ -149,12 +148,13 @@ class Canvas(app.Canvas):
         loc = gl.glGetUniformLocation(self.program, "center")
         gl.glUniform3f(loc, *center)
 
-        self.data['lifetime'] = np.random.normal(2.0, 0.5, (n,))
-        self.data['start'] = np.random.normal(0.0, 0.2, (n, 3))
-        self.data['end'] = np.random.normal(0.0, 1.2, (n, 3))
+        self.data["lifetime"] = np.random.normal(2.0, 0.5, (n,))
+        self.data["start"] = np.random.normal(0.0, 0.2, (n, 3))
+        self.data["end"] = np.random.normal(0.0, 1.2, (n, 3))
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data, gl.GL_DYNAMIC_DRAW)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     c = Canvas()
     c.show()
     app.run()

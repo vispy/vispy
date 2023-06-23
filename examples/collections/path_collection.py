@@ -6,7 +6,7 @@ import numpy as np
 from vispy import app, gloo
 from vispy.visuals.collections import PathCollection
 
-c = app.Canvas(size=(800, 800), show=True, keys='interactive')
+c = app.Canvas(size=(800, 800), show=True, keys="interactive")
 gloo.set_viewport(0, 0, c.size[0], c.size[1])
 gloo.set_state("translucent", depth_test=False)
 
@@ -31,12 +31,12 @@ P = 2 * (P / (800, 800, 1)) - 1
 paths = PathCollection(mode="agg")
 paths.append(P, closed=True, itemsize=len(S))
 paths["linewidth"] = 1.0
-paths['viewport'] = 0, 0, 800, 800
+paths["viewport"] = 0, 0, 800, 800
 
 
 @c.connect
 def on_draw(e):
-    gloo.clear('white')
+    gloo.clear("white")
     paths.draw()
 
 
@@ -44,6 +44,7 @@ def on_draw(e):
 def on_resize(e):
     width, height = e.size[0], e.size[1]
     gloo.set_viewport(0, 0, width, height)
-    paths['viewport'] = 0, 0, width, height
+    paths["viewport"] = 0, 0, width, height
+
 
 app.run()

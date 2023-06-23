@@ -54,18 +54,23 @@ class InfiniteLineVisual(Visual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
-    def __init__(self, pos=None, color=(1.0, 1.0, 1.0, 1.0), line_width=1.0, antialias=False,
-                 vertical=True, **kwargs):
-        """
+    def __init__(
+        self,
+        pos=None,
+        color=(1.0, 1.0, 1.0, 1.0),
+        line_width=1.0,
+        antialias=False,
+        vertical=True,
+        **kwargs,
+    ):
+        """ """
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
 
-        """
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
-
-        self._changed = {'pos': False, 'color': False}
+        self._changed = {"pos": False, "color": False}
 
         self.pos_buf = gloo.VertexBuffer()
         # The Visual superclass contains a MultiProgram, which is an object
@@ -76,8 +81,8 @@ class InfiniteLineVisual(Visual):
         # The MultiProgram is accessed via the `shared_program` property, so
         # the following modifications to the program will be applied to all
         # views:
-        self.shared_program['a_pos'] = self.pos_buf
-        self._program.vert['is_vertical'] = 1 if vertical else 0
+        self.shared_program["a_pos"] = self.pos_buf
+        self._program.vert["is_vertical"] = 1 if vertical else 0
 
         self._need_upload = False
         self._is_vertical = bool(vertical)
@@ -88,8 +93,8 @@ class InfiniteLineVisual(Visual):
 
         # Visual keeps track of draw mode, index buffer, and GL state. These
         # are shared between all views.
-        self._draw_mode = 'line_strip'
-        self.set_gl_state('translucent', depth_test=False)
+        self._draw_mode = "line_strip"
+        self.set_gl_state("translucent", depth_test=False)
 
         self.set_data(pos=pos, color=color)
 
@@ -117,15 +122,14 @@ class InfiniteLineVisual(Visual):
                 xy[0, 1] = pos
                 xy[1, 0] = 1
                 xy[1, 1] = pos
-            self._changed['pos'] = True
+            self._changed["pos"] = True
 
         if color is not None:
             color = np.array(color, dtype=np.float32)
             if color.ndim != 1 or color.shape[0] != 4:
-                raise ValueError('color must be a 4 element float rgba tuple,'
-                                 ' list or array')
+                raise ValueError("color must be a 4 element float rgba tuple," " list or array")
             self._color = color
-            self._changed['color'] = True
+            self._changed["color"] = True
 
     @property
     def color(self):
@@ -174,10 +178,8 @@ class InfiniteLineVisual(Visual):
     def _prepare_transforms(self, view=None):
         program = view.view_program
         transforms = view.transforms
-        program.vert['render_to_visual'] = transforms.get_transform('render',
-                                                                    'visual')
-        program.vert['transform'] = transforms.get_transform('visual',
-                                                             'render')
+        program.vert["render_to_visual"] = transforms.get_transform("render", "visual")
+        program.vert["transform"] = transforms.get_transform("visual", "render")
 
     def _prepare_draw(self, view=None):
         """This method is called immediately before each draw.
@@ -190,10 +192,10 @@ class InfiniteLineVisual(Visual):
         width = px_scale * self._line_width
         self.update_gl_state(line_width=max(width, 1.0))
 
-        if self._changed['pos']:
+        if self._changed["pos"]:
             self.pos_buf.set_data(self._pos)
-            self._changed['pos'] = False
+            self._changed["pos"] = False
 
-        if self._changed['color']:
-            self._program.vert['color'] = self._color
-            self._changed['color'] = False
+        if self._changed["color"]:
+            self._program.vert["color"] = self._color
+            self._changed["color"] = False

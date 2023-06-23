@@ -1,4 +1,3 @@
-
 from .mesh import MeshVisual
 from ..geometry import create_grid_mesh, MeshData
 
@@ -35,12 +34,9 @@ class GridMeshVisual(MeshVisual):
         Other arguments are passed directly to MeshVisual.
     """
 
-    def __init__(self, xs, ys, zs, colors=None, shading='smooth',
-                 **kwargs):
-
+    def __init__(self, xs, ys, zs, colors=None, shading="smooth", **kwargs):
         if xs is None or ys is None or zs is None:
-            raise ValueError('All of xs, ys and zs must be initialised '
-                             'with arrays.')
+            raise ValueError("All of xs, ys and zs must be initialised " "with arrays.")
 
         self._xs = None
         self._ys = None
@@ -92,7 +88,8 @@ class GridMeshVisual(MeshVisual):
             self.__meshdata.set_faces(indices)
 
         if colors is not None:
-            self.__meshdata.set_vertex_colors(colors.reshape(
-                colors.shape[0] * colors.shape[1], colors.shape[2]))
+            self.__meshdata.set_vertex_colors(
+                colors.reshape(colors.shape[0] * colors.shape[1], colors.shape[2])
+            )
 
         MeshVisual.set_data(self, meshdata=self.__meshdata)

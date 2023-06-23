@@ -16,17 +16,17 @@ GL_UNSIGNED_BYTE = 5121
 GL_VERSION = 7938
 
 _osmesa_file = None
-if 'OSMESA_LIBRARY' in os.environ:
-    if os.path.exists(os.environ['OSMESA_LIBRARY']):
-        _osmesa_file = os.path.realpath(os.environ['OSMESA_LIBRARY'])
+if "OSMESA_LIBRARY" in os.environ:
+    if os.path.exists(os.environ["OSMESA_LIBRARY"]):
+        _osmesa_file = os.path.realpath(os.environ["OSMESA_LIBRARY"])
 
 # Else, try to find it
 if _osmesa_file is None:
-    _osmesa_file = ctypes.util.find_library('OSMesa')
+    _osmesa_file = ctypes.util.find_library("OSMesa")
 
 # Else, we failed and exit
 if _osmesa_file is None:
-    raise OSError('OSMesa library not found')
+    raise OSError("OSMesa library not found")
 
 # Load it
 _lib = ctypes.CDLL(_osmesa_file)
@@ -42,7 +42,7 @@ _lib.OSMesaCreateContext.argtypes = _c_int, c_void_p
 _lib.OSMesaCreateContext.restype = c_void_p
 # GLAPI void GLAPIENTRY
 # OSMesaDestroyContext( OSMesaContext ctx );
-_lib.OSMesaDestroyContext.argtypes = c_void_p,
+_lib.OSMesaDestroyContext.argtypes = (c_void_p,)
 # GLAPI GLboolean GLAPIENTRY
 # OSMesaMakeCurrent( OSMesaContext ctx, void *buffer, GLenum type,
 #                   GLsizei width, GLsizei height );
@@ -71,15 +71,15 @@ def OSMesaDestroyContext(context):
 
 
 def OSMesaMakeCurrent(context, buffer, width, height):
-    ret = _lib.OSMesaMakeCurrent(context, buffer, GL_UNSIGNED_BYTE,
-                                 width, height)
+    ret = _lib.OSMesaMakeCurrent(context, buffer, GL_UNSIGNED_BYTE, width, height)
     return ret != 0
 
 
 def OSMesaGetCurrentContext():
     return c_void_p(_lib.OSMesaGetCurrentContext())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     """This test basic OSMesa functionality"""
     # If you have OSMesa installed alongside normal OpenGL, execute with
     # VISPY_GL_LIB=/opt/osmesa_llvmpipe/lib/libGLESv2.so \
@@ -91,9 +91,9 @@ if __name__ == '__main__':
     pixels = allocate_pixels_buffer(w, h)
     ok = OSMesaMakeCurrent(context, pixels, 640, 480)
     if not ok:
-        raise RuntimeError('Failed OSMesaMakeCurrent')
+        raise RuntimeError("Failed OSMesaMakeCurrent")
     if not (OSMesaGetCurrentContext().value == context.value):
-        raise RuntimeError('OSMesa context not correctly attached')
+        raise RuntimeError("OSMesa context not correctly attached")
 
     _lib.glGetString.argtypes = (ctypes.c_uint,)
     _lib.glGetString.restype = ctypes.c_char_p
@@ -102,4 +102,4 @@ if __name__ == '__main__':
 
     OSMesaDestroyContext(context)
     if OSMesaGetCurrentContext().value is not None:
-        raise RuntimeError('Failed to destroy OSMesa context')
+        raise RuntimeError("Failed to destroy OSMesa context")

@@ -100,9 +100,9 @@ class Compiler(object):
                     code.append(dep_code)
 
             if version is not None:
-                code.insert(0, '#version %s %s' % version)
+                code.insert(0, "#version %s %s" % version)
 
-            compiled[shader_name] = '\n'.join(code)
+            compiled[shader_name] = "\n".join(code)
 
         self.code = compiled
         return compiled
@@ -117,9 +117,9 @@ class Compiler(object):
         for shader_name, deps in self._shader_deps.items():
             for dep in deps:
                 name = dep.name
-                if name != 'main':
-                    ext = '_%x' % id(dep)
-                    name = name[:32-len(ext)] + ext
+                if name != "main":
+                    ext = "_%x" % id(dep)
+                    name = name[: 32 - len(ext)] + ext
                 self._object_names[dep] = name
 
     def _rename_objects_pretty(self):
@@ -164,8 +164,8 @@ class Compiler(object):
                 while True:
                     index = name_index.get(name, 0) + 1
                     name_index[name] = index
-                    ext = '_%d' % index
-                    new_name = name[:32-len(ext)] + ext
+                    ext = "_%d" % index
+                    new_name = name[: 32 - len(ext)] + ext
                     if self._name_available(obj, new_name, shaders):
                         self._assign_name(obj, new_name, shaders)
                         break
@@ -181,6 +181,7 @@ class Compiler(object):
         # Functions are local. Is this actually correct? Are there any
         # global functions? Are there any local variables?
         from .variable import Variable
+
         return isinstance(obj, Variable)
 
     def _name_available(self, obj, name, shaders):

@@ -10,7 +10,7 @@ This collection provides fast raw (& ugly) line segments.
 """
 import numpy as np
 from ... import glsl
-from . collection import Collection
+from .collection import Collection
 from ..transforms import NullTransform
 
 
@@ -21,8 +21,7 @@ class RawSegmentCollection(Collection):
     This collection provides fast raw (& ugly) line segments.
     """
 
-    def __init__(self, user_dtype=None, transform=None,
-                 vertex=None, fragment=None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None, vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -44,26 +43,28 @@ class RawSegmentCollection(Collection):
         color : string
             'local', 'shared' or 'global'
         """
-        base_dtype = [("position", (np.float32, 3), "!local", (0, 0, 0)),
-                      ("color", (np.float32, 4), "global", (0, 0, 0, 1)),
-                      ("viewport", (np.float32, 4), "global", (0, 0, 512, 512))
-                      ]
+        base_dtype = [
+            ("position", (np.float32, 3), "!local", (0, 0, 0)),
+            ("color", (np.float32, 4), "global", (0, 0, 0, 1)),
+            ("viewport", (np.float32, 4), "global", (0, 0, 512, 512)),
+        ]
 
         dtype = base_dtype
         if user_dtype:
             dtype.extend(user_dtype)
 
         if vertex is None:
-            vertex = glsl.get('collections/raw-segment.vert')
+            vertex = glsl.get("collections/raw-segment.vert")
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
-            fragment = glsl.get('collections/raw-segment.frag')
+            fragment = glsl.get("collections/raw-segment.frag")
 
-        Collection.__init__(self, dtype=dtype, itype=None, mode='lines',
-                            vertex=vertex, fragment=fragment, **kwargs)
-        self._programs[0].vert['transform'] = self.transform
+        Collection.__init__(
+            self, dtype=dtype, itype=None, mode="lines", vertex=vertex, fragment=fragment, **kwargs
+        )
+        self._programs[0].vert["transform"] = self.transform
 
     def append(self, P0, P1, itemsize=None, **kwargs):
         """
@@ -93,12 +94,12 @@ class RawSegmentCollection(Collection):
 
         # Apply default values on vertices
         for name in self.vtype.names:
-            if name not in ['collection_index', 'P']:
+            if name not in ["collection_index", "P"]:
                 V[name] = kwargs.get(name, self._defaults[name])
 
         V = np.repeat(V, 2, axis=0)
-        V['P'][0::2] = P0
-        V['P'][1::2] = P1
+        V["P"][0::2] = P0
+        V["P"][1::2] = P1
 
         # Uniforms
         if self.utype:

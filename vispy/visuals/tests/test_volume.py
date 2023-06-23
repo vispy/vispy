@@ -4,27 +4,31 @@ import pytest
 import numpy as np
 from vispy import scene
 
-from vispy.testing import (TestingCanvas, requires_application,
-                           run_tests_if_main, requires_pyopengl,
-                           raises)
+from vispy.testing import (
+    TestingCanvas,
+    requires_application,
+    run_tests_if_main,
+    requires_pyopengl,
+    raises,
+)
 from vispy.testing.image_tester import assert_image_approved, downsample
 from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
 
 
 @requires_pyopengl()
 def test_volume():
-    vol = np.zeros((20, 20, 20), 'float32')
+    vol = np.zeros((20, 20, 20), "float32")
     vol[8:16, 8:16, :] = 1.0
 
     # Create
     V = scene.visuals.Volume(vol)
     assert V.clim == (0, 1)
-    assert V.method == 'mip'
-    assert V.interpolation == 'linear'
+    assert V.method == "mip"
+    assert V.interpolation == "linear"
 
     # Set wrong data
     with raises(ValueError):
-        V.set_data(np.zeros((20, 20), 'float32'))
+        V.set_data(np.zeros((20, 20), "float32"))
 
     # Clim
     V.set_data(vol, (0.5, 0.8))
@@ -33,12 +37,12 @@ def test_volume():
         V.set_data((0.5, 0.8, 1.0))
 
     # Method
-    V.method = 'iso'
-    assert V.method == 'iso'
+    V.method = "iso"
+    assert V.method == "iso"
 
     # Interpolation
-    V.interpolation = 'nearest'
-    assert V.interpolation == 'nearest'
+    V.interpolation = "nearest"
+    assert V.interpolation == "nearest"
 
     # Step size
     V.relative_step_size = 1.1
@@ -50,7 +54,7 @@ def test_volume():
 
 @requires_pyopengl()
 def test_volume_bounds():
-    vol = np.zeros((20, 30, 40), 'float32')
+    vol = np.zeros((20, 30, 40), "float32")
     vol[8:16, 8:16, :] = 1.0
 
     # Create
@@ -63,9 +67,9 @@ def test_volume_bounds():
 @requires_pyopengl()
 @requires_application()
 def test_volume_draw():
-    with TestingCanvas(bgcolor='k', size=(100, 100)) as c:
+    with TestingCanvas(bgcolor="k", size=(100, 100)) as c:
         v = c.central_widget.add_view()
-        v.camera = 'turntable'
+        v.camera = "turntable"
         v.camera.fov = 70
         # Create
         np.random.seed(2376)
@@ -73,14 +77,14 @@ def test_volume_draw():
         vol[8:16, 8:16, :] += 1.0
         scene.visuals.Volume(vol, parent=v.scene)  # noqa
         v.camera.set_range()
-        assert_image_approved(c.render(), 'visuals/volume.png')
+        assert_image_approved(c.render(), "visuals/volume.png")
 
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('clim_on_init', [False, True])
-@pytest.mark.parametrize('texture_format', [None, '__dtype__', 'auto'])
-@pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
+@pytest.mark.parametrize("clim_on_init", [False, True])
+@pytest.mark.parametrize("texture_format", [None, "__dtype__", "auto"])
+@pytest.mark.parametrize("input_dtype", [np.uint8, np.uint16, np.float32, np.float64])
 def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
     """Test volume visual with clims and gamma on shader.
 
@@ -94,7 +98,7 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
 
     """
     size = (40, 40)
-    if texture_format == '__dtype__':
+    if texture_format == "__dtype__":
         texture_format = input_dtype
     np.random.seed(0)  # make tests the same every time
     data = _make_test_data(size[:1] * 3, input_dtype)
@@ -107,18 +111,18 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
 
     kwargs = {}
     if clim_on_init:
-        kwargs['clim'] = clim
+        kwargs["clim"] = clim
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
         volume = scene.visuals.Volume(
             data,
-            interpolation='nearest',
+            interpolation="nearest",
             parent=v.scene,
-            method='mip',
+            method="mip",
             texture_format=texture_format,
-            **kwargs
+            **kwargs,
         )
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
         v.camera.center = (19.5, 19.5, 19.5)
@@ -133,20 +137,22 @@ def test_volume_clims_and_gamma(texture_format, input_dtype, clim_on_init):
         # adjust contrast limits
         volume.clim = new_clim
         rendered2 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
-        scaled_data = (np.clip(data, new_clim[0], new_clim[1]) - new_clim[0]) / (new_clim[1] - new_clim[0])
+        scaled_data = (np.clip(data, new_clim[0], new_clim[1]) - new_clim[0]) / (
+            new_clim[1] - new_clim[0]
+        )
         predicted = scaled_data.max(axis=1)
         compare_render(predicted, rendered2, previous_render=rendered)
 
         # adjust gamma
         volume.gamma = 2
         rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
-        predicted = (scaled_data ** 2).max(axis=1)
+        predicted = (scaled_data**2).max(axis=1)
         compare_render(predicted, rendered3, previous_render=rendered2)
 
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('method_name', scene.visuals.Volume._rendering_methods.keys())
+@pytest.mark.parametrize("method_name", scene.visuals.Volume._rendering_methods.keys())
 def test_all_render_methods(method_name):
     """Test that render methods don't produce any errors."""
     size = (40, 40)
@@ -154,20 +160,15 @@ def test_all_render_methods(method_name):
     data = _make_test_data(size[:1] * 3, np.float32)
     # modify the data for 'minip' method so that there is at least one segment
     # of the volume with no 'empty'/zero space
-    data[:, :, 40 // 3: 2 * 40 // 3] = 1.0
+    data[:, :, 40 // 3 : 2 * 40 // 3] = 1.0
     clim = (0, 1)
     kwargs = {}
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
         volume = scene.visuals.Volume(
-            data,
-            interpolation='nearest',
-            clim=clim,
-            parent=v.scene,
-            method=method_name,
-            **kwargs
+            data, interpolation="nearest", clim=clim, parent=v.scene, method=method_name, **kwargs
         )
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
         v.camera.center = (19.5, 19.5, 19.5)
@@ -182,7 +183,7 @@ def test_all_render_methods(method_name):
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('texture_format', [None, 'auto'])
+@pytest.mark.parametrize("texture_format", [None, "auto"])
 def test_equal_clims(texture_format):
     """Test that equal clims produce a min cmap value."""
     size = (40, 40)
@@ -192,14 +193,14 @@ def test_equal_clims(texture_format):
         v = c.central_widget.add_view(border_width=0)
         scene.visuals.Volume(
             data,
-            interpolation='nearest',
+            interpolation="nearest",
             clim=(128.0, 128.0),  # equal clims
-            cmap='viridis',  # something with a non-black min value
+            cmap="viridis",  # something with a non-black min value
             parent=v.scene,
-            method='mip',
+            method="mip",
             texture_format=texture_format,
         )
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
         v.camera.center = (19.5, 19.5, 19.5)
@@ -243,7 +244,7 @@ def test_set_data_does_not_change_input():
     # calling Volume.set_data() should NOT alter the values of the input array
     # regardless of data type
     vol = np.random.randint(0, 200, (20, 20, 20))
-    for dtype in ['uint8', 'int16', 'uint16', 'float32', 'float64']:
+    for dtype in ["uint8", "int16", "uint16", "float32", "float64"]:
         vol_copy = np.array(vol, dtype=dtype, copy=True)
         # setting clim so that normalization would otherwise change the data
         V.set_data(vol_copy, clim=(0, 200))
@@ -288,21 +289,16 @@ def test_changing_cmap():
     size = (40, 40)
     np.random.seed(0)  # make tests the same every time
     data = _make_test_data(size[:1] * 3, np.float32)
-    cmap = 'grays'
-    test_cmaps = ('reds', 'greens', 'blues')
+    cmap = "grays"
+    test_cmaps = ("reds", "greens", "blues")
     clim = (0, 1)
     kwargs = {}
     with TestingCanvas(size=size, bgcolor="k") as c:
         v = c.central_widget.add_view(border_width=0)
         volume = scene.visuals.Volume(
-            data,
-            interpolation='nearest',
-            clim=clim,
-            cmap=cmap,
-            parent=v.scene,
-            **kwargs
+            data, interpolation="nearest", clim=clim, cmap=cmap, parent=v.scene, **kwargs
         )
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.scale_factor = 40.0
 
@@ -322,13 +318,14 @@ def test_changing_cmap():
 def test_plane_depth():
     with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.center = (40, 40, 40)
         v.camera.scale_factor = 80.0
 
-        # two planes at 45 degrees relative to the camera. If depth is set correctly, we should see one half
-        # of the screen red and the other half white
+        # two planes at 45 degrees relative to the camera. If depth is set
+        # correctly, we should see one half of the screen red and the other
+        # half white
         scene.visuals.Volume(
             np.ones((80, 80, 80), dtype=np.uint8),
             interpolation="nearest",
@@ -377,7 +374,7 @@ def test_volume_depth():
 
     with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.center = (40, 40, 40)
         v.camera.scale_factor = 80.0
@@ -417,7 +414,7 @@ def test_mip_cutoff():
     """
     with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.center = (40, 40, 40)
         v.camera.scale_factor = 80.0
@@ -440,7 +437,7 @@ def test_mip_cutoff():
         assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
 
         # repeat for attenuated_mip
-        vol.method = 'attenuated_mip'
+        vol.method = "attenuated_mip"
         vol.mip_cutoff = None
 
         # we should see white
@@ -462,7 +459,7 @@ def test_minip_cutoff():
     """
     with TestingCanvas(size=(80, 80)) as c:
         v = c.central_widget.add_view(border_width=0)
-        v.camera = 'arcball'
+        v.camera = "arcball"
         v.camera.fov = 0
         v.camera.center = (40, 40, 40)
         v.camera.scale_factor = 120.0
@@ -474,7 +471,7 @@ def test_minip_cutoff():
         vol = scene.visuals.Volume(
             data,
             interpolation="nearest",
-            method='minip',
+            method="minip",
             clim=(0, 2),
             cmap="grays",
             parent=v.scene,
@@ -503,16 +500,11 @@ def test_volume_set_data_different_dtype():
 
     with TestingCanvas(size=size[::-1], bgcolor="w") as c:
         view = c.central_widget.add_view()
-        view.camera = 'arcball'
+        view.camera = "arcball"
         view.camera.fov = 0
         view.camera.center = 0.5, 0, 0
         view.camera.scale_factor = 2
-        volume = scene.visuals.Volume(
-            data,
-            cmap='grays',
-            clim=[0, 127],
-            parent=view.scene
-        )
+        volume = scene.visuals.Volume(data, cmap="grays", clim=[0, 127], parent=view.scene)
 
         render = c.render()
         assert np.allclose(render[left], black)

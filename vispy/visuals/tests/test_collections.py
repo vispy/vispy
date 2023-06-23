@@ -1,8 +1,12 @@
 # *Very* basic collections tests
 
-from vispy.visuals.collections import (PathCollection, PointCollection,
-                                       PolygonCollection, SegmentCollection,
-                                       TriangleCollection)
+from vispy.visuals.collections import (
+    PathCollection,
+    PointCollection,
+    PolygonCollection,
+    SegmentCollection,
+    TriangleCollection,
+)
 from vispy.testing import requires_application, TestingCanvas
 
 
@@ -10,6 +14,11 @@ from vispy.testing import requires_application, TestingCanvas
 def test_init():
     """Test collection initialization"""
     with TestingCanvas():
-        for coll in (PathCollection, PointCollection, PolygonCollection,
-                     SegmentCollection, TriangleCollection):
+        for coll in (
+            PathCollection,
+            PointCollection,
+            PolygonCollection,
+            SegmentCollection,
+            TriangleCollection,
+        ):
             coll()

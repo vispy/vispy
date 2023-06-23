@@ -18,22 +18,26 @@ def assert_array_eq(a, b):
 
 def test_intersect_edge_arrays():
     global t
-    pts = np.array([
-        [0., 0.],
-        [0., 10.],
-        [5., 0.],
-        [-5., 0.],
-        [-1., 11.],
-        [1., 9.],
-    ])
-    edges = np.array([
-        [0, 1],
-        [2, 3],
-        [0, 3],
-        [4, 5],
-        [4, 1],
-        [0, 1],
-    ])
+    pts = np.array(
+        [
+            [0.0, 0.0],
+            [0.0, 10.0],
+            [5.0, 0.0],
+            [-5.0, 0.0],
+            [-1.0, 11.0],
+            [1.0, 9.0],
+        ]
+    )
+    edges = np.array(
+        [
+            [0, 1],
+            [2, 3],
+            [0, 3],
+            [4, 5],
+            [4, 1],
+            [0, 1],
+        ]
+    )
 
     lines = pts[edges]
     t = T(pts, edges)
@@ -44,8 +48,7 @@ def test_intersect_edge_arrays():
     assert_array_eq(intercepts, expect)
 
     # intersect every line with every line
-    intercepts = t._intersect_edge_arrays(lines[:, np.newaxis, ...],
-                                          lines[np.newaxis, ...])
+    intercepts = t._intersect_edge_arrays(lines[:, np.newaxis, ...], lines[np.newaxis, ...])
     for i in range(lines.shape[0]):
         int2 = t._intersect_edge_arrays(lines[i], lines)
         assert_array_eq(intercepts[i], int2)
@@ -53,27 +56,31 @@ def test_intersect_edge_arrays():
 
 def test_edge_intersections():
     global t
-    pts = np.array([
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [0, 1],
-        [0, 0.5],  # three edges intersect here
-        [2, 0.5],
-        [-1, 0.2],
-        [2, 0.8],
-        [-1, 1],
-        [0, 0.5],
-    ])
-    edges = np.array([
-        [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 0],
-        [4, 5],
-        [6, 7],
-        [8, 9],
-    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 1],
+            [0, 0.5],  # three edges intersect here
+            [2, 0.5],
+            [-1, 0.2],
+            [2, 0.8],
+            [-1, 1],
+            [0, 0.5],
+        ]
+    )
+    edges = np.array(
+        [
+            [0, 1],
+            [1, 2],
+            [2, 3],
+            [3, 0],
+            [4, 5],
+            [6, 7],
+            [8, 9],
+        ]
+    )
 
     t = T(pts, edges)
 
@@ -81,16 +88,11 @@ def test_edge_intersections():
     cuts = t._find_edge_intersections()
     expect = {
         0: [],
-        1: [(0.5, [1., 0.5]),
-            (0.6, [1., 0.6])],
+        1: [(0.5, [1.0, 0.5]), (0.6, [1.0, 0.6])],
         2: [],
-        3: [(0.5, [0., 0.5]),
-            (0.6, [0., 0.4])],
-        4: [(0.25, [0.5, 0.5]),
-            (0.5, [1., 0.5])],
-        5: [(1./3., [0., 0.4]),
-            (0.5, [0.5, 0.5]),
-            (2./3., [1., 0.6])],
+        3: [(0.5, [0.0, 0.5]), (0.6, [0.0, 0.4])],
+        4: [(0.25, [0.5, 0.5]), (0.5, [1.0, 0.5])],
+        5: [(1.0 / 3.0, [0.0, 0.4]), (0.5, [0.5, 0.5]), (2.0 / 3.0, [1.0, 0.6])],
     }
 
     assert len(expect) == len(cuts)
@@ -104,52 +106,59 @@ def test_edge_intersections():
 
     # next test that we can split the edges correctly
     t._split_intersecting_edges()
-    pts = np.array([[0., 0.],
-                    [1., 0.],
-                    [1., 1.],
-                    [0., 1.],
-                    [0., 0.5],
-                    [2., 0.5],
-                    [-1., 0.2],
-                    [2., 0.8],
-                    [-1., 1.],
-                    [0., 0.5],
-                    [1., 0.5],
-                    [1., 0.6],
-                    [0., 0.5],
-                    [0., 0.4],
-                    [0.5, 0.5],
-                    [1., 0.5],
-                    [0., 0.4],
-                    [0.5, 0.5],
-                    [1., 0.6]])
-    edges = np.array([[0, 1],
-                      [1, 10],
-                      [2, 3],
-                      [3, 12],
-                      [4, 14],
-                      [6, 16],
-                      [8, 9],
-                      [10, 11],
-                      [11, 2],
-                      [12, 13],
-                      [13, 0],
-                      [14, 15],
-                      [15, 5],
-                      [16, 17],
-                      [17, 18],
-                      [18, 7]])
+    pts = np.array(
+        [
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 0.5],
+            [2.0, 0.5],
+            [-1.0, 0.2],
+            [2.0, 0.8],
+            [-1.0, 1.0],
+            [0.0, 0.5],
+            [1.0, 0.5],
+            [1.0, 0.6],
+            [0.0, 0.5],
+            [0.0, 0.4],
+            [0.5, 0.5],
+            [1.0, 0.5],
+            [0.0, 0.4],
+            [0.5, 0.5],
+            [1.0, 0.6],
+        ]
+    )
+    edges = np.array(
+        [
+            [0, 1],
+            [1, 10],
+            [2, 3],
+            [3, 12],
+            [4, 14],
+            [6, 16],
+            [8, 9],
+            [10, 11],
+            [11, 2],
+            [12, 13],
+            [13, 0],
+            [14, 15],
+            [15, 5],
+            [16, 17],
+            [17, 18],
+            [18, 7],
+        ]
+    )
 
-    if sys.version[0] == '3':
-        raise SkipTest('Triangulation differences on Py3k')
+    if sys.version[0] == "3":
+        raise SkipTest("Triangulation differences on Py3k")
     assert_array_almost_equal(pts, t.pts)
     assert np.all(edges == t.edges)
 
     # Test _nearly_ parallel lines.
-    pts = np.array([[0., 0.],
-                    [1.62434542, 0.],
-                    [1.62434542, -0.61175638],
-                    [1.09617364, -0.61175638]])
+    pts = np.array(
+        [[0.0, 0.0], [1.62434542, 0.0], [1.62434542, -0.61175638], [1.09617364, -0.61175638]]
+    )
 
     edges = np.array([[0, 1], [1, 2], [2, 3], [3, 0]])
     t = T(pts, edges)
@@ -159,40 +168,48 @@ def test_edge_intersections():
 
 def test_merge_duplicate_points():
     global t
-    pts = np.array([
-        [0, 0],
-        [1, 1],
-        [0.1, 0.7],
-        [2, 3],
-        [0, 0],
-        [0.1, 0.7],
-        [5, 6],
-    ])
-    edges = np.array([
-        [0, 6],
-        [1, 5],
-        [2, 4],
-        [3, 6],
-        [4, 5],
-    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [1, 1],
+            [0.1, 0.7],
+            [2, 3],
+            [0, 0],
+            [0.1, 0.7],
+            [5, 6],
+        ]
+    )
+    edges = np.array(
+        [
+            [0, 6],
+            [1, 5],
+            [2, 4],
+            [3, 6],
+            [4, 5],
+        ]
+    )
 
     t = T(pts, edges)
     t._merge_duplicate_points()
 
-    pts = np.array([
-        [0, 0],
-        [1, 1],
-        [0.1, 0.7],
-        [2, 3],
-        [5, 6],
-    ])
-    edges = np.array([
-        [0, 4],
-        [1, 2],
-        [2, 0],
-        [3, 4],
-        [0, 2],
-    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [1, 1],
+            [0.1, 0.7],
+            [2, 3],
+            [5, 6],
+        ]
+    )
+    edges = np.array(
+        [
+            [0, 4],
+            [1, 2],
+            [2, 0],
+            [3, 4],
+            [0, 2],
+        ]
+    )
     assert np.allclose(t.pts, pts)
     assert np.all(t.edges == edges)
 
@@ -206,17 +223,21 @@ def test_initialize():
 
 def test_utility_methods():
     global t
-    pts = np.array([
-        [0, 0],
-        [1, 0],
-        [2, 0],
-        [3, 0],
-        [1.5, 2],
-        [1.5, -2],
-    ])
-    edges = np.array([
-        [4, 5],  # edge cuts through triangle (1, 2, 4)
-    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [1, 0],
+            [2, 0],
+            [3, 0],
+            [1.5, 2],
+            [1.5, -2],
+        ]
+    )
+    edges = np.array(
+        [
+            [4, 5],  # edge cuts through triangle (1, 2, 4)
+        ]
+    )
 
     t = T(pts, edges)
     # skip initialization and just simulate being part-way through
@@ -260,10 +281,7 @@ def test_utility_methods():
 
 
 def test_projection():
-    pts = np.array([[0, 0],
-                    [5, 0],
-                    [1, 2],
-                    [3, 4]])
+    pts = np.array([[0, 0], [5, 0], [1, 2], [3, 4]])
     t = T(pts, np.zeros((0, 2)))
 
     a, b, c, d = pts
@@ -286,14 +304,13 @@ def test_random():
         pts = np.random.normal(size=(N, 2))
         edges = np.zeros((N, 2), dtype=int)
         edges[:, 0] = np.arange(N)
-        edges[:, 1] = np.arange(1, N+1) % N
+        edges[:, 1] = np.arange(1, N + 1) % N
 
         t = T(pts, edges)
         t.triangulate()
 
-    theta = np.linspace(0, 2*np.pi, 11)[:-1]
-    pts = np.hstack([np.cos(theta)[:, np.newaxis],
-                     np.sin(theta)[:, np.newaxis]])
+    theta = np.linspace(0, 2 * np.pi, 11)[:-1]
+    pts = np.hstack([np.cos(theta)[:, np.newaxis], np.sin(theta)[:, np.newaxis]])
     pts[::2] *= 0.4
     edges = np.empty((pts.shape[0], 2), dtype=np.uint)
     edges[:, 0] = np.arange(pts.shape[0])
@@ -335,12 +352,15 @@ def test_orthogonal():
 
 def test_edge_event():
     # mode 1
-    pts = np.array([[0, 0],
-                    [5, -10],
-                    [10, 0],
-                    [6, -5],
-                    [5, 5],
-                    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [5, -10],
+            [10, 0],
+            [6, -5],
+            [5, 5],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 
@@ -351,11 +371,14 @@ def test_edge_event():
     t.triangulate()
 
     # mode 2
-    pts = np.array([[0, 0],
-                    [10, 0],
-                    [20, 0],
-                    [5, 11],
-                    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [10, 0],
+            [20, 0],
+            [5, 11],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 
@@ -366,13 +389,16 @@ def test_edge_event():
     t.triangulate()
 
     # mode 1, 2
-    pts = np.array([[0, 0],
-                    [10, 0],
-                    [20, 0],
-                    [5, 11],
-                    [9, 10],
-                    [0, 20],
-                    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [10, 0],
+            [20, 0],
+            [5, 11],
+            [9, 10],
+            [0, 20],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 
@@ -383,13 +409,16 @@ def test_edge_event():
     t.triangulate()
 
     # mode 2, 1
-    pts = np.array([[0, 0],
-                    [10, 0],
-                    [20, 0],
-                    [15, 8],
-                    [15, 1],
-                    [-5, 10],
-                    ])
+    pts = np.array(
+        [
+            [0, 0],
+            [10, 0],
+            [20, 0],
+            [15, 8],
+            [15, 1],
+            [-5, 10],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 
@@ -400,25 +429,25 @@ def test_edge_event():
     t.triangulate()
 
     # mode 2, 1 with many triangles
-    pts = np.array([[0, 10],
-                    [2, 8],
-                    [4, 6],
-                    [6, 4],
-                    [8, 2],
-                    [10, 0],
-
-                    [20, 5],
-                    [20, 20],
-
-                    [2, 13],
-                    [4, 11],
-                    [6, 9],
-                    [8, 7],
-                    [10, 5],
-
-                    [10, 1],
-                    [0, 15],
-                    ])
+    pts = np.array(
+        [
+            [0, 10],
+            [2, 8],
+            [4, 6],
+            [6, 4],
+            [8, 2],
+            [10, 0],
+            [20, 5],
+            [20, 20],
+            [2, 13],
+            [4, 11],
+            [6, 9],
+            [8, 7],
+            [10, 5],
+            [10, 1],
+            [0, 15],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 
@@ -429,25 +458,25 @@ def test_edge_event():
     t.triangulate()
 
     # mode 1, 2, 1, 2, 1
-    pts = np.array([[0, 10],
-                    [2, 9],
-                    [4, 8],
-                    [6, 7],
-                    [8, 6],
-                    [10, 5],
-
-                    [20, 5],
-                    [20, 20],
-
-                    [2, 11],
-                    [19, 19],
-                    [6, 9],
-                    [19, 18],
-                    [10, 7],
-
-                    [11, 5.1],
-                    [0, 11.1],
-                    ])
+    pts = np.array(
+        [
+            [0, 10],
+            [2, 9],
+            [4, 8],
+            [6, 7],
+            [8, 6],
+            [10, 5],
+            [20, 5],
+            [20, 20],
+            [2, 11],
+            [19, 19],
+            [6, 9],
+            [19, 18],
+            [10, 7],
+            [11, 5.1],
+            [0, 11.1],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 
@@ -458,23 +487,23 @@ def test_edge_event():
     t.triangulate()
 
     # mode 2, 1, 2, 1
-    pts = np.array([[0, 10],
-                    [2, 9],
-                    [4, 8],
-                    [6, 7],
-                    [8, 6],
-                    [10, 5],
-
-                    [20, 5],
-                    [20, 20],
-
-                    [6, 9],
-                    [19, 18],
-                    [10, 7],
-
-                    [11, 5.1],
-                    [0, 11.1],
-                    ])
+    pts = np.array(
+        [
+            [0, 10],
+            [2, 9],
+            [4, 8],
+            [6, 7],
+            [8, 6],
+            [10, 5],
+            [20, 5],
+            [20, 20],
+            [6, 9],
+            [19, 18],
+            [10, 7],
+            [11, 5.1],
+            [0, 11.1],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 
@@ -485,14 +514,17 @@ def test_edge_event():
     t.triangulate()
 
     # 1, 2  upper/lower polygon order check
-    pts = np.array([[-5, 0],
-                    [-3, 0],
-                    [10, 0],
-                    [15, 15],
-                    [4, 9],
-                    [6, 8.8],
-                    [9, 10],
-                    ])
+    pts = np.array(
+        [
+            [-5, 0],
+            [-3, 0],
+            [10, 0],
+            [15, 15],
+            [4, 9],
+            [6, 8.8],
+            [9, 10],
+        ]
+    )
     inds = np.arange(pts.shape[0])[:, np.newaxis]
     edges = np.hstack([inds, np.roll(inds, -1)])
 

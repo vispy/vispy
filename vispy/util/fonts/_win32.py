@@ -9,12 +9,23 @@ from os import path as op
 import warnings
 
 
-from ctypes import (cast, byref, sizeof, create_unicode_buffer,
-                    c_void_p, c_wchar_p)
-from ...ext.gdi32plus import (gdiplus, gdi32, user32, winreg, LOGFONT,
-                              OUTLINETEXTMETRIC, GM_ADVANCED, FW_NORMAL,
-                              FW_BOLD, LF_FACESIZE, DEFAULT_CHARSET,
-                              TRUETYPE_FONTTYPE, FONTENUMPROC, BOOL)
+from ctypes import cast, byref, sizeof, create_unicode_buffer, c_void_p, c_wchar_p
+from ...ext.gdi32plus import (
+    gdiplus,
+    gdi32,
+    user32,
+    winreg,
+    LOGFONT,
+    OUTLINETEXTMETRIC,
+    GM_ADVANCED,
+    FW_NORMAL,
+    FW_BOLD,
+    LF_FACESIZE,
+    DEFAULT_CHARSET,
+    TRUETYPE_FONTTYPE,
+    FONTENUMPROC,
+    BOOL,
+)
 
 
 # Inspired by:
@@ -23,8 +34,9 @@ from ...ext.gdi32plus import (gdiplus, gdi32, user32, winreg, LOGFONT,
 
 # XXX This isn't perfect, but it should work for now...
 
+
 def find_font(face, bold, italic, orig_face=None):
-    style_dict = {'Regular': 0, 'Bold': 1, 'Italic': 2, 'Bold Italic': 3}
+    style_dict = {"Regular": 0, "Bold": 1, "Italic": 2, "Bold Italic": 3}
 
     # Figure out which font to actually use by trying to instantiate by name
     dc = user32.GetDC(0)  # noqa, analysis:ignore
@@ -45,41 +57,40 @@ def find_font(face, bold, italic, orig_face=None):
     user32.ReleaseDC(None, dc)
     use_face = cast(byref(metrics, metrics.otmpFamilyName), c_wchar_p).value
     if use_face != face:
-        warnings.warn('Could not find face match "%s", falling back to "%s"'
-                      % (orig_face or face, use_face))
+        warnings.warn(
+            'Could not find face match "%s", falling back to "%s"' % (orig_face or face, use_face)
+        )
     use_style = cast(byref(metrics, metrics.otmpStyleName), c_wchar_p).value
-    use_style = style_dict.get(use_style, 'Regular')
+    use_style = style_dict.get(use_style, "Regular")
     # AK: I get "Standaard" for use_style, which is Dutch for standard/regular
 
     # Now we match by creating private font collections until we find
     # the one that was used
-    font_dir = op.join(os.environ['WINDIR'], 'Fonts')
+    font_dir = op.join(os.environ["WINDIR"], "Fonts")
     reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
-    key = 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts'
+    key = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts"
     reg_vals = winreg.OpenKey(reg, key)
     n_values = winreg.QueryInfoKey(reg_vals)[1]
     fname = None
     for vi in range(n_values):
         name, ff = winreg.EnumValue(reg_vals, vi)[:2]
-        if name.endswith('(TrueType)'):
+        if name.endswith("(TrueType)"):
             ff = op.join(font_dir, ff) if op.basename(ff) == ff else ff
             assert op.isfile(ff)
             pc = c_void_p()
             assert gdiplus.GdipNewPrivateFontCollection(byref(pc)) == 0
             gdiplus.GdipPrivateAddFontFile(pc, ff)
             family = c_void_p()
-            if gdiplus.GdipCreateFontFamilyFromName(use_face, pc,
-                                                    byref(family)) == 0:
+            if gdiplus.GdipCreateFontFamilyFromName(use_face, pc, byref(family)) == 0:
                 val = BOOL()
-                assert gdiplus.GdipIsStyleAvailable(family, use_style,
-                                                    byref(val)) == 0
+                assert gdiplus.GdipIsStyleAvailable(family, use_style, byref(val)) == 0
                 if val.value:
                     buf = create_unicode_buffer(LF_FACESIZE)
                     assert gdiplus.GdipGetFamilyName(family, buf, 0) == 0
                     assert buf.value == use_face
                     fname = ff
                     break
-    fname = fname or find_font('', bold, italic, face)  # fall back to default
+    fname = fname or find_font("", bold, italic, face)  # fall back to default
     return fname
 
 
@@ -88,7 +99,7 @@ def _list_fonts():
     gdi32.SetGraphicsMode(dc, GM_ADVANCED)  # only TT and OT fonts
     logfont = LOGFONT()
     logfont.lfCharSet = DEFAULT_CHARSET
-    logfont.lfFaceName = ''
+    logfont.lfFaceName = ""
     logfont.lfPitchandFamily = 0
     fonts = list()
 
@@ -96,7 +107,7 @@ def _list_fonts():
         # Only support TTF for now (silly Windows shortcomings)
         if font_type == TRUETYPE_FONTTYPE:
             font = lp_logfont.contents.lfFaceName
-            if not font.startswith('@') and font not in fonts:
+            if not font.startswith("@") and font not in fonts:
                 fonts.append(font)
         return 1
 

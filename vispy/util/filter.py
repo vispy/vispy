@@ -25,20 +25,22 @@ def gaussian_filter(data, sigma):
         # generate 1D gaussian kernel
         ksize = int(s * 6)
         x = np.arange(-ksize, ksize)
-        kernel = np.exp(-x**2 / (2*s**2))
-        kshape = [1, ] * data.ndim
+        kernel = np.exp(-(x**2) / (2 * s**2))
+        kshape = [
+            1,
+        ] * data.ndim
         kshape[ax] = len(kernel)
         kernel = kernel.reshape(kshape)
 
         # convolve as product of FFTs
         shape = data.shape[ax] + ksize
-        scale = 1.0 / (abs(s) * (2*np.pi)**0.5)
-        filtered = scale * np.fft.irfft(np.fft.rfft(filtered, shape, axis=ax) *
-                                        np.fft.rfft(kernel, shape, axis=ax),
-                                        axis=ax)
+        scale = 1.0 / (abs(s) * (2 * np.pi) ** 0.5)
+        filtered = scale * np.fft.irfft(
+            np.fft.rfft(filtered, shape, axis=ax) * np.fft.rfft(kernel, shape, axis=ax), axis=ax
+        )
 
         # clip off extra data
         sl = [slice(None)] * data.ndim
-        sl[ax] = slice(filtered.shape[ax]-data.shape[ax], None, None)
+        sl[ax] = slice(filtered.shape[ax] - data.shape[ax], None, None)
         filtered = filtered[tuple(sl)]
     return filtered + baseline

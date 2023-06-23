@@ -74,13 +74,15 @@ class InstancedMeshVisual(MeshVisual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': MeshVisual._shaders['fragment'],
+        "vertex": _VERTEX_SHADER,
+        "fragment": MeshVisual._shaders["fragment"],
     }
 
     _shading_filter_class = InstancedShadingFilter
 
-    def __init__(self, *args, instance_positions, instance_transforms, instance_colors=None, **kwargs):
+    def __init__(
+        self, *args, instance_positions, instance_transforms, instance_colors=None, **kwargs
+    ):
         self._instance_positions = None
         self._instance_positions_vbo = None
         self._instance_transforms = None
@@ -100,7 +102,9 @@ class InstancedMeshVisual(MeshVisual):
     def instance_positions(self, pos):
         pos = np.reshape(pos, (-1, 3))
         if pos.ndim != 2 or pos.shape[-1] != 3:
-            raise ValueError(f'positions must be 3D coordinates, but provided data has shape {pos.shape}')
+            raise ValueError(
+                f"positions must be 3D coordinates, but provided data has shape {pos.shape}"
+            )
         self._instance_positions = downcast_to_32bit_if_needed(pos, dtype=np.float32)
         self._instance_positions_vbo = VertexBuffer(self._instance_positions, divisor=1)
         self.mesh_data_changed()
@@ -113,7 +117,10 @@ class InstancedMeshVisual(MeshVisual):
     def instance_transforms(self, matrix):
         matrix = np.reshape(matrix, (-1, 3, 3))
         if matrix.ndim != 3 or matrix.shape[1:] != (3, 3):
-            raise ValueError(f'transforms must be an array of 3x3 matrices, but provided data has shape {matrix.shape}')
+            raise ValueError(
+                "transforms must be an array of 3x3 matrices, "
+                f"but provided data has shape {matrix.shape}"
+            )
         self._instance_transforms = downcast_to_32bit_if_needed(matrix, dtype=np.float32)
         # copy if not c contiguous
         self._instance_transforms_vbos = (
@@ -133,7 +140,7 @@ class InstancedMeshVisual(MeshVisual):
             colors = ColorArray(colors)
             self._instance_colors_vbo = VertexBuffer(colors.rgba, divisor=1)
         else:
-            self._instance_colors_vbo = Variable('base_color', self._color.rgba)
+            self._instance_colors_vbo = Variable("base_color", self._color.rgba)
 
         self._instance_colors = colors
         self.mesh_data_changed()
@@ -143,10 +150,10 @@ class InstancedMeshVisual(MeshVisual):
             super()._update_data()
 
         # set instance buffers
-        self.shared_program.vert['base_color'] = self._instance_colors_vbo
-        self.shared_program['transform_x'] = self._instance_transforms_vbos[0]
-        self.shared_program['transform_y'] = self._instance_transforms_vbos[1]
-        self.shared_program['transform_z'] = self._instance_transforms_vbos[2]
-        self.shared_program['shift'] = self._instance_positions_vbo
+        self.shared_program.vert["base_color"] = self._instance_colors_vbo
+        self.shared_program["transform_x"] = self._instance_transforms_vbos[0]
+        self.shared_program["transform_y"] = self._instance_transforms_vbos[1]
+        self.shared_program["transform_z"] = self._instance_transforms_vbos[2]
+        self.shared_program["shift"] = self._instance_positions_vbo
 
         self.events.data_updated()

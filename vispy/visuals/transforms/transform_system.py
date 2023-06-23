@@ -22,7 +22,7 @@ class TransformSystem(object):
       buffers used by the visual are usually specified in this coordinate
       system.
 
-    * **Scene** - This is an isometric coordinate system used mainly for 
+    * **Scene** - This is an isometric coordinate system used mainly for
       lighting calculations.
 
     * **Document** - This coordinate system has units of _logical_ pixels, and
@@ -34,21 +34,21 @@ class TransformSystem(object):
 
     * **Canvas** - This coordinate system represents the logical pixel
       coordinates of the canvas. It has its origin in the top-left corner of
-      the canvas, and is typically the coordinate system that mouse and touch 
+      the canvas, and is typically the coordinate system that mouse and touch
       events are reported in. Note that, by convention, _logical_ pixels
       are not necessarily the same size as the _physical_ pixels in the
       framebuffer that is being rendered to.
 
-    * **Framebuffer** - The buffer coordinate system has units of _physical_ 
-      pixels, and should usually represent the coordinates of the current 
+    * **Framebuffer** - The buffer coordinate system has units of _physical_
+      pixels, and should usually represent the coordinates of the current
       framebuffer (on the canvas or an FBO) being rendered to. Visuals use this
       coordinate system primarily for antialiasing calculations. It is also the
       coorinate system used by glFragCoord. In most cases,
-      this will have the same scale as the document and canvas coordinate 
+      this will have the same scale as the document and canvas coordinate
       systems because the active framebuffer is the
       back buffer of the canvas, and the canvas will have _logical_ and
       _physical_ pixels of the same size. However, the scale may be different
-      in the case of high-resolution displays, or when rendering to an 
+      in the case of high-resolution displays, or when rendering to an
       off-screen framebuffer with different scaling or boundaries than the
       canvas.
 
@@ -136,13 +136,13 @@ class TransformSystem(object):
     """
 
     def __init__(self, canvas=None, dpi=None):
-        self.changed = EventEmitter(source=self, type='transform_changed')
+        self.changed = EventEmitter(source=self, type="transform_changed")
         self._canvas = None
         self._fbo_bounds = None
         self.canvas = canvas
         self._cache = TransformCache()
         self._dpi = dpi
-        self._mappings = {'ct0': None, 'ct1': None, 'ft0': None}
+        self._mappings = {"ct0": None, "ct1": None, "ft0": None}
 
         # Assign a ChainTransform for each step. This allows us to always
         # return the same transform objects regardless of how the user
@@ -150,13 +150,16 @@ class TransformSystem(object):
         self._visual_transform = ChainTransform([NullTransform()])
         self._scene_transform = ChainTransform([NullTransform()])
         self._document_transform = ChainTransform([NullTransform()])
-        self._canvas_transform = ChainTransform([STTransform(),
-                                                 STTransform()])
+        self._canvas_transform = ChainTransform([STTransform(), STTransform()])
         self._framebuffer_transform = ChainTransform([STTransform()])
 
-        for tr in (self._visual_transform, self._scene_transform, 
-                   self._document_transform, self._canvas_transform,
-                   self._framebuffer_transform):
+        for tr in (
+            self._visual_transform,
+            self._scene_transform,
+            self._document_transform,
+            self._canvas_transform,
+            self._framebuffer_transform,
+        ):
             tr.changed.connect(self.changed)
 
     def _update_if_maps_changed(self, transform, map_key, new_maps):
@@ -172,16 +175,15 @@ class TransformSystem(object):
                 self._mappings[map_key] = new_maps
                 transform.set_mapping(new_maps[0], new_maps[1])
 
-    def configure(self, viewport=None, fbo_size=None, fbo_rect=None,
-                  canvas=None):
+    def configure(self, viewport=None, fbo_size=None, fbo_rect=None, canvas=None):
         """Automatically configure the TransformSystem:
 
         * canvas_transform maps from the Canvas logical pixel
-          coordinate system to the framebuffer coordinate system, taking into 
-          account the logical/physical pixel scale factor, current FBO 
+          coordinate system to the framebuffer coordinate system, taking into
+          account the logical/physical pixel scale factor, current FBO
           position, and y-axis inversion.
         * framebuffer_transform maps from the current GL viewport on the
-          framebuffer coordinate system to clip coordinates (-1 to 1). 
+          framebuffer coordinate system to clip coordinates (-1 to 1).
 
 
         Parameters
@@ -197,7 +199,7 @@ class TransformSystem(object):
             system of the canvas's framebuffer. If None, then the bounds are
             assumed to cover the entire active framebuffer.
         canvas : Canvas instance
-            Optionally set the canvas for this TransformSystem. See the 
+            Optionally set the canvas for this TransformSystem. See the
             `canvas` property.
         """
         # TODO: check that d2f and f2r transforms still contain a single
@@ -213,18 +215,22 @@ class TransformSystem(object):
         # left, whereas framebuffer origin is in bottom left.
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.physical_size[1]), (canvas.physical_size[0], 0)]
-        self._update_if_maps_changed(self._canvas_transform.transforms[1],
-                                     'ct1', np.array((map_from, map_to)))
+        self._update_if_maps_changed(
+            self._canvas_transform.transforms[1], "ct1", np.array((map_from, map_to))
+        )
         if fbo_rect is None:
             self._canvas_transform.transforms[0].scale = (1, 1, 1)
             self._canvas_transform.transforms[0].translate = (0, 0, 0)
         else:
             # Map into FBO coordinates
-            map_from = [(fbo_rect[0], fbo_rect[1]),
-                        (fbo_rect[0] + fbo_rect[2], fbo_rect[1] + fbo_rect[3])]
+            map_from = [
+                (fbo_rect[0], fbo_rect[1]),
+                (fbo_rect[0] + fbo_rect[2], fbo_rect[1] + fbo_rect[3]),
+            ]
             map_to = [(0, 0), fbo_size]
-            self._update_if_maps_changed(self._canvas_transform.transforms[0],
-                                         'ct0', np.array((map_from, map_to)))
+            self._update_if_maps_changed(
+                self._canvas_transform.transforms[0], "ct0", np.array((map_from, map_to))
+            )
         if viewport is None:
             if fbo_size is None:
                 # viewport covers entire canvas
@@ -233,11 +239,11 @@ class TransformSystem(object):
                 # viewport covers entire FBO
                 map_from = [(0, 0), fbo_size]
         else:
-            map_from = [viewport[:2], 
-                        (viewport[0] + viewport[2], viewport[1] + viewport[3])]
+            map_from = [viewport[:2], (viewport[0] + viewport[2], viewport[1] + viewport[3])]
         map_to = [(-1, -1), (1, 1)]
-        self._update_if_maps_changed(self._framebuffer_transform.transforms[0],
-                                     'ft0', np.array((map_from, map_to)))
+        self._update_if_maps_changed(
+            self._framebuffer_transform.transforms[0], "ft0", np.array((map_from, map_to))
+        )
 
     @property
     def canvas(self):
@@ -284,7 +290,10 @@ class TransformSystem(object):
 
     @property
     def document_transform(self):
-        """Transform mapping from document coordinate frame to the framebuffer (physical pixel) coordinate frame."""
+        """Transform mapping from document coordinate frame to the framebuffer coordinate frame.
+
+        The framebuffer frame corresponds to physical pixels.
+        """
         return self._document_transform
 
     @document_transform.setter
@@ -309,7 +318,7 @@ class TransformSystem(object):
     def framebuffer_transform(self, tr):
         self._framebuffer_transform.transforms = tr
 
-    def get_transform(self, map_from='visual', map_to='render'):
+    def get_transform(self, map_from="visual", map_to="render"):
         """Return a transform mapping between any two coordinate systems.
 
         Parameters
@@ -321,16 +330,14 @@ class TransformSystem(object):
             The ending coordinate system to map to. Must be one of: visual,
             scene, document, canvas, framebuffer, or render.
         """
-        tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
+        tr = ["visual", "scene", "document", "canvas", "framebuffer", "render"]
         ifrom = tr.index(map_from)
         ito = tr.index(map_to)
 
         if ifrom < ito:
-            trs = [getattr(self, '_' + t + '_transform')
-                   for t in tr[ifrom:ito]][::-1]
+            trs = [getattr(self, "_" + t + "_transform") for t in tr[ifrom:ito]][::-1]
         else:
-            trs = [getattr(self, '_' + t + '_transform').inverse
-                   for t in tr[ito:ifrom]]
+            trs = [getattr(self, "_" + t + "_transform").inverse for t in tr[ito:ifrom]]
         return self._cache.get(trs)
 
     @property

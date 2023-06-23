@@ -14,7 +14,7 @@ import numpy as np
 from vispy import app, scene
 
 # Create canvas and view
-canvas = scene.SceneCanvas(keys='interactive', size=(600, 600), show=True)
+canvas = scene.SceneCanvas(keys="interactive", size=(600, 600), show=True)
 view = canvas.central_widget.add_view()
 view.camera = scene.cameras.ArcballCamera(fov=0)
 view.camera.scale_factor = 500
@@ -36,15 +36,14 @@ vis = scene.visuals.Markers(
     size=100,
     antialias=0,
     face_color=colors,
-    edge_color='white',
+    edge_color="white",
     edge_width=0,
     scaling=True,
     spherical=True,
 )
 vis.parent = view.scene
 
-lines = np.array([[data[i], data[-1]]
-                  for i in range(len(data) - 1)])
+lines = np.array([[data[i], data[-1]] for i in range(len(data) - 1)])
 line_vis = []
 
 for line in lines:

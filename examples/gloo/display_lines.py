@@ -59,42 +59,40 @@ void main()
 
 
 class Canvas(app.Canvas):
-
     # ---------------------------------
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive', size=(W, H))
+        app.Canvas.__init__(self, keys="interactive", size=(W, H))
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
 
         # Set uniform and attribute
-        self.program['a_id'] = gloo.VertexBuffer(a_id)
-        self.program['a_position'] = gloo.VertexBuffer(a_position)
+        self.program["a_id"] = gloo.VertexBuffer(a_id)
+        self.program["a_position"] = gloo.VertexBuffer(a_position)
 
         self.translate = 5
         self.view = translate((0, 0, -self.translate), dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
 
         gloo.set_viewport(0, 0, self.physical_size[0], self.physical_size[1])
-        self.projection = perspective(45.0, self.size[0] /
-                                      float(self.size[1]), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.projection = perspective(45.0, self.size[0] / float(self.size[1]), 1.0, 1000.0)
+        self.program["u_projection"] = self.projection
 
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
+        self.program["u_model"] = self.model
+        self.program["u_view"] = self.view
 
         self.theta = 0
         self.phi = 0
 
-        self.context.set_clear_color('white')
-        self.context.set_state('translucent')
+        self.context.set_clear_color("white")
+        self.context.set_state("translucent")
 
-        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
+        self.timer = app.Timer("auto", connect=self.on_timer, start=True)
 
         self.show()
 
     # ---------------------------------
     def on_key_press(self, event):
-        if event.text == ' ':
+        if event.text == " ":
             if self.timer.running:
                 self.timer.stop()
             else:
@@ -102,34 +100,32 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
-        self.model = np.dot(rotate(self.theta, (0, 0, 1)),
-                            rotate(self.phi, (0, 1, 0)))
-        self.program['u_model'] = self.model
+        self.theta += 0.5
+        self.phi += 0.5
+        self.model = np.dot(rotate(self.theta, (0, 0, 1)), rotate(self.phi, (0, 1, 0)))
+        self.program["u_model"] = self.model
         self.update()
 
     # ---------------------------------
     def on_resize(self, event):
         gloo.set_viewport(0, 0, event.physical_size[0], event.physical_size[1])
-        self.projection = perspective(45.0, event.size[0] /
-                                      float(event.size[1]), 1.0, 1000.0)
-        self.program['u_projection'] = self.projection
+        self.projection = perspective(45.0, event.size[0] / float(event.size[1]), 1.0, 1000.0)
+        self.program["u_projection"] = self.projection
 
     # ---------------------------------
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
         self.translate = max(2, self.translate)
         self.view = translate((0, 0, -self.translate))
-        self.program['u_view'] = self.view
+        self.program["u_view"] = self.view
         self.update()
 
     # ---------------------------------
     def on_draw(self, event):
         self.context.clear()
-        self.program.draw('line_strip')
+        self.program.draw("line_strip")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

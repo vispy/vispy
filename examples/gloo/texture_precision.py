@@ -36,16 +36,13 @@ for i in range(W):
 for i in range(H):
     data[i, :, :] *= i**2
 
-data *= 1./data.max()
+data *= 1.0 / data.max()
 
 # prepare a simple quad to cover the viewport
-quad = np.zeros(4, dtype=[
-    ('a_position', np.float32, 2),
-    ('a_texcoord', np.float32, 2)
-])
+quad = np.zeros(4, dtype=[("a_position", np.float32, 2), ("a_texcoord", np.float32, 2)])
 
-quad['a_position'] = np.array([[-1, -1], [+1, -1], [-1, +1], [+1, +1]])
-quad['a_texcoord'] = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
+quad["a_position"] = np.array([[-1, -1], [+1, -1], [-1, +1], [+1, +1]])
+quad["a_texcoord"] = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
 
 vert_shader = """
 attribute vec2 a_position;
@@ -84,28 +81,21 @@ void main()
       ndiff,                    // flag quantized bands as blue
       1);
 }
-""" % dict(W=W)
+""" % dict(
+    W=W
+)
 
 
 class Canvas(app.Canvas):
-
     def __init__(self):
-        app.Canvas.__init__(self, size=(W, H), keys='interactive')
+        app.Canvas.__init__(self, size=(W, H), keys="interactive")
 
-        self._internalformats = [
-            'rgb8',
-            'rgb16',
-            'rgb16f',
-            'rgb32f'
-        ]
+        self._internalformats = ["rgb8", "rgb16", "rgb16f", "rgb32f"]
 
         self.program = gloo.Program(vert_shader, frag_shader)
         self.program.bind(gloo.VertexBuffer(quad))
         self._internalformat = -1
-        self.texture = gloo.Texture2D(
-            shape=(H, W, 3),
-            interpolation='nearest'
-        )
+        self.texture = gloo.Texture2D(shape=(H, W, 3), interpolation="nearest")
 
         gloo.set_viewport(0, 0, *self.physical_size)
 
@@ -114,23 +104,16 @@ class Canvas(app.Canvas):
         self.show()
 
     def on_key_press(self, event):
-        if event.key == 'F':
+        if event.key == "F":
             self.toggle_internalformat()
 
     def toggle_internalformat(self):
-        self._internalformat = (
-            (self._internalformat + 1)
-            % len(self._internalformats)
-        )
+        self._internalformat = (self._internalformat + 1) % len(self._internalformats)
         internalformat = self._internalformats[self._internalformat]
         print("Requesting texture internalformat %s" % internalformat)
-        self.texture.resize(
-            data.shape,
-            format='rgb',
-            internalformat=internalformat
-        )
+        self.texture.resize(data.shape, format="rgb", internalformat=internalformat)
         self.texture.set_data(data)
-        self.program['u_texture'] = self.texture
+        self.program["u_texture"] = self.texture
         self.update()
 
     def on_resize(self, event):
@@ -138,8 +121,9 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
-        self.program.draw('triangle_strip')
+        self.program.draw("triangle_strip")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     c = Canvas()
     app.run()

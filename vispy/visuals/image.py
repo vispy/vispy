@@ -126,9 +126,9 @@ _APPLY_GAMMA = """
     }
 """
 
-_NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
+_NULL_COLOR_TRANSFORM = "vec4 pass(vec4 color) { return color; }"
 
-_C2L_RED = 'float cmap(vec4 color) { return color.r; }'
+_C2L_RED = "float cmap(vec4 color) { return color.r; }"
 
 _CUSTOM_FILTER = """
 vec4 texture_lookup(vec2 texcoord) {
@@ -248,26 +248,35 @@ class ImageVisual(Visual):
     """
 
     _shaders = {
-        'vertex': _VERTEX_SHADER,
-        'fragment': _FRAGMENT_SHADER,
+        "vertex": _VERTEX_SHADER,
+        "fragment": _FRAGMENT_SHADER,
     }
 
     _func_templates = {
-        'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
-        'texture_lookup_custom': _CUSTOM_FILTER,
-        'texture_lookup': _TEXTURE_LOOKUP,
-        'clim_float': _APPLY_CLIM_FLOAT,
-        'clim': _APPLY_CLIM,
-        'gamma_float': _APPLY_GAMMA_FLOAT,
-        'gamma': _APPLY_GAMMA,
-        'null_color_transform': _NULL_COLOR_TRANSFORM,
-        'red_to_luminance': _C2L_RED,
+        "texture_lookup_interpolated": _INTERPOLATION_TEMPLATE,
+        "texture_lookup_custom": _CUSTOM_FILTER,
+        "texture_lookup": _TEXTURE_LOOKUP,
+        "clim_float": _APPLY_CLIM_FLOAT,
+        "clim": _APPLY_CLIM,
+        "gamma_float": _APPLY_GAMMA_FLOAT,
+        "gamma": _APPLY_GAMMA,
+        "null_color_transform": _NULL_COLOR_TRANSFORM,
+        "red_to_luminance": _C2L_RED,
     }
 
-    def __init__(self, data=None, method='auto', grid=(1, 1),
-                 cmap='viridis', clim='auto', gamma=1.0,
-                 interpolation='nearest', texture_format=None,
-                 custom_kernel=np.ones((1, 1)), **kwargs):
+    def __init__(
+        self,
+        data=None,
+        method="auto",
+        grid=(1, 1),
+        cmap="viridis",
+        clim="auto",
+        gamma=1.0,
+        interpolation="nearest",
+        texture_format=None,
+        custom_kernel=np.ones((1, 1)),
+        **kwargs,
+    ):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
 
@@ -276,7 +285,7 @@ class ImageVisual(Visual):
         # `load_spatial_filters(packed=False)`
         kernel, interpolation_names = load_spatial_filters()
 
-        self._kerneltex = Texture2D(kernel, interpolation='nearest')
+        self._kerneltex = Texture2D(kernel, interpolation="nearest")
         # The unpacking can be debugged by changing "spatial-filters.frag"
         # to have the "unpack" function just return the .r component. That
         # combined with using the below as the _kerneltex allows debugging
@@ -284,14 +293,14 @@ class ImageVisual(Visual):
         # self._kerneltex = Texture2D(kernel, interpolation='linear',
         #                             internalformat='r32f')
 
-        interpolation_names, interpolation_fun = self._init_interpolation(
-            interpolation_names)
+        interpolation_names, interpolation_fun = self._init_interpolation(interpolation_names)
         self._interpolation_names = interpolation_names
         self._interpolation_fun = interpolation_fun
         self._interpolation = interpolation
         if self._interpolation not in self._interpolation_names:
-            raise ValueError("interpolation must be one of %s" %
-                             ', '.join(self._interpolation_names))
+            raise ValueError(
+                "interpolation must be one of %s" % ", ".join(self._interpolation_names)
+            )
 
         self._method = method
         self._grid = grid
@@ -304,17 +313,17 @@ class ImageVisual(Visual):
         self._subdiv_texcoord = VertexBuffer()
 
         # impostor quad covers entire viewport
-        vertices = np.array([[-1, -1], [1, -1], [1, 1],
-                             [-1, -1], [1, 1], [-1, 1]],
-                            dtype=np.float32)
+        vertices = np.array(
+            [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]], dtype=np.float32
+        )
         self._impostor_coords = VertexBuffer(vertices)
         self._null_tr = NullTransform()
 
         self._init_view(self)
 
-        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
-        self.set_gl_state('translucent', cull_face=False)
-        self._draw_mode = 'triangles'
+        Visual.__init__(self, vcode=self._shaders["vertex"], fcode=self._shaders["fragment"])
+        self.set_gl_state("translucent", cull_face=False)
+        self._draw_mode = "triangles"
 
         # define _data_lookup_fn as None, will be setup in
         # self._build_interpolation()
@@ -331,42 +340,42 @@ class ImageVisual(Visual):
 
     def _init_interpolation(self, interpolation_names):
         # create interpolation shader functions for available interpolations
-        fun = [Function(self._func_templates['texture_lookup_interpolated'] % (n + '2D'))
-               for n in interpolation_names]
+        fun = [
+            Function(self._func_templates["texture_lookup_interpolated"] % (n + "2D"))
+            for n in interpolation_names
+        ]
         interpolation_names = [n.lower() for n in interpolation_names]
 
         # add custom filter
-        fun.append(Function(self._func_templates['texture_lookup_custom']))
-        interpolation_names.append('custom')
+        fun.append(Function(self._func_templates["texture_lookup_custom"]))
+        interpolation_names.append("custom")
 
         interpolation_fun = dict(zip(interpolation_names, fun))
         interpolation_names = tuple(sorted(interpolation_names))
 
         # overwrite "nearest" and "linear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
-        hardware_lookup = Function(self._func_templates['texture_lookup'])
-        interpolation_fun['nearest'] = hardware_lookup
-        interpolation_fun['linear'] = hardware_lookup
+        hardware_lookup = Function(self._func_templates["texture_lookup"])
+        interpolation_fun["nearest"] = hardware_lookup
+        interpolation_fun["linear"] = hardware_lookup
         # alias bilinear to linear and bicubic to cubic (but deprecate)
-        interpolation_names = interpolation_names + ('bilinear', 'bicubic')
+        interpolation_names = interpolation_names + ("bilinear", "bicubic")
         return interpolation_names, interpolation_fun
 
     def _init_texture(self, data, texture_format, **texture_kwargs):
-        if self._interpolation == 'linear':
-            texture_interpolation = 'linear'
+        if self._interpolation == "linear":
+            texture_interpolation = "linear"
         else:
-            texture_interpolation = 'nearest'
+            texture_interpolation = "nearest"
 
         if texture_format is None:
-            tex = CPUScaledTexture2D(
-                data, interpolation=texture_interpolation,
-                **texture_kwargs
-            )
+            tex = CPUScaledTexture2D(data, interpolation=texture_interpolation, **texture_kwargs)
         else:
             tex = GPUScaledTexture2D(
-                data, internalformat=texture_format,
+                data,
+                internalformat=texture_format,
                 interpolation=texture_interpolation,
-                **texture_kwargs
+                **texture_kwargs,
             )
         return tex
 
@@ -382,9 +391,7 @@ class ImageVisual(Visual):
         """
         data = np.array(image, copy=copy)
         if np.iscomplexobj(data):
-            raise TypeError(
-                "Complex data types not supported. Please use 'ComplexImage' instead"
-            )
+            raise TypeError("Complex data types not supported. Please use 'ComplexImage' instead")
         # can the texture handle this data?
         self._texture.check_data_format(data)
         if self._data is None or self._data.shape[:2] != data.shape[:2]:
@@ -426,7 +433,7 @@ class ImageVisual(Visual):
             return
         else:
             # shortcut so we don't have to rebuild the whole color transform
-            self.shared_program.frag['color_transform'][1]['clim'] = norm_clims
+            self.shared_program.frag["color_transform"][1]["clim"] = norm_clims
 
     @property
     def cmap(self):
@@ -452,7 +459,7 @@ class ImageVisual(Visual):
         self._gamma = float(value)
         # shortcut so we don't have to rebuild the color transform
         if not self._need_colortransform_update:
-            self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
+            self.shared_program.frag["color_transform"][2]["gamma"] = self._gamma
         self.update()
 
     @property
@@ -480,8 +487,9 @@ class ImageVisual(Visual):
     @interpolation.setter
     def interpolation(self, i):
         if i not in self._interpolation_names:
-            raise ValueError("interpolation must be one of %s" %
-                             ', '.join(self._interpolation_names))
+            raise ValueError(
+                "interpolation must be one of %s" % ", ".join(self._interpolation_names)
+            )
         if self._interpolation != i:
             self._interpolation = i
             self._need_interpolation_update = True
@@ -501,12 +509,12 @@ class ImageVisual(Visual):
     def custom_kernel(self, value):
         value = np.asarray(value, dtype=np.float32)
         if value.ndim != 2:
-            raise ValueError(f'kernel must have 2 dimensions; got {value.ndim}')
+            raise ValueError(f"kernel must have 2 dimensions; got {value.ndim}")
         self._custom_kernel = value
-        self._custom_kerneltex = Texture2D(value, interpolation='nearest', internalformat='r32f')
-        if self._data_lookup_fn is not None and 'kernel' in self._data_lookup_fn:
-            self._data_lookup_fn['kernel'] = self._custom_kerneltex
-            self._data_lookup_fn['kernel_shape'] = value.shape[::-1]
+        self._custom_kerneltex = Texture2D(value, interpolation="nearest", internalformat="r32f")
+        if self._data_lookup_fn is not None and "kernel" in self._data_lookup_fn:
+            self._data_lookup_fn["kernel"] = self._custom_kerneltex
+            self._data_lookup_fn["kernel_shape"] = value.shape[::-1]
         self.update()
 
     # The interpolation code could be transferred to a dedicated filter
@@ -515,44 +523,44 @@ class ImageVisual(Visual):
         """Rebuild the _data_lookup_fn for different interpolations."""
         interpolation = self._interpolation
         # alias bilinear to linear
-        if interpolation == 'bilinear':
+        if interpolation == "bilinear":
             warnings.warn(
                 "'bilinear' interpolation is Deprecated. Use 'linear' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            interpolation = 'linear'
+            interpolation = "linear"
         # alias bicubic to cubic
-        if interpolation == 'bicubic':
+        if interpolation == "bicubic":
             warnings.warn(
                 "'bicubic' interpolation is Deprecated. Use 'cubic' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            interpolation = 'cubic'
+            interpolation = "cubic"
         self._data_lookup_fn = self._interpolation_fun[interpolation]
-        self.shared_program.frag['get_data'] = self._data_lookup_fn
+        self.shared_program.frag["get_data"] = self._data_lookup_fn
 
         # only 'linear' and 'custom' use 'linear' texture interpolation
-        if interpolation in ('linear', 'custom'):
-            texture_interpolation = 'linear'
+        if interpolation in ("linear", "custom"):
+            texture_interpolation = "linear"
         else:
-            texture_interpolation = 'nearest'
+            texture_interpolation = "nearest"
 
         # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
         # so u_kernel and shape setting is skipped
-        if interpolation not in ('nearest', 'linear'):
-            self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
-            if interpolation == 'custom':
-                self._data_lookup_fn['kernel'] = self._custom_kerneltex
-                self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape[::-1]
+        if interpolation not in ("nearest", "linear"):
+            self._data_lookup_fn["shape"] = self._data.shape[:2][::-1]
+            if interpolation == "custom":
+                self._data_lookup_fn["kernel"] = self._custom_kerneltex
+                self._data_lookup_fn["kernel_shape"] = self._custom_kernel.shape[::-1]
             else:
-                self.shared_program['u_kernel'] = self._kerneltex
+                self.shared_program["u_kernel"] = self._kerneltex
 
         if self._texture.interpolation != texture_interpolation:
             self._texture.interpolation = texture_interpolation
 
-        self._data_lookup_fn['texture'] = self._texture
+        self._data_lookup_fn["texture"] = self._texture
 
         self._need_interpolation_update = False
 
@@ -562,48 +570,48 @@ class ImageVisual(Visual):
         w = 1.0 / grid[1]
         h = 1.0 / grid[0]
 
-        quad = np.array([[0, 0, 0], [w, 0, 0], [w, h, 0],
-                         [0, 0, 0], [w, h, 0], [0, h, 0]],
-                        dtype=np.float32)
+        quad = np.array(
+            [[0, 0, 0], [w, 0, 0], [w, h, 0], [0, 0, 0], [w, h, 0], [0, h, 0]], dtype=np.float32
+        )
         quads = np.empty((grid[1], grid[0], 6, 3), dtype=np.float32)
         quads[:] = quad
 
-        mgrid = np.mgrid[0.:grid[1], 0.:grid[0]].transpose(1, 2, 0)
+        mgrid = np.mgrid[0.0 : grid[1], 0.0 : grid[0]].transpose(1, 2, 0)
         mgrid = mgrid[:, :, np.newaxis, :]
         mgrid[..., 0] *= w
         mgrid[..., 1] *= h
 
         quads[..., :2] += mgrid
-        tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
+        tex_coords = quads.reshape(grid[1] * grid[0] * 6, 3)
         tex_coords = np.ascontiguousarray(tex_coords[:, :2])
         vertices = tex_coords * self.size
 
-        self._subdiv_position.set_data(vertices.astype('float32'))
-        self._subdiv_texcoord.set_data(tex_coords.astype('float32'))
+        self._subdiv_position.set_data(vertices.astype("float32"))
+        self._subdiv_texcoord.set_data(tex_coords.astype("float32"))
         self._need_vertex_update = False
 
     def _update_method(self, view):
         """Decide which method to use for *view* and configure it accordingly."""
         method = self._method
-        if method == 'auto':
+        if method == "auto":
             if view.transforms.get_transform().Linear:
-                method = 'subdivide'
+                method = "subdivide"
             else:
-                method = 'impostor'
+                method = "impostor"
         view._method_used = method
 
-        if method == 'subdivide':
-            view.view_program['method'] = 0
-            view.view_program['a_position'] = self._subdiv_position
-            view.view_program['a_texcoord'] = self._subdiv_texcoord
-        elif method == 'impostor':
-            view.view_program['method'] = 1
-            view.view_program['a_position'] = self._impostor_coords
-            view.view_program['a_texcoord'] = self._impostor_coords
+        if method == "subdivide":
+            view.view_program["method"] = 0
+            view.view_program["a_position"] = self._subdiv_position
+            view.view_program["a_texcoord"] = self._subdiv_texcoord
+        elif method == "impostor":
+            view.view_program["method"] = 1
+            view.view_program["a_position"] = self._impostor_coords
+            view.view_program["a_texcoord"] = self._impostor_coords
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
 
-        self.shared_program['image_size'] = self.size
+        self.shared_program["image_size"] = self.size
         view._need_method_update = False
         self._prepare_transforms(view)
 
@@ -626,7 +634,7 @@ class ImageVisual(Visual):
             self._need_colortransform_update = True
         elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
-            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
+            self.shared_program.frag["color_transform"][1]["clim"] = self._texture.clim_normalized
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
@@ -638,32 +646,40 @@ class ImageVisual(Visual):
     def _build_color_transform(self):
         if self._data.ndim == 2 or self._data.shape[2] == 1:
             # luminance data
-            fclim = Function(self._func_templates['clim_float'])
-            fgamma = Function(self._func_templates['gamma_float'])
+            fclim = Function(self._func_templates["clim_float"])
+            fgamma = Function(self._func_templates["gamma_float"])
             # NOTE: red_to_luminance only uses the red component, fancy internalformats
             #   may need to use the other components or a different function chain
             fun = FunctionChain(
-                None, [Function(self._func_templates['red_to_luminance']), fclim, fgamma, Function(self.cmap.glsl_map)]
+                None,
+                [
+                    Function(self._func_templates["red_to_luminance"]),
+                    fclim,
+                    fgamma,
+                    Function(self.cmap.glsl_map),
+                ],
             )
         else:
             # RGB/A image data (no colormap)
-            fclim = Function(self._func_templates['clim'])
-            fgamma = Function(self._func_templates['gamma'])
-            fun = FunctionChain(None, [Function(self._func_templates['null_color_transform']), fclim, fgamma])
-        fclim['clim'] = self._texture.clim_normalized
-        fgamma['gamma'] = self.gamma
+            fclim = Function(self._func_templates["clim"])
+            fgamma = Function(self._func_templates["gamma"])
+            fun = FunctionChain(
+                None, [Function(self._func_templates["null_color_transform"]), fclim, fgamma]
+            )
+        fclim["clim"] = self._texture.clim_normalized
+        fgamma["gamma"] = self.gamma
         return fun
 
     def _prepare_transforms(self, view):
         trs = view.transforms
         prg = view.view_program
         method = view._method_used
-        if method == 'subdivide':
-            prg.vert['transform'] = trs.get_transform()
-            prg.frag['transform'] = self._null_tr
+        if method == "subdivide":
+            prg.vert["transform"] = trs.get_transform()
+            prg.frag["transform"] = self._null_tr
         else:
-            prg.vert['transform'] = self._null_tr
-            prg.frag['transform'] = trs.get_transform().inverse
+            prg.vert["transform"] = self._null_tr
+            prg.frag["transform"] = trs.get_transform().inverse
 
     def _prepare_draw(self, view):
         if self._data is None:
@@ -677,9 +693,9 @@ class ImageVisual(Visual):
 
         if self._need_colortransform_update:
             prg = view.view_program
-            self.shared_program.frag['color_transform'] = self._build_color_transform()
+            self.shared_program.frag["color_transform"] = self._build_color_transform()
             self._need_colortransform_update = False
-            prg['texture2D_LUT'] = self.cmap.texture_lut()
+            prg["texture2D_LUT"] = self.cmap.texture_lut()
 
         if self._need_vertex_update:
             self._build_vertex_data()

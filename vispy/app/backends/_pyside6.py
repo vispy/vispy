@@ -11,7 +11,7 @@ from .. import backends
 from ...util import logger
 from ... import config
 
-USE_EGL = config['gl_backend'].lower().startswith('es')
+USE_EGL = config["gl_backend"].lower().startswith("es")
 
 try:
     # Try importing (QtOpenGL first to fail without import QtCore)
@@ -34,20 +34,21 @@ else:
     @staticmethod
     def qWait(msec):
         import time
+
         start = time.time()
         PySide6.QtWidgets.QApplication.processEvents()
         while time.time() < start + msec * 0.001:
             PySide6.QtWidgets.QApplication.processEvents()
+
     QtTest.QTest.qWait = qWait
 
-    which = ('PySide6', PySide6.__version__, QtCore.__version__)
+    which = ("PySide6", PySide6.__version__, QtCore.__version__)
     # Remove _qt module to force an import even if it was already imported
-    sys.modules.pop(__name__.replace('_pyside6', '_qt'), None)
+    sys.modules.pop(__name__.replace("_pyside6", "_qt"), None)
     # Import _qt. Keep a ref to the module object!
     if backends.qt_lib is None:
-        backends.qt_lib = 'pyside6'  # Signal to _qt what it should import
+        backends.qt_lib = "pyside6"  # Signal to _qt what it should import
         from . import _qt  # noqa
         from ._qt import *  # noqa
     else:
-        logger.warning('%s already imported, cannot switch to %s'
-                       % (backends.qt_lib, 'pyside6'))
+        logger.warning("%s already imported, cannot switch to %s" % (backends.qt_lib, "pyside6"))

@@ -17,22 +17,29 @@ import numpy as np
 import vispy
 import vispy.plot as vp
 import vispy.io as io
-vispy.use(app='osmesa')  # noqa
+
+vispy.use(app="osmesa")  # noqa
 
 # Check the application correctly picked up osmesa
-assert vispy.app.use_app().backend_name == 'osmesa', 'Not using OSMesa'
+assert vispy.app.use_app().backend_name == "osmesa", "Not using OSMesa"
 
-data = np.load(io.load_data_file('electrophys/iv_curve.npz'))['arr_0']
+data = np.load(io.load_data_file("electrophys/iv_curve.npz"))["arr_0"]
 time = np.arange(0, data.shape[1], 1e-4)
 
 fig = vp.Fig(size=(800, 800), show=False)
 
 x = np.linspace(0, 10, 20)
 y = np.cos(x)
-line = fig[0, 0].plot((x, y), symbol='o', width=3, title='I/V Curve',
-                      xlabel='Current (pA)', ylabel='Membrane Potential (mV)')
+line = fig[0, 0].plot(
+    (x, y),
+    symbol="o",
+    width=3,
+    title="I/V Curve",
+    xlabel="Current (pA)",
+    ylabel="Membrane Potential (mV)",
+)
 grid = vp.visuals.GridLines(color=(0, 0, 0, 0.5))
-grid.set_gl_state('translucent')
+grid.set_gl_state("translucent")
 fig[0, 0].view.add(grid)
 
 fig.show()

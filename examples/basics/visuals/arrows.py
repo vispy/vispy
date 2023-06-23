@@ -18,58 +18,50 @@ from vispy.visuals.transforms import STTransform
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, title='Arrows example',
-                            keys='interactive', size=(1050, 650))
+        app.Canvas.__init__(self, title="Arrows example", keys="interactive", size=(1050, 650))
 
-        line1 = curves.curve4_bezier(
-            (10.0, 0.0),
-            (50, -190),
-            (350, 190),
-            (390, 0.0)
-        )
-        arrows1 = np.array([
-            line1[-2],
-            line1[-1]
-        ]).reshape((1, 4))
+        line1 = curves.curve4_bezier((10.0, 0.0), (50, -190), (350, 190), (390, 0.0))
+        arrows1 = np.array([line1[-2], line1[-1]]).reshape((1, 4))
 
-        line2 = curves.curve4_bezier(
-            (10.0, 0.0),
-            (190, -190),
-            (210, 190),
-            (390, 0.0)
-        )
-        arrows2 = np.array([
-            line2[1],
-            line2[0],
-            line2[-2],
-            line2[-1]
-        ]).reshape((2, 4))
+        line2 = curves.curve4_bezier((10.0, 0.0), (190, -190), (210, 190), (390, 0.0))
+        arrows2 = np.array([line2[1], line2[0], line2[-2], line2[-1]]).reshape((2, 4))
 
-        line3 = curves.curve3_bezier(
-            (10.0, 0.0),
-            (50, 190),
-            (390, 0.0)
-        )
+        line3 = curves.curve3_bezier((10.0, 0.0), (50, 190), (390, 0.0))
 
-        arrows3 = np.array([
-            line3[-2],
-            line3[-1]
-        ]).reshape((1, 4))
+        arrows3 = np.array([line3[-2], line3[-1]]).reshape((1, 4))
 
         arrow_types = ["curved", "stealth", "inhibitor_round", "angle_60"]
         self.lines = []
 
         for i, arrow_type in enumerate(arrow_types):
             arrows = [
-                visuals.ArrowVisual(line1, color='w', width=6, method='agg',
-                                    arrows=arrows1, arrow_type=arrow_type,
-                                    arrow_size=30.0),
-                visuals.ArrowVisual(line2, color='w', width=2, method='agg',
-                                    arrows=arrows2, arrow_type=arrow_type,
-                                    arrow_size=5.0),
-                visuals.ArrowVisual(line3, color='w', width=4, method='agg',
-                                    arrows=arrows3, arrow_type=arrow_type,
-                                    arrow_size=10.0)
+                visuals.ArrowVisual(
+                    line1,
+                    color="w",
+                    width=6,
+                    method="agg",
+                    arrows=arrows1,
+                    arrow_type=arrow_type,
+                    arrow_size=30.0,
+                ),
+                visuals.ArrowVisual(
+                    line2,
+                    color="w",
+                    width=2,
+                    method="agg",
+                    arrows=arrows2,
+                    arrow_type=arrow_type,
+                    arrow_size=5.0,
+                ),
+                visuals.ArrowVisual(
+                    line3,
+                    color="w",
+                    width=4,
+                    method="agg",
+                    arrows=arrows3,
+                    arrow_type=arrow_type,
+                    arrow_size=10.0,
+                ),
             ]
 
             # Translate each line visual downwards
@@ -77,8 +69,7 @@ class Canvas(app.Canvas):
                 x = 50 + (i * 250)
                 y = 100 + (200 * j)
 
-                visual.transform = STTransform(translate=[x, y],
-                                               scale=(0.5, 1.0))
+                visual.transform = STTransform(translate=[x, y], scale=(0.5, 1.0))
                 visual.events.update.connect(lambda event: self.update())
 
             self.lines.extend(arrows)
@@ -86,7 +77,7 @@ class Canvas(app.Canvas):
         self.show()
 
     def on_draw(self, event):
-        gloo.clear('black')
+        gloo.clear("black")
 
         for visual in self.lines:
             visual.draw()
@@ -97,7 +88,8 @@ class Canvas(app.Canvas):
         for visual in self.lines:
             visual.transforms.configure(canvas=self, viewport=vp)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     win = Canvas()
 
     if sys.flags.interactive != 1:

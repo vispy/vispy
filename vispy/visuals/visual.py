@@ -145,16 +145,14 @@ class BaseVisual(Frozen):
     """
 
     def __init__(self, vshare=None):
-        self._view_class = getattr(self, '_view_class', VisualView)
+        self._view_class = getattr(self, "_view_class", VisualView)
 
         self._vshare = VisualShare() if vshare is None else vshare
         self._vshare.views[self] = None
 
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   update=Event,
-                                   bounds_change=Event
-                                   )
+        self.events = EmitterGroup(
+            source=self, auto_connect=True, update=Event, bounds_change=Event
+        )
 
         self._transforms = None
         self.transforms = TransformSystem()
@@ -181,7 +179,7 @@ class BaseVisual(Frozen):
         trs.changed.connect(self._transform_changed)
         self._transform_changed()
 
-    def get_transform(self, map_from='visual', map_to='render'):
+    def get_transform(self, map_from="visual", map_to="render"):
         """Return a transform mapping between any two coordinate systems.
 
         Parameters
@@ -293,7 +291,7 @@ class BaseVisualView(object):
         self._visual._compute_bounds(axis, view)
 
     def __repr__(self):
-        return '<%s on %r>' % (self.__class__.__name__, self._visual)
+        return "<%s on %r>" % (self.__class__.__name__, self._visual)
 
 
 class Visual(BaseVisual):
@@ -323,8 +321,7 @@ class Visual(BaseVisual):
         The visual share, if necessary.
     """
 
-    def __init__(self, vcode='', fcode='', gcode=None, program=None,
-                 vshare=None):
+    def __init__(self, vcode="", fcode="", gcode=None, program=None, vshare=None):
         self._view_class = VisualView
         BaseVisual.__init__(self, vshare)
         if vshare is None:
@@ -335,8 +332,7 @@ class Visual(BaseVisual):
             else:
                 self._vshare.program = program
                 if len(vcode) > 0 or len(fcode) > 0:
-                    raise ValueError("Cannot specify both program and "
-                                     "vcode/fcode arguments.")
+                    raise ValueError("Cannot specify both program and " "vcode/fcode arguments.")
 
         self._prev_gl_state = []
         self._program = self._vshare.program.add_program()
@@ -364,7 +360,7 @@ class Visual(BaseVisual):
         prev_gl_state = self._vshare.gl_state.copy()
 
         self._vshare.gl_state = kwargs
-        self._vshare.gl_state['preset'] = preset
+        self._vshare.gl_state["preset"] = preset
 
         return _revert_gl_state([(self, prev_gl_state)])
 
@@ -386,7 +382,7 @@ class Visual(BaseVisual):
         prev_gl_state = self._vshare.gl_state.copy()
 
         if len(args) == 1:
-            self._vshare.gl_state['preset'] = args[0]
+            self._vshare.gl_state["preset"] = args[0]
         elif len(args) != 0:
             raise TypeError("Only one positional argument allowed.")
         self._vshare.gl_state.update(kwargs)
@@ -506,13 +502,11 @@ class Visual(BaseVisual):
             return
 
         if self._vshare.draw_mode is None:
-            raise ValueError("_draw_mode has not been set for visual %r" %
-                             self)
+            raise ValueError("_draw_mode has not been set for visual %r" % self)
 
         self._configure_gl_state()
         try:
-            self._program.draw(self._vshare.draw_mode,
-                               self._vshare.index_buffer)
+            self._program.draw(self._vshare.draw_mode, self._vshare.index_buffer)
         except Exception:
             logger.warning("Error drawing visual %r" % self)
             raise
@@ -526,16 +520,16 @@ class Visual(BaseVisual):
         *shader* should be "vert", "geom", or "frag"
         *name* should be "pre" or "post"
         """
-        assert name in ('pre', 'post')
+        assert name in ("pre", "post")
         key = (shader, name)
         if key in self._hooks:
             return self._hooks[key]
         hook = StatementList()
-        if shader == 'vert':
+        if shader == "vert":
             self.view_program.vert[name] = hook
-        elif shader == 'frag':
+        elif shader == "frag":
             self.view_program.frag[name] = hook
-        elif shader == 'geom':
+        elif shader == "geom":
             self.view_program.geom[name] = hook
         else:
             raise ValueError("shader must be vert, geom, or frag")
@@ -606,7 +600,7 @@ class CompoundVisual(BaseVisual):
     To the user, a compound visual behaves exactly like a normal visual--it
     has a transform system, draw() and bounds() methods, etc. Internally, the
     compound visual automatically manages proxying these transforms and methods
-    to its sub-visuals. 
+    to its sub-visuals.
 
     Parameters
     ----------
@@ -890,7 +884,7 @@ class updating_property:
         self.fget = fget
         self.fset = fset
         if self.fget is not None:
-            self.attr_name = f'_{self.fget.__name__}'
+            self.attr_name = f"_{self.fget.__name__}"
             self.__doc__ = doc or self.fget.__doc__
 
     def __get__(self, obj, objtype=None):
@@ -913,7 +907,7 @@ class updating_property:
                 self.fset(obj, value)
             obj._need_update = True
             # prevent update during obj.__init__
-            if hasattr(obj, 'events'):
+            if hasattr(obj, "events"):
                 obj.update()
 
     def __delete__(self, obj):

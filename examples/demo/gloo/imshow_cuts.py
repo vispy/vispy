@@ -11,7 +11,9 @@ from vispy.gloo import set_viewport, clear, set_state, Program
 
 # Image
 def func(x, y):
-    return (1-x/2+x**5+y**3)*np.exp(-x**2-y**2)
+    return (1 - x / 2 + x**5 + y**3) * np.exp(-(x**2) - y**2)
+
+
 x = np.linspace(-3.0, 3.0, 512).astype(np.float32)
 y = np.linspace(-3.0, 3.0, 512).astype(np.float32)
 X, Y = np.meshgrid(x, y)
@@ -29,22 +31,16 @@ values = np.linspace(0, 1, 512)[1:-1]
 # Hot colormap
 colormaps[0, 0] = 0, 0, 1, 1  # Low values  (< vmin)
 colormaps[0, -1] = 0, 1, 0, 1  # High values (> vmax)
-colormaps[0, 1:-1, 0] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
-                                  [0.00, 1.00, 1.00, 1.00])
-colormaps[0, 1:-1, 1] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
-                                  [0.00, 0.00, 1.00, 1.00])
-colormaps[0, 1:-1, 2] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
-                                  [0.00, 0.00, 0.00, 1.00])
+colormaps[0, 1:-1, 0] = np.interp(values, [0.00, 0.33, 0.66, 1.00], [0.00, 1.00, 1.00, 1.00])
+colormaps[0, 1:-1, 1] = np.interp(values, [0.00, 0.33, 0.66, 1.00], [0.00, 0.00, 1.00, 1.00])
+colormaps[0, 1:-1, 2] = np.interp(values, [0.00, 0.33, 0.66, 1.00], [0.00, 0.00, 0.00, 1.00])
 
 # Grey colormap
 colormaps[1, 0] = 0, 0, 1, 1  # Low values (< vmin)
 colormaps[1, -1] = 0, 1, 0, 1  # High values (> vmax)
-colormaps[1, 1:-1, 0] = np.interp(values, [0.00, 1.00],
-                                  [0.00, 1.00])
-colormaps[1, 1:-1, 1] = np.interp(values, [0.00, 1.00],
-                                  [0.00, 1.00])
-colormaps[1, 1:-1, 2] = np.interp(values, [0.00, 1.00],
-                                  [0.00, 1.00])
+colormaps[1, 1:-1, 0] = np.interp(values, [0.00, 1.00], [0.00, 1.00])
+colormaps[1, 1:-1, 1] = np.interp(values, [0.00, 1.00], [0.00, 1.00])
+colormaps[1, 1:-1, 2] = np.interp(values, [0.00, 1.00], [0.00, 1.00])
 # Jet colormap
 # ...
 
@@ -111,33 +107,31 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(512, 512),
-                            keys='interactive')
+        app.Canvas.__init__(self, size=(512, 512), keys="interactive")
 
         self.image = Program(image_vertex, image_fragment, 4)
-        self.image['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
-        self.image['texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
-        self.image['vmin'] = +0.0
-        self.image['vmax'] = +1.0
-        self.image['cmap'] = 0  # Colormap index to use
-        self.image['colormaps'] = colormaps
-        self.image['n_colormaps'] = colormaps.shape[0]
-        self.image['image'] = idxs.astype('float32')
-        self.image['image'].interpolation = 'linear'
+        self.image["position"] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
+        self.image["texcoord"] = (0, 0), (0, +1), (+1, 0), (+1, +1)
+        self.image["vmin"] = +0.0
+        self.image["vmax"] = +1.0
+        self.image["cmap"] = 0  # Colormap index to use
+        self.image["colormaps"] = colormaps
+        self.image["n_colormaps"] = colormaps.shape[0]
+        self.image["image"] = idxs.astype("float32")
+        self.image["image"].interpolation = "linear"
 
         set_viewport(0, 0, *self.physical_size)
 
         self.lines = Program(lines_vertex, lines_fragment)
-        self.lines["position"] = np.zeros((4+4+514+514, 2), np.float32)
-        color = np.zeros((4+4+514+514, 4), np.float32)
-        color[1:1+2, 3] = 0.25
-        color[5:5+2, 3] = 0.25
-        color[9:9+512, 3] = 0.5
-        color[523:523+512, 3] = 0.5
+        self.lines["position"] = np.zeros((4 + 4 + 514 + 514, 2), np.float32)
+        color = np.zeros((4 + 4 + 514 + 514, 4), np.float32)
+        color[1 : 1 + 2, 3] = 0.25
+        color[5 : 5 + 2, 3] = 0.25
+        color[9 : 9 + 512, 3] = 0.5
+        color[523 : 523 + 512, 3] = 0.5
         self.lines["color"] = color
 
-        set_state(clear_color='white', blend=True,
-                  blend_func=('src_alpha', 'one_minus_src_alpha'))
+        set_state(clear_color="white", blend=True, blend_func=("src_alpha", "one_minus_src_alpha"))
 
         self.show()
 
@@ -146,8 +140,8 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         clear(color=True, depth=True)
-        self.image.draw('triangle_strip')
-        self.lines.draw('line_strip')
+        self.image.draw("triangle_strip")
+        self.lines.draw("line_strip")
 
     def on_mouse_move(self, event):
         x, y = event.pos
@@ -157,13 +151,13 @@ class Canvas(app.Canvas):
         x = max(0, min(x, w - 1))
         y = max(0, min(y, h - 1))
 
-        yf = 1 - y/(h/2.)
-        xf = x/(w/2.) - 1
+        yf = 1 - y / (h / 2.0)
+        xf = x / (w / 2.0) - 1
 
-        x_norm = int((x*512)//w)
-        y_norm = int((y*512)//h)
+        x_norm = int((x * 512) // w)
+        y_norm = int((y * 512) // h)
 
-        P = np.zeros((4+4+514+514, 2), np.float32)
+        P = np.zeros((4 + 4 + 514 + 514, 2), np.float32)
 
         x_baseline = P[:4]
         y_baseline = P[4:8]
@@ -186,6 +180,7 @@ class Canvas(app.Canvas):
         self.lines["position"] = P
         self.update()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     canvas = Canvas()
     app.run()

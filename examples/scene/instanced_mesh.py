@@ -15,7 +15,7 @@ from scipy.spatial.transform import Rotation
 from vispy.io import read_mesh, load_data_file
 
 # full gl+ context is required for instanced rendering
-use(gl='gl+')
+use(gl="gl+")
 
 
 vertex_shader = """
@@ -52,12 +52,12 @@ class InstancedMeshVisual(visuals.Visual):
     def __init__(self, vertices, faces, positions, colors, transforms, subdivisions=5):
         visuals.Visual.__init__(self, vertex_shader, fragment_shader)
 
-        self.set_gl_state('translucent', depth_test=True, cull_face=True)
-        self._draw_mode = 'triangles'
+        self.set_gl_state("translucent", depth_test=True, cull_face=True)
+        self._draw_mode = "triangles"
 
         # set up vertex and index buffer
         self.vbo = gloo.VertexBuffer(vertices.astype(np.float32))
-        self.shared_program.vert['position'] = self.vbo
+        self.shared_program.vert["position"] = self.vbo
         self._index_buffer = gloo.IndexBuffer(data=faces.astype(np.uint32))
 
         # create a vertex buffer with a divisor argument of 1. This means that the
@@ -65,7 +65,7 @@ class InstancedMeshVisual(visuals.Visual):
         # The length of the array multiplied by the divisor determines the number
         # of instances
         self.shifts = gloo.VertexBuffer(positions.astype(np.float32), divisor=1)
-        self.shared_program['shift'] = self.shifts
+        self.shared_program["shift"] = self.shifts
 
         # vispy does not handle matrix attributes (likely requires some big changes in GLIR)
         # so we decompose it into three vec3; (column vectors of the matrix)
@@ -73,32 +73,32 @@ class InstancedMeshVisual(visuals.Visual):
         self.transforms_x = gloo.VertexBuffer(transforms[..., 0].copy(), divisor=1)
         self.transforms_y = gloo.VertexBuffer(transforms[..., 1].copy(), divisor=1)
         self.transforms_z = gloo.VertexBuffer(transforms[..., 2].copy(), divisor=1)
-        self.shared_program['transform_x'] = self.transforms_x
-        self.shared_program['transform_y'] = self.transforms_y
-        self.shared_program['transform_z'] = self.transforms_z
+        self.shared_program["transform_x"] = self.transforms_x
+        self.shared_program["transform_y"] = self.transforms_y
+        self.shared_program["transform_z"] = self.transforms_z
 
         # we can provide additional buffers with different divisors, as long as the
         # amount of instances (length * divisor) is the same. In this case, we will change
         # color every 5 instances
         self.color = gloo.VertexBuffer(colors.astype(np.float32), divisor=1)
-        self.shared_program['color'] = self.color
+        self.shared_program["color"] = self.color
 
     def _prepare_transforms(self, view):
-        view.view_program.vert['transform'] = view.get_transform()
+        view.view_program.vert["transform"] = view.get_transform()
 
 
 # create a visual node class to add it to the canvas
 InstancedMesh = scene.visuals.create_visual_node(InstancedMeshVisual)
 
 # set up vanvas
-canvas = scene.SceneCanvas(keys='interactive', show=True)
+canvas = scene.SceneCanvas(keys="interactive", show=True)
 view = canvas.central_widget.add_view()
-view.camera = 'arcball'
+view.camera = "arcball"
 view.camera.scale_factor = 1000
 
 N = 1000
 
-mesh_file = load_data_file('orig/triceratops.obj.gz')
+mesh_file = load_data_file("orig/triceratops.obj.gz")
 vertices, faces, _, _ = read_mesh(mesh_file)
 
 np.random.seed(0)
@@ -111,7 +111,8 @@ multimesh = InstancedMesh(vertices * 10, faces, pos, colors, transforms, parent=
 multimesh.transform = visuals.transforms.STTransform(scale=(3, 2, 1))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     if sys.flags.interactive != 1:
         app.run()

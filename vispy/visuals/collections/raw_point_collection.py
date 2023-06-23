@@ -14,7 +14,7 @@ from __future__ import division
 
 import numpy as np
 from ... import glsl
-from . collection import Collection
+from .collection import Collection
 from ..transforms import NullTransform
 
 
@@ -26,8 +26,7 @@ class RawPointCollection(Collection):
     must be used at small size only (2/3 pixels). You've been warned.
     """
 
-    def __init__(self, user_dtype=None, transform=None,
-                 vertex=None, fragment=None, **kwargs):
+    def __init__(self, user_dtype=None, transform=None, vertex=None, fragment=None, **kwargs):
         """
         Initialize the collection.
 
@@ -49,9 +48,11 @@ class RawPointCollection(Collection):
         color : string
             'local', 'shared' or 'global'
         """
-        base_dtype = [('position', (np.float32, 3), "!local", (0, 0, 0)),
-                      ('size', (np.float32, 1), "global", 3.0),
-                      ('color', (np.float32, 4), "global", (0, 0, 0, 1))]
+        base_dtype = [
+            ("position", (np.float32, 3), "!local", (0, 0, 0)),
+            ("size", (np.float32, 1), "global", 3.0),
+            ("color", (np.float32, 4), "global", (0, 0, 0, 1)),
+        ]
 
         dtype = base_dtype
         if user_dtype:
@@ -61,16 +62,17 @@ class RawPointCollection(Collection):
             vertex = glsl.get("collections/raw-point.vert")
         if transform is None:
             transform = NullTransform()
-        self.transform = transform        
+        self.transform = transform
         if fragment is None:
             fragment = glsl.get("collections/raw-point.frag")
 
-        Collection.__init__(self, dtype=dtype, itype=None, mode="points",
-                            vertex=vertex, fragment=fragment, **kwargs)
+        Collection.__init__(
+            self, dtype=dtype, itype=None, mode="points", vertex=vertex, fragment=fragment, **kwargs
+        )
 
         # Set hooks if necessary
         program = self._programs[0]
-        program.vert['transform'] = self.transform
+        program.vert["transform"] = self.transform
 
     def append(self, P, itemsize=None, **kwargs):
         """
@@ -97,7 +99,7 @@ class RawPointCollection(Collection):
 
         # Apply default values on vertices
         for name in self.vtype.names:
-            if name not in ['position', "collection_index"]:
+            if name not in ["position", "collection_index"]:
                 V[name] = kwargs.get(name, self._defaults[name])
         V["position"] = P
 

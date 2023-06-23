@@ -9,23 +9,29 @@ from .backends import qt_lib
 
 if qt_lib is None:
     raise RuntimeError("Module backends._qt should not be imported directly.")
-elif qt_lib in 'pyqt4':
+elif qt_lib in "pyqt4":
     from PyQt4 import QtGui
+
     QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
-elif qt_lib == 'pyside':
+elif qt_lib == "pyside":
     from PySide import QtGui
+
     QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
-elif qt_lib == 'pyqt5':
+elif qt_lib == "pyqt5":
     from PyQt5 import QtWidgets
+
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
-elif qt_lib == 'pyqt6':
+elif qt_lib == "pyqt6":
     from PyQt6 import QtWidgets
+
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
-elif qt_lib == 'pyside2':
+elif qt_lib == "pyside2":
     from PySide2 import QtWidgets
+
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
-elif qt_lib == 'pyside6':
+elif qt_lib == "pyside6":
     from PySide6 import QtWidgets
+
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
@@ -51,16 +57,15 @@ class QtCanvas(QWidget):
 
     def __init__(self, parent=None, canvas=None, **kwargs):
         from .canvas import Canvas
+
         if canvas is None:
             canvas = Canvas
         if issubclass(canvas, Canvas):
             canvas = canvas(**kwargs)
         elif len(**kwargs) > 0:
-            raise TypeError('Invalid keyword arguments: %s' %
-                            list(kwargs.keys()))
+            raise TypeError("Invalid keyword arguments: %s" % list(kwargs.keys()))
         if not isinstance(canvas, Canvas):
-            raise TypeError('canvas argument must be an instance or subclass '
-                            'of Canvas.')
+            raise TypeError("canvas argument must be an instance or subclass " "of Canvas.")
 
         QWidget.__init__(self, parent)
         self.layout = QGridLayout()
@@ -89,4 +94,5 @@ class QtSceneCanvas(QtCanvas):
 
     def __init__(self, parent=None, **kwargs):
         from ..scene.canvas import SceneCanvas
+
         QtCanvas.__init__(self, parent, canvas=SceneCanvas, **kwargs)

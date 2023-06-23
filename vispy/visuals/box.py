@@ -40,25 +40,37 @@ class BoxVisual(CompoundVisual):
         cube edges are drawn.
     """
 
-    def __init__(self, width=1, height=1, depth=1, width_segments=1,
-                 height_segments=1, depth_segments=1, planes=None,
-                 vertex_colors=None, face_colors=None,
-                 color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
+    def __init__(
+        self,
+        width=1,
+        height=1,
+        depth=1,
+        width_segments=1,
+        height_segments=1,
+        depth_segments=1,
+        planes=None,
+        vertex_colors=None,
+        face_colors=None,
+        color=(0.5, 0.5, 1, 1),
+        edge_color=None,
+        **kwargs,
+    ):
         vertices, filled_indices, outline_indices = create_box(
-            width, height, depth, width_segments, height_segments,
-            depth_segments, planes)
+            width, height, depth, width_segments, height_segments, depth_segments, planes
+        )
 
-        self._mesh = MeshVisual(vertices['position'], filled_indices,
-                                vertex_colors, face_colors, color)
+        self._mesh = MeshVisual(
+            vertices["position"], filled_indices, vertex_colors, face_colors, color
+        )
         if edge_color:
-            self._border = MeshVisual(vertices['position'], outline_indices,
-                                      color=edge_color, mode='lines')
+            self._border = MeshVisual(
+                vertices["position"], outline_indices, color=edge_color, mode="lines"
+            )
         else:
             self._border = MeshVisual()
 
         CompoundVisual.__init__(self, [self._mesh, self._border], **kwargs)
-        self.mesh.set_gl_state(polygon_offset_fill=True,
-                               polygon_offset=(1, 1), depth_test=True)
+        self.mesh.set_gl_state(polygon_offset_fill=True, polygon_offset=(1, 1), depth_test=True)
 
     @property
     def mesh(self):

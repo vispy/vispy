@@ -7,13 +7,11 @@ import unittest
 import numpy as np
 
 from vispy.testing import run_tests_if_main
-from vispy.gloo.buffer import (Buffer, DataBuffer, DataBufferView, 
-                               VertexBuffer, IndexBuffer)
+from vispy.gloo.buffer import Buffer, DataBuffer, DataBufferView, VertexBuffer, IndexBuffer
 
 
 # -----------------------------------------------------------------------------
 class BufferTest(unittest.TestCase):
-
     # Default init
     # ------------
     def test_init_default(self):
@@ -22,20 +20,20 @@ class BufferTest(unittest.TestCase):
         B = Buffer()
         assert B.nbytes == 0
         glir_cmd = B._glir.clear()[-1]
-        assert glir_cmd[0] == 'CREATE'
+        assert glir_cmd[0] == "CREATE"
 
         # With data
         data = np.zeros(100)
         B = Buffer(data=data)
         assert B.nbytes == data.nbytes
         glir_cmd = B._glir.clear()[-1]
-        assert glir_cmd[0] == 'DATA'
+        assert glir_cmd[0] == "DATA"
 
         # With nbytes
         B = Buffer(nbytes=100)
         assert B.nbytes == 100
         glir_cmd = B._glir.clear()[-1]
-        assert glir_cmd[0] == 'SIZE'
+        assert glir_cmd[0] == "SIZE"
 
         # Wrong data
         self.assertRaises(ValueError, Buffer, data, 4)
@@ -50,20 +48,20 @@ class BufferTest(unittest.TestCase):
         B.set_data(data=data)
         glir_cmds = B._glir.clear()
         assert len(glir_cmds) == 2
-        assert glir_cmds[0][0] == 'SIZE'
-        assert glir_cmds[1][0] == 'DATA'
+        assert glir_cmds[0][0] == "SIZE"
+        assert glir_cmds[1][0] == "DATA"
 
         # And sub data
         B.set_subdata(data[:50], 20)
         glir_cmds = B._glir.clear()
         assert len(glir_cmds) == 1
-        assert glir_cmds[0][0] == 'DATA'
+        assert glir_cmds[0][0] == "DATA"
         assert glir_cmds[0][2] == 20  # offset
 
         # And sub data
         B.set_subdata(data)
         glir_cmds = B._glir.clear()
-        assert glir_cmds[-1][0] == 'DATA'
+        assert glir_cmds[-1][0] == "DATA"
 
         # Wrong ways to set subdata
         self.assertRaises(ValueError, B.set_subdata, data[:50], -1)  # neg
@@ -103,8 +101,7 @@ class BufferTest(unittest.TestCase):
         B = Buffer(data=data)
         # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(1), offset=10 * data.dtype.itemsize)
-        self.assertRaises(ValueError, B.set_subdata,
-                          np.ones(1), offset=10 * data.dtype.itemsize)
+        self.assertRaises(ValueError, B.set_subdata, np.ones(1), offset=10 * data.dtype.itemsize)
 
     # Buffer size
     # -----------
@@ -125,7 +122,6 @@ class BufferTest(unittest.TestCase):
 
 # -----------------------------------------------------------------------------
 class DataBufferTest(unittest.TestCase):
-
     # Default init
     # ------------
     def test_default_init(self):
@@ -140,15 +136,15 @@ class DataBufferTest(unittest.TestCase):
         assert B.dtype == data.dtype
 
         # Given data must be actual numeric data
-        self.assertRaises(TypeError, DataBuffer, 'this is not nice data')
+        self.assertRaises(TypeError, DataBuffer, "this is not nice data")
 
     # Default init with structured data
     # ---------------------------------
     def test_structured_init(self):
         # Check structured type
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         assert B.nbytes == data.nbytes
@@ -174,14 +170,14 @@ class DataBufferTest(unittest.TestCase):
         data_given = data[::2]
 
         B = DataBuffer(data_given)
-        assert B.stride == 4*2
+        assert B.stride == 4 * 2
 
     # Get buffer field
     # ----------------
     def test_getitem_field(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
 
@@ -212,9 +208,9 @@ class DataBufferTest(unittest.TestCase):
     # Get view via index
     # ------------------
     def test_getitem_index(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         Z = B[0:1]
@@ -226,7 +222,7 @@ class DataBufferTest(unittest.TestCase):
         assert Z.itemsize == (3 + 2 + 4) * np.dtype(np.float32).itemsize
         assert Z.stride == (3 + 2 + 4) * np.dtype(np.float32).itemsize
         assert Z.dtype == B.dtype
-        assert 'DataBufferView' in repr(Z)
+        assert "DataBufferView" in repr(Z)
 
         # There's a few things we cannot do with a view
         self.assertRaises(RuntimeError, Z.set_data, data)
@@ -238,12 +234,12 @@ class DataBufferTest(unittest.TestCase):
     # View get invalidated when base is resized
     # -----------------------------------------
     def test_invalid_view_after_resize(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
-        Y = B['position']
+        Y = B["position"]
         Z = B[5:]
         B.resize_bytes(5)
         assert Y._valid is False
@@ -252,9 +248,9 @@ class DataBufferTest(unittest.TestCase):
     # View get invalidated after setting oversized data
     # -------------------------------------------------
     def test_invalid_view_after_set_data(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         Z = B[5:]
@@ -264,14 +260,14 @@ class DataBufferTest(unittest.TestCase):
     # Set data on base buffer : ok
     # ----------------------------
     def test_set_data_base(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         B.set_data(data)
         last_cmd = B._glir.clear()[-1]
-        assert last_cmd[0] == 'DATA'
+        assert last_cmd[0] == "DATA"
 
         # Extra kwargs are caught
         self.assertRaises(TypeError, B.set_data, data, foo=4)
@@ -286,12 +282,12 @@ class DataBufferTest(unittest.TestCase):
         B.set_subdata(subdata, offset=10)
         last_cmd = B._glir.clear()[-1]
         offset = last_cmd[2]
-        assert offset == 10*4
+        assert offset == 10 * 4
 
     def test_getitem(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         assert B[1].dtype == dtype
@@ -303,9 +299,9 @@ class DataBufferTest(unittest.TestCase):
         self.assertRaises(IndexError, B.__getitem__, -999)
 
     def test_setitem(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         B[1] = data[0]
@@ -318,7 +314,11 @@ class DataBufferTest(unittest.TestCase):
         # B[1] = b''  # Gets converted into array of dtype. Lists do not work
         # the below doesn't work on all systems (I guess?)
         # B[1] = 0
-        B[1] = ([0, 0, 0], [0, 0], [0, 0, 0, 0],)
+        B[1] = (
+            [0, 0, 0],
+            [0, 0],
+            [0, 0, 0, 0],
+        )
 
         self.assertRaises(IndexError, B.__setitem__, +999, data[0])
         self.assertRaises(IndexError, B.__setitem__, -999, data[0])
@@ -327,19 +327,19 @@ class DataBufferTest(unittest.TestCase):
     # Setitem + broadcast
     # ------------------------------------------------------
     def test_setitem_broadcast(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
-        self.assertRaises(ValueError, B.__setitem__, 'position', (1, 2, 3))
+        self.assertRaises(ValueError, B.__setitem__, "position", (1, 2, 3))
 
     # Set every 2 item
     # ------------------------------------------------------
     def test_setitem_strided(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
         B = DataBuffer(data1)
@@ -349,9 +349,9 @@ class DataBufferTest(unittest.TestCase):
     # Set half the array
     # ------------------------------------------------------
     def test_setitem_half(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
         B = DataBuffer(data1)
@@ -360,26 +360,26 @@ class DataBufferTest(unittest.TestCase):
         glir_cmds = B._glir.clear()
         assert len(glir_cmds) == 1
         set_data = glir_cmds[0][-1]
-        assert np.allclose(set_data['position'], data2['position'][:5])
-        assert np.allclose(set_data['texcoord'][:5], data2['texcoord'][:5])
-        assert np.allclose(set_data['color'][:5], data2['color'][:5])
+        assert np.allclose(set_data["position"], data2["position"][:5])
+        assert np.allclose(set_data["texcoord"][:5], data2["texcoord"][:5])
+        assert np.allclose(set_data["color"][:5], data2["color"][:5])
 
     # Set field without storage: error
     # --------------------------------
     def test_setitem_field_no_storage(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
-        self.assertRaises(ValueError, B.__setitem__, 'position', (1, 2, 3))
+        self.assertRaises(ValueError, B.__setitem__, "position", (1, 2, 3))
 
     # Set every 2 item without storage:  error
     # ----------------------------------------
     def test_every_two_item_no_storage(self):
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),
-                          ('color', np.float32, 4)])
+        dtype = np.dtype(
+            [("position", np.float32, 3), ("texcoord", np.float32, 2), ("color", np.float32, 4)]
+        )
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         # with self.assertRaises(ValueError):
@@ -415,7 +415,6 @@ class DataBufferTest(unittest.TestCase):
 
 
 class DataBufferViewTest(unittest.TestCase):
-
     def test_init_view(self):
         data = np.zeros(10)
         B = DataBuffer(data=data)
@@ -438,7 +437,6 @@ class DataBufferViewTest(unittest.TestCase):
 
 # -----------------------------------------------------------------------------
 class VertexBufferTest(unittest.TestCase):
-
     # VertexBuffer allowed base types
     # -------------------------------
     def test_init_allowed_dtype(self):
@@ -448,8 +446,7 @@ class VertexBufferTest(unittest.TestCase):
             assert V.dtype[names[0]].base == dtype
             assert V.dtype[names[0]].shape == (3,)
         for dtype in (np.float64, np.int64):
-            self.assertRaises(TypeError, VertexBuffer,
-                              np.zeros((10, 3), dtype=dtype))
+            self.assertRaises(TypeError, VertexBuffer, np.zeros((10, 3), dtype=dtype))
 
         # Tuple/list is also allowed
         V = VertexBuffer([1, 2, 3])
@@ -461,12 +458,12 @@ class VertexBufferTest(unittest.TestCase):
         assert V.itemsize == 2 * 4
 
         # Convert
-        data = np.zeros((10,), 'uint8')
+        data = np.zeros((10,), "uint8")
         B = VertexBuffer(data)
         assert B.dtype[0].base == np.uint8
         assert B.dtype[0].itemsize == 1
         #
-        data = np.zeros((10, 2), 'uint8')
+        data = np.zeros((10, 2), "uint8")
         B = VertexBuffer(data)
         assert B.dtype[0].base == np.uint8
         assert B.dtype[0].itemsize == 2
@@ -477,7 +474,7 @@ class VertexBufferTest(unittest.TestCase):
 
         # This is converted to 1D
         B = VertexBuffer([[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]])
-        assert B.size == 10 
+        assert B.size == 10
 
         # Not allowed
         self.assertRaises(TypeError, VertexBuffer, dtype=np.float64)
@@ -492,33 +489,30 @@ class VertexBufferTest(unittest.TestCase):
             self.assertRaises(TypeError, VertexBuffer, dtype=dtype)
 
     def test_glsl_type(self):
-
         data = np.zeros((10,), np.float32)
         B = VertexBuffer(data)
         C = B[1:]
-        assert B.glsl_type == ('attribute', 'float')
-        assert C.glsl_type == ('attribute', 'float')
+        assert B.glsl_type == ("attribute", "float")
+        assert C.glsl_type == ("attribute", "float")
 
         data = np.zeros((10, 2), np.float32)
         B = VertexBuffer(data)
         C = B[1:]
-        assert B.glsl_type == ('attribute', 'vec2')
-        assert C.glsl_type == ('attribute', 'vec2')
+        assert B.glsl_type == ("attribute", "vec2")
+        assert C.glsl_type == ("attribute", "vec2")
 
         data = np.zeros((10, 4), np.float32)
         B = VertexBuffer(data)
         C = B[1:]
-        assert B.glsl_type == ('attribute', 'vec4')
-        assert C.glsl_type == ('attribute', 'vec4')
+        assert B.glsl_type == ("attribute", "vec4")
+        assert C.glsl_type == ("attribute", "vec4")
 
 
 # -----------------------------------------------------------------------------
 class IndexBufferTest(unittest.TestCase):
-
     # IndexBuffer allowed base types
     # ------------------------------
     def test_init_allowed_dtype(self):
-
         # allowed dtypes
         for dtype in (np.uint8, np.uint16, np.uint32):
             b = IndexBuffer(np.zeros(10, dtype=dtype))
@@ -529,16 +523,19 @@ class IndexBufferTest(unittest.TestCase):
         V.dtype is None
 
         # Not allowed dtypes
-        for dtype in (np.int8, np.int16, np.int32,
-                      np.float16, np.float32, np.float64):
+        for dtype in (np.int8, np.int16, np.int32, np.float16, np.float32, np.float64):
             # with self.assertRaises(TypeError):
             #    V = IndexBuffer(dtype=dtype)
             data = np.zeros(10, dtype=dtype)
             self.assertRaises(TypeError, IndexBuffer, data)
 
         # Prepare some data
-        dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2), ])
+        dtype = np.dtype(
+            [
+                ("position", np.float32, 3),
+                ("texcoord", np.float32, 2),
+            ]
+        )
         sdata = np.zeros(10, dtype=dtype)
 
         # Normal data is

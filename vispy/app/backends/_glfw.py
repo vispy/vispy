@@ -18,7 +18,7 @@ from ...util import keys, logger
 from ...util.ptime import time
 from ... import config
 
-USE_EGL = config['gl_backend'].lower().startswith('es')
+USE_EGL = config["gl_backend"].lower().startswith("es")
 
 
 # -------------------------------------------------------------------- init ---
@@ -34,11 +34,11 @@ except Exception as err:
     available, testable, why_not, which = False, False, why_not, None
 else:
     if USE_EGL:
-        available, testable, why_not = False, False, 'EGL not supported'
-        which = 'glfw ' + str(glfw.__version__)
+        available, testable, why_not = False, False, "EGL not supported"
+        which = "glfw " + str(glfw.__version__)
     else:
         available, testable, why_not = True, True, None
-        which = 'glfw ' + str(glfw.__version__)
+        which = "glfw " + str(glfw.__version__)
 
 if glfw:
     # Map native keys to vispy keys
@@ -51,22 +51,18 @@ if glfw:
         glfw.KEY_RIGHT_ALT: keys.ALT,
         glfw.KEY_LEFT_SUPER: keys.META,
         glfw.KEY_RIGHT_SUPER: keys.META,
-
         glfw.KEY_LEFT: keys.LEFT,
         glfw.KEY_UP: keys.UP,
         glfw.KEY_RIGHT: keys.RIGHT,
         glfw.KEY_DOWN: keys.DOWN,
         glfw.KEY_PAGE_UP: keys.PAGEUP,
         glfw.KEY_PAGE_DOWN: keys.PAGEDOWN,
-
         glfw.KEY_INSERT: keys.INSERT,
         glfw.KEY_DELETE: keys.DELETE,
         glfw.KEY_HOME: keys.HOME,
         glfw.KEY_END: keys.END,
-
         glfw.KEY_ESCAPE: keys.ESCAPE,
         glfw.KEY_BACKSPACE: keys.BACKSPACE,
-
         glfw.KEY_F1: keys.F1,
         glfw.KEY_F2: keys.F2,
         glfw.KEY_F3: keys.F3,
@@ -79,17 +75,13 @@ if glfw:
         glfw.KEY_F10: keys.F10,
         glfw.KEY_F11: keys.F11,
         glfw.KEY_F12: keys.F12,
-
         glfw.KEY_SPACE: keys.SPACE,
         glfw.KEY_ENTER: keys.ENTER,
-        '\r': keys.ENTER,
+        "\r": keys.ENTER,
         glfw.KEY_TAB: keys.TAB,
     }
 
-    BUTTONMAP = {glfw.MOUSE_BUTTON_LEFT: 1,
-                 glfw.MOUSE_BUTTON_RIGHT: 2,
-                 glfw.MOUSE_BUTTON_MIDDLE: 3
-                 }
+    BUTTONMAP = {glfw.MOUSE_BUTTON_LEFT: 1, glfw.MOUSE_BUTTON_RIGHT: 2, glfw.MOUSE_BUTTON_MIDDLE: 3}
 
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
 _GLFW_INITIALIZED = False
@@ -125,28 +117,31 @@ capability = dict(  # things that can be set by the backend
 
 # ------------------------------------------------------- set_configuration ---
 
+
 def _set_config(c):
     """Set gl configuration for GLFW."""
-    glfw.window_hint(glfw.RED_BITS, c['red_size'])
-    glfw.window_hint(glfw.GREEN_BITS, c['green_size'])
-    glfw.window_hint(glfw.BLUE_BITS, c['blue_size'])
-    glfw.window_hint(glfw.ALPHA_BITS, c['alpha_size'])
+    glfw.window_hint(glfw.RED_BITS, c["red_size"])
+    glfw.window_hint(glfw.GREEN_BITS, c["green_size"])
+    glfw.window_hint(glfw.BLUE_BITS, c["blue_size"])
+    glfw.window_hint(glfw.ALPHA_BITS, c["alpha_size"])
 
     glfw.window_hint(glfw.ACCUM_RED_BITS, 0)
     glfw.window_hint(glfw.ACCUM_GREEN_BITS, 0)
     glfw.window_hint(glfw.ACCUM_BLUE_BITS, 0)
     glfw.window_hint(glfw.ACCUM_ALPHA_BITS, 0)
 
-    glfw.window_hint(glfw.DEPTH_BITS, c['depth_size'])
-    glfw.window_hint(glfw.STENCIL_BITS, c['stencil_size'])
+    glfw.window_hint(glfw.DEPTH_BITS, c["depth_size"])
+    glfw.window_hint(glfw.STENCIL_BITS, c["stencil_size"])
     # glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, c['major_version'])
     # glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, c['minor_version'])
     # glfw.window_hint(glfw.SRGB_CAPABLE, c['srgb'])
-    glfw.window_hint(glfw.SAMPLES, c['samples'])
-    glfw.window_hint(glfw.STEREO, c['stereo'])
-    if not c['double_buffer']:
-        raise RuntimeError('GLFW must double buffer, consider using a '
-                           'different backend, or using double buffering')
+    glfw.window_hint(glfw.SAMPLES, c["samples"])
+    glfw.window_hint(glfw.STEREO, c["stereo"])
+    if not c["double_buffer"]:
+        raise RuntimeError(
+            "GLFW must double buffer, consider using a "
+            "different backend, or using double buffering"
+        )
 
 
 # ------------------------------------------------------------- application ---
@@ -156,11 +151,10 @@ _glfw_errors = []
 
 
 def _error_callback(num, descr):
-    _glfw_errors.append('Error %s: %s' % (num, descr))
+    _glfw_errors.append("Error %s: %s" % (num, descr))
 
 
 class ApplicationBackend(BaseApplicationBackend):
-
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._timers = list()
@@ -170,7 +164,7 @@ class ApplicationBackend(BaseApplicationBackend):
             self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
-        return 'Glfw'
+        return "Glfw"
 
     def _vispy_process_events(self):
         glfw.poll_events()
@@ -184,8 +178,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         wins = _get_glfw_windows()
-        while any(w._id is not None and not glfw.window_should_close(w._id)
-                  for w in wins):
+        while any(w._id is not None and not glfw.window_should_close(w._id) for w in wins):
             self._vispy_process_events()
         self._vispy_quit()  # to clean up
 
@@ -207,7 +200,7 @@ class ApplicationBackend(BaseApplicationBackend):
             glfw.set_error_callback(_error_callback)
             try:
                 if not glfw.init():  # only ever call once
-                    raise OSError('Could not init glfw:\n%r' % _glfw_errors)
+                    raise OSError("Could not init glfw:\n%r" % _glfw_errors)
             finally:
                 os.chdir(cwd)
             glfw.set_error_callback(None)
@@ -217,6 +210,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 # ------------------------------------------------------------------ canvas ---
+
 
 class CanvasBackend(BaseCanvasBackend):
     """Glfw backend for Canvas abstract class."""
@@ -229,7 +223,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Deal with config
         _set_config(p.context.config)
         # Deal with context
-        p.context.shared.add_ref('glfw', self)
+        p.context.shared.add_ref("glfw", self)
         if p.context.shared.ref is self:
             share = None
         else:
@@ -247,24 +241,25 @@ class CanvasBackend(BaseCanvasBackend):
             else:
                 monitor = glfw.get_monitors()
                 if p.fullscreen >= len(monitor):
-                    raise ValueError('fullscreen must be <= %s'
-                                     % len(monitor))
+                    raise ValueError("fullscreen must be <= %s" % len(monitor))
                 monitor = monitor[p.fullscreen]
             use_size = glfw.get_video_mode(monitor)[0][:2]
             if use_size != tuple(p.size):
-                logger.debug('Requested size %s, will be ignored to '
-                             'use fullscreen mode %s' % (p.size, use_size))
+                logger.debug(
+                    "Requested size %s, will be ignored to "
+                    "use fullscreen mode %s" % (p.size, use_size)
+                )
             size = use_size
         else:
             self._fullscreen = False
             monitor = None
             size = p.size
 
-        self._id = glfw.create_window(width=size[0], height=size[1],
-                                      title=p.title, monitor=monitor,
-                                      share=share)
+        self._id = glfw.create_window(
+            width=size[0], height=size[1], title=p.title, monitor=monitor, share=share
+        )
         if not self._id:
-            raise RuntimeError('Could not create window')
+            raise RuntimeError("Could not create window")
 
         glfw.make_context_current(self._id)
         glfw.swap_interval(1 if p.vsync else 0)  # needs a valid context
@@ -346,7 +341,7 @@ class CanvasBackend(BaseCanvasBackend):
             glfw.hide_window(self._id)
 
     def _vispy_set_fullscreen(self, fullscreen):
-        logger.warn('Cannot change fullscreen mode for GLFW backend')
+        logger.warn("Cannot change fullscreen mode for GLFW backend")
 
     def _vispy_update(self):
         # Invoke a redraw, passing it on to the canvas
@@ -391,8 +386,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_resize(self, _id, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(
-            size=(w, h), physical_size=self._vispy_get_physical_size())
+        self._vispy_canvas.events.resize(size=(w, h), physical_size=self._vispy_get_physical_size())
 
     def _on_close(self, _id):
         if self._vispy_canvas is None:
@@ -425,8 +419,7 @@ class CanvasBackend(BaseCanvasBackend):
             return
         pos = glfw.get_cursor_pos(self._id)
         delta = (float(x_off), float(y_off))
-        self._vispy_canvas.events.mouse_wheel(pos=pos, delta=delta,
-                                              modifiers=self._mod)
+        self._vispy_canvas.events.mouse_wheel(pos=pos, delta=delta, modifiers=self._mod)
 
     def _on_mouse_motion(self, _id, x, y):
         if self._vispy_canvas is None:
@@ -450,7 +443,7 @@ class CanvasBackend(BaseCanvasBackend):
         # NOTE: GLFW only provides localized characters via _on_key_char, so if
         # this event contains a character we store all other data and dispatch
         # it once the final unicode character is sent shortly after.
-        if text != '' and action == glfw.PRESS:
+        if text != "" and action == glfw.PRESS:
             self._next_key_events.append((fun, key, self._mod))
         else:
             if key in self._next_key_text:
@@ -472,9 +465,9 @@ class CanvasBackend(BaseCanvasBackend):
         if 32 <= key <= 127:
             return keys.Key(chr(key)), chr(key)
         elif key in KEYMAP:
-            return KEYMAP[key], ''
+            return KEYMAP[key], ""
         else:
-            return None, ''
+            return None, ""
 
     def _process_mod(self, key, down):
         """Process (possible) keyboard modifiers
@@ -493,8 +486,8 @@ class CanvasBackend(BaseCanvasBackend):
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend):
 
+class TimerBackend(BaseTimerBackend):
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
         vispy_timer._app._backend._add_timer(self)
@@ -505,7 +498,7 @@ class TimerBackend(BaseTimerBackend):
         self._next_time = time() + self._interval
 
     def _vispy_stop(self):
-        self._next_time = float('inf')
+        self._next_time = float("inf")
 
     def _tick(self):
         if time() >= self._next_time:
