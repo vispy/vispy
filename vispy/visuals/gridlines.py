@@ -10,6 +10,9 @@ from .shaders import Function
 
 
 _GRID_COLOR = """
+uniform vec4 u_gridlines_bounds;
+uniform float u_boarder_width;
+
 vec4 grid_color(vec2 pos) {
     vec4 px_pos = $map_to_doc(vec4(pos, 0, 1));
     px_pos /= px_pos.w;
@@ -22,6 +25,8 @@ vec4 grid_color(vec2 pos) {
     local_pos /= local_pos.w;
     dx = dx / dx.w - local_pos;
     dy = dy / dy.w - local_pos;
+    if (px_pos.z > 1 || px_pos.z < -1)
+        discard;
 
     // Pixel length along each axis, rounded to the nearest power of 10
     vec2 px = s * vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
@@ -57,6 +62,20 @@ vec4 grid_color(vec2 pos) {
     if (alpha == 0.) {
         discard;
     }
+
+    // outside the defined region
+    if (any(lessThan(local_pos.xy, u_gridlines_bounds.xz)) ||
+        any(greaterThan(local_pos.xy, u_gridlines_bounds.yw))) {
+
+        // inside the defined bouarder width
+        if (all(greaterThan(local_pos.xy, u_gridlines_bounds.xz - u_boarder_width)) &&
+            all(lessThan(local_pos.xy, u_gridlines_bounds.yw + u_boarder_width))) {
+            alpha = 1;
+        } else {
+            discard;
+        }
+    }
+
     return vec4($color.rgb, $color.a * alpha);
 }
 """
@@ -75,7 +94,8 @@ class GridLinesVisual(ImageVisual):
         channel modified.
     """
 
-    def __init__(self, scale=(1, 1), color='w'):
+    def __init__(self, scale=(1, 1), color='w', bounds=(-1e3, 1e3, -1e3, 1e3),
+                 boarder_width=2):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
         self._grid_color_fn = Function(_GRID_COLOR)
@@ -86,6 +106,30 @@ class GridLinesVisual(ImageVisual):
         self.shared_program.frag['get_data'] = self._grid_color_fn
         cfun = Function('vec4 null(vec4 x) { return x; }')
         self.shared_program.frag['color_transform'] = cfun
+        self.unfreeze()
+        self.bounds = bounds
+        self.boarder_width = boarder_width
+        self.freeze()
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    @bounds.setter
+    def bounds(self, value):
+        self.shared_program['u_gridlines_bounds'] = value
+        self._bounds = value
+        self.update()
+
+    @property
+    def boarder_width(self):
+        return self._boarder_width
+
+    @boarder_width.setter
+    def boarder_width(self, value):
+        self.shared_program['u_boarder_width'] = value
+        self._boarder_width = value
+        self.update()
 
     @property
     def size(self):
@@ -103,3 +147,4 @@ class GridLinesVisual(ImageVisual):
 
         if view._need_method_update:
             self._update_method(view)
+
