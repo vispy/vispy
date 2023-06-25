@@ -4,6 +4,8 @@
 
 from __future__ import division
 
+import numpy as np
+
 from .image import ImageVisual
 from ..color import Color
 from .shaders import Function
@@ -11,7 +13,7 @@ from .shaders import Function
 
 _GRID_COLOR = """
 uniform vec4 u_gridlines_bounds;
-uniform float u_boarder_width;
+uniform float u_border_width;
 
 vec4 grid_color(vec2 pos) {
     vec4 px_pos = $map_to_doc(vec4(pos, 0, 1));
@@ -67,9 +69,9 @@ vec4 grid_color(vec2 pos) {
     if (any(lessThan(local_pos.xy, u_gridlines_bounds.xz)) ||
         any(greaterThan(local_pos.xy, u_gridlines_bounds.yw))) {
 
-        // inside the defined bouarder width
-        if (all(greaterThan(local_pos.xy, u_gridlines_bounds.xz - u_boarder_width)) &&
-            all(lessThan(local_pos.xy, u_gridlines_bounds.yw + u_boarder_width))) {
+        // inside the defined border width
+        if (all(greaterThan(local_pos.xy, u_gridlines_bounds.xz - u_border_width)) &&
+            all(lessThan(local_pos.xy, u_gridlines_bounds.yw + u_border_width))) {
             alpha = 1;
         } else {
             discard;
@@ -94,8 +96,9 @@ class GridLinesVisual(ImageVisual):
         channel modified.
     """
 
-    def __init__(self, scale=(1, 1), color='w', bounds=(-1e3, 1e3, -1e3, 1e3),
-                 boarder_width=2):
+    def __init__(self, scale=(1, 1), color='w',
+                 bounds=(-np.inf, np.inf, -np.inf, np.inf),
+                 border_width=2):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
         self._grid_color_fn = Function(_GRID_COLOR)
@@ -108,7 +111,7 @@ class GridLinesVisual(ImageVisual):
         self.shared_program.frag['color_transform'] = cfun
         self.unfreeze()
         self.bounds = bounds
-        self.boarder_width = boarder_width
+        self.border_width = border_width
         self.freeze()
 
     @property
@@ -122,13 +125,13 @@ class GridLinesVisual(ImageVisual):
         self.update()
 
     @property
-    def boarder_width(self):
-        return self._boarder_width
+    def border_width(self):
+        return self._border_width
 
-    @boarder_width.setter
-    def boarder_width(self, value):
-        self.shared_program['u_boarder_width'] = value
-        self._boarder_width = value
+    @border_width.setter
+    def border_width(self, value):
+        self.shared_program['u_border_width'] = value
+        self._border_width = value
         self.update()
 
     @property
