@@ -135,7 +135,9 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
     :py:meth:`_update_id_colors`.
     """
 
-    def __init__(self):
+    def __init__(self, fpos=9):
+        # fpos is set to 9 by default to put it near the end, but before the
+        # default PickingFilter
         vfunc = Function("""\
             varying vec4 v_marker_picking_color;
             void prepare_marker_picking() {
@@ -155,7 +157,8 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
         self._id_colors = VertexBuffer(np.zeros((0, 4), dtype=np.float32))
         vfunc['ids'] = self._id_colors
         self._n_primitives = 0
-        super().__init__(vcode=vfunc, fcode=ffunc)
+        # set fpos to a very big number to make sure this is applied last
+        super().__init__(vcode=vfunc, fcode=ffunc, fpos=1e9)
         self.enabled = False
 
     @abstractmethod
