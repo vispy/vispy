@@ -29,9 +29,6 @@ class MarkerPickingFilter(PrimitivePickingFilter):
         self._n_primitives = n_markers
 
         # pack the marker ids into a color buffer
-        ids = np.arange(
-            1, n_markers + 1,
-            dtype=np.uint32
-        ).view(np.uint8).reshape(n_markers, 4)
-        ids = np.divide(ids, 255, dtype=np.float32)
-        self._id_colors.set_data(ids)
+        ids = np.arange(1, n_markers + 1, dtype=np.uint32)
+        id_colors = self._pack_ids_into_rgba(ids)
+        self._id_colors.set_data(id_colors)

@@ -150,6 +150,9 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
                 if ($enabled != 1) {
                     return;
                 }
+                if( gl_FragColor.a == 0.0 ) {
+                    discard;
+                }
                 gl_FragColor = v_marker_picking_color;
             }
         """)
@@ -157,8 +160,7 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
         self._id_colors = VertexBuffer(np.zeros((0, 4), dtype=np.float32))
         vfunc['ids'] = self._id_colors
         self._n_primitives = 0
-        # set fpos to a very big number to make sure this is applied last
-        super().__init__(vcode=vfunc, fcode=ffunc, fpos=1e9)
+        super().__init__(vcode=vfunc, fcode=ffunc, fpos=fpos)
         self.enabled = False
 
     @abstractmethod
@@ -199,6 +201,18 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
         number of primitives changes.
         """
         raise NotImplementedError(self)
+
+    @staticmethod
+    def _pack_ids_into_rgba(ids):
+        """Pack an array of uint32 primitive ids into float32 RGBA colors."""
+        if ids.dtype != np.uint32:
+            raise ValueError(f"ids must be uint32, got {ids.dtype}")
+
+        return np.divide(
+            ids.view(np.uint8).reshape(-1, 4),
+            255,
+            dtype=np.float32
+        )
 
     def _on_data_updated(self, event=None):
         if not self.attached:

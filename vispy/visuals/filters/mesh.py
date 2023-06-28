@@ -793,11 +793,7 @@ class FacePickingFilter(PrimitivePickingFilter):
             return
         self._n_primitives = n_faces
 
-        # pack the face ids into a color buffer
-        # TODO: consider doing the bit-packing in the shader
-        ids = np.arange(
-            1, n_faces + 1,
-            dtype=np.uint32
-        ).view(np.uint8).reshape(n_faces, 4)
-        ids = np.divide(ids, 255, dtype=np.float32)
-        self._id_colors.set_data(np.repeat(ids, 3, axis=0))
+        ids = np.arange(1, n_faces + 1, dtype=np.uint32)
+        ids = np.repeat(ids, 3, axis=0)  # repeat id for each vertex
+        id_colors = self._pack_ids_into_rgba(ids)
+        self._id_colors.set_data(id_colors)
