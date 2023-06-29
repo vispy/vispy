@@ -132,10 +132,10 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
     primitive-picking mode.
 
     Subclasses must (and usually only need to) implement
-    :py:meth:`_update_id_colors`.
+    :py:meth:`_get_picking_ids`.
     """
 
-    def __init__(self, fpos=9):
+    def __init__(self, fpos=9, *, discard_transparent=False):
         # fpos is set to 9 by default to put it near the end, but before the
         # default PickingFilter
         vfunc = Function("""\
@@ -147,10 +147,10 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
         ffunc = Function("""\
             varying vec4 v_marker_picking_color;
             void marker_picking_filter() {
-                if ($enabled != 1) {
+                if ( $enabled != 1 ) {
                     return;
                 }
-                if( gl_FragColor.a == 0.0 ) {
+                if ( $discard_transparent == 1 && gl_FragColor.a == 0.0 ) {
                     discard;
                 }
                 gl_FragColor = v_marker_picking_color;
@@ -162,45 +162,39 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
         self._n_primitives = 0
         super().__init__(vcode=vfunc, fcode=ffunc, fpos=fpos)
         self.enabled = False
+        self.discard_transparent = discard_transparent
 
     @abstractmethod
+    def _get_picking_ids(self):
+        """Return a 1D array of picking IDs for the vertices in the visual.
+
+        Generally, this method should be implemented to:
+            1. Calculate the number of primitives in the visual (may be
+            persisted in `self._n_primitives`).
+            2. Calculate a range of picking ids for each primitive in the
+            visual. IDs should start from 1, reserving 0 for the background. If
+            primitives comprise multiple vertices (triangles), ids may need to
+            be repeated.
+
+        The return value should be an array of uint32 with shape
+        (num_vertices,).
+
+        If no change to the picking IDs is needed (for example, the number of
+        primitives has not changed), this method should return `None`.
+        """
+        raise NotImplementedError(self)
+
     def _update_id_colors(self):
         """Calculate the colors encoding the picking IDs for the visual.
 
-        Generally, this method should be implemented to:
-            1. Calculate the number of primitives in the visual, stored in
-            `self._n_primitives`.
-            2. Pack the picking IDs into a 4-component float array (RGBA
-            VertexBuffer), stored in `self._id_colors`.
-
-        As an example of packing IDs into a VertexBuffer, consider the following
-        implementation for the Mesh visual:
-        ```
-            # calculate the number of primitives
-            n_faces = len(self._visual.mesh_data.get_faces())
-            self._n_primitives = n_faces
-
-            # assign 32 bit IDs to each primitive
-            # starting from 1 reserves (0, 0, 0, 0) for the background
-            ids = np.arange(1, n_faces + 1,dtype=np.uint32)
-
-            # reinterpret as 8-bit RGBA and normalize colors into floats
-            id_colors = np.divide(
-                ids.view(np.uint8).reshape(n_faces, 4),
-                255,
-                dtype=np.float32
-            )
-
-            # store the colors in a VertexBuffer, repeating each color 3 times
-            # for each vertex in each triangle
-            self._id_colors.set_data(np.repeat(idid_colors, 3, axis=0))
-        ```
-
-        For performance, you may want to optimize this method to only update
-        the IDs when the data meaningfully changes - for example when the
-        number of primitives changes.
+        For performance, this method will not update the id colors VertexBuffer
+        if :py:meth:`_get_picking_ids` returns `None`.
         """
-        raise NotImplementedError(self)
+        # this should remain untouched
+        ids = self._get_picking_ids()
+        if ids is not None:
+            id_colors = self._pack_ids_into_rgba(ids)
+            self._id_colors.set_data(id_colors)
 
     @staticmethod
     def _pack_ids_into_rgba(ids):
@@ -228,6 +222,15 @@ class PrimitivePickingFilter(Filter, metaclass=ABCMeta):
         self._enabled = bool(e)
         self.fshader['enabled'] = int(self._enabled)
         self._on_data_updated()
+
+    @property
+    def discard_transparent(self):
+        return self._discard_transparent
+
+    @discard_transparent.setter
+    def discard_transparent(self, d):
+        self._discard_transparent = bool(d)
+        self.fshader['discard_transparent'] = int(self._discard_transparent)
 
     def _attach(self, visual):
         super()._attach(visual)

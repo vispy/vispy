@@ -17,7 +17,7 @@ class MarkerPickingFilter(PrimitivePickingFilter):
     example script.
     """
 
-    def _update_id_colors(self):
+    def _get_picking_ids(self):
         if self._visual._data is None:
             n_markers = 0
         else:
@@ -28,7 +28,4 @@ class MarkerPickingFilter(PrimitivePickingFilter):
             return
         self._n_primitives = n_markers
 
-        # pack the marker ids into a color buffer
-        ids = np.arange(1, n_markers + 1, dtype=np.uint32)
-        id_colors = self._pack_ids_into_rgba(ids)
-        self._id_colors.set_data(id_colors)
+        return np.arange(1, n_markers + 1, dtype=np.uint32)

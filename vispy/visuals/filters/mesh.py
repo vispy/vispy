@@ -782,7 +782,7 @@ class FacePickingFilter(PrimitivePickingFilter):
     example script.
     """
 
-    def _update_id_colors(self):
+    def _get_picking_ids(self):
         if self._visual.mesh_data.is_empty():
             n_faces = 0
         else:
@@ -790,10 +790,9 @@ class FacePickingFilter(PrimitivePickingFilter):
 
         # we only care about the number of faces changing
         if self._n_primitives == n_faces:
-            return
+            return None
         self._n_primitives = n_faces
 
         ids = np.arange(1, n_faces + 1, dtype=np.uint32)
         ids = np.repeat(ids, 3, axis=0)  # repeat id for each vertex
-        id_colors = self._pack_ids_into_rgba(ids)
-        self._id_colors.set_data(id_colors)
+        return ids
