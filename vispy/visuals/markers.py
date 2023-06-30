@@ -16,7 +16,7 @@ from .visual import Visual
 _VERTEX_SHADER = """
 uniform float u_antialias;
 uniform float u_px_scale;
-uniform int u_scaling;
+uniform bool u_scaling;
 uniform bool u_spherical;
 
 attribute vec3 a_position;
@@ -48,26 +48,15 @@ void main (void) {
     gl_Position = $framebuffer_to_render(fb_pos);
 
     // NOTE: gl_stuff uses framebuffer coords!
-    if (u_scaling == 1) {
+    if (u_scaling) {
         // scaling == "scene": scale marker using entire visual -> framebuffer set of transforms
-        x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
-        x = (x - pos);
-        size_vec = $visual_to_framebuffer(pos + normalize(x) * a_size);
-        $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
-        v_edgewidth = ($v_size / a_size) * a_edgewidth;
-    }
-    else if (u_scaling == 2) {
         // scaling == "visual": scale marker using only the Visual's transform
-        // move horizontally in framebuffer space
-        // then go to scene coordinates (not visual, so scaling is accounted for)
-        x = $framebuffer_to_scene(fb_pos + vec4(big_float, 0, 0, 0));
-        // subtract position, so we get the scene-coordinate vector describing
-        // an "horizontal direction parallel to the screen"
-        vec4 scene_pos = $framebuffer_to_scene(fb_pos);
-        x = (x - scene_pos);
-        // multiply that direction by the size (in scene space) and add it to the position
+        pos = $framebuffer_to_scene_or_visual(fb_pos);
+        x = $framebuffer_to_scene_or_visual(fb_pos + vec4(big_float, 0, 0, 0));
+        x = (x - pos);
+        // multiply that direction by the size and add it to the position
         // this gives us the position of the edge of the point, which we convert in screen space
-        size_vec = $scene_to_framebuffer(scene_pos + normalize(x) * a_size);
+        size_vec = $scene_or_visual_to_framebuffer(pos + normalize(x) * a_size);
         // divide by `w` for perspective, and subtract pos
         // this gives us the actual screen-space size of the point
         $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
@@ -83,12 +72,13 @@ void main (void) {
     gl_PointSize = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
 
     if (u_spherical == true) {
+        // similar as above for scaling, but in towards the screen direction
         // Get the framebuffer z direction relative to this sphere in visual coords
-        vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, big_float, 0));
+        vec4 z = $framebuffer_to_scene_or_visual(fb_pos + vec4(0, 0, big_float, 0));
         z = (z - pos);
         // Get the depth of the sphere in its middle point on the screen
         // size/2 because we need the radius, not the diameter
-        vec4 depth_z_vec = $visual_to_framebuffer(pos + normalize(z) * a_size / 2);
+        vec4 depth_z_vec = $scene_or_visual_to_framebuffer(pos + normalize(z) * a_size / 2);
         v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
         // size ratio between aliased and non-aliased, needed for correct depth
         v_alias_ratio = gl_PointSize / $v_size;
@@ -560,6 +550,8 @@ class MarkersVisual(Visual):
                  light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
+        self._scaling = "fixed"
+        self._scaling_mode = "fixed"
 
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._symbol_func = Function(self._symbol_shader)
@@ -576,8 +568,6 @@ class MarkersVisual(Visual):
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
-        self._scaling = "fixed"
-        self._scaling_int = 0
         self.scaling = scaling
         self.antialias = antialias
         self.light_color = light_color
@@ -702,19 +692,18 @@ class MarkersVisual(Visual):
     @scaling.setter
     def scaling(self, value):
         scaling_modes = {
-            False: 0,
-            True: 1,
-            "fixed": 0,
-            "scene": 1,
-            "visual": 2,
+            False: "fixed",
+            True: "scene",
+            "fixed": "fixed",
+            "scene": "scene",
+            "visual": "visual",
         }
         if value not in scaling_modes:
             possible_options = ", ".join(repr(opt) for opt in scaling_modes)
             raise ValueError(f"Unknown scaling option {value!r}, expected one of: {possible_options}")
-        scaling_int = scaling_modes[value]
-        self.shared_program['u_scaling'] = scaling_int
         self._scaling = value
-        self._scaling_int = scaling_int
+        self._scaling_mode = scaling_modes[value]
+        self.shared_program['u_scaling'] = self._scaling_mode != "fixed"
         self.update()
 
     @property
@@ -799,16 +788,15 @@ class MarkersVisual(Visual):
 
     def _prepare_transforms(self, view):
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
-        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
-        view.view_program.vert['framebuffer_to_scene'] = view.get_transform('framebuffer', 'scene')
-        view.view_program.vert['scene_to_framebuffer'] = view.get_transform('scene', 'framebuffer')
+        scaling = view._scaling_mode if view._scaling_mode != "fixed" else "scene"
+        view.view_program.vert['framebuffer_to_scene_or_visual'] = view.get_transform('framebuffer', scaling)
+        view.view_program.vert['scene_or_visual_to_framebuffer'] = view.get_transform(scaling, 'framebuffer')
 
     def _prepare_draw(self, view):
         if self._data is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        view.view_program['u_scaling'] = self._scaling_int
 
     def _compute_bounds(self, axis, view):
         pos = self._data['a_position']
