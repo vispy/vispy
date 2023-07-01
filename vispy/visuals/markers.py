@@ -551,7 +551,6 @@ class MarkersVisual(Visual):
         self._vbo = VertexBuffer()
         self._data = None
         self._scaling = "fixed"
-        self._scaling_mode = "fixed"
 
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._symbol_func = Function(self._symbol_shader)
@@ -701,9 +700,8 @@ class MarkersVisual(Visual):
         if value not in scaling_modes:
             possible_options = ", ".join(repr(opt) for opt in scaling_modes)
             raise ValueError(f"Unknown scaling option {value!r}, expected one of: {possible_options}")
-        self._scaling = value
-        self._scaling_mode = scaling_modes[value]
-        self.shared_program['u_scaling'] = self._scaling_mode != "fixed"
+        self._scaling = scaling_modes[value]
+        self.shared_program['u_scaling'] = self._scaling != "fixed"
         self.update()
 
     @property
@@ -789,7 +787,7 @@ class MarkersVisual(Visual):
     def _prepare_transforms(self, view):
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
-        scaling = view._scaling_mode if view._scaling_mode != "fixed" else "scene"
+        scaling = view._scaling if view._scaling != "fixed" else "scene"
         view.view_program.vert['framebuffer_to_scene_or_visual'] = view.get_transform('framebuffer', scaling)
         view.view_program.vert['scene_or_visual_to_framebuffer'] = view.get_transform(scaling, 'framebuffer')
 
