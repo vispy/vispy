@@ -776,10 +776,7 @@ class FacePickingFilter(PrimitivePickingFilter):
 
     Examples
     --------
-    See
-    `examples/scene/face_picking.py
-    <https://github.com/vispy/vispy/blob/main/examples/scene/face_picking.py>`_
-    example script.
+    :ref:`sphx_glr_gallery_scene_face_picking.py`
     """
 
     def _get_picking_ids(self):

@@ -11,10 +11,7 @@ class MarkerPickingFilter(PrimitivePickingFilter):
 
     Examples
     --------
-    See
-    `examples/scene/marker_picking.py
-    <https://github.com/vispy/vispy/blob/main/examples/scene/marker_picking.py>`_
-    example script.
+    :ref:`sphx_glr_gallery_scene_marker_picking.py`
     """
 
     def _get_picking_ids(self):
