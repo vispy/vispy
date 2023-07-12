@@ -11,6 +11,7 @@ from ..color import ColorArray
 from ..gloo import VertexBuffer
 from .shaders import Function, Variable
 from .visual import Visual
+from ..util.event import Event
 
 
 _VERTEX_SHADER = """
@@ -564,6 +565,8 @@ class MarkersVisual(Visual):
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
 
+        self.events.add(data_updated=Event)
+
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
@@ -651,6 +654,7 @@ class MarkersVisual(Visual):
             self._vbo.set_data(data)
             self.shared_program.bind(self._vbo)
 
+        self.events.data_updated()
         self.update()
 
     @property
