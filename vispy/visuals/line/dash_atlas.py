@@ -37,12 +37,15 @@ class DashAtlas(object):
         return self._atlas[key]
 
     def __setitem__(self, key, value):
-        length = self._data.shape[1]
-        data, period = _make_pattern(length, value[0], value[1])
+        data, period = self.make_pattern(value[0], value[1])
         self._data[self._index] = data
         self._atlas[key] = [self._index / float(self._data.shape[0]), period]
         self._index += 1
         self._dirty = True
+
+    def make_pattern(self, pattern, caps=[1, 1]):
+        length = self._data.shape[1]
+        return _make_pattern(length, pattern, caps)
 
 
 @lru_cache
