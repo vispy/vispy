@@ -48,7 +48,7 @@ class DashAtlas(object):
         return _make_pattern(length, pattern, caps)
 
 
-@lru_cache
+@lru_cache(maxsize=32)
 def _make_pattern(length, pattern, caps):
     """Make a concrete dash pattern of a given length."""
     # A pattern is defined as on/off sequence of segments
