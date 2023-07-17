@@ -43,7 +43,7 @@ class DashAtlas(object):
         self._index += 1
         self._dirty = True
 
-    def make_pattern(self, pattern, caps=[1, 1]):
+    def make_pattern(self, pattern, caps=(1, 1)):
         length = self._data.shape[1]
         return _make_pattern(length, pattern, caps)
 
