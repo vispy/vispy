@@ -201,7 +201,6 @@ html_title = 'VisPy'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "_static/vispy-teaser-short.png"
 
 html_static_path = ["_static"]
 html_theme_options = {
