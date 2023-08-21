@@ -1092,17 +1092,13 @@ _colormaps = dict(
 )
 
 
-def get_colormap(name, *args, **kwargs):
-    """Obtain a colormap.
+def get_colormap(name):
+    """Obtain a colormap by name.
 
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
-    *args:
-        Deprecated.
-    **kwargs
-        Deprecated.
 
     Examples
     --------
@@ -1118,11 +1114,17 @@ def get_colormap(name, *args, **kwargs):
         ``RdYeBuCy`` (``RedYellowBlueCyan``) colormap you must import and
         instantiate it directly from the ``vispy.color.colormap`` module.
 
+    .. versionchanged: 0.13.1
+
+        Remove deprecation for ``cubehelix`` (``CubeHelixColormap``),
+        ``single_hue`` (``SingleHue``), ``hsl`` (``HSL``), ``husl`` (``HSLuv``),
+        ``diverging`` (``Diverging``), and ``RdYeBuCy`` (``RedYellowBlueCyan``)
+        colormaps, which are supported.
+
+        No longer accept args/kwargs at all.  Now passing additional arguments
+        will raise an exception.
+
     """
-    if args or kwargs:
-        warnings.warn("Creating a Colormap instance with 'get_colormap' is "
-                      "no longer supported. No additional arguments or "
-                      "keyword arguments should be passed.", DeprecationWarning)
     if isinstance(name, BaseColormap):
         return name
 
@@ -1130,14 +1132,6 @@ def get_colormap(name, *args, **kwargs):
         raise TypeError('colormap must be a Colormap or string name')
     if name in _colormaps:  # vispy cmap
         cmap = _colormaps[name]
-        if name in ("cubehelix", "single_hue", "hsl", "husl", "diverging", "RdYeBuCy"):
-            warnings.warn(
-                f"Colormap '{name}' has been deprecated since vispy 0.7. "
-                f"Please import and create 'vispy.color.colormap.{cmap.__class__.__name__}' "
-                "directly instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
 
     elif has_matplotlib():  # matplotlib cmap
         try:
