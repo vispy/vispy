@@ -7,7 +7,7 @@ requires = [
     # "setuptools>=42",
     # "setuptools_scm[toml]>=3.4",
     "setuptools_scm_git_archive",
-    "Cython>=0.29.2",
+    "Cython>=3.0.0",
     "oldest-supported-numpy"
 ]
 
