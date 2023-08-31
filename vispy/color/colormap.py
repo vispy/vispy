@@ -1107,22 +1107,8 @@ def get_colormap(name):
 
     .. versionchanged: 0.7
 
-        Additional args/kwargs are no longer accepted. Colormap classes are
-        no longer created on the fly. To create a ``cubehelix``
-        (``CubeHelixColormap``), ``single_hue`` (``SingleHue``), ``hsl``
-        (``HSL``), ``husl`` (``HSLuv``), ``diverging`` (``Diverging``), or
-        ``RdYeBuCy`` (``RedYellowBlueCyan``) colormap you must import and
-        instantiate it directly from the ``vispy.color.colormap`` module.
-
-    .. versionchanged: 0.13.1
-
-        Remove deprecation for ``cubehelix`` (``CubeHelixColormap``),
-        ``single_hue`` (``SingleHue``), ``hsl`` (``HSL``), ``husl`` (``HSLuv``),
-        ``diverging`` (``Diverging``), and ``RdYeBuCy`` (``RedYellowBlueCyan``)
-        colormaps, which are supported.
-
-        No longer accept args/kwargs at all.  Now passing additional arguments
-        will raise an exception.
+        Additional args/kwargs are no longer accepted. Colormap instances are
+        no longer created on the fly.
 
     """
     if isinstance(name, BaseColormap):
