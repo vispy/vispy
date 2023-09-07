@@ -36,6 +36,7 @@ jobs:
         CIBW_BUILD_VERBOSITY: "2"
         # Get numpy release candidate to have Python 3.12 compatibility (hopefully)
         CIBW_BEFORE_BUILD: "pip install -U Cython pip setuptools; pip install -U --pre numpy"
+        CIBW_BEFORE_TEST: "pip install -U Cython pip setuptools; pip intsall -U --pre numpy"
         #CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
         CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev; pip install freetype-py"
         # If freetype-py is installed from source (no wheel found), include bundled freetype library
