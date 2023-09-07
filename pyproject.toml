@@ -5,7 +5,7 @@ requires = [
     'numpy>=1.26.0rc1; python_full_version>="3.12.0rc1"'
     "setuptools>=42",
     "setuptools_scm[toml]>=7.1",
-    "Cython>=3.0.0",
+    "Cython>=3.0.0"
 ]
 
 [tools.setuptools_scm]
