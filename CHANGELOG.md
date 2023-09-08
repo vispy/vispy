@@ -1,5 +1,30 @@
 # Release Notes
 
+## [v0.14.0](https://github.com/vispy/vispy/tree/v0.14.0) (2023-09-08)
+
+**Enhancements:**
+
+- Remove deprecated code from vispy.color.get\_colormap [\#2519](https://github.com/vispy/vispy/pull/2519) ([codypiersall](https://github.com/codypiersall))
+- Cache make\_pattern on DashAtlas [\#2508](https://github.com/vispy/vispy/pull/2508) ([aganders3](https://github.com/aganders3))
+- Add push/pop gl\_state for visuals \(used in picking\) [\#2502](https://github.com/vispy/vispy/pull/2502) ([aganders3](https://github.com/aganders3))
+- Add primitive picking filters for Mesh and Markers visuals [\#2500](https://github.com/vispy/vispy/pull/2500) ([aganders3](https://github.com/aganders3))
+
+**Fixed bugs:**
+
+- Fix spherical markers depth buffer with scaling='visual' [\#2506](https://github.com/vispy/vispy/pull/2506) ([brisvag](https://github.com/brisvag))
+- Update \_glfw.py [\#2496](https://github.com/vispy/vispy/pull/2496) ([smyeungx](https://github.com/smyeungx))
+- Fix mesh shading with flipped normals [\#2493](https://github.com/vispy/vispy/pull/2493) ([brisvag](https://github.com/brisvag))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.14.1 to 2.15.0 and add Python 3.12 wheels [\#2515](https://github.com/vispy/vispy/pull/2515) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.14.0 to 2.14.1 [\#2509](https://github.com/vispy/vispy/pull/2509) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.13.1 to 2.14.0 [\#2507](https://github.com/vispy/vispy/pull/2507) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.13.0 to 2.13.1 [\#2498](https://github.com/vispy/vispy/pull/2498) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.12.3 to 2.13.0 [\#2492](https://github.com/vispy/vispy/pull/2492) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump mamba-org/provision-with-micromamba from 15 to 16 [\#2490](https://github.com/vispy/vispy/pull/2490) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Add lasso selection example [\#2485](https://github.com/vispy/vispy/pull/2485) ([DanAurea](https://github.com/DanAurea))
+
 ## [v0.13.0](https://github.com/vispy/vispy/tree/v0.13.0) (2023-05-12)
 
 **Enhancements:**
