@@ -62,6 +62,7 @@ class BaseCamera(Node):
         # Linked cameras
         self._linked_cameras = {}
         self._linked_cameras_no_update = None
+        self._setting_state = False
 
         # Variables related to transforms
         self.transform = NullTransform()
@@ -211,11 +212,14 @@ class BaseCamera(Node):
     @center.setter
     def center(self, val):
         if len(val) == 2:
-            self._center = float(val[0]), float(val[1]), 0.0
+            center = float(val[0]), float(val[1]), 0.0
         elif len(val) == 3:
-            self._center = float(val[0]), float(val[1]), float(val[2])
+            center = float(val[0]), float(val[1]), float(val[2])
         else:
             raise ValueError('Center must be a 2 or 3 element tuple')
+        if center == self._center:
+            return
+        self._center = center
         self.view_changed()
 
     @property
@@ -356,6 +360,7 @@ class BaseCamera(Node):
         """
         state = state or {}
         state.update(kwargs)
+        self._setting_state = True
 
         # In first pass, process tuple keys which select subproperties. This
         # is an undocumented feature used for selective linking of camera state.
@@ -383,6 +388,8 @@ class BaseCamera(Node):
             if key not in self._state_props:
                 raise KeyError('Not a valid camera state property %r' % key)
             setattr(self, key, val)
+        self._setting_state = False
+        self.view_changed()
 
     def link(self, camera, props=None, axis=None):
         """Link this camera with another camera of the same type
@@ -508,6 +515,8 @@ class BaseCamera(Node):
 
     def _set_scene_transform(self, tr):
         """Called by subclasses to configure the viewbox scene transform."""
+        if self._setting_state:
+            return
         # todo: check whether transform has changed, connect to
         # transform.changed event
         pre_tr = self.pre_transform

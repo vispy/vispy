@@ -421,6 +421,7 @@ class ShadingFilter(Filter):
         ffunc = Function(self._shaders['fragment'])
 
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
+        self._normals_cache = None
         vfunc['normal'] = self._normals
 
         super().__init__(vcode=vfunc, fcode=ffunc)
@@ -550,7 +551,12 @@ class ShadingFilter(Filter):
         )
 
         normals = self._visual.mesh_data.get_vertex_normals(indexed='faces')
-        self._normals.set_data(normals, convert=True)
+        if normals is not self._normals_cache:
+            # limit how often we upload new normal arrays
+            # gotcha: if normals are changed in place then this won't invalidate this cache
+            print(f"Setting new normals array: {self=} | {id(normals)}")
+            self._normals_cache = normals
+            self._normals.set_data(self._normals_cache, convert=True)
 
     def on_mesh_data_updated(self, event):
         self._update_data()
