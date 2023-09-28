@@ -4,6 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """Marker Visual and shader definitions."""
+from typing import Iterable
 
 import numpy as np
 
