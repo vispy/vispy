@@ -649,7 +649,7 @@ class MarkersVisual(Visual):
                 if isinstance(symbol, str):
                     symbol = [symbol]
                 try:
-                    data['a_symbol'] = np.array(self._symbol_shader_values[x] for x in symbol)
+                    data['a_symbol'] = np.array([self._symbol_shader_values[x] for x in symbol])
                 except KeyError:
                     raise ValueError(f'symbols must one of {self.symbols}')
 
