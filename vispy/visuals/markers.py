@@ -616,7 +616,7 @@ class MarkersVisual(Visual):
                 raise ValueError('edge_width_rel cannot be negative')
 
         if symbol is not None:
-            if not all(x in self._symbol_shader_values for x in set([symbol] if isinstance(symbol, str) else symbol)):
+            if not (set([symbol] if isinstance(symbol, str) else symbol) - set(self._symbol_shader_values_):
                 raise ValueError(f'symbols must one of {self.symbols}')
 
         edge_color = ColorArray(edge_color).rgba
