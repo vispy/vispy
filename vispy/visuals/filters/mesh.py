@@ -554,7 +554,6 @@ class ShadingFilter(Filter):
         if normals is not self._normals_cache:
             # limit how often we upload new normal arrays
             # gotcha: if normals are changed in place then this won't invalidate this cache
-            print(f"Setting new normals array: {self=} | {id(normals)}")
             self._normals_cache = normals
             self._normals.set_data(self._normals_cache, convert=True)
 
