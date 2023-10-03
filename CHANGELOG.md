@@ -1,5 +1,19 @@
 # Release Notes
 
+## [v0.14.1](https://github.com/vispy/vispy/tree/v0.14.1) (2023-10-03)
+
+**Fixed bugs:**
+
+- return to oldest supported numpy [\#2535](https://github.com/vispy/vispy/pull/2535) ([brisvag](https://github.com/brisvag))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.16.0 to 2.16.1 [\#2534](https://github.com/vispy/vispy/pull/2534) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.15.0 to 2.16.0 [\#2531](https://github.com/vispy/vispy/pull/2531) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump docker/setup-qemu-action from 2 to 3 [\#2529](https://github.com/vispy/vispy/pull/2529) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/checkout from 3 to 4 [\#2527](https://github.com/vispy/vispy/pull/2527) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+
 ## [v0.14.0](https://github.com/vispy/vispy/tree/v0.14.0) (2023-09-08)
 
 **Enhancements:**
