@@ -18,6 +18,7 @@ Controls:
 * 2  - toggle between volume rendering methods
 * 3  - toggle between stent-CT / brain-MRI image
 * 4  - toggle between colormaps
+* 5  - toggle between interpolation methods
 * 0  - reset cameras
 * [] - decrease/increase isosurface threshold
 
@@ -92,6 +93,9 @@ translucent_cmaps = cycle([TransFire(), TransGrays()])
 opaque_cmap = next(opaque_cmaps)
 translucent_cmap = next(translucent_cmaps)
 
+interp_methods = cycle(volume1.interpolation_methods)
+interp = next(interp_methods)
+
 
 # Implement axis connection with cam2
 @canvas.events.mouse_move.connect
@@ -139,6 +143,11 @@ def on_key_press(event):
             cmap = translucent_cmap = next(translucent_cmaps)
         volume1.cmap = cmap
         volume2.cmap = cmap
+    elif event.text == '5':
+        interp = next(interp_methods)
+        volume1.interpolation = interp
+        volume2.interpolation = interp
+        print(f"Interpolation method: {interp}")
     elif event.text == '0':
         cam1.set_range()
         cam3.set_range()

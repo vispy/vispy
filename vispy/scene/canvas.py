@@ -140,6 +140,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
+        self.events.touch.connect(self._process_mouse_event)
 
         self.scene = SubScene()
         self.freeze()
@@ -344,7 +345,12 @@ class SceneCanvas(app.Canvas, Frozen):
 
     def _process_mouse_event(self, event):
         prof = Profiler()  # noqa
-        deliver_types = ['mouse_press', 'mouse_wheel']
+        deliver_types = [
+            'mouse_press',
+            'mouse_wheel',
+            'gesture_zoom',
+            'gesture_rotate',
+        ]
         if self._send_hover_events:
             deliver_types += ['mouse_move']
 
@@ -487,11 +493,8 @@ class SceneCanvas(app.Canvas, Frozen):
             than triggering transform updates across the scene with every
             click.
         """
-        try:
-            self._scene.picking = True
+        with self._scene.set_picking():
             img = self.render(bgcolor=(0, 0, 0, 0), crop=crop)
-        finally:
-            self._scene.picking = False
         img = img.astype('int32') * [2**0, 2**8, 2**16, 2**24]
         id_ = img.sum(axis=2).astype('int32')
         return id_
@@ -524,6 +527,7 @@ class SceneCanvas(app.Canvas, Frozen):
         self.events.mouse_move.disconnect(self._process_mouse_event)
         self.events.mouse_release.disconnect(self._process_mouse_event)
         self.events.mouse_wheel.disconnect(self._process_mouse_event)
+        self.events.touch.disconnect(self._process_mouse_event)
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):

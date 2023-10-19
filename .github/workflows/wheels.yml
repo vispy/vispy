@@ -14,34 +14,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2019, macOS-10.15]
+        os: [ubuntu-20.04, windows-2019, macOS-latest]
         arch: [auto]
         include:
           - os: ubuntu-20.04
             arch: aarch64
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Set up QEMU
       if: ${{ matrix.arch == 'aarch64' }}
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.1.1
+      uses: pypa/cibuildwheel@v2.16.2
       env:
-        CIBW_SKIP: "cp27-* cp34-* cp35-* cp36-* pp* *-win32 *-manylinux_i686"
+        CIBW_SKIP: "cp36-* pp* *-win32 *-manylinux_i686 *-musllinux*"
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
         CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
-        CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test()\""
+        CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test('nobackend')\""
         CIBW_BUILD_VERBOSITY: "2"
-        CIBW_BEFORE_BUILD: "pip install -U numpy Cython"
-        CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
-        CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig; pip install -U pip setuptools; pip install freetype-py"
+        # Get numpy release candidate to have Python 3.12 compatibility (hopefully)
+        CIBW_BEFORE_BUILD: "pip install -U Cython pip setuptools; pip install -U --pre numpy"
+        CIBW_BEFORE_TEST: "pip install -U Cython pip setuptools; pip install -U --pre numpy"
+        #CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
+        CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev; pip install freetype-py"
         # If freetype-py is installed from source (no wheel found), include bundled freetype library
         CIBW_ENVIRONMENT_WINDOWS: "FREETYPEPY_BUNDLE_FT=1"
+        CIBW_ENVIRONMENT: "GITHUB_ACTIONS=true"
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
-    - uses: actions/upload-artifact@v2
+        CIBW_ARCHS_MACOS: 'x86_64 arm64'
+        CIBW_TEST_SKIP: '*-macosx_arm64'
+    - uses: actions/upload-artifact@v3
       with:
         path: ./wheelhouse/*.whl
 
@@ -49,10 +54,10 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v4
       name: Install Python
       with:
         python-version: '3.7'
@@ -61,7 +66,7 @@ jobs:
         python -m pip install --upgrade pip setuptools build wheel
         python -m pip install numpy Cython
         python -m build -s -o dist/
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         path: dist/*.tar.gz
 
@@ -71,7 +76,7 @@ jobs:
     # upload to Test PyPI for every commit on main branch
     if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: artifact
           path: dist
@@ -89,7 +94,7 @@ jobs:
     # alternatively, to publish when a GitHub Release is created, use the following rule:
     # if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: artifact
         path: dist

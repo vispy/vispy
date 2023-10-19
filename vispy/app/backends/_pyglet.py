@@ -6,7 +6,7 @@
 
 from __future__ import division
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 from time import sleep
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -23,7 +23,7 @@ USE_EGL = config['gl_backend'].lower().startswith('es')
 try:
     import pyglet
     version = pyglet.version
-    if LooseVersion(version) < LooseVersion('1.2'):
+    if Version(version) < Version('1.2'):
         help_ = ('You can install the latest pyglet using:\n    '
                  'pip install http://pyglet.googlecode.com/archive/tip.zip')
         raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
@@ -269,6 +269,12 @@ class CanvasBackend(BaseCanvasBackend, _Window):
 
     def _vispy_get_size(self):
         w, h = self.get_size()
+        return w, h
+
+    def _vispy_get_physical_size(self):
+        if self._vispy_canvas is None:
+            return
+        w, h = self.get_framebuffer_size()
         return w, h
 
     def _vispy_get_position(self):

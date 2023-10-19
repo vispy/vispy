@@ -234,6 +234,9 @@ GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE
 GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_SHADER GL_VIEWPORT GL_ZERO
 """.replace('\n', ' ')
 
+# vispy_ext.h
+constant_names += "GL_MIN GL_MAX"
+
 function_names = [n.strip() for n in function_names.split(' ')]
 function_names = set([n for n in function_names if n])
 constant_names = [n.strip() for n in constant_names.split(' ')]

@@ -9,7 +9,7 @@ and vispy.gloo.gl can be used independently, they are not complely
 independent for some configureation. E.g. when using real ES 2.0,
 the app backend should use EGL and not a desktop OpenGL context. Also,
 we probably want it to be easy to configure vispy to use the ipython
-notebook backend, which requires specifc config of both app and gl.
+notebook backend, which requires specific config of both app and gl.
 
 This module does not have to be aware of the available app and gl
 backends, but it should be(come) aware of (in)compatibilities between

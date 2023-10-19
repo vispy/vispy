@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest import mock
 
-from vispy.scene.visuals import Image
+from vispy.scene import Image, PanZoomCamera
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main, IS_CI)
 from vispy.testing.image_tester import assert_image_approved, downsample
@@ -76,7 +76,7 @@ def _get_orig_and_new_clims(input_dtype):
 def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
                                clim_on_init, data_on_init):
     """Test image visual with clims and gamma on shader."""
-    size = (40, 40)
+    size = (80, 80)
     if texture_format == '__dtype__':
         texture_format = input_dtype
     shape = size + (num_channels,) if num_channels > 0 else size
@@ -295,6 +295,96 @@ def test_change_clim_float(dtype, init_clim):
         rendered2 = c.render()
 
         assert np.allclose(rendered1, rendered2)
+
+
+@requires_application()
+def test_image_interpolation():
+    """Test different interpolations"""
+    size = (81, 81)
+    data = np.array([[0, 1]], dtype=int)
+    left = (40, 0)
+    right = (40, 80)
+    center_left = (40, 39)
+    center = (40, 40)
+    center_right = (40, 41)
+    white = (255, 255, 255, 255)
+    black = (0, 0, 0, 255)
+    gray = (128, 128, 128, 255)
+
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
+        view = c.central_widget.add_view(border_width=0)
+        view.camera = PanZoomCamera((0, 0, 2, 1))
+        image = Image(data=data, cmap='grays',
+                      parent=view.scene)
+
+        # needed to properly initialize the canvas
+        render = c.render()
+
+        image.interpolation = 'nearest'
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+        assert np.allclose(render[center_left], black)
+        assert np.allclose(render[center_right], white)
+
+        image.interpolation = 'bilinear'
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+        assert np.allclose(render[center], gray, atol=5)  # we just want gray, this is not quantitative
+
+        image.interpolation = 'custom'
+        image.custom_kernel = np.array([[0]])  # no sampling
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], black)
+        assert np.allclose(render[center], black)
+
+        image.custom_kernel = np.array([[1]])  # same as linear
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+        assert np.allclose(render[center], gray, atol=5)  # we just want gray, this is not quantitative
+
+
+@requires_application()
+def test_image_set_data_different_dtype():
+    size = (80, 80)
+    data = np.array([[0, 127]], dtype=np.int8)
+    left = (40, 10)
+    right = (40, 70)
+    white = (255, 255, 255, 255)
+    black = (0, 0, 0, 255)
+
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
+        view = c.central_widget.add_view()
+        view.camera = PanZoomCamera((0, 0, 2, 1))
+        image = Image(data=data, cmap='grays', clim=[0, 127],
+                      parent=view.scene)
+
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # same data as float should change nothing
+        image.set_data(data.astype(np.float32))
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # something inverted, different dtype
+        new_data = np.array([[127, 0]], dtype=np.float16)
+        image.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], white)
+        assert np.allclose(render[right], black)
+
+        # out of bounds should clip (2000 > 127)
+        new_data = np.array([[0, 2000]], dtype=np.float64)
+        image.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
 
 
 run_tests_if_main()

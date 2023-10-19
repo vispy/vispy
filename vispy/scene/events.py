@@ -71,6 +71,15 @@ class SceneMouseEvent(Event):
         """The increment by which the mouse wheel has moved."""
         return self.mouse_event.delta
 
+    @property
+    def scale(self):
+        """The scale of a gesture_zoom event"""
+        try:
+            return self.mouse_event.scale
+        except AttributeError:
+            errmsg = f"SceneMouseEvent type '{self.type}' has no scale"
+            raise TypeError(errmsg)
+
     def copy(self):
         ev = self.__class__(self.mouse_event, self.visual)
         return ev

@@ -62,6 +62,12 @@ class PerspectiveCamera(BaseCamera):
             if self._distance is not None:
                 self._distance *= s
             self.view_changed()
+        elif event.type == 'gesture_zoom':
+            s = 1 - event.scale
+            self._scale_factor *= s
+            if self._distance is not None:
+                self._distance *= s
+            self.view_changed()
 
     @property
     def scale_factor(self):

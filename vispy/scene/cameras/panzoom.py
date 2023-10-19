@@ -132,8 +132,11 @@ class PanZoomCamera(BaseCamera):
 
     @property
     def rect(self):
-        """The rectangular border of the ViewBox visible area, expressed in
-        the coordinate system of the scene.
+        """The rectangular border of the ViewBox visible area.
+        
+        This is expressed in the coordinate system of the scene.
+        See :class:`~vispy.geometry.rect.Rect` for different ways this can
+        be specified.
 
         Note that the rectangle can have negative width or height, in
         which case the corresponding dimension is flipped (this flipping
@@ -204,7 +207,10 @@ class PanZoomCamera(BaseCamera):
             center = self._scene_transform.imap(event.pos)
             self.zoom((1 + self.zoom_factor)**(-event.delta[1] * 30), center)
             event.handled = True
-
+        elif event.type == 'gesture_zoom':
+            center = self._scene_transform.imap(event.pos)
+            self.zoom(1 - event.scale, center)
+            event.handled = True
         elif event.type == 'mouse_move':
             if event.press_event is None:
                 return

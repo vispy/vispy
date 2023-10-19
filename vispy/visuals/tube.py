@@ -65,7 +65,7 @@ class TubeVisual(MeshVisual):
         segments = len(points) - 1
 
         # if single radius, convert to list of radii
-        if not isinstance(radius, collections.Iterable):
+        if not isinstance(radius, collections.abc.Iterable):
             radius = [radius] * len(points)
         elif len(radius) != len(points):
             raise ValueError('Length of radii list must match points.')
@@ -80,7 +80,7 @@ class TubeVisual(MeshVisual):
 
             # Add a vertex for each point on the circle
             v = np.arange(tube_points,
-                          dtype=np.float) / tube_points * 2 * np.pi
+                          dtype=np.float32) / tube_points * 2 * np.pi
             cx = -1. * r * np.cos(v)
             cy = r * np.sin(v)
             grid[i] = (pos + cx[:, np.newaxis]*normal +

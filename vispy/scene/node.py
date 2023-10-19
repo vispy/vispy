@@ -5,6 +5,7 @@
 from __future__ import division
 
 import weakref
+from contextlib import contextmanager
 
 from ..util.event import Event, EmitterGroup
 from ..visuals.transforms import (NullTransform, BaseTransform, 
@@ -63,7 +64,8 @@ class Node(object):
         # Add some events to the emitter groups:
         events = ['canvas_change', 'parent_change', 'children_change', 
                   'transform_change', 'mouse_press', 'mouse_move',
-                  'mouse_release', 'mouse_wheel', 'key_press', 'key_release']
+                  'mouse_release', 'mouse_wheel', 'key_press', 'key_release',
+                  'gesture_zoom', 'gesture_rotate']
         # Create event emitter if needed (in subclasses that inherit from
         # Visual, we already have an emitter to share)
         if not hasattr(self, 'events'):
@@ -625,3 +627,18 @@ class Node(object):
         for c in self.children:
             c.picking = p
         self._picking = p
+
+    @contextmanager
+    def set_picking(self, *, picking=True):
+        """Context manager to temporarily set picking for this node and its children.
+
+        Note that this function will not alter the picking mode unless/until
+        the context manager is entered (using the `with` statement). Use
+        :py:attr:`~.picking` for setting the picking mode directly.
+        """
+        old_picking = self.picking
+        try:
+            self.picking = picking
+            yield self.picking
+        finally:
+            self.picking = old_picking

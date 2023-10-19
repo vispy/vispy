@@ -71,7 +71,10 @@ class VisualNode(Node):
             return
         self._picking = p
         self._picking_filter.enabled = p
-        self.update_gl_state(blend=not p)
+        if p:
+            self.push_gl_state_update(blend=False)
+        else:
+            self.pop_gl_state()
 
     def _update_trsys(self, event):
         """Transform object(s) have changed for this Node; assign these to the
@@ -244,6 +247,7 @@ Histogram = create_visual_node(visuals.HistogramVisual)
 Image = create_visual_node(visuals.ImageVisual)
 ComplexImage = create_visual_node(visuals.ComplexImageVisual)
 InfiniteLine = create_visual_node(visuals.InfiniteLineVisual)
+InstancedMesh = create_visual_node(visuals.InstancedMeshVisual)
 Isocurve = create_visual_node(visuals.IsocurveVisual)
 Isoline = create_visual_node(visuals.IsolineVisual)
 Isosurface = create_visual_node(visuals.IsosurfaceVisual)

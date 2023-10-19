@@ -39,6 +39,7 @@ extensions = ['sphinx.ext.autodoc',
               'numpydoc',
               'sphinxcontrib.apidoc',
               'sphinx_gallery.gen_gallery',
+              'myst_parser',
               ]
 
 # API docs
@@ -185,6 +186,7 @@ html_theme_options = {
     "use_edit_page_button": True,
     "github_url": "https://github.com/vispy/vispy",
     "twitter_url": "https://twitter.com/vispyproject",
+    "header_links_before_dropdown": 7,
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -345,11 +347,11 @@ numpydoc_show_class_members = False
 # -----------------------------------------------------------------------------
 # intersphinx
 # -----------------------------------------------------------------------------
-_python_doc_base = 'https://docs.python.org/3.9'
+_python_doc_base = "https://docs.python.org/3"
 intersphinx_mapping = {
-    _python_doc_base: None,
-    'https://numpy.org/doc/stable/': None,
-    'https://scipy.github.io/devdocs/': None,
+    "python": (_python_doc_base, None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://scipy.github.io/devdocs/", None),
 }
 
 

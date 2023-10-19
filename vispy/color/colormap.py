@@ -435,7 +435,7 @@ class Colormap(BaseColormap):
         if self.texture_map_data is None:
             return None
         interp = 'linear' if self.interpolation == 'linear' else 'nearest'
-        texture_LUT = vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape),
+        texture_LUT = vispy.gloo.Texture2D(np.zeros(self.texture_map_data.shape, dtype=np.float32),
                                            interpolation=interp)
         texture_LUT.set_data(self.texture_map_data, offset=None, copy=True)
         return texture_LUT
@@ -1092,17 +1092,13 @@ _colormaps = dict(
 )
 
 
-def get_colormap(name, *args, **kwargs):
-    """Obtain a colormap.
+def get_colormap(name):
+    """Obtain a colormap by name.
 
     Parameters
     ----------
     name : str | Colormap
         Colormap name. Can also be a Colormap for pass-through.
-    *args:
-        Deprecated.
-    **kwargs
-        Deprecated.
 
     Examples
     --------
@@ -1111,18 +1107,10 @@ def get_colormap(name, *args, **kwargs):
 
     .. versionchanged: 0.7
 
-        Additional args/kwargs are no longer accepted. Colormap classes are
-        no longer created on the fly. To create a ``cubehelix``
-        (``CubeHelixColormap``), ``single_hue`` (``SingleHue``), ``hsl``
-        (``HSL``), ``husl`` (``HSLuv``), ``diverging`` (``Diverging``), or
-        ``RdYeBuCy`` (``RedYellowBlueCyan``) colormap you must import and
-        instantiate it directly from the ``vispy.color.colormap`` module.
+        Additional args/kwargs are no longer accepted. Colormap instances are
+        no longer created on the fly.
 
     """
-    if args or kwargs:
-        warnings.warn("Creating a Colormap instance with 'get_colormap' is "
-                      "no longer supported. No additional arguments or "
-                      "keyword arguments should be passed.", DeprecationWarning)
     if isinstance(name, BaseColormap):
         return name
 
@@ -1130,14 +1118,6 @@ def get_colormap(name, *args, **kwargs):
         raise TypeError('colormap must be a Colormap or string name')
     if name in _colormaps:  # vispy cmap
         cmap = _colormaps[name]
-        if name in ("cubehelix", "single_hue", "hsl", "husl", "diverging", "RdYeBuCy"):
-            warnings.warn(
-                f"Colormap '{name}' has been deprecated since vispy 0.7. "
-                f"Please import and create 'vispy.color.colormap.{cmap.__class__.__name__}' "
-                "directly instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
 
     elif has_matplotlib():  # matplotlib cmap
         try:
