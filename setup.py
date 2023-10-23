@@ -61,7 +61,7 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
               ]
 
 install_requires = ['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging']
-if sys.version_info <= (3, 8):
+if sys.version_info < (3, 9):
     install_requires.append("importlib-resources")
 
 readme = open('README.rst', 'r').read()
