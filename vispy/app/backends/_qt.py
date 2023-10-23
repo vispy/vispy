@@ -386,9 +386,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         # must set physical size before setting visible or fullscreen
         # operations may make the size invalid
-        if hasattr(self, 'devicePixelRatio'):
+        if hasattr(self, 'devicePixelRatioF'):
             # handle high DPI displays in PyQt5
-            ratio = self.devicePixelRatio()
+            ratio = self.devicePixelRatioF()
         else:
             ratio = 1
         self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
@@ -421,7 +421,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         If display resolutions are the same this is essentially a no-op except for the redraw.
         If the display resolutions differ (HiDPI versus regular displays) the canvas needs to
-        be redrawn to reset the physical size based on the current `devicePixelRatio()` and
+        be redrawn to reset the physical size based on the current `devicePixelRatioF()` and
         redrawn with that new size.
 
         """
@@ -909,11 +909,11 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        if hasattr(self, 'devicePixelRatio'):
-            # We take into account devicePixelRatio, which is non-unity on
+        if hasattr(self, 'devicePixelRatioF'):
+            # We take into account devicePixelRatioF, which is non-unity on
             # e.g HiDPI displays.
-            # self.devicePixelRatio() is a float and should have been in Qt5 according to the documentation
-            ratio = self.devicePixelRatio()
+            # self.devicePixelRatioF() is a float and should have been in Qt5 according to the documentation
+            ratio = self.devicePixelRatioF()
             w = int(w * ratio)
             h = int(h * ratio)
         self._vispy_set_physical_size(w, h)

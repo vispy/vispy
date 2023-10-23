@@ -111,7 +111,7 @@ jobs:
         sleep 5
         # export python_version
         echo "python_version=310" >> $GITHUB_OUTPUT
-    - uses: mamba-org/provision-with-micromamba@v16
+    - uses: mamba-org/setup-micromamba@v1
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
@@ -169,17 +169,17 @@ jobs:
       matrix:
         include:
           - test_number: 1
-            python_version: "3.8"
+            python_version: "3.9"
             deps: "min"
             test: "standard"
             new_qt: false
           - test_number: 2
-            python_version: "3.8"
+            python_version: "3.9"
             deps: "full"
             test: "standard"
             new_qt: false
           - test_number: 3
-            python_version: "3.8"
+            python_version: "3.9"
             deps: "osmesa"
             test: "osmesa"
             new_qt: false
@@ -225,7 +225,7 @@ jobs:
         # export python_version
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
-    - uses: mamba-org/provision-with-micromamba@v16
+    - uses: mamba-org/setup-micromamba@v1
       with:
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
     - name: Install conda-dependencies
@@ -254,7 +254,7 @@ jobs:
           export DISPLAY=:99.0
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa32.so;
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
         micromamba list
@@ -267,7 +267,7 @@ jobs:
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa32.so
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi
