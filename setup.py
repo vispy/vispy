@@ -23,6 +23,7 @@ Announcing:
 """
 
 import os
+import sys
 from os import path as op
 from setuptools import setup, find_packages
 
@@ -59,6 +60,10 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
                         ),
               ]
 
+install_requires = ['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging']
+if sys.version_info < (3, 9):
+    install_requires.append("importlib-resources")
+
 readme = open('README.rst', 'r').read()
 setup(
     name=name,
@@ -92,7 +97,7 @@ setup(
     platforms='any',
     provides=['vispy'],
     python_requires='>=3.8',
-    install_requires=['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging'],
+    install_requires=install_requires,
     extras_require={
         'ipython-static': ['ipython'],
         'pyglet': ['pyglet>=1.2'],
