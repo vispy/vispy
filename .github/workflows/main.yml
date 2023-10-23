@@ -254,10 +254,10 @@ jobs:
           export DISPLAY=:99.0
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa.so;
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
-        ls -l ~/micromamba-root/envs/vispy-tests/lib
+        ls -l ~/micromamba/envs/vispy-tests/lib
         micromamba list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"
@@ -268,7 +268,7 @@ jobs:
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba-root/envs/vispy-tests/lib/libOSMesa.so
+          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi
