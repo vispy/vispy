@@ -3,22 +3,20 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from os import path as op
-import warnings
 
 from vispy.testing import requires_application
 
 
-@requires_application('pyqt4', has=['uic'])
+@requires_application('pyqt5', has=['uic'])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
-    from PyQt4 import QtGui, uic
-    app = QtGui.QApplication.instance()
+    from PyQt5 import QtWidgets, uic
+    app = QtWidgets.QApplication.instance()
     if app is None:
-        app = QtGui.QApplication([])
+        app = QtWidgets.QApplication([])
 
     fname = op.join(op.dirname(__file__), 'qt-designer.ui')
-    with warnings.catch_warnings(record=True):  # pyqt4 deprecation warning
-        WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
+    WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
 
     class MainWindow(TemplateBaseClass):
         def __init__(self):

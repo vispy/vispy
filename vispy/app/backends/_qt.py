@@ -4,18 +4,18 @@
 
 """
 Base code for the Qt backends. Note that this is *not* (anymore) a
-backend by itself! One has to explicitly use either PySide, PyQt4 or
-PySide2, PyQt5 or PyQt6. Note that the automatic backend selection prefers
+backend by itself! One has to explicitly use PySide2, PyQt5, PySide6 or PyQt6.
+Note that the automatic backend selection prefers
 a GUI toolkit that is already imported.
 
-The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will
+The _pyside2, _pyqt5, _pyside6 and _pyqt6 modules will
 import * from this module, and also keep a ref to the module object.
 Note that if two of the backends are used, this module is actually
 reloaded. This is a sorts of poor mans "subclassing" to get a working
 version for both backends using the same code.
 
 Note that it is strongly discouraged to use the
-PySide/PyQt4/PySide2/PyQt5/PySide6 backends simultaneously. It is
+PySide2/PyQt5/PySide6/PyQt6 backends simultaneously. It is
 known to cause unpredictable behavior and segfaults.
 """
 
@@ -55,7 +55,7 @@ elif sys.platform.startswith('win'):
 
 def _check_imports(lib):
     # Make sure no conflicting libraries have been imported.
-    libs = ['PyQt4', 'PyQt5', 'PyQt6', 'PySide', 'PySide2', 'PySide6']
+    libs = ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']
     libs.remove(lib)
     for lib2 in libs:
         lib2 += '.QtCore'
@@ -76,18 +76,12 @@ def _get_event_xy(ev):
 
 
 # Get what qt lib to try. This tells us wheter this module is imported
-# via _pyside or _pyqt4 or _pyqt5
+# via _pyside2 or _pyqt5 or _pyside6 or _pyqt6
 QGLWidget = object
 QT5_NEW_API = False
 PYSIDE6_API = False
 PYQT6_API = False
-if qt_lib == 'pyqt4':
-    _check_imports('PyQt4')
-    if not USE_EGL:
-        from PyQt4.QtOpenGL import QGLWidget, QGLFormat
-    from PyQt4 import QtGui, QtCore, QtTest
-    QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
-elif qt_lib == 'pyqt5':
+if qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
         from PyQt5.QtCore import QT_VERSION_STR
@@ -135,12 +129,6 @@ elif qt_lib == 'pyside2':
             from PySide2.QtOpenGL import QGLWidget, QGLFormat
     from PySide2 import QtGui, QtCore, QtWidgets, QtTest
     QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
-elif qt_lib == 'pyside':
-    _check_imports('PySide')
-    if not USE_EGL:
-        from PySide.QtOpenGL import QGLWidget, QGLFormat
-    from PySide import QtGui, QtCore, QtTest
-    QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
 else:
@@ -208,9 +196,7 @@ else:
 # Properly log Qt messages
 def message_handler(*args):
 
-    if qt_lib in ("pyqt4", "pyside"):
-        msg_type, msg = args
-    elif qt_lib in ("pyqt5", "pyqt6", "pyside2", "pyside6"):  # Is this correct for pyside2?
+    if qt_lib in ("pyqt5", "pyqt6", "pyside2", "pyside6"):  # Is this correct for pyside2?
         msg_type, context, msg = args
     elif qt_lib:
         raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
@@ -287,7 +273,7 @@ def _set_config(c):
         glformat.setSwapBehavior(glformat.SwapBehavior.DoubleBuffer if c['double_buffer']
                                  else glformat.SwapBehavior.SingleBuffer)
     else:
-        # Qt4 and Qt5 < 5.4.0 - buffers must be explicitly requested.
+        # Qt5 < 5.4.0 - buffers must be explicitly requested.
         glformat.setAccum(False)
         glformat.setRgba(True)
         glformat.setDoubleBuffer(True if c['double_buffer'] else False)
@@ -322,7 +308,7 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_process_events(self):
         app = self._vispy_get_native_app()
         # sendPostedEvents replaces flush which has been removed from Qt6.0+
-        # This should be compatible with Qt4.x and Qt5.x
+        # This should be compatible with Qt5.x
         app.sendPostedEvents()
         app.processEvents()
 
@@ -723,7 +709,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         self._initialized = True
 
     def get_window_id(self):
-        """Get the window id of a PySide Widget. Might also work for PyQt4."""
+        """Get the window id of a Widget."""
         # Get Qt win id
         winid = self.winId()
 
@@ -852,7 +838,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             self._surface.create()
             self._secondary_context.makeCurrent(self._surface)
         else:
-            # Qt4 and Qt5 < 5.4.0 - sharing is explicitly requested
+            # Qt5 < 5.4.0 - sharing is explicitly requested
             QGLWidget.__init__(self, p.parent, widget, hint)
             # unused with this API
             self._secondary_context = None

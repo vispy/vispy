@@ -21,18 +21,12 @@ context. This can be done using any one of the following.
    * - Backend
      - Status
      - Dependencies
-   * - pyqt4
-     - Stable
-     - pyqt4
    * - pyqt5
      - Stable
      - pyqt5
    * - pyqt6
      - Stable
      - pyqt6
-   * - pyside
-     - Stable
-     - pyside
    * - pyside2
      - Stable
      - pyside2

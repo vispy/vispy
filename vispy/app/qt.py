@@ -3,18 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 # Force the selection of an application backend. If the user has already
-# imported PyQt or PySide, this should result in selection of the corresponding
-# backend.
+# imported PyQt5/6 or PySide2/6, this should result in selection of the
+# corresponding backend.
 from .backends import qt_lib
 
 if qt_lib is None:
     raise RuntimeError("Module backends._qt should not be imported directly.")
-elif qt_lib in 'pyqt4':
-    from PyQt4 import QtGui
-    QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
-elif qt_lib == 'pyside':
-    from PySide import QtGui
-    QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
 elif qt_lib == 'pyqt5':
     from PyQt5 import QtWidgets
     QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
