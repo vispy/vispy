@@ -1045,6 +1045,9 @@ class GlirProgram(GlirObject):
         'vec2': (2, gl.GL_FLOAT, np.float32),
         'vec3': (3, gl.GL_FLOAT, np.float32),
         'vec4': (4, gl.GL_FLOAT, np.float32),
+        'ivec2': (2, gl.GL_INT, np.int32),
+        'ivec3': (3, gl.GL_INT, np.int32),
+        'ivec4': (4, gl.GL_INT, np.int32),
         'int': (1, gl.GL_INT, np.int32),
         'bool': (1, gl.GL_BOOL, np.int32)
     }
