@@ -511,7 +511,7 @@ _TRANSLUCENT_2D_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyTransferFunction(val, loc, step);
+        color = applyTransferFunction(val, loc, vec3(0.005, 0.005, 0.005));
 
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
