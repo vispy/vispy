@@ -22,17 +22,17 @@ from skimage.transform import pyramid_reduce
 # from vispy.visuals.transforms import STTransform
 
 # Read volume
-# mri_data = np.load(io.load_data_file('brain/mri.npz'))['data']
-# mri_data = np.flipud(np.rollaxis(mri_data, 1)).astype(np.float32)
+mri_data = np.load(io.load_data_file('brain/mri.npz'))['data']
+mri_data = np.flipud(np.rollaxis(mri_data, 1)).astype(np.float32)
 # TODO: generate more illustrative data
 
-mri_data = imread('/Users/aandersoniii/Data/21316414z-8_scale-4.0_cdim-3_net-4_wmean--2_wstd-0.85_0.tif').compute()
-mri_data = mri_data.reshape((1024, 1024, 1024, 3))[..., 0].astype(np.float32)
+# mri_data = imread('/Users/aandersoniii/Data/21316414z-8_scale-4.0_cdim-3_net-4_wmean--2_wstd-0.85_0.tif').compute()
+# mri_data = mri_data.reshape((1024, 1024, 1024, 3))[..., 0].astype(np.float32)
 mri_data = (mri_data - mri_data.min()) / mri_data.ptp()
-mri_data_small = pyramid_reduce(mri_data, 4)
-mri_data = mri_data_small
+# mri_data_small = pyramid_reduce(mri_data, 4)
+# mri_data = mri_data_small
 
-print(mri_data.shape)
+print(mri_data.shape, mri_data.min(), mri_data.max())
 # print(mri_data.shape, mri_data.dtype)
 
 
@@ -49,22 +49,20 @@ view1 = grid.add_view(row=2, col=0, camera="panzoom")
 
 # create colormaps that work well for translucent and additive volume rendering
 
+n = 2
+p = 0.2
 
 class TransFire(BaseColormap):
-    glsl_map = """
-    vec4 translucent_fire(float t) {
-        return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
-    }
+    glsl_map = f"""
+    vec4 translucent_fire(float t) {{
+        return vec4(pow(t, 0.5), t, t*t, pow(t, {n}));
+    }}
     """
-
-
-n = 2
-
 
 class TransFire2D(BaseColormap):
     glsl_map = f"""
     vec4 translucent_fire(float t, float g) {{
-        return vec4(pow(t, 0.5), t / (1 + g), g*g*g, t * pow(g, {n}));
+        return vec4(pow(t, {p}), 1 / (1 + t), g*g*g, pow(g, {n}));
     }}
     """
 
@@ -83,22 +81,22 @@ gm = np.linalg.norm(np.gradient(mri_data), axis=0)
 # gm = da.linalg.norm(da.stack(da.gradient(mri_data), axis=-1), axis=-1)
 # gm = da.rechunk(gm, chunks=(256, 256, 256))
 # print(gm)
-# hist_data = np.histogram2d(
-#     gm.ravel(),
-#     mri_data.ravel(),
-#     # da.from_array(mri_data, chunks=(256, 256, 256)).ravel(),
-#     bins=(32, 128),
-#     range=((0, 1), (0, 1)),
-# )[0]
+hist_data = np.histogram2d(
+    np.log(np.clip(gm.ravel(), 1e-2, None)),
+    mri_data.ravel(),
+    # da.from_array(mri_data, chunks=(256, 256, 256)).ravel(),
+    bins=(32, 128),
+    # range=((0, 1), (0, 1)),
+)[0]
 # hist_data = da.log(da.clip(hist_data, 1, None)).compute()
-# print(hist_data)
+print(hist_data.shape)
 t, gm = np.meshgrid(np.linspace(0, 1, 128), np.linspace(0, 1, 32))
-r = t ** 0.5
-g = t / (1 + gm)
+r = t ** p
+g = 1 / (1 + t)
 b = gm**3
 a = gm**n
 hist_overlay = np.stack((r, g, b, a), axis=-1)
-# hist = scene.visuals.Image(np.log(hist_data + 1), parent=view1.scene, cmap="gray")
+hist = scene.visuals.Image(np.log(hist_data + 1), parent=view1.scene, cmap="gray")
 cmap = scene.visuals.Image(hist_overlay, parent=view1.scene)
 cmap.set_gl_state('translucent', depth_test=False)
 view1.camera.rect = (0, 0, 128, 32)
@@ -122,10 +120,10 @@ def on_key_press(event):
             n += .1
         n = max(0, n)
         print(n)
-        r = t ** 0.5
-        g = t / (1 + gm)
+        r = t ** p
+        g = 1 / (1 + t)
         b = gm**3
-        a = t * gm**n
+        a = gm**n
         hist_overlay = np.stack((r, g, b, a), axis=-1)
         cmap.set_data(hist_overlay)
         cmap.set_gl_state('translucent', depth_test=False)
@@ -134,10 +132,19 @@ def on_key_press(event):
         class TransFire2D(BaseColormap):
             glsl_map = f"""
             vec4 translucent_fire(float t, float g) {{
-                return vec4(pow(t, 0.5), t / (1 + g), g*g*g, t * pow(g, {n}));
+                return vec4(pow(t, {p}), 1 / (1 + t), g*g*g, pow(g, {n}));
             }}
             """
         vol.transfer_function = TransFire2D()
+
+        class TransFire(BaseColormap):
+            glsl_map = f"""
+            vec4 translucent_fire(float t) {{
+                return vec4(pow(t, 0.5), t, t*t, pow(t, {n}));
+            }}
+            """
+        vol.cmap = TransFire()
+        vol.update()
 
     elif event.text == '2':
         methods = ['translucent', 'translucent_2d']
