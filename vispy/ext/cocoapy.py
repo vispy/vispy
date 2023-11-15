@@ -32,9 +32,9 @@ except ImportError:
             return res
         lut = {
             'objc': 'libobjc.dylib',
-            'quartz': 'Quartz.framework/Quartz'
+            'quartz': '/System/Library/Frameworks/Quartz.framework/Quartz'
         }
-        return lut.get(name, name+'.framework/'+name)
+        return lut.get(name, f'/System/Library/Frameworks/${name}.framework/${name}')
     util.find_library = new_util_find_library
 
 
@@ -56,6 +56,7 @@ def encoding_for_ctype(vartype):
                  c_double: b'd', c_bool: b'B', c_char_p: b'*', c_void_p: b'@',
                  py_object: PyObjectEncoding}
     return typecodes.get(vartype, b'?')
+
 
 if __LP64__:
     NSInteger = c_long
@@ -84,16 +85,22 @@ NSZoneEncoding = b'{_NSZone=}'
 
 class NSPoint(Structure):
     _fields_ = [("x", CGFloat), ("y", CGFloat)]
+
+
 CGPoint = NSPoint
 
 
 class NSSize(Structure):
     _fields_ = [("width", CGFloat), ("height", CGFloat)]
+
+
 CGSize = NSSize
 
 
 class NSRect(Structure):
     _fields_ = [("origin", NSPoint), ("size", NSSize)]
+
+
 CGRect = NSRect
 
 
@@ -431,6 +438,7 @@ def send_message(receiver, selName, *args, **kwargs):
 class OBJC_SUPER(Structure):
     _fields_ = [('receiver', c_void_p), ('class', c_void_p)]
 
+
 OBJC_SUPER_PTR = POINTER(OBJC_SUPER)
 
 
@@ -475,7 +483,7 @@ def parse_type_encoding(encoding):
         elif c == b'}':
             typecode += c
             brace_count -= 1
-            assert(brace_count >= 0)
+            assert (brace_count >= 0)
         elif c == b'[':
             if typecode and typecode[-1:] != b'^' and brace_count == 0 and \
                     bracket_count == 0:
@@ -486,7 +494,7 @@ def parse_type_encoding(encoding):
         elif c == b']':
             typecode += c
             bracket_count -= 1
-            assert(bracket_count >= 0)
+            assert (bracket_count >= 0)
         elif brace_count or bracket_count:
             typecode += c
         elif c in b'0123456789':
@@ -545,8 +553,8 @@ def register_subclass(subclass):
 
 def add_method(cls, selName, method, types):
     type_encodings = parse_type_encoding(types)
-    assert(type_encodings[1] == b'@')  # ensure id self typecode
-    assert(type_encodings[2] == b':')  # ensure SEL cmd typecode
+    assert (type_encodings[1] == b'@')  # ensure id self typecode
+    assert (type_encodings[2] == b':')  # ensure SEL cmd typecode
     selector = get_selector(selName)
     cfunctype = cfunctype_for_encoding(types)
     imp = cfunctype(method)
@@ -1077,6 +1085,7 @@ def cfnumber_to_number(cfnumber):
         raise Exception(
             'cfnumber_to_number: unhandled CFNumber type %d' % numeric_type)
 
+
 # Dictionary of cftypes matched to the method converting them to python values.
 known_cftypes = {cf.CFStringGetTypeID(): cfstring_to_string,
                  cf.CFNumberGetTypeID(): cfnumber_to_number}
@@ -1097,6 +1106,7 @@ def cftype_to_value(cftype):
     else:
         return cftype
 
+
 cf.CFSetGetCount.restype = CFIndex
 cf.CFSetGetCount.argtypes = [c_void_p]
 
@@ -1112,6 +1122,7 @@ def cfset_to_set(cfset):
     buffer = (c_void_p * count)()
     cf.CFSetGetValues(cfset, byref(buffer))
     return set([cftype_to_value(c_void_p(buffer[i])) for i in range(count)])
+
 
 cf.CFArrayGetCount.restype = CFIndex
 cf.CFArrayGetCount.argtypes = [c_void_p]
