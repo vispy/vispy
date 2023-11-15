@@ -34,7 +34,7 @@ except ImportError:
             'objc': 'libobjc.dylib',
             'quartz': '/System/Library/Frameworks/Quartz.framework/Quartz'
         }
-        return lut.get(name, f'/System/Library/Frameworks/${name}.framework/${name}')
+        return lut.get(name, f'/System/Library/Frameworks/{name}.framework/{name}')
     util.find_library = new_util_find_library
 
 
