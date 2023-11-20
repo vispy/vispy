@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -6,161 +5,211 @@
 # vispy: gallery 2
 
 """
-Volume Rendering
+Volume Rendering with 2D Transfer Function
 ================
 
-Example volume rendering
+Example volume rendering with an editable 2D transfer function.
+
+The bottom view shows the 2D histogram of the data (value, gradent magnitude)
+with the transfer function overlaid.
+
+Controls:
+
+* 1  - Reset to default 1D transfer function
+* 2  - Reset to default 2D transfer function
+* 3  - Show attenuated MIP
+* 4  - Show attenuated MIP colored by depth of max value
+
+# Left click and drag to paint the transfer function
+# Alt + Left click and drag to erase on the transfer function
 
 """
-
-import dask.array as da
-from dask_image.imread import imread
 import numpy as np
 from vispy import app, scene, io
-from vispy.color import BaseColormap
-from skimage.transform import pyramid_reduce
-# from vispy.visuals.transforms import STTransform
+from vispy.color import BaseTransferFunction
 
-# Read volume
+# Read and normalize volume data
 mri_data = np.load(io.load_data_file('brain/mri.npz'))['data']
 mri_data = np.flipud(np.rollaxis(mri_data, 1)).astype(np.float32)
-# TODO: generate more illustrative data
-
-# mri_data = imread('/Users/aandersoniii/Data/21316414z-8_scale-4.0_cdim-3_net-4_wmean--2_wstd-0.85_0.tif').compute()
-# mri_data = mri_data.reshape((1024, 1024, 1024, 3))[..., 0].astype(np.float32)
 mri_data = (mri_data - mri_data.min()) / mri_data.ptp()
-# mri_data_small = pyramid_reduce(mri_data, 4)
-# mri_data = mri_data_small
-
-print(mri_data.shape, mri_data.min(), mri_data.max())
-# print(mri_data.shape, mri_data.dtype)
-
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive', size=(768, 1024), show=True)
 canvas.measure_fps()
 grid = canvas.central_widget.add_grid()
 
-# Set up a viewbox to display the image with interactive pan/zoom
-view0 = grid.add_view(row=0, col=0, row_span=2)
-view1 = grid.add_view(row=2, col=0, camera="panzoom")
-# view0 = canvas.central_widget.add_view()
+# Set up a viewbox to display the image
+data_view = grid.add_view(row=0, col=0, row_span=2)
+# The other view will show the 2D histogram of the data with the TF over it
+cmap_view = grid.add_view(row=2, col=0, camera='panzoom')
 
 
-# create colormaps that work well for translucent and additive volume rendering
-
-n = 2
-p = 0.2
-
-class TransFire(BaseColormap):
-    glsl_map = f"""
-    vec4 translucent_fire(float t) {{
-        return vec4(pow(t, 0.5), t, t*t, pow(t, {n}));
-    }}
+class GradientMagnitudeTF(BaseTransferFunction):
+    """Transfer function that uses the data value and gradient magnitude to
+    sample a 2D transfer function.
     """
 
-class TransFire2D(BaseColormap):
-    glsl_map = f"""
-    vec4 translucent_fire(float t, float g) {{
-        return vec4(pow(t, {p}), 1 / (1 + t), g*g*g, pow(g, {n}));
-    }}
+    glsl_tf = """\
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 step) {
+        step = step / u_relative_step_size;
+        vec4 prev;
+        vec4 next;
+        // calculate normal vector from gradient
+        vec3 N; // normal
+        prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
+        next = $get_data(loc + vec3(step.x, 0.0, 0.0));
+        N[0] = colorToVal(prev) - colorToVal(next);
+        prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
+        next = $get_data(loc + vec3(0.0, step.y, 0.0));
+        N[1] = colorToVal(prev) - colorToVal(next);
+        prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
+        next = $get_data(loc + vec3(0.0, 0.0, step.z));
+        N[2] = colorToVal(prev) - colorToVal(next);
+        float gm = length(N); // gradient magnitude
+
+        gm = clamp(gm, min(clim.x, clim.y), max(clim.x, clim.y));
+
+        float data = colorToVal(color);
+        data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
+
+        vec4 final_color = sampleTFLUT(pow(data, gamma), gm);
+        return final_color;
+    }
     """
 
 
-# Create the volume visuals, only one is visible
-vol = scene.visuals.Volume(mri_data, parent=view0.scene, method="translucent", cmap=TransFire(), relative_step_size=1.0)
-vol.unfreeze()
-vol.transfer_function = TransFire2D()
-cam = scene.cameras.TurntableCamera(parent=view0.scene, fov=60, name='Turntable')
-view0.camera = cam
-view0.camera.scale_factor = 320.0
+class DepthColorTF(BaseTransferFunction):
+    """Transfer function that uses the data value and gradient magnitude to
+    sample a 2D transfer function.
+    """
 
-# pre-integrate the volume for direct volume rendering
+    glsl_tf = """\
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 step) {
+        vec4 hue = applyColormap(length(loc));
+        vec4 final_color = vec4(color.r * hue.rgb, 1.0);
+        return final_color;
+    }
+    """
 
+
+bins = 64
+cols = 128
+lut = np.empty((bins, cols, 4), dtype=np.float32)
+lut[:, :, 0] = 0
+lut[:, :, 1] = np.linspace(0, 1, cols)
+lut[:, :, 2] = 1
+lut[:, :, 3] = np.linspace(0, 0.05, cols)  # alpha
+lut_og = lut.copy()
+lut_og_1d = lut_og.copy()
+lut_og_2d = lut_og.copy()
+lut_og_2d[:, :, 3] *= np.linspace(1, 0, bins)[:, None] ** 2
+
+# basic volume rendering visual
+vol = scene.visuals.Volume(
+    mri_data,
+    parent=data_view.scene,
+    attenuation=0.01,
+    method="translucent",
+    relative_step_size=0.8,
+    transfer_function=GradientMagnitudeTF(lut_og_1d),
+    gamma=0.7,
+)
+cam = scene.cameras.TurntableCamera(parent=data_view.scene, fov=60, name='Turntable')
+data_view.camera = cam
+data_view.camera.scale_factor = 320.0
+
+# display the 2D histogram of the data with the TF over it
 gm = np.linalg.norm(np.gradient(mri_data), axis=0)
-# gm = da.linalg.norm(da.stack(da.gradient(mri_data), axis=-1), axis=-1)
-# gm = da.rechunk(gm, chunks=(256, 256, 256))
-# print(gm)
 hist_data = np.histogram2d(
-    np.log(np.clip(gm.ravel(), 1e-2, None)),
+    gm.ravel(),
     mri_data.ravel(),
-    # da.from_array(mri_data, chunks=(256, 256, 256)).ravel(),
-    bins=(32, 128),
-    # range=((0, 1), (0, 1)),
-)[0]
-# hist_data = da.log(da.clip(hist_data, 1, None)).compute()
-print(hist_data.shape)
-t, gm = np.meshgrid(np.linspace(0, 1, 128), np.linspace(0, 1, 32))
-r = t ** p
-g = 1 / (1 + t)
-b = gm**3
-a = gm**n
-hist_overlay = np.stack((r, g, b, a), axis=-1)
-hist = scene.visuals.Image(np.log(hist_data + 1), parent=view1.scene, cmap="gray")
-cmap = scene.visuals.Image(hist_overlay, parent=view1.scene)
-cmap.set_gl_state('translucent', depth_test=False)
-view1.camera.rect = (0, 0, 128, 32)
-view1.camera.interactive = False
+    bins=(bins, cols),
+    range=((0, 1), (0, 1)),
+)[0].astype(np.float32)
+
+hist = scene.visuals.Image(np.log2(hist_data + 1e-3), parent=cmap_view.scene, cmap="gray")
+cmap = scene.visuals.Image(vol.transfer_function._lut, parent=cmap_view.scene)
 
 
-@canvas.connect
-def on_mouse_press(event):
-    print(event.button)
-    print(event.pos)
-    print(view0.size, view1.size)
+def update_cmap_view():
+    # multiply by 10 just so it's easier to see, even though it's not correct
+    cmap_vis = vol.transfer_function._lut.copy()
+    cmap_vis[:, :, 3] *= 10
+    cmap.set_data(cmap_vis)
+    cmap.set_gl_state('translucent', depth_test=False)
+    cmap.update()
+
+
+cmap_view.camera.rect = (0, 0, cols, bins)
+cmap_view.camera.interactive = False
+update_cmap_view()
+
+
+@canvas.events.mouse_move.connect
+@canvas.events.mouse_press.connect
+def paint_tf(event):
+    u, v = lut_og.shape[:2]
+    if event.button == 1 and cmap_view.parent is not None:
+        x, y = event.pos
+        v_ = int(x * v / cmap_view.size[0]) - 1
+        u_ = u - int((y - data_view.size[1]) * u / cmap_view.size[1]) - 1
+        if u_ < 0 or u_ >= u or v_ < 0 or v_ >= v:
+            return
+        lut = vol.transfer_function._lut.copy()
+        u_min, u_max = max(0, u_ - 1), min(u, u_ + 2)
+        v_min, v_max = max(0, v_ - 1), min(v, v_ + 2)
+        if "Alt" in event.modifiers:
+            # erase
+            lut[u_min:u_max, v_min:v_max, :] = lut_og[u_min:u_max, v_min:v_max, :]
+        else:
+            # draw red
+            lut[u_min:u_max, v_min:v_max, 3] *= 1.2
+            lut[u_min:u_max, v_min:v_max, 0] = 1.0
+            lut[u_min:u_max, v_min:v_max, 1:3] = 0.0
+        lut = np.clip(lut, 0, 1.0)
+        vol.transfer_function = GradientMagnitudeTF(lut)
+        update_cmap_view()
+        vol.update()
 
 
 @canvas.events.key_press.connect
 def on_key_press(event):
-    global n
-    if event.text in ('-', "="):
-        if event.text == '-':
-            n -= .1
-        else:
-            n += .1
-        n = max(0, n)
-        print(n)
-        r = t ** p
-        g = 1 / (1 + t)
-        b = gm**3
-        a = gm**n
-        hist_overlay = np.stack((r, g, b, a), axis=-1)
-        cmap.set_data(hist_overlay)
-        cmap.set_gl_state('translucent', depth_test=False)
-        cmap.update()
-
-        class TransFire2D(BaseColormap):
-            glsl_map = f"""
-            vec4 translucent_fire(float t, float g) {{
-                return vec4(pow(t, {p}), 1 / (1 + t), g*g*g, pow(g, {n}));
-            }}
-            """
-        vol.transfer_function = TransFire2D()
-
-        class TransFire(BaseColormap):
-            glsl_map = f"""
-            vec4 translucent_fire(float t) {{
-                return vec4(pow(t, 0.5), t, t*t, pow(t, {n}));
-            }}
-            """
-        vol.cmap = TransFire()
+    global lut_og
+    if event.text == "1":
+        cmap_view.parent = grid
+        vol.method = "translucent"
+        lut_og = lut_og_1d
+        new_lut = lut_og.copy()
+        vol.transfer_function = GradientMagnitudeTF(new_lut)
+        print("translucent, 1D colormap")
+        update_cmap_view()
         vol.update()
 
-    elif event.text == '2':
-        methods = ['translucent', 'translucent_2d']
-        method = methods[(methods.index(vol.method) + 1) % len(methods)]
-        vol.method = method
-        print("Volume render method: %s" % method)
-
-    elif event.text == "[":
-        vol.relative_step_size = max(vol.relative_step_size - 0.1, 0.5)
+    elif event.text == "2":
+        cmap_view.parent = grid
+        vol.method = "translucent"
+        lut_og = lut_og_2d
+        new_lut = lut_og.copy()
+        vol.transfer_function = GradientMagnitudeTF(new_lut)
+        print("translucent, 2D colormap")
+        update_cmap_view()
         vol.update()
-        print(vol.relative_step_size)
 
-    elif event.text == "]":
-        vol.relative_step_size = max(vol.relative_step_size + 0.1, 0.5)
+    elif event.text == "3":
+        cmap_view.parent = None
+        vol.method = "attenuated_mip"
+        vol.cmap = "turbo"
+        vol.transfer_function = BaseTransferFunction()
+        print("attenuated_mip, base transfer function")
         vol.update()
-        print(vol.relative_step_size)
+
+    elif event.text == "4":
+        cmap_view.parent = None
+        vol.method = "attenuated_mip"
+        vol.cmap = "turbo"
+        vol.transfer_function = DepthColorTF()
+        print("attenuated_mip, depth color transfer function")
+        vol.update()
 
 
 if __name__ == '__main__':

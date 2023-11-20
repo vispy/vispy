@@ -44,7 +44,7 @@ from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture
 from ..gloo import VertexBuffer, IndexBuffer
 from . import Visual
 from .shaders import Function
-from ..color import get_colormap
+from ..color import get_colormap, BaseTransferFunction
 from ..io import load_spatial_filters
 
 import numpy as np
@@ -133,34 +133,8 @@ vec4 applyColormap(float data) {
     return color;
 }
 
-vec4 applyTransferFunction(float data, vec3 loc, vec3 step) {
-    vec4 prev;
-    vec4 next;
-    // TODO: factor gradient calc for use in other shaders
-    // calculate normal vector from gradient
-    vec3 N; // normal
-    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
-    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
-    N[0] = colorToVal(prev) - colorToVal(next);
-    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
-    next = $get_data(loc + vec3(0.0, step.y, 0.0));
-    N[1] = colorToVal(prev) - colorToVal(next);
-    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
-    next = $get_data(loc + vec3(0.0, 0.0, step.z));
-    N[2] = colorToVal(prev) - colorToVal(next);
-    float gm = length(N); // gradient magnitude
-
-    gm = clamp(gm, min(clim.x, clim.y), max(clim.x, clim.y));
-    gm = (gm - clim.x) / (clim.y - clim.x);
-
-    data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
-    data = (data - clim.x) / (clim.y - clim.x);
-    vec4 color = $trans(pow(data, gamma), gm);
-    return color;
-}
-
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
-{   
+{
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
@@ -251,6 +225,8 @@ vec3 intersectLinePlane(vec3 linePosition,
 
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
+
+$def_tf
 
 void main() {
     vec3 farpos = v_farpos.xyz / v_farpos.w;
@@ -423,7 +399,8 @@ _MIP_SNIPPETS = dict(
                 loc += small_step;
             }
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            vec4 max_color = $get_data(max_loc_tex);
+            gl_FragColor = applyTransferFunction(max_color, max_loc_tex - start_loc, step);
         } else {
             discard;
         }
@@ -456,7 +433,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     after_loop="""
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            vec4 max_color = $get_data(max_loc_tex);
+            gl_FragColor = applyTransferFunction(max_color, max_loc_tex - start_loc, step);
         }
         else {
             discard;
@@ -506,42 +484,12 @@ _MINIP_SNIPPETS = dict(
         """,
 )
 
-_TRANSLUCENT_2D_SNIPPETS = dict(
-    before_loop="""
-        vec4 integrated_color = vec4(0., 0., 0., 0.);
-        """,
-    in_loop="""
-        color = applyTransferFunction(val, loc, vec3(0.005, 0.005, 0.005));
-
-        float a1 = integrated_color.a;
-        float a2 = color.a * (1 - a1);
-        float alpha = min(1.0, max(a1 + a2, 0.001));
-
-        // Doesn't work.. GLSL optimizer bug?
-        //integrated_color = (integrated_color * a1 / alpha) +
-        //                   (color * a2 / alpha);
-        // This should be identical but does work correctly:
-        integrated_color *= a1 / alpha;
-        integrated_color += color * a2 / alpha;
-
-        integrated_color.a = alpha;
-
-        if( alpha > 0.99 ){
-            // stop integrating if the fragment becomes opaque
-            iter = nsteps;
-        }
-        """,
-    after_loop="""
-        gl_FragColor = integrated_color;
-        """,
-)
-
 _TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyTransferFunction(color, loc, step);
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.001);
@@ -570,7 +518,7 @@ _ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyTransferFunction(color, loc, step);
 
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -739,7 +687,6 @@ class VolumeVisual(Visual):
         'attenuated_mip': _ATTENUATED_MIP_SNIPPETS,
         'iso': _ISO_SNIPPETS,
         'translucent': _TRANSLUCENT_SNIPPETS,
-        'translucent_2d': _TRANSLUCENT_2D_SNIPPETS,
         'additive': _ADDITIVE_SNIPPETS,
         'average': _AVG_SNIPPETS
     }
@@ -765,7 +712,7 @@ class VolumeVisual(Visual):
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
                  clipping_planes_coord_system='scene', mip_cutoff=None,
-                 minip_cutoff=None):
+                 minip_cutoff=None, transfer_function=None):
 
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if clipping_planes_coord_system not in tr:
@@ -809,6 +756,12 @@ class VolumeVisual(Visual):
         self.shared_program['gamma'] = self._gamma
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
+
+        # TODO: add get_tf()
+        if transfer_function is not None:
+            self._transfer_function = transfer_function
+        else:
+            self._transfer_function = BaseTransferFunction()
 
         # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
@@ -989,8 +942,8 @@ class VolumeVisual(Visual):
     @transfer_function.setter
     def transfer_function(self, transfer_function):
         self._transfer_function = transfer_function
-        self.shared_program.frag['trans'] = Function(self._transfer_function.glsl_map)
-        self.shared_program['texture2D_LUT'] = self.transfer_function.texture_lut()
+        self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
+        self.shared_program['texture2D_TF_LUT'] = self._transfer_function.lut
         self.update()
 
     @property
@@ -1168,7 +1121,9 @@ class VolumeVisual(Visual):
         self.shared_program.frag['after_loop'] = self._after_loop_snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
+        self.shared_program['texture2D_TF_LUT'] = self._transfer_function.lut
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
         self._need_interpolation_update = True
