@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# Copyright (c) Vispy Development Team. All Rights Reserved.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
-# -----------------------------------------------------------------------------
 
 import math
 
@@ -72,22 +67,22 @@ class AxisVisual(CompoundVisual):
         determined automatically.
     """
 
-    def __init__(self, pos=None, domain=(0., 1.), 
-                 tick_direction=(-1., 0.), 
-                 scale_type="linear", 
-                 axis_color=(1, 1, 1), 
-                 tick_color=(0.7, 0.7, 0.7), 
-                 text_color='w', 
-                 minor_tick_length=5, 
-                 major_tick_length=10, 
-                 tick_width=2, 
-                 tick_label_margin=12, 
-                 tick_font_size=8, 
-                 axis_width=3, 
-                 axis_label=None, 
-                 axis_label_margin=35, 
-                 axis_font_size=10, 
-                 font_size=None, 
+    def __init__(self, pos=None, domain=(0., 1.),
+                 tick_direction=(-1., 0.),
+                 scale_type="linear",
+                 axis_color=(1, 1, 1),
+                 tick_color=(0.7, 0.7, 0.7),
+                 text_color='w',
+                 minor_tick_length=5,
+                 major_tick_length=10,
+                 tick_width=2,
+                 tick_label_margin=12,
+                 tick_font_size=8,
+                 axis_width=3,
+                 axis_label=None,
+                 axis_label_margin=35,
+                 axis_font_size=10,
+                 font_size=None,
                  anchors=None):
 
         if scale_type != 'linear':
@@ -330,6 +325,7 @@ class Ticker(object):
         doc_unit = visual_to_document.map([[0, 0], direction[:2]])
         doc_unit = doc_unit[1] - doc_unit[0]
         doc_len = np.linalg.norm(doc_unit)
+        doc_len = 400
 
         vectors = np.array([[0., 0.],
                             direction * self.axis.minor_tick_length / doc_len,
@@ -393,8 +389,11 @@ class Ticker(object):
             n_inches = np.sqrt(np.sum(length ** 2)) / transforms.dpi
 
             major = _get_ticks_talbot(domain[0], domain[1], n_inches, 2)
-
+            major = np.append(major,domain[1])
             labels = ['%g' % x for x in major]
+            if domain[1] - major[-1] < 500:
+                labels[-2] = ""
+
             majstep = major[1] - major[0]
             minor = []
             minstep = majstep / (minor_num + 1)
