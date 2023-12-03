@@ -3,6 +3,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+from typing import Callable
 
 import numpy as np
 
@@ -22,37 +23,62 @@ class HistogramVisual(MeshVisual):
         Color of the histogram.
     orientation : {'h', 'v'}
         Orientation of the histogram.
+    calc_hist : callable
+        Function that computes the histogram. Must accept (data, bins) and
+        return (hist_data, bin_edges). Default is numpy.histogram.
     """
 
-    def __init__(self, data, bins=10, color='w', orientation='h'):
-        #   4-5
-        #   | |
-        # 1-2/7-8
-        # |/| | |
-        # 0-3-6-9
-        data = np.asarray(data)
-        if data.ndim != 1:
-            raise ValueError('Only 1D data currently supported')
-        if not isinstance(orientation, str) or \
-                orientation not in ('h', 'v'):
-            raise ValueError('orientation must be "h" or "v", not %s'
-                             % (orientation,))
-        X, Y = (0, 1) if orientation == 'h' else (1, 0)
+    def __init__(
+        self,
+        hist_data=None,
+        bins=10,
+        color="w",
+        orientation="h",
+        calc_hist: Callable = np.histogram,
+    ):
+        self.orientation = orientation
+        if not callable(calc_hist):
+            raise TypeError("calc_hist must be a callable that accepts (data, bins).")
+        self.calc_hist = calc_hist
+        self._bins = bins
+        MeshVisual.__init__(self, color=color)
+        if hist_data is not None:
+            self.set_raw_data(hist_data, bins)
 
+    @property
+    def orientation(self):
+        return self._orientation
+
+    @orientation.setter
+    def orientation(self, orientation: str = "h"):
+        if orientation not in ("h", "v"):
+            raise ValueError('orientation must be "h" or "v", not %s' % (orientation,))
+        self._orientation = orientation
+
+    def set_raw_data(self, data, bins=None) -> None:
+        # update bins if provided
+        if bins is None:
+            bins = self._bins
+        else:
+            self._bins = bins
         # do the histogramming
-        data, bin_edges = np.histogram(data, bins)
+        hist_data, bin_edges = self.calc_hist(data, bins)
         # construct our vertices
+        verts, faces = self.bins2mesh(hist_data, bin_edges)
+        super().set_data(verts, faces)
+
+    def bins2mesh(self, hist_data, bin_edges):
+        X, Y = (0, 1) if self.orientation == "h" else (1, 0)
         rr = np.zeros((3 * len(bin_edges) - 2, 3), np.float32)
         rr[:, X] = np.repeat(bin_edges, 3)[1:-1]
-        rr[1::3, Y] = data
-        rr[2::3, Y] = data
+        rr[1::3, Y] = hist_data
+        rr[2::3, Y] = hist_data
         bin_edges.astype(np.float32)
         # and now our tris
         tris = np.zeros((2 * len(bin_edges) - 2, 3), np.uint32)
-        offsets = 3 * np.arange(len(bin_edges) - 1,
-                                dtype=np.uint32)[:, np.newaxis]
+        offsets = 3 * np.arange(len(bin_edges) - 1, dtype=np.uint32)[:, np.newaxis]
         tri_1 = np.array([0, 2, 1])
         tri_2 = np.array([2, 0, 3])
         tris[::2] = tri_1 + offsets
         tris[1::2] = tri_2 + offsets
-        MeshVisual.__init__(self, rr, tris, color=color)
+        return rr, tris

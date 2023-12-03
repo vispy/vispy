@@ -162,7 +162,7 @@ class PlotWidget(scene.Widget):
 
         self._configured = True
 
-    def histogram(self, data, bins=10, color='w', orientation='h'):
+    def histogram(self, data=None, bins=10, color='w', orientation='h'):
         """Calculate and show a histogram of data
 
         Parameters
