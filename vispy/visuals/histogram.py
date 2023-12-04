@@ -24,8 +24,8 @@ class HistogramVisual(MeshVisual):
     orientation : {'h', 'v'}
         Orientation of the histogram.
     calc_hist : callable
-        Function that computes the histogram. Must accept (data, bins) and
-        return (hist_data, bin_edges). Default is numpy.histogram.
+        Function that computes the histogram. Must accept two positional arguments
+        (data, bins) and return (hist_data, bin_edges). Default is numpy.histogram.
     """
 
     def __init__(
@@ -56,6 +56,7 @@ class HistogramVisual(MeshVisual):
         self._orientation = orientation
 
     def set_raw_data(self, data, bins=None, color=None) -> None:
+        """Set the data underlying the histogram, optionally update bins or color."""
         # update bins if provided
         if bins is None:
             bins = self._bins
@@ -64,10 +65,10 @@ class HistogramVisual(MeshVisual):
         # do the histogramming
         hist_data, bin_edges = self.calc_hist(data, bins)
         # construct our vertices
-        verts, faces = self.bins2mesh(hist_data, bin_edges)
+        verts, faces = self._bins2mesh(hist_data, bin_edges)
         super().set_data(verts, faces, color=color)
 
-    def bins2mesh(self, hist_data, bin_edges):
+    def _bins2mesh(self, hist_data, bin_edges):
         X, Y = (0, 1) if self.orientation == "h" else (1, 0)
         rr = np.zeros((3 * len(bin_edges) - 2, 3), np.float32)
         rr[:, X] = np.repeat(bin_edges, 3)[1:-1]
