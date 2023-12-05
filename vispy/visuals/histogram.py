@@ -56,7 +56,12 @@ class HistogramVisual(MeshVisual):
         self._orientation = orientation
 
     def set_raw_data(self, data, bins=None, color=None) -> None:
-        """Set the data underlying the histogram, optionally update bins or color."""
+        """Set the data underlying the histogram.
+        
+        Optionally update bins and color. Provided data will be passed
+        to the histogram function (``calc_hist``).
+        
+        """
         # update bins if provided
         if bins is None:
             bins = self._bins
