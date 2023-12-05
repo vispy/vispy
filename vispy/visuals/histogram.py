@@ -3,11 +3,24 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-from typing import Callable
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any, Callable
+import numpy.typing as npt
 
 import numpy as np
 
+
 from .mesh import MeshVisual
+
+if TYPE_CHECKING:
+    from typing import TypeAlias, Literal, SupportsIndex
+    from vispy.color.color_array import Color
+
+    BinsLike: TypeAlias = "str | SupportsIndex | npt.ArrayLike"
+    HistogramCallable: TypeAlias = Callable[
+        [npt.ArrayLike, BinsLike], tuple[npt.NDArray, npt.NDArray]
+    ]
+    Orientation: TypeAlias = Literal["h", "v"]
 
 
 class HistogramVisual(MeshVisual):
@@ -15,47 +28,60 @@ class HistogramVisual(MeshVisual):
 
     Parameters
     ----------
-    data : array-like
-        Data to histogram. Currently only 1D data is supported.
-    bins : int | array-like
-        Number of bins, or bin edges.
-    color : instance of Color
-        Color of the histogram.
+    data : array-like, optional
+        Data to histogram. Currently only 1D data is supported.  May be `None` on
+        initialization, use `set_raw_data` to set data after initialization.
+    bins : int | array-like | str
+        If `bins` is an int, it defines the number of equal-width
+        bins in the given range (10, by default). If `bins` is a
+        sequence, it defines a monotonically increasing array of bin edges,
+        including the rightmost edge, allowing for non-uniform bin widths.
+        May also be a string if the calc_hist function supports it.
+    color : str | Color
+        Color of the faces in the histogram mesh.
     orientation : {'h', 'v'}
         Orientation of the histogram.
-    calc_hist : callable
+    calc_hist : Callable
         Function that computes the histogram. Must accept (data, bins) and
-        return (hist_data, bin_edges). Default is numpy.histogram.
+        return (hist_data, bin_edges). Default is `numpy.histogram`.
+    **kwargs : dict
+        Keyword arguments to pass to `MeshVisual`.
     """
 
     def __init__(
         self,
-        hist_data=None,
-        bins=10,
-        color="w",
-        orientation="h",
-        calc_hist: Callable = np.histogram,
+        hist_data: npt.ArrayLike | None = None,
+        bins: BinsLike = 10,
+        color: str | Color = "w",
+        orientation: Orientation = "h",
+        calc_hist: HistogramCallable = np.histogram,
+        **kwargs: Any,
     ):
         self.orientation = orientation
         if not callable(calc_hist):
             raise TypeError("calc_hist must be a callable that accepts (data, bins).")
         self.calc_hist = calc_hist
         self._bins = bins
-        MeshVisual.__init__(self, color=color)
+        MeshVisual.__init__(self, color=color, **kwargs)
         if hist_data is not None:
             self.set_raw_data(hist_data, bins)
 
     @property
-    def orientation(self):
+    def orientation(self) -> Orientation:
         return self._orientation
 
     @orientation.setter
-    def orientation(self, orientation: str = "h"):
+    def orientation(self, orientation: Orientation = "h") -> None:
         if orientation not in ("h", "v"):
             raise ValueError('orientation must be "h" or "v", not %s' % (orientation,))
         self._orientation = orientation
 
-    def set_raw_data(self, data, bins=None, color=None) -> None:
+    def set_raw_data(
+        self,
+        data: npt.ArrayLike,
+        bins: BinsLike | None = None,
+        color: str | Color | None = None,
+    ) -> None:
         # update bins if provided
         if bins is None:
             bins = self._bins
