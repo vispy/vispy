@@ -4,16 +4,16 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Callable
-import numpy.typing as npt
 
 import numpy as np
-
 
 from .mesh import MeshVisual
 
 if TYPE_CHECKING:
     from typing import TypeAlias, Literal, SupportsIndex
+    import numpy.typing as npt
     from vispy.color.color_array import Color
 
     BinsLike: TypeAlias = "str | SupportsIndex | npt.ArrayLike"
@@ -29,8 +29,8 @@ class HistogramVisual(MeshVisual):
     Parameters
     ----------
     data : array-like, optional
-        Data to histogram. Currently only 1D data is supported.  May be `None` on
-        initialization, use `set_raw_data` to set data after initialization.
+        Data to histogram.  May be `None` on initialization, use `set_raw_data`
+        to set data after initialization.
     bins : int | array-like | str
         If `bins` is an int, it defines the number of equal-width
         bins in the given range (10, by default). If `bins` is a
@@ -94,11 +94,12 @@ class HistogramVisual(MeshVisual):
             self._bins = bins
         # do the histogramming
         hist_data, bin_edges = self.calc_hist(data, bins)
-        # construct our vertices
+        # construct our vertices and update the mesh
         verts, faces = self._bins2mesh(hist_data, bin_edges)
         super().set_data(verts, faces, color=color)
 
     def _bins2mesh(self, hist_data: npt.NDArray, bin_edges: npt.NDArray) -> tuple:
+        """Convert histogram data and bin edges to vertices and faces."""
         X, Y = (0, 1) if self.orientation == "h" else (1, 0)
         rr = np.zeros((3 * len(bin_edges) - 2, 3), np.float32)
         rr[:, X] = np.repeat(bin_edges, 3)[1:-1]
