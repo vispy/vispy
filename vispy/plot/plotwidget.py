@@ -168,7 +168,8 @@ class PlotWidget(scene.Widget):
         Parameters
         ----------
         data : array-like, optional
-            Data to histogram.  May be `None` on initialization, use `set_raw_data`
+            Data to histogram.  May be `None` on initialization, use
+            :meth:`~vispy.visuals.histogram:HistogramVisual.set_raw_data`
             on returned object to set data after initialization.
         bins : int | array-like | str
             If `bins` is an int, it defines the number of equal-width
