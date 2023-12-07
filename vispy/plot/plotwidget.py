@@ -172,11 +172,8 @@ class PlotWidget(scene.Widget):
             :meth:`~vispy.visuals.histogram:HistogramVisual.set_raw_data`
             on returned object to set data after initialization.
         bins : int | array-like | str
-            If `bins` is an int, it defines the number of equal-width
-            bins in the given range (10, by default). If `bins` is a
-            sequence, it defines a monotonically increasing array of bin edges,
-            including the rightmost edge, allowing for non-uniform bin widths.
-            May also be a string if the calc_hist function supports it.
+            Number of bins, bin edges, or bin edges and values.  See 
+            :class:`~vispy.visuals.histogram:HistogramVisual` docstring for details.
         color : instance of Color
             Color of the histogram.
         orientation : {'h', 'v'}
