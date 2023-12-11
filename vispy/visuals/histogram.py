@@ -28,23 +28,23 @@ class HistogramVisual(MeshVisual):
 
     Parameters
     ----------
-    data : array-like, optional
+    data
         Data to histogram.  May be `None` on initialization, use `set_raw_data`
         to set data after initialization.
-    bins : int | array-like | str
+    bins
         If `bins` is an int, it defines the number of equal-width
         bins in the given range (10, by default). If `bins` is a
         sequence, it defines a monotonically increasing array of bin edges,
         including the rightmost edge, allowing for non-uniform bin widths.
         May also be a string if the calc_hist function supports it.
-    color : str | Color
+    color
         Color of the faces in the histogram mesh.
-    orientation : {'h', 'v'}
+    orientation
         Orientation of the histogram.
-    calc_hist : Callable
+    calc_hist
         Function that computes the histogram. Must accept two positional arguments
         (data, bins) and return (hist_data, bin_edges). Default is numpy.histogram.
-    **kwargs : dict
+    **kwargs
         Keyword arguments to pass to `MeshVisual`.
     """
 
