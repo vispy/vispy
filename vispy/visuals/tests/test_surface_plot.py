@@ -29,7 +29,7 @@ def test_surface_plot(x1dim:bool, y1dim:bool):
 
         # color vertices
         cnorm = z / abs(np.amax(z))
-        colormap = get_colormap("jet").map(cnorm)
+        colormap = get_colormap("viridis").map(cnorm)
         colormap.reshape(z.shape + (-1,))
 
         # 1 or 2 dimensional x and y data
