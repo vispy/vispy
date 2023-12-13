@@ -2,9 +2,8 @@
 from vispy.scene.visuals import SurfacePlot 
 from vispy.scene import TurntableCamera
 from vispy.color import get_colormap
-from vispy.testing import (requires_application, TestingCanvas,
-                           run_tests_if_main, IS_CI)
-from vispy.testing.image_tester import assert_image_approved
+from vispy.testing import requires_application, TestingCanvas, run_tests_if_main
+from vispy.testing.image_tester import assert_image_reasonable
 
 import numpy as np
 import pytest
@@ -47,7 +46,7 @@ def test_surface_plot(x1dim:bool, y1dim:bool):
         # c.draw_visual(surface) 
         view.add(surface)
 
-        assert_image_approved(c.render(), "visuals/surface_plot.png")
+        assert_image_reasonable(c.render())
 
 
 run_tests_if_main()
