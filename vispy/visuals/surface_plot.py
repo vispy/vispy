@@ -70,8 +70,8 @@ class SurfacePlotVisual(MeshVisual):
         if z is not None:
             if self._x is not None and z.shape[0] != len(self._x):
                 raise TypeError('Z values must have shape (len(x), len(y))')
-            if self._y is not None and z.shape[1] != len(self._y):
-                raise TypeError('Z values must have shape (len(x), len(y))')
+            if self._y is not None and z.shape[1] != self._y.shape[-1]:    
+                raise TypeError('Z values must have shape (len(x), len(y)) or (x.shape[0], y.shape[1])')
             self._z = z
             if (self.__vertices is not None and
                     self._z.shape != self.__vertices.shape[:2]):
