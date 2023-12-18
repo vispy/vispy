@@ -46,7 +46,7 @@ jobs:
         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
         CIBW_ARCHS_MACOS: 'x86_64 arm64'
         CIBW_TEST_SKIP: '*-macosx_arm64'
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         path: ./wheelhouse/*.whl
 
@@ -66,7 +66,7 @@ jobs:
         python -m pip install --upgrade pip setuptools build wheel
         python -m pip install numpy Cython
         python -m build -s -o dist/
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         path: dist/*.tar.gz
 
