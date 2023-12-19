@@ -40,6 +40,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinxcontrib.apidoc',
               'sphinx_gallery.gen_gallery',
               'myst_parser',
+              'sphinx_autodoc_typehints',
               ]
 
 # API docs
