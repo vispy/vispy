@@ -75,8 +75,6 @@ jobs:
   upload_test_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    # upload to Test PyPI for every commit on main branch
-    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -99,6 +97,8 @@ jobs:
           name: wheels-ubuntu-20.04-aarch64
           path: dist
       - uses: pypa/gh-action-pypi-publish@master
+        # upload to Test PyPI for every commit on main branch
+        if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
         with:
           user: __token__
           password: ${{ secrets.VISPY_TEST_PYPI_TOKEN }}
@@ -107,10 +107,6 @@ jobs:
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    # upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    # alternatively, to publish when a GitHub Release is created, use the following rule:
-    # if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -133,6 +129,8 @@ jobs:
           name: wheels-ubuntu-20.04-aarch64
           path: dist
       - uses: pypa/gh-action-pypi-publish@master
+        # upload to PyPI on every tag starting with 'v'
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
         with:
           user: __token__
           password: ${{ secrets.VISPY_PYPI_TOKEN }}
