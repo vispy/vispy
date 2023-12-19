@@ -137,7 +137,7 @@ jobs:
         export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
     - name: Upload website HTML artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Sphinx Website
         path: |

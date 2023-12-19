@@ -46,8 +46,9 @@ jobs:
         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
         CIBW_ARCHS_MACOS: 'x86_64 arm64'
         CIBW_TEST_SKIP: '*-macosx_arm64'
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
+        name: wheels-${{ matrix.os }}-${{ matrix.arch }}
         path: ./wheelhouse/*.whl
 
   build_sdist:
@@ -66,21 +67,38 @@ jobs:
         python -m pip install --upgrade pip setuptools build wheel
         python -m pip install numpy Cython
         python -m build -s -o dist/
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
+        name: sdist
         path: dist/*.tar.gz
 
   upload_test_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    # upload to Test PyPI for every commit on main branch
-    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          name: sdist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-ubuntu-20.04-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-2019-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-macOS-latest-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-ubuntu-20.04-aarch64
           path: dist
       - uses: pypa/gh-action-pypi-publish@master
+        # upload to Test PyPI for every commit on main branch
+        if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
         with:
           user: __token__
           password: ${{ secrets.VISPY_TEST_PYPI_TOKEN }}
@@ -89,16 +107,30 @@ jobs:
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    # upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    # alternatively, to publish when a GitHub Release is created, use the following rule:
-    # if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-    - uses: actions/download-artifact@v3
-      with:
-        name: artifact
-        path: dist
-    - uses: pypa/gh-action-pypi-publish@master
-      with:
-        user: __token__
-        password: ${{ secrets.VISPY_PYPI_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-ubuntu-20.04-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-2019-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-macOS-latest-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-ubuntu-20.04-aarch64
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@master
+        # upload to PyPI on every tag starting with 'v'
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+        with:
+          user: __token__
+          password: ${{ secrets.VISPY_PYPI_TOKEN }}
