@@ -69,9 +69,8 @@ class EllipseVisual(PolygonVisual):
             if len(radius) == 2:
                 xr, yr = radius
             else:
-                raise ValueError("radius must be float or 2 value tuple/list"
-                                 " (got %s of length %d)" % (type(radius),
-                                                             len(radius)))
+                raise ValueError("radius must be float or 2 value tuple/list/numpy.ndarray "
+                                 f"(got {type(radius)} of length {len(radius)})")
         else:
             xr = yr = radius
 
