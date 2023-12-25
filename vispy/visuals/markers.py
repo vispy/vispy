@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """Marker Visual and shader definitions."""
-
 import numpy as np
 
 from ..color import ColorArray
@@ -616,10 +615,6 @@ class MarkersVisual(Visual):
             if np.any(edge_width_rel < 0):
                 raise ValueError('edge_width_rel cannot be negative')
 
-        if symbol is not None:
-            if not np.all(np.isin(np.asarray(symbol), self.symbols)):
-                raise ValueError(f'symbols must one of {self.symbols}')
-
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
             edge_color = edge_color[0]
@@ -648,7 +643,15 @@ class MarkersVisual(Visual):
             data['a_position'][:, :pos.shape[1]] = pos
             data['a_size'] = size
 
-            data['a_symbol'] = np.vectorize(self._symbol_shader_values.get)(symbol)
+            if symbol is None:
+                data["a_symbol"] = np.array(None)
+            else:
+                if isinstance(symbol, str):
+                    symbol = [symbol]
+                try:
+                    data['a_symbol'] = np.array([self._symbol_shader_values[x] for x in symbol])
+                except KeyError:
+                    raise ValueError(f'symbols must one of {self.symbols}')
 
             self._data = data
             self._vbo.set_data(data)
