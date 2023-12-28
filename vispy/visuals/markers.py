@@ -595,10 +595,8 @@ class MarkersVisual(Visual):
         edge_width : float or array or None
             The width of the symbol outline in screen (or data, if scaling is on) px.
         edge_width_rel : float or array or None
-            The width as a fraction of marker size.
-            Note on edge_width and edge_width_rel:
-                By default, edge_width = 1.0 if neither edge_width nor edge_width_rel is provided
-                A ValueError will be raised if both `edge_width` and `edge_width_rel` are supplied.
+            The width as a fraction of marker size. Can not be specified along with
+            edge_width. A ValueError will be raised if both are provided.
         edge_color : Color | ColorArray
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
