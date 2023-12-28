@@ -602,12 +602,10 @@ class MarkersVisual(Visual):
         symbol : str or array
             The style of symbol used to draw each marker (see Notes).
         """
-        if (edge_width is not None) and (edge_width_rel is not None):
-            #both edge_width and edge_width_rel are supplied
-            raise ValueError('either edge_width or edge_width_rel '
-                             'should be provided, not both')
-        elif (edge_width is None) and (edge_width_rel is None):
-            #neither the two widths is supplied
+        if edge_width is not None and edge_width_rel is not None:
+            raise ValueError("either edge_width or edge_width_rel "
+                             "should be provided, not both")
+        elif edge_width is None and edge_width_rel is None:
             edge_width = 1.0
 
         if edge_width is not None:
