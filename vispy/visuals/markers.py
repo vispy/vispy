@@ -594,6 +594,8 @@ class MarkersVisual(Visual):
             The symbol size in screen (or data, if scaling is on) px.
         edge_width : float or array or None
             The width of the symbol outline in screen (or data, if scaling is on) px.
+            Defaults to 1.0 if None or not provided and ``edge_width_rel`` is not
+        provided.
         edge_width_rel : float or array or None
             The width as a fraction of marker size. Can not be specified along with
             edge_width. A ValueError will be raised if both are provided.
