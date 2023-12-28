@@ -579,7 +579,7 @@ class MarkersVisual(Visual):
 
         self.freeze()
 
-    def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
+    def set_data(self, pos=None, size=10., edge_width=None, edge_width_rel=None,
                  edge_color='black', face_color='white',
                  symbol='o'):
         """Set the data used to display this visual.
@@ -602,9 +602,13 @@ class MarkersVisual(Visual):
         symbol : str or array
             The style of symbol used to draw each marker (see Notes).
         """
-        if (edge_width is not None) + (edge_width_rel is not None) != 1:
-            raise ValueError('exactly one of edge_width and edge_width_rel '
-                             'must be non-None')
+        if (edge_width is not None) and (edge_width_rel is not None):
+            #both edge_width and edge_width_rel are supplied
+            raise ValueError('either edge_width or edge_width_rel '
+                             'should be provided, not both')
+        elif (edge_width is None) and (edge_width_rel is None):
+            #neither the two widths is supplied
+            edge_width = 1.0
 
         if edge_width is not None:
             edge_width = np.asarray(edge_width)
