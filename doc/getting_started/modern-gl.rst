@@ -273,7 +273,7 @@ and not the fixed one.
 An intro to modern OpenGL
 -------------------------
 
-OpenGL has been around a long time, and from reading all the accumulated layers
+OpenGL has been around a long time and from reading all the accumulated layers
 of documentation out there on the Internet, it's not always clear what parts
 are historic and what parts are still useful and supported on modern graphics
 hardware. It's about time for a new OpenGL `introduction that
