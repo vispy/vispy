@@ -252,7 +252,7 @@ scene such that all objects are withing this direction but it would not be very
 convenient. So instead, we'll use a view matrix that will map the the world
 space to camera space. This is pretty much as if we were orienting the camera
 at a given position and look toward a given direction. In the meantime, we can
-further refine the whole pipeline by providing a model matrix that will maps
+further refine the whole pipeline by providing a model matrix that will map
 the object's local coordinate space into world space. For example, this will be
 useful for rotating an object around its center. To sum up, we need:
 
