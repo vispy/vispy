@@ -301,5 +301,5 @@ OpenGL ES 2.0 documentation
 the OpenGL 2.0 specification and emphasizes a programmable 3D graphics pipeline
 with the ability to create shader and program objects and the ability to write
 vertex and fragment shaders in the OpenGL ES Shading Language. VisPy is based
-on OpenGL ES 2.0 because it give access to the programmable pipeline while
+on OpenGL ES 2.0 because it gives access to the programmable pipeline while
 keeping overall complexity tractable.
