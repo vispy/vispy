@@ -276,9 +276,9 @@ An intro to modern OpenGL
 OpenGL has been around a long time and from reading all the accumulated layers
 of documentation out there on the Internet, it's not always clear what parts
 are historic and what parts are still useful and supported on modern graphics
-hardware. It's about time for a new OpenGL `introduction that
+hardware. It's about time for a `new OpenGL introduction
 <http://duriansoftware.com/joe/An-intro-to-modern-OpenGL.-Table-of-Contents.html>`_
-walks through the parts that are still relevant today.
+that walks through the parts that are still relevant today.
 
 
 Learning Modern 3D Graphics Programming
