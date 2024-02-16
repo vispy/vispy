@@ -252,7 +252,7 @@ scene such that all objects are withing this direction but it would not be very
 convenient. So instead, we'll use a view matrix that will map the the world
 space to camera space. This is pretty much as if we were orienting the camera
 at a given position and look toward a given direction. In the meantime, we can
-further refine the whole pipeline by providing a model matrix that will maps
+further refine the whole pipeline by providing a model matrix that will map
 the object's local coordinate space into world space. For example, this will be
 useful for rotating an object around its center. To sum up, we need:
 
@@ -273,19 +273,20 @@ and not the fixed one.
 An intro to modern OpenGL
 -------------------------
 
-OpenGL has been around a long time, and from reading all the accumulated layers
+OpenGL has been around a long time and from reading all the accumulated layers
 of documentation out there on the Internet, it's not always clear what parts
 are historic and what parts are still useful and supported on modern graphics
-hardware. It's about time for a new OpenGL `introduction that
+hardware. It's about time for a `new OpenGL introduction
 <http://duriansoftware.com/joe/An-intro-to-modern-OpenGL.-Table-of-Contents.html>`_
-walks through the parts that are still relevant today.
+that walks through the parts that are still relevant today.
 
 
 Learning Modern 3D Graphics Programming
 ---------------------------------------
 
-This `book <https://paroj.github.io/gltut/>`_ is intended to teach you how
-to be a graphics programmer. It is not aimed at any particular graphics field;
+The book `Learning Modern 3D Graphics Programming <https://paroj.github.io/gltut/>`_
+by Jason L. McKesson is intended to teach you how to be a graphics programmer.
+It is not aimed at any particular graphics field;
 it is designed to cover most of the basics of 3D rendering. So if you want to
 be a game developer, a CAD program designer, do some computer visualization, or
 any number of things, this book can still be an asset for you. This does not
@@ -301,5 +302,5 @@ OpenGL ES 2.0 documentation
 the OpenGL 2.0 specification and emphasizes a programmable 3D graphics pipeline
 with the ability to create shader and program objects and the ability to write
 vertex and fragment shaders in the OpenGL ES Shading Language. VisPy is based
-on OpenGL ES 2.0 because it give access to the programmable pipeline while
+on OpenGL ES 2.0 because it gives access to the programmable pipeline while
 keeping overall complexity tractable.
