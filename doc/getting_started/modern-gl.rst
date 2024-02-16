@@ -284,8 +284,9 @@ that walks through the parts that are still relevant today.
 Learning Modern 3D Graphics Programming
 ---------------------------------------
 
-`This book <https://paroj.github.io/gltut/>`_ is intended to teach you how
-to be a graphics programmer. It is not aimed at any particular graphics field;
+The book `Learning Modern 3D Graphics Programming <https://paroj.github.io/gltut/>`_
+by Jason L. McKesson is intended to teach you how to be a graphics programmer.
+It is not aimed at any particular graphics field;
 it is designed to cover most of the basics of 3D rendering. So if you want to
 be a game developer, a CAD program designer, do some computer visualization, or
 any number of things, this book can still be an asset for you. This does not
