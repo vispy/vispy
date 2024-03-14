@@ -1,5 +1,31 @@
 # Release Notes
 
+## [v0.14.2](https://github.com/vispy/vispy/tree/v0.14.2) (2024-03-14)
+
+**Enhancements:**
+
+- Radius of ellipse can now be specified as numpy.array [\#2561](https://github.com/vispy/vispy/pull/2561) ([ullmannJan](https://github.com/ullmannJan))
+- Add ivec2, ivec3, ivec4 to ATYPEINFO in glir.py [\#2545](https://github.com/vispy/vispy/pull/2545) ([hmaarrfk](https://github.com/hmaarrfk))
+- Improve Markers symbols validation performance [\#2533](https://github.com/vispy/vispy/pull/2533) ([Czaki](https://github.com/Czaki))
+
+**Fixed bugs:**
+
+- Correction to Vispy.Visuals.Markers.set\_data [\#2565](https://github.com/vispy/vispy/pull/2565) ([c40zAtGitHub](https://github.com/c40zAtGitHub))
+- Fix SurfacePlotVisual not allowing 2D x and y inputs [\#2554](https://github.com/vispy/vispy/pull/2554) ([ullmannJan](https://github.com/ullmannJan))
+- Change `devicePixelRatio` calls to `devicePixelRatioF` to get a floating point number instead of an integer [\#2540](https://github.com/vispy/vispy/pull/2540) ([dalthviz](https://github.com/dalthviz))
+
+**Merged pull requests:**
+
+- Fix a few typos in the docs [\#2573](https://github.com/vispy/vispy/pull/2573) ([kraasch](https://github.com/kraasch))
+- Bump pypa/cibuildwheel from 2.16.4 to 2.16.5 [\#2572](https://github.com/vispy/vispy/pull/2572) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.16.2 to 2.16.4 [\#2571](https://github.com/vispy/vispy/pull/2571) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/cache from 3 to 4 [\#2569](https://github.com/vispy/vispy/pull/2569) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Fix typo in plot widget error message [\#2563](https://github.com/vispy/vispy/pull/2563) ([jeertmans](https://github.com/jeertmans))
+- Bump actions/upload-artifact from 3 to 4 [\#2559](https://github.com/vispy/vispy/pull/2559) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/setup-python from 4 to 5 [\#2556](https://github.com/vispy/vispy/pull/2556) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.16.1 to 2.16.2 [\#2536](https://github.com/vispy/vispy/pull/2536) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+
 ## [v0.14.1](https://github.com/vispy/vispy/tree/v0.14.1) (2023-10-03)
 
 **Fixed bugs:**
