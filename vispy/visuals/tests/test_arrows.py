@@ -34,9 +34,6 @@ arrows = np.array([
 def test_arrow_draw():
     """Test drawing arrows without transforms"""
     with TestingCanvas() as c:
-        if IS_TRAVIS_CI and c.app.backend_name.lower() == 'pyqt4':
-            # TODO: Fix this (issue #1042
-            raise SkipTest('Travis fails due to FB stack problem')
         for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
@@ -52,9 +49,6 @@ def test_arrow_draw():
 def test_arrow_transform_draw():
     """Tests the ArrowVisual when a transform is applied"""
     with TestingCanvas() as c:
-        if IS_TRAVIS_CI and c.app.backend_name.lower() == 'pyqt4':
-            # TODO: Fix this (issue #1042
-            raise SkipTest('Travis fails due to FB stack problem')
         for arrow_type in ARROW_TYPES:
             arrow = visuals.Arrow(pos=vertices, arrow_type=arrow_type,
                                   arrows=arrows, arrow_size=10, color='red',
