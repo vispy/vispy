@@ -1283,8 +1283,7 @@ class GlirProgram(GlirObject):
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo_handle)
                 gl.glEnableVertexAttribArray(attr_handle)
                 func(attr_handle, *args)
-                if divisor is not None:
-                    gl.glVertexAttribDivisor(attr_handle, divisor)
+                gl.glVertexAttribDivisor(attr_handle, divisor or 0)
             else:
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
                 gl.glDisableVertexAttribArray(attr_handle)
