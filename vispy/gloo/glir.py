@@ -1283,7 +1283,13 @@ class GlirProgram(GlirObject):
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo_handle)
                 gl.glEnableVertexAttribArray(attr_handle)
                 func(attr_handle, *args)
-                gl.glVertexAttribDivisor(attr_handle, divisor or 0)
+                if hasattr(gl, "glVertexAttribDivisor"):
+                    gl.glVertexAttribDivisor(attr_handle, divisor or 0)
+                elif divisor is not None:
+                    logger.warning(
+                        'Instanced rendering not supported by'
+                        f'backend {gl.current_backend.__name__}'
+                    )
             else:
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
                 gl.glDisableVertexAttribArray(attr_handle)
