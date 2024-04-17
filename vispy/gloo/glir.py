@@ -1287,8 +1287,8 @@ class GlirProgram(GlirObject):
                     gl.glVertexAttribDivisor(attr_handle, divisor or 0)
                 elif divisor is not None:
                     logger.warning(
-                        'Instanced rendering not supported by'
-                        f'backend {gl.current_backend.__name__}'
+                        'Instanced rendering is not supported by the current'
+                        f'backend ("{gl.current_backend.__name__}")'
                     )
             else:
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
