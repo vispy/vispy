@@ -417,8 +417,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         // Scale and clamp accumulation in `sumval` by contrast limits so that:
         // * attenuation value does not depend on data values
         // * negative values do not amplify instead of attenuate
-        sumval = sumval + clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0);
-        scale = exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
+        sumval = sumval + u_relative_step_size * clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0);
+        scale = exp(-u_attenuation * (sumval - 1));
         if( maxval > scale * clim.y ) {
             // stop if no chance of finding a higher maxval
             iter = nsteps;
