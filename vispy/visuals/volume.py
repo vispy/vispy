@@ -1166,8 +1166,8 @@ class VolumeVisual(Visual):
     @relative_step_size.setter
     def relative_step_size(self, value):
         value = float(value)
-        if value < 0.1:
-            raise ValueError('relative_step_size cannot be smaller than 0.1')
+        if value <= 0:
+            raise ValueError('relative_step_size cannot be 0 or negative.')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
 
