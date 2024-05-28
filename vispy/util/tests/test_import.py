@@ -78,10 +78,8 @@ def test_import_vispy_app1():
 def test_import_vispy_app2():
     """Importing vispy.app should not pull in any backend toolkit."""
     allmodnames = loaded_vispy_modules('vispy.app', 2, True)
-    assert_not_in('PySide', allmodnames)
     assert_not_in('PySide2', allmodnames)
     assert_not_in('PySide6', allmodnames)
-    assert_not_in('PyQt4', allmodnames)
     assert_not_in('PyQt5', allmodnames)
     assert_not_in('PyQt6', allmodnames)
     assert_not_in('pyglet', allmodnames)

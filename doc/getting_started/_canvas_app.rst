@@ -28,16 +28,18 @@ depend on your environment and your machine.
     Python:   3.7.6 | packaged by conda-forge | (default, Mar 23 2020, 23:03:20)  [GCC 7.3.0]
     NumPy:    1.18.1
     Backend:  PyQt5
-    pyqt4:    None
     pyqt5:    ('PyQt5', '5.12.3', '5.12.5')
-    pyside:   None
+    pyqt6:    None
     pyside2:  None
+    pyside6:  None
     pyglet:   None
     glfw:     None
     sdl2:     None
     wx:       None
     egl:      EGL 1.5 NVIDIA: OpenGL_ES OpenGL
     osmesa:   None
+    tkinter:  None
+    jupyter_rfb: None
     _test:    None
 
     GL version:  '4.6.0 NVIDIA 455.28'
