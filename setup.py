@@ -106,6 +106,7 @@ setup(
         'pyside': ['PySide'],
         'pyside2': ['PySide2'],
         'pyside6': ['PySide6'],
+        'glfw': ['glfw'],
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'tk': ['pyopengltk'],
