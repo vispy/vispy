@@ -133,8 +133,8 @@ vec4 applyColormap(float data) {
     return color;
 }
 
-vec3 calculateNormal(vec3 loc, vec3 step) {
-    // calculate normal vector from gradient
+vec3 calculateGradient(vec3 loc, vec3 step) {
+    // calculate gradient within the volume by finite differences
     vec3 N;
     vec4 prev;
     vec4 next;
@@ -154,8 +154,8 @@ vec3 calculateNormal(vec3 loc, vec3 step) {
     return N;
 }
 
-vec3 calculateNormal(vec3 loc, vec3 step, inout vec4 maxColor) {
-    // calculate normal vector from gradient
+vec3 calculateGradient(vec3 loc, vec3 step, inout vec4 maxColor) {
+    // calculate gradient within the volume by finite differences
     // overwrite maxColor with the maximum encountered color
     // this is just overloading the above function, but it also
     // keeps track of maxColor for the isosurface shader
@@ -184,14 +184,13 @@ vec3 calculateNormal(vec3 loc, vec3 step, inout vec4 maxColor) {
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating lighting
-    vec4 color1;
-    vec4 color2;
 
     // View direction
     vec3 V = normalize(view_ray);
 
-    // Calculate normal vector
-    vec3 N = calculateNormal(loc, step, betterColor);
+    // Calculate normal vector from gradient, updating color based on local max
+    // this function modifies betterColor
+    vec3 N = calculateGradient(loc, step, betterColor);
     N = normalize(N);
 
     // Flip normal so it points towards viewer
@@ -199,9 +198,6 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
 
     // Get color of the texture (albeido)
-    color1 = betterColor;
-    color2 = color1;
-    // todo: parametrise color1_to_color2
 
     // Init colors
     vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);
@@ -233,8 +229,8 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     }
 
     // Calculate final color by componing different components
-    final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
-    final_color.a = color2.a;
+    final_color = betterColor * (ambient_color + diffuse_color) + specular_color;
+    final_color.a = betterColor.a;
 
     // Done
     return final_color;
@@ -280,7 +276,7 @@ void main() {
     // vec3 start_loc - the starting location of the ray in texture coordinates
     // vec3 step - the step vector in texture coordinates
     // int nsteps - the number of steps to make through the texture
-    
+
     $raycasting_setup
 
     // For testing: show the number of steps. This helps to establish
