@@ -58,8 +58,8 @@ class GradientMagnitudeTF(TextureSamplingTF):
     glsl_tf = """\
     vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step) {
         // calculate normal vector from gradient
-        // step = step / u_relative_step_size;
-        vec3 N = calculateNormal(loc, step);
+        vec3 dstep = 1.5 / u_shape;
+        vec3 N = calculateGradient(loc, dstep);
         // also calculate the gradient magnitude
         float gm = length(N);
 
@@ -97,7 +97,7 @@ lut[:, :, 3] = np.linspace(0, 0.05, cols)  # alpha
 lut_og = lut.copy()
 lut_og_1d = lut_og.copy()
 lut_og_2d = lut_og.copy()
-lut_og_2d[:, :, 3] *= np.linspace(0, 1, bins)[:, None] ** 0.5
+lut_og_2d[:, :, 3] *= np.linspace(0.1, 1, bins)[:, None] ** 0.5
 
 # basic volume rendering visual
 vol = scene.visuals.Volume(
@@ -212,6 +212,14 @@ def on_key_press(event):
         vol.cmap = mip_colormap
         vol.transfer_function = BaseTransferFunction()
         print("attenuated_mip, depth color transfer function")
+        vol.update()
+
+    if event.text in "[]":
+        if event.text == "[":
+            vol.relative_step_size *= 0.9
+        else:
+            vol.relative_step_size *= 1.1
+        print("relative step size:", vol.relative_step_size)
         vol.update()
 
 
