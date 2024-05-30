@@ -26,7 +26,13 @@ Controls:
 """
 import numpy as np
 from vispy import app, scene, io
-from vispy.color import BaseTransferFunction
+from vispy.color import BaseTransferFunction, TextureSamplingTF
+
+try:
+    import matplotlib  # noqa
+    mip_colormap = "turbo"
+except ImportError:
+    mip_colormap = "viridis"
 
 # Read and normalize volume data
 mri_data = np.load(io.load_data_file('brain/mri.npz'))['data']
@@ -44,28 +50,18 @@ data_view = grid.add_view(row=0, col=0, row_span=2)
 cmap_view = grid.add_view(row=2, col=0, camera='panzoom')
 
 
-class GradientMagnitudeTF(BaseTransferFunction):
+class GradientMagnitudeTF(TextureSamplingTF):
     """Transfer function that uses the data value and gradient magnitude to
     sample a 2D transfer function.
     """
 
     glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 step) {
-        step = step / u_relative_step_size;
-        vec4 prev;
-        vec4 next;
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step) {
         // calculate normal vector from gradient
-        vec3 N; // normal
-        prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
-        next = $get_data(loc + vec3(step.x, 0.0, 0.0));
-        N[0] = colorToVal(prev) - colorToVal(next);
-        prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
-        next = $get_data(loc + vec3(0.0, step.y, 0.0));
-        N[1] = colorToVal(prev) - colorToVal(next);
-        prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
-        next = $get_data(loc + vec3(0.0, 0.0, step.z));
-        N[2] = colorToVal(prev) - colorToVal(next);
-        float gm = length(N); // gradient magnitude
+        // step = step / u_relative_step_size;
+        vec3 N = calculateNormal(loc, step);
+        // also calculate the gradient magnitude
+        float gm = length(N);
 
         gm = clamp(gm, min(clim.x, clim.y), max(clim.x, clim.y));
 
@@ -79,13 +75,12 @@ class GradientMagnitudeTF(BaseTransferFunction):
 
 
 class DepthColorTF(BaseTransferFunction):
-    """Transfer function that uses the data value and gradient magnitude to
-    sample a 2D transfer function.
-    """
+    """Transfer function that colors the volume based on the depth of the maximum value."""
 
     glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 step) {
-        vec4 hue = applyColormap(length(loc));
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step) {
+        float depth = length(loc - start_loc);
+        vec4 hue = applyColormap(depth);
         vec4 final_color = vec4(color.r * hue.rgb, 1.0);
         return final_color;
     }
@@ -102,7 +97,7 @@ lut[:, :, 3] = np.linspace(0, 0.05, cols)  # alpha
 lut_og = lut.copy()
 lut_og_1d = lut_og.copy()
 lut_og_2d = lut_og.copy()
-lut_og_2d[:, :, 3] *= np.linspace(1, 0, bins)[:, None] ** 2
+lut_og_2d[:, :, 3] *= np.linspace(0, 1, bins)[:, None] ** 0.5
 
 # basic volume rendering visual
 vol = scene.visuals.Volume(
@@ -127,7 +122,7 @@ hist_data = np.histogram2d(
     range=((0, 1), (0, 1)),
 )[0].astype(np.float32)
 
-hist = scene.visuals.Image(np.log2(hist_data + 1e-3), parent=cmap_view.scene, cmap="gray")
+hist = scene.visuals.Image(np.log2(hist_data + 1e-3), parent=cmap_view.scene, cmap="grays")
 cmap = scene.visuals.Image(vol.transfer_function._lut, parent=cmap_view.scene)
 
 
@@ -198,7 +193,7 @@ def on_key_press(event):
     elif event.text == "3":
         cmap_view.parent = None
         vol.method = "attenuated_mip"
-        vol.cmap = "turbo"
+        vol.cmap = mip_colormap
         vol.transfer_function = BaseTransferFunction()
         print("attenuated_mip, base transfer function")
         vol.update()
@@ -206,8 +201,16 @@ def on_key_press(event):
     elif event.text == "4":
         cmap_view.parent = None
         vol.method = "attenuated_mip"
-        vol.cmap = "turbo"
+        vol.cmap = mip_colormap
         vol.transfer_function = DepthColorTF()
+        print("attenuated_mip, depth color transfer function")
+        vol.update()
+
+    elif event.text == "5":
+        cmap_view.parent = None
+        vol.method = "iso"
+        vol.cmap = mip_colormap
+        vol.transfer_function = BaseTransferFunction()
         print("attenuated_mip, depth color transfer function")
         vol.update()
 

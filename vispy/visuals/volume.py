@@ -133,6 +133,54 @@ vec4 applyColormap(float data) {
     return color;
 }
 
+vec3 calculateNormal(vec3 loc, vec3 step) {
+    // calculate normal vector from gradient
+    vec3 N;
+    vec4 prev;
+    vec4 next;
+
+    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
+    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
+    N.x = colorToVal(prev) - colorToVal(next);
+
+    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
+    next = $get_data(loc + vec3(0.0, step.y, 0.0));
+    N.y = colorToVal(prev) - colorToVal(next);
+
+    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
+    next = $get_data(loc + vec3(0.0, 0.0, step.z));
+    N.z = colorToVal(prev) - colorToVal(next);
+
+    return N;
+}
+
+vec3 calculateNormal(vec3 loc, vec3 step, inout vec4 maxColor) {
+    // calculate normal vector from gradient
+    // overwrite maxColor with the maximum encountered color
+    // this is just overloading the above function, but it also
+    // keeps track of maxColor for the isosurface shader
+    vec3 N;
+    vec4 prev;
+    vec4 next;
+
+    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
+    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
+    N.x = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
+    next = $get_data(loc + vec3(0.0, step.y, 0.0));
+    N.y = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
+    next = $get_data(loc + vec3(0.0, 0.0, step.z));
+    N.z = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    return N;
+}
+
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating lighting
@@ -142,21 +190,8 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // View direction
     vec3 V = normalize(view_ray);
 
-    // calculate normal vector from gradient
-    vec3 N; // normal
-    color1 = $get_data(loc+vec3(-step[0],0.0,0.0) );
-    color2 = $get_data(loc+vec3(step[0],0.0,0.0) );
-    N[0] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    color1 = $get_data(loc+vec3(0.0,-step[1],0.0) );
-    color2 = $get_data(loc+vec3(0.0,step[1],0.0) );
-    N[1] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]) );
-    color2 = $get_data(loc+vec3(0.0,0.0,step[2]) );
-    N[2] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    float gm = length(N); // gradient magnitude
+    // Calculate normal vector
+    vec3 N = calculateNormal(loc, step, betterColor);
     N = normalize(N);
 
     // Flip normal so it points towards viewer
@@ -400,7 +435,7 @@ _MIP_SNIPPETS = dict(
             }
             frag_depth_point = max_loc_tex * u_shape;
             vec4 max_color = $get_data(max_loc_tex);
-            gl_FragColor = applyTransferFunction(max_color, max_loc_tex - start_loc, step);
+            gl_FragColor = applyTransferFunction(max_color, max_loc_tex, start_loc, step);
         } else {
             discard;
         }
@@ -434,7 +469,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
             vec4 max_color = $get_data(max_loc_tex);
-            gl_FragColor = applyTransferFunction(max_color, max_loc_tex - start_loc, step);
+            gl_FragColor = applyTransferFunction(max_color, max_loc_tex, start_loc, step);
         }
         else {
             discard;
@@ -489,7 +524,7 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyTransferFunction(color, loc, step);
+        color = applyTransferFunction(color, loc, start_loc, step);
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.001);
@@ -518,7 +553,7 @@ _ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyTransferFunction(color, loc, step);
+        color = applyTransferFunction(color, loc, start_loc, step);
 
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -757,7 +792,6 @@ class VolumeVisual(Visual):
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
-        # TODO: add get_tf()
         if transfer_function is not None:
             self._transfer_function = transfer_function
         else:
@@ -943,7 +977,8 @@ class VolumeVisual(Visual):
     def transfer_function(self, transfer_function):
         self._transfer_function = transfer_function
         self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
-        self.shared_program['texture2D_TF_LUT'] = self._transfer_function.lut
+        for key, value in self._transfer_function.get_uniforms().items():
+            self.shared_program[key] = value
         self.update()
 
     @property
@@ -1123,9 +1158,10 @@ class VolumeVisual(Visual):
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
-        self.shared_program['texture2D_TF_LUT'] = self._transfer_function.lut
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
+        for key, value in self._transfer_function.get_uniforms().items():
+            self.shared_program[key] = value
         self._need_interpolation_update = True
         self.update()
 
