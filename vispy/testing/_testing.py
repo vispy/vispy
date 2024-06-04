@@ -377,7 +377,7 @@ def run_tests_if_main():
     import __main__
     try:
         import pytest
-        pytest.main(['-s', '--tb=short', fname])
+        pytest.main(['-s', '--tb=short', '-vvv', fname])
     except ImportError:
         print('==== Running tests in script\n==== %s' % fname)
         run_tests_in_object(__main__)

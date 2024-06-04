@@ -192,7 +192,7 @@ quad = np.array([[0, 0, 0], [-1, 0, 0], [-1, -1, 0],
 N = quad.shape[0] * 4
 
 # buf3 contains coordinates in device coordinates for four quadrants
-buf3 = np.row_stack([quad + (0, 0, 0), quad + (0, 1, 0),
+buf3 = np.vstack([quad + (0, 0, 0), quad + (0, 1, 0),
                      quad + (1, 1, 0), quad + (1, 0, 0)]).astype(np.float32)
 
 # buf2 is texture coords. Note that this is a view on buf2
