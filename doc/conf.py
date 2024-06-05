@@ -49,7 +49,6 @@ apidoc_excluded_paths = ["../vispy/ext"]
 apidoc_separate_modules = True
 
 # Sphinx Gallery
-from sphinx_gallery.sorting import FileNameSortKey
 
 # the following files are ignored from gallery processing
 ignore_files = ['plotting/export.py',
@@ -67,7 +66,7 @@ sphinx_gallery_conf = {
     'image_scrapers': ('vispy',),
     'reset_modules': tuple(),  # remove default matplotlib/seaborn resetters
     'first_notebook_cell': '%gui qt',  # tell notebooks to use Qt backend
-    'within_subsection_order': FileNameSortKey,
+    'within_subsection_order': "FileNameSortKey",
 }
 # Let vispy.app.application:Application.run know that we are generating gallery images
 os.environ["_VISPY_RUNNING_GALLERY_EXAMPLES"] = "1"
@@ -168,6 +167,12 @@ def _custom_edit_url(github_user, github_repo, github_version, doc_path, file_na
                                                  doc_path=doc_path,
                                                  file_name=file_name)
 
+
+# FIXME: including a function (_custom_edit_url) in html_context causes a warning in the build in CI
+# we fail on warnings, so suppress it for now. I think we need to suppress all similar warnings.
+# WARNING: cannot cache unpickable configuration value: 'html_context'
+# (because it contains a function, class, or module object)
+suppress_warnings = ["config.cache"]
 
 html_context = {
     "github_user": "vispy",
