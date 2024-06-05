@@ -7,10 +7,15 @@ from os import path as op
 import warnings
 
 from vispy.io import load_crate, imsave, imread, read_png, write_png
-from vispy.testing import requires_img_lib, run_tests_if_main
+from vispy.testing import requires_img_lib, requires_pyopengl, run_tests_if_main
 from vispy.util import _TempDir
 
 temp_dir = _TempDir()
+
+
+@requires_pyopengl()
+def test_failure():
+    assert False, "Forcing a failure to make sure CI is properly failing"
 
 
 def test_make_png():
