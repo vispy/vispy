@@ -1174,17 +1174,21 @@ class VolumeVisual(Visual):
 
         https://github.com/vispy/vispy/pull/2587
 
-        For this reason, this setter raises a ValueError when the value is
+        For this reason, this setter issues a warning when the value is
         smaller than ``side_len / (2 * MAX_CANVAS_SIZE)``, where ``side_len``
         is the smallest side of the volume and ``MAX_CANVAS_SIZE`` is what
         we consider to be the largest likely monitor resolution along its
         longest side: 7680 pixels, equivalent to an 8K monitor.
+
+        This setter also raises a ValueError when the value is 0 or negative.
         """
         value = float(value)
         side_len = np.min(self._vol_shape)
         MAX_CANVAS_SIZE = 7680
         minimum_val = side_len / (2 * MAX_CANVAS_SIZE)
-        if value < minimum_val:
+        if value <= 0:
+            raise ValueError('relative_step_size cannot be 0 or negative.')
+        elif value < minimum_val:
             warnings.warn(
                 f'To display a volume of shape {self._vol_shape} without '
                 f'artifacts, you need a step size no smaller than {side_len} /'
