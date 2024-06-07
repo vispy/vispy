@@ -141,7 +141,8 @@ html_theme = 'pydata_sphinx_theme'
 
 # Create custom 'edit' URLs for API modules since they are dynamically generated.
 # We precompute this so the values in the `html_context` are static, and it can be cached
-edit_link_paths = {}
+# `modules.rst` is a special case, and we link it to the main `vispy` package
+edit_link_paths = {"api/modules.rst": "vispy/__init__.py"}
 for root, dirs, files in os.walk("../vispy"):
     # remove leading "../"
     root = root[3:]
@@ -157,12 +158,14 @@ for root, dirs, files in os.walk("../vispy"):
             apidoc_file_name = "api/" + module_name + ".rst"
         edit_link_paths[apidoc_file_name] = full_path
 
+
 edit_page_url_template = """\
 {%- if file_name in edit_link_paths %}
     {% set file_name = edit_link_paths[file_name] %}
     https://github.com/{{github_user}}/{{github_repo}}/edit/{{github_version}}/{{file_name}}
 {%- else %}
-    https://github.com/{{github_user}}/{{github_repo}}/edit/{{github_version}}/{{doc_path}}/{{file_name}}
+    {# the last slash between doc_path and file_name is not needed for non-apidoc files #}
+    https://github.com/{{github_user}}/{{github_repo}}/edit/{{github_version}}/{{doc_path}}{{file_name}}
 {%- endif %}
 """
 
