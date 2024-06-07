@@ -15,7 +15,6 @@ from datetime import date
 import sys
 import os
 import re
-import warnings
 import vispy
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -49,7 +48,6 @@ apidoc_excluded_paths = ["../vispy/ext"]
 apidoc_separate_modules = True
 
 # Sphinx Gallery
-
 # the following files are ignored from gallery processing
 ignore_files = ['plotting/export.py',
                 'gloo/geometry_shader.py',
@@ -141,47 +139,40 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 html_theme = 'pydata_sphinx_theme'
 
-# Tell the theme where the code lives
+# Create custom 'edit' URLs for API modules since they are dynamically generated.
+# We precompute this so the values in the `html_context` are static, and it can be cached
+edit_link_paths = {}
+for root, dirs, files in os.walk("../vispy"):
+    # remove leading "../"
+    root = root[3:]
+    if root.endswith("__pycache__"):
+        continue
+    for file in files:
+        full_path = os.path.join(root, file)
+        if full_path.endswith("__init__.py"):
+            package_name = root.replace(os.sep, ".")
+            apidoc_file_name = "api/" + package_name + ".rst"
+        elif full_path.endswith(".py"):
+            module_name = os.path.splitext(full_path)[0].replace(os.sep, ".")
+            apidoc_file_name = "api/" + module_name + ".rst"
+        edit_link_paths[apidoc_file_name] = full_path
 
-
-def _custom_edit_url(github_user, github_repo, github_version, doc_path, file_name, default_edit_page_url_template):
-    """Create custom 'edit' URLs for API modules since they are dynamically generated."""
-    if file_name.startswith("api/"):
-        # this is a dynamically generated API page, link to actual Python source
-        modpath = os.sep.join(os.path.splitext(file_name[4:])[0].split("."))
-        if modpath == "modules":
-            # main package listing
-            modpath = "vispy"
-        rel_modpath = os.path.join("..", modpath)
-        if os.path.isdir(rel_modpath):
-            doc_path = modpath + "/"
-            file_name = "__init__.py"
-        elif os.path.isfile(rel_modpath + ".py"):
-            doc_path = os.path.dirname(modpath)
-            file_name = os.path.basename(modpath) + ".py"
-        else:
-            warnings.warn(f"Not sure how to generate the API URL for: {file_name}")
-    return default_edit_page_url_template.format(github_user=github_user,
-                                                 github_repo=github_repo,
-                                                 github_version=github_version,
-                                                 doc_path=doc_path,
-                                                 file_name=file_name)
-
-
-# FIXME: including a function (_custom_edit_url) in html_context causes a warning in the build in CI
-# we fail on warnings, so suppress it for now. I think we need to suppress all similar warnings.
-# WARNING: cannot cache unpickable configuration value: 'html_context'
-# (because it contains a function, class, or module object)
-suppress_warnings = ["config.cache"]
+edit_page_url_template = """\
+{%- if file_name in edit_link_paths %}
+    {% set file_name = edit_link_paths[file_name] %}
+    https://github.com/{{github_user}}/{{github_repo}}/edit/{{github_version}}/{{file_name}}
+{%- else %}
+    https://github.com/{{github_user}}/{{github_repo}}/edit/{{github_version}}/{{doc_path}}/{{file_name}}
+{%- endif %}
+"""
 
 html_context = {
     "github_user": "vispy",
     "github_repo": "vispy",
     "github_version": "main",
     "doc_path": "doc",
-    "edit_page_url_template": "{{ vispy_custom_edit_url(github_user, github_repo, github_version, doc_path, file_name, default_edit_page_url_template) }}",
-    "default_edit_page_url_template": "https://github.com/{github_user}/{github_repo}/edit/{github_version}/{doc_path}{file_name}",
-    "vispy_custom_edit_url": _custom_edit_url,
+    "edit_link_paths": edit_link_paths,
+    "edit_page_url_template": edit_page_url_template,
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
