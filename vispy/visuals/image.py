@@ -381,9 +381,7 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        if not copy:
-            copy = np_copy_if_needed
-        data = np.array(image, copy=copy)
+        data = np.array(image, copy=copy or np_copy_if_needed)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
