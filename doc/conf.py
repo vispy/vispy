@@ -154,12 +154,11 @@ for root, dirs, files in os.walk("../vispy"):
         full_path = root / file
         if full_path.name == "__init__.py":
             package_name = ".".join(root.parts)
-            apidoc_file_name = "api" / Path(package_name).with_suffix(".rst")
+            apidoc_file_name = "api" / Path(package_name + ".rst")
         elif full_path.suffix == ".py":
-            module_name = ".".join(Path(full_path).with_suffix("").parts)
-            apidoc_file_name = "api" / Path(module_name).with_suffix(".rst")
+            module_name = ".".join(full_path.with_suffix("").parts)
+            apidoc_file_name = "api" / Path(module_name + ".rst")
         edit_link_paths[str(apidoc_file_name)] = full_path
-
 
 edit_page_url_template = """\
 {%- if file_name in edit_link_paths %}
