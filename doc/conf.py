@@ -15,6 +15,8 @@ from datetime import date
 import sys
 import os
 import re
+from pathlib import Path
+
 import vispy
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -143,20 +145,20 @@ html_theme = 'pydata_sphinx_theme'
 # We precompute this so the values in the `html_context` are static, and it can be cached
 # `modules.rst` is a special case, and we link it to the main `vispy` package
 edit_link_paths = {"api/modules.rst": "vispy/__init__.py"}
-for root, dirs, files in os.walk("../vispy"):
+for root, dirs, files in Path("../vispy").walk():
     # remove leading "../"
-    root = root[3:]
-    if root.endswith("__pycache__"):
+    root = root.relative_to("..")
+    if root.name == "__pycache__":
         continue
     for file in files:
-        full_path = os.path.join(root, file)
-        if full_path.endswith("__init__.py"):
-            package_name = root.replace(os.sep, ".")
-            apidoc_file_name = "api/" + package_name + ".rst"
-        elif full_path.endswith(".py"):
-            module_name = os.path.splitext(full_path)[0].replace(os.sep, ".")
-            apidoc_file_name = "api/" + module_name + ".rst"
-        edit_link_paths[apidoc_file_name] = full_path
+        full_path = root / file
+        if full_path.name == "__init__.py":
+            package_name = ".".join(root.parts)
+            apidoc_file_name = "api" / Path(package_name).with_suffix(".rst")
+        elif full_path.suffix == ".py":
+            module_name = ".".join(Path(full_path).with_suffix("").parts)
+            apidoc_file_name = "api" / Path(module_name).with_suffix(".rst")
+        edit_link_paths[str(apidoc_file_name)] = full_path
 
 
 edit_page_url_template = """\
