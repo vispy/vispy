@@ -29,7 +29,15 @@ def convert_dtype_and_clip(data, dtype, copy=False):
     new_min, new_max = get_dtype_limits(dtype)
     if new_max >= old_max and new_min <= old_min:
         # no need to clip
-        return np.array(data, dtype=dtype, copy=copy)
+        try:
+            return np.array(data, dtype=dtype, copy=copy)
+        except TypeError as e:
+            # might be a cupy array, which raises error with implicit conversion
+            try:
+                import cupy as cp
+            except ImportError:
+                raise e
+            return cp.array(data, dtype=dtype, copy=copy)
     else:
         # to reduce copying, we clip into a pre-generated array of the right dtype
         new_data = np.empty_like(data, dtype=dtype)
@@ -172,7 +180,7 @@ class BaseTexture(GLObject):
 
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input
-        if isinstance(data_or_shape, np.ndarray):
+        if hasattr(data_or_shape, 'shape'):
             data = data_or_shape
             shape = data.shape
         else:
@@ -808,7 +816,7 @@ class TextureEmulated3D(Texture2D):
         self._update_variables()
 
     def _set_emulated_shape(self, data_or_shape):
-        if isinstance(data_or_shape, np.ndarray):
+        if hasattr(data_or_shape, 'shape'):
             self._emulated_shape = data_or_shape.shape
         else:
             assert isinstance(data_or_shape, tuple)
