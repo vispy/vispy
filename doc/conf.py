@@ -145,9 +145,9 @@ html_theme = 'pydata_sphinx_theme'
 # We precompute this so the values in the `html_context` are static, and it can be cached
 # `modules.rst` is a special case, and we link it to the main `vispy` package
 edit_link_paths = {"api/modules.rst": "vispy/__init__.py"}
-for root, dirs, files in Path("../vispy").walk():
+for root, dirs, files in os.walk("../vispy"):
     # remove leading "../"
-    root = root.relative_to("..")
+    root = Path(root).relative_to("..")
     if root.name == "__pycache__":
         continue
     for file in files:
