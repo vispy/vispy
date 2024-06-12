@@ -452,7 +452,15 @@ class BaseCollection(object):
         """Update vertex buffers & texture"""
         if self._vertices_buffer is not None:
             self._vertices_buffer.delete()
-        self._vertices_buffer = VertexBuffer(self._vertices_list.data)
+
+        # Vertex buffer is created with a local CPU storage to allow setting
+        # non-contiguous data (e.g. a single field such as 'position').
+        # Performance could be increased by also setting immediate_upload to
+        # False, but then appropriate calls to the upload_GPU method would
+        # be needed.
+        self._vertices_buffer = VertexBuffer(self._vertices_list.data,
+                                             use_cpu=True,
+                                             immediate_upload=True)
 
         if self.itype is not None:
             if self._indices_buffer is not None:
