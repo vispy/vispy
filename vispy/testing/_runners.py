@@ -164,7 +164,9 @@ def _flake():
         print('Running flake8... ')  # if end='', first error gets ugly
         sys.stdout.flush()
         try:
-            main()
+            # flake8 used to exit on failure, but instead `main` now returns an exit code
+            # see https://github.com/PyCQA/flake8/pull/1461
+            raise SystemExit(main())
         except SystemExit as ex:
             if ex.code in (None, 0):
                 pass  # do not exit yet, we want to print a success msg
