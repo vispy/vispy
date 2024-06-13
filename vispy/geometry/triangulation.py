@@ -7,6 +7,8 @@ import numpy as np
 
 from collections import OrderedDict
 
+from .calculations import _cross_2d
+
 
 class Triangulation(object):
     """Constrained delaunay triangulation
@@ -676,7 +678,7 @@ class Triangulation(object):
         A = self.pts[a]
         B = self.pts[b]
         C = self.pts[c]
-        return np.cross(B-A, C-B) > 0
+        return _cross_2d(B - A, C - B) > 0
 
     def _edges_intersect(self, edge1, edge2):
         """Return 1 if edges intersect completely (endpoints excluded)"""
@@ -739,7 +741,7 @@ class Triangulation(object):
         """
         v1 = self.pts[point] - self.pts[edge[0]]
         v2 = self.pts[edge[1]] - self.pts[edge[0]]
-        c = np.cross(v1, v2)  # positive if v1 is CW from v2
+        c = _cross_2d(v1, v2)  # positive if v1 is CW from v2
         return 1 if c > 0 else (-1 if c < 0 else 0)
 
     def _add_tri(self, a, b, c):
