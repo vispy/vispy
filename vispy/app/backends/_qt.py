@@ -493,41 +493,49 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_press(
+        vispy_event = self._vispy_mouse_press(
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
+        if not vispy_event.handled:
+            ev.ignore()
 
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_release(
+        vispy_event = self._vispy_mouse_release(
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP[ev.button()],
             modifiers=self._modifiers(ev),
         )
+        if not vispy_event.handled:
+            ev.ignore()
 
     def mouseDoubleClickEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_double_click(
+        vispy_event = self._vispy_mouse_double_click(
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
+        if not vispy_event.handled:
+            ev.ignore()
 
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_move(
+        vispy_event = self._vispy_mouse_move(
             native=ev,
             pos=_get_event_xy(ev),
             modifiers=self._modifiers(ev),
         )
+        if not vispy_event.handled:
+            ev.ignore()
 
     def wheelEvent(self, ev):
         if self._vispy_canvas is None:
@@ -544,12 +552,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             delta = ev.angleDelta()
             deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
         # Emit event
-        self._vispy_canvas.events.mouse_wheel(
+        vispy_event = self._vispy_canvas.events.mouse_wheel(
             native=ev,
             delta=(deltax, deltay),
             pos=_get_event_xy(ev),
             modifiers=self._modifiers(ev),
         )
+        if not vispy_event.handled:
+            ev.ignore()
 
     def keyPressEvent(self, ev):
         self._keyEvent(self._vispy_canvas.events.key_press, ev)
@@ -571,15 +581,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             pos = self.mapFromGlobal(ev.globalPos())
         pos = pos.x(), pos.y()
 
+        vispy_event = None
         if t == QtCore.Qt.NativeGestureType.BeginNativeGesture:
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type='gesture_begin',
                 pos=_get_event_xy(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.EndNativeGesture:
             self._native_touch_total_rotation = []
             self._native_touch_total_scale = []
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type='gesture_end',
                 pos=_get_event_xy(ev),
             )
@@ -592,7 +603,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             )
             self._native_gesture_rotation_values.append(angle)
             total_rotation_angle = math.fsum(self._native_gesture_rotation_values)
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type="gesture_rotate",
                 pos=pos,
                 rotation=angle,
@@ -608,7 +619,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             )
             self._native_gesture_scale_values.append(scale)
             total_scale_factor = math.fsum(self._native_gesture_scale_values)
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type="gesture_zoom",
                 pos=pos,
                 last_scale=last_scale,
@@ -621,6 +632,8 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Two finger pan events are anyway converted to scroll/wheel events.
         # On macOS, more fingers are usually swallowed by the OS (by spaces,
         # mission control, etc.).
+        if vispy_event is not None and not vispy_event.handled:
+            ev.ignore()
 
     def event(self, ev):
         out = super(QtBaseCanvasBackend, self).event(ev)
@@ -644,7 +657,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         else:
             key = None
         mod = self._modifiers(ev)
-        func(native=ev, key=key, text=str(ev.text()), modifiers=mod)
+        vispy_event = func(native=ev, key=key, text=str(ev.text()), modifiers=mod)
+        if not vispy_event.handled:
+            ev.ignore()
 
     def _modifiers(self, event):
         # Convert the QT modifier state into a tuple of active modifier keys.
@@ -771,7 +786,9 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
 
     def resizeEvent(self, event):
         w, h = event.size().width(), event.size().height()
-        self._vispy_canvas.events.resize(size=(w, h))
+        vispy_event = self._vispy_canvas.events.resize(size=(w, h))
+        if not vispy_event.handled:
+            event.ignore()
 
     def paintEvent(self, event):
         self._vispy_canvas.events.draw(region=None)
