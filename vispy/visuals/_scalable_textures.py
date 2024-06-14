@@ -311,7 +311,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
     def scale_and_set_data(self, data, offset=None, copy=True):
         """Upload new data to the GPU, scaling if necessary."""
         if self._data_dtype is None:
-            data.dtype == self._data_dtype
+            self._data_dtype = data.dtype
 
         # ensure dtype is the same as it was before, or funny things happen
         # no copy is performed unless asked for or necessary
