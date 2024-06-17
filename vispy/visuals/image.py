@@ -16,6 +16,7 @@ from .transforms import NullTransform
 from .visual import Visual
 from ..io import load_spatial_filters
 from ._scalable_textures import CPUScaledTexture2D, GPUScaledTexture2D
+from ..util import np_copy_if_needed
 
 
 _VERTEX_SHADER = """
@@ -380,7 +381,7 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = np.array(image, copy=copy)
+        data = np.array(image, copy=copy or np_copy_if_needed)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"

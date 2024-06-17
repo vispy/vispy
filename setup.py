@@ -96,7 +96,7 @@ setup(
     long_description_content_type='text/x-rst',
     platforms='any',
     provides=['vispy'],
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     install_requires=install_requires,
     extras_require={
         'ipython-static': ['ipython'],
@@ -151,10 +151,10 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Framework :: IPython'
     ],
 )

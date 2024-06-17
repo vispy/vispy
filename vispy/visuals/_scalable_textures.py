@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 
 from vispy.gloo.texture import Texture2D, Texture3D, convert_dtype_and_clip
+from vispy.util import np_copy_if_needed
 
 
 def get_default_clim_from_dtype(dtype):
@@ -298,7 +299,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
 
     @staticmethod
     def _scale_data_on_cpu(data, clim, copy=True):
-        data = np.array(data, dtype=np.float32, copy=copy)
+        data = np.array(data, dtype=np.float32, copy=copy or np_copy_if_needed)
         if clim[0] != clim[1]:
             # we always must copy the data if we change it here, otherwise it might change
             # unexpectedly the data held outside of here
