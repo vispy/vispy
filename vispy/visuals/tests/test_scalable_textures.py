@@ -133,6 +133,23 @@ def test_clim_handling_cpu():
     assert st.clim == (5, 25)
     assert st.clim_normalized == (0, 1)
 
+    # u8 auto -> f32 auto
+    st = CPUScaledStub()
+    st.set_clim("auto")
+    assert st.clim == "auto"
+    st.scale_and_set_data(ref_data.astype(np.uint8))
+    assert st.clim == (5, 25)
+    assert st.clim_normalized == (0, 1)
+    # set new data with an out-of-range value
+    # it should clip at the limits of the original data type
+    st.set_clim("auto")
+    assert st.clim == "auto"
+    new_data = np.array([[10, 10, 5], [15, 2048, 15]], dtype=np.float32)
+    st.scale_and_set_data(new_data)
+    assert st.clim == (5, 255)
+    assert st.clim_normalized == (0, 1)
+    print(st.data)
+
 
 def test_clim_handling_gpu():
     ref_data = np.array([[10, 10, 5], [15, 25, 15]])
