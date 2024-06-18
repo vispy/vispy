@@ -529,12 +529,15 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
+        # NB ignores events, returns None for events in quick succession
         vispy_event = self._vispy_mouse_move(
             native=ev,
             pos=_get_event_xy(ev),
             modifiers=self._modifiers(ev),
         )
-        if not vispy_event.handled:
+        if vispy_event is None or not vispy_event.handled:
+            # Theoretically, a parent widget might want to listen to all of
+            # the mouse move events, including those that VisPy ignores
             ev.ignore()
 
     def wheelEvent(self, ev):
