@@ -148,7 +148,6 @@ def test_clim_handling_cpu():
     st.scale_and_set_data(new_data)
     assert st.clim == (5, 255)
     assert st.clim_normalized == (0, 1)
-    print(st.data)
 
 
 def test_clim_handling_gpu():
