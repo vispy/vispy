@@ -44,7 +44,7 @@ from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture
 from ..gloo import VertexBuffer, IndexBuffer
 from . import Visual
 from .shaders import Function
-from ..color import get_colormap
+from ..color import get_colormap, BaseTransferFunction
 from ..io import load_spatial_filters
 
 import numpy as np
@@ -133,31 +133,64 @@ vec4 applyColormap(float data) {
     return color;
 }
 
+vec3 calculateGradient(vec3 loc, vec3 step) {
+    // calculate gradient within the volume by finite differences
+    vec3 N;
+    vec4 prev;
+    vec4 next;
+
+    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
+    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
+    N.x = colorToVal(prev) - colorToVal(next);
+
+    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
+    next = $get_data(loc + vec3(0.0, step.y, 0.0));
+    N.y = colorToVal(prev) - colorToVal(next);
+
+    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
+    next = $get_data(loc + vec3(0.0, 0.0, step.z));
+    N.z = colorToVal(prev) - colorToVal(next);
+
+    return N;
+}
+
+vec3 calculateGradient(vec3 loc, vec3 step, inout vec4 maxColor) {
+    // calculate gradient within the volume by finite differences
+    // overwrite maxColor with the maximum encountered color
+    // this is just overloading the above function, but it also
+    // keeps track of maxColor for the isosurface shader
+    vec3 N;
+    vec4 prev;
+    vec4 next;
+
+    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
+    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
+    N.x = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
+    next = $get_data(loc + vec3(0.0, step.y, 0.0));
+    N.y = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
+    next = $get_data(loc + vec3(0.0, 0.0, step.z));
+    N.z = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    return N;
+}
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
-{   
+{
     // Calculate color by incorporating lighting
-    vec4 color1;
-    vec4 color2;
 
     // View direction
     vec3 V = normalize(view_ray);
 
-    // calculate normal vector from gradient
-    vec3 N; // normal
-    color1 = $get_data(loc+vec3(-step[0],0.0,0.0) );
-    color2 = $get_data(loc+vec3(step[0],0.0,0.0) );
-    N[0] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    color1 = $get_data(loc+vec3(0.0,-step[1],0.0) );
-    color2 = $get_data(loc+vec3(0.0,step[1],0.0) );
-    N[1] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]) );
-    color2 = $get_data(loc+vec3(0.0,0.0,step[2]) );
-    N[2] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    float gm = length(N); // gradient magnitude
+    // Calculate normal vector from gradient, updating color based on local max
+    // this function modifies betterColor
+    vec3 N = calculateGradient(loc, step, betterColor);
     N = normalize(N);
 
     // Flip normal so it points towards viewer
@@ -165,9 +198,6 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
 
     // Get color of the texture (albeido)
-    color1 = betterColor;
-    color2 = color1;
-    // todo: parametrise color1_to_color2
 
     // Init colors
     vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);
@@ -199,8 +229,8 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     }
 
     // Calculate final color by componing different components
-    final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
-    final_color.a = color2.a;
+    final_color = betterColor * (ambient_color + diffuse_color) + specular_color;
+    final_color.a = betterColor.a;
 
     // Done
     return final_color;
@@ -227,6 +257,8 @@ vec3 intersectLinePlane(vec3 linePosition,
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
 
+$def_tf
+
 void main() {
     vec3 farpos = v_farpos.xyz / v_farpos.w;
     vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
@@ -244,7 +276,7 @@ void main() {
     // vec3 start_loc - the starting location of the ray in texture coordinates
     // vec3 step - the step vector in texture coordinates
     // int nsteps - the number of steps to make through the texture
-    
+
     $raycasting_setup
 
     // For testing: show the number of steps. This helps to establish
@@ -398,7 +430,8 @@ _MIP_SNIPPETS = dict(
                 loc += small_step;
             }
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            vec4 max_color = $get_data(max_loc_tex);
+            gl_FragColor = applyTransferFunction(max_color, max_loc_tex, start_loc, step);
         } else {
             discard;
         }
@@ -431,7 +464,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     after_loop="""
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            vec4 max_color = $get_data(max_loc_tex);
+            gl_FragColor = applyTransferFunction(max_color, max_loc_tex, start_loc, step);
         }
         else {
             discard;
@@ -486,7 +520,7 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyTransferFunction(color, loc, start_loc, step);
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.001);
@@ -515,7 +549,7 @@ _ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyTransferFunction(color, loc, start_loc, step);
 
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -709,7 +743,7 @@ class VolumeVisual(Visual):
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
                  clipping_planes_coord_system='scene', mip_cutoff=None,
-                 minip_cutoff=None):
+                 minip_cutoff=None, transfer_function=None):
 
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if clipping_planes_coord_system not in tr:
@@ -753,6 +787,11 @@ class VolumeVisual(Visual):
         self.shared_program['gamma'] = self._gamma
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
+
+        if transfer_function is not None:
+            self._transfer_function = transfer_function
+        else:
+            self._transfer_function = BaseTransferFunction()
 
         # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
@@ -924,6 +963,18 @@ class VolumeVisual(Visual):
         self._cmap = get_colormap(cmap)
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
+        self.update()
+
+    @property
+    def transfer_function(self):
+        return self._transfer_function
+
+    @transfer_function.setter
+    def transfer_function(self, transfer_function):
+        self._transfer_function = transfer_function
+        self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
+        for key, value in self._transfer_function.get_uniforms().items():
+            self.shared_program[key] = value
         self.update()
 
     @property
@@ -1101,9 +1152,12 @@ class VolumeVisual(Visual):
         self.shared_program.frag['after_loop'] = self._after_loop_snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
+        for key, value in self._transfer_function.get_uniforms().items():
+            self.shared_program[key] = value
         self._need_interpolation_update = True
         self.update()
 
