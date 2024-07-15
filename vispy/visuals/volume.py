@@ -236,7 +236,6 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }
 
-
 vec3 intersectLinePlane(vec3 linePosition, 
                         vec3 lineVector, 
                         vec3 planePosition, 
@@ -254,10 +253,10 @@ vec3 intersectLinePlane(vec3 linePosition,
     return linePosition + ( scaleFactor * lineVector );
 }
 
+$def_tf
+
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
-
-$def_tf
 
 void main() {
     vec3 farpos = v_farpos.xyz / v_farpos.w;
@@ -328,6 +327,27 @@ void main() {
 """  # noqa
 
 _RAYCASTING_SETUP_VOLUME = """
+    vec3 center = u_shape / 2.0;
+    float radius = length(u_shape) / 2.0;
+    vec3 oc = nearpos - center;
+    // a = 1 because direction is normalized
+    float b = 2 * dot(oc, view_ray);
+    float c = dot(oc, oc) - radius * radius;
+    float discriminant = b * b - 4 * c;
+    if (discriminant < 0) {
+        // no intersection
+        discard;
+    }
+    float t0 = (-b - sqrt(discriminant)) / 2.0;
+    float t1 = (-b + sqrt(discriminant)) / 2.0 ;
+    if (t0 <= 0.0 && t1 <= 0.0) {
+        // both intersections are behind the camera
+        discard;
+    }
+    // it's okay one of the intersections is behind the camera
+    // we still want the depth from the "front" of the sphere
+    vec3 sphere_intersection = nearpos + min(t0, t1) * view_ray;
+
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
     distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
@@ -431,7 +451,8 @@ _MIP_SNIPPETS = dict(
             }
             frag_depth_point = max_loc_tex * u_shape;
             vec4 max_color = $get_data(max_loc_tex);
-            gl_FragColor = applyTransferFunction(max_color, max_loc_tex, start_loc, step);
+            gl_FragColor = applyTransferFunction(max_color, frag_depth_point,
+                                                 sphere_intersection, step);
         } else {
             discard;
         }
@@ -465,7 +486,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
             vec4 max_color = $get_data(max_loc_tex);
-            gl_FragColor = applyTransferFunction(max_color, max_loc_tex, start_loc, step);
+            gl_FragColor = applyTransferFunction(max_color, frag_depth_point,
+                                                 sphere_intersection, step);
         }
         else {
             discard;
@@ -788,11 +810,6 @@ class VolumeVisual(Visual):
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
-        if transfer_function is not None:
-            self._transfer_function = transfer_function
-        else:
-            self._transfer_function = BaseTransferFunction()
-
         # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
@@ -809,6 +826,9 @@ class VolumeVisual(Visual):
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
+
+        if transfer_function is not None:
+            self.transfer_function = transfer_function
 
         # Set plane params
         if plane_position is None:
@@ -972,10 +992,14 @@ class VolumeVisual(Visual):
     @transfer_function.setter
     def transfer_function(self, transfer_function):
         self._transfer_function = transfer_function
+        self._need_tf_update = True
+        self.update()
+
+    def _transfer_function_update(self):
         self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
         for key, value in self._transfer_function.get_uniforms().items():
             self.shared_program[key] = value
-        self.update()
+        self._need_tf_update = False
 
     @property
     def interpolation_methods(self):
@@ -1143,6 +1167,9 @@ class VolumeVisual(Visual):
                              (known_methods, method))
         self._method = method
 
+        # reset the transfer function, as it may be different for different render methods
+        self.transfer_function = BaseTransferFunction()
+
         # $get_data needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['get_data'] = None
@@ -1156,8 +1183,6 @@ class VolumeVisual(Visual):
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
-        for key, value in self._transfer_function.get_uniforms().items():
-            self.shared_program[key] = value
         self._need_interpolation_update = True
         self.update()
 
@@ -1418,3 +1443,6 @@ class VolumeVisual(Visual):
 
         if self._need_interpolation_update:
             self._build_interpolation()
+
+        if self._need_tf_update:
+            self._transfer_function_update()

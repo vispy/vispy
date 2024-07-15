@@ -8,17 +8,16 @@
 Volume Rendering with 2D Transfer Function
 ================
 
-Example volume rendering with an editable 2D transfer function.
-
-The bottom view shows the 2D histogram of the data (value, gradent magnitude)
-with the transfer function overlaid.
+This example demonstrates how to use higher order transfer functions to control volume rendering.
+The transfer function is a 2D texture that is sampled based on the data value and the gradient
+magnitude. The transfer function is shown over the 2D histogram of the data below the image. You can
+paint on the transfer function to change it.
 
 Controls:
 
 * 1  - Reset to default 1D transfer function
 * 2  - Reset to default 2D transfer function
-* 3  - Show attenuated MIP
-* 4  - Show attenuated MIP colored by depth of max value
+* [ / ] - Decrease/increase relative step size
 
 # Left click and drag to paint the transfer function
 # Alt + Left click and drag to erase on the transfer function
@@ -27,12 +26,6 @@ Controls:
 import numpy as np
 from vispy import app, scene, io
 from vispy.color import BaseTransferFunction, TextureSamplingTF
-
-try:
-    import matplotlib  # noqa
-    mip_colormap = "turbo"
-except ImportError:
-    mip_colormap = "viridis"
 
 # Read and normalize volume data
 mri_data = np.load(io.load_data_file('brain/mri.npz'))['data']
@@ -74,19 +67,6 @@ class GradientMagnitudeTF(TextureSamplingTF):
     """
 
 
-class DepthColorTF(BaseTransferFunction):
-    """Transfer function that colors the volume based on the depth of the maximum value."""
-
-    glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step) {
-        float depth = length(loc - start_loc);
-        vec4 hue = applyColormap(depth);
-        vec4 final_color = vec4(color.r * hue.rgb, 1.0);
-        return final_color;
-    }
-    """
-
-
 bins = 64
 cols = 128
 lut = np.empty((bins, cols, 4), dtype=np.float32)
@@ -103,12 +83,12 @@ lut_og_2d[:, :, 3] *= np.linspace(0.1, 1, bins)[:, None] ** 0.5
 vol = scene.visuals.Volume(
     mri_data,
     parent=data_view.scene,
-    attenuation=0.01,
+    attenuation=0.015,
     method="translucent",
     relative_step_size=0.8,
     transfer_function=GradientMagnitudeTF(lut_og_1d),
-    gamma=0.7,
 )
+# breakpoint()
 cam = scene.cameras.TurntableCamera(parent=data_view.scene, fov=60, name='Turntable')
 data_view.camera = cam
 data_view.camera.scale_factor = 320.0
@@ -171,7 +151,6 @@ def paint_tf(event):
 def on_key_press(event):
     global lut_og
     if event.text == "1":
-        cmap_view.parent = grid
         vol.method = "translucent"
         lut_og = lut_og_1d
         new_lut = lut_og.copy()
@@ -181,7 +160,6 @@ def on_key_press(event):
         vol.update()
 
     elif event.text == "2":
-        cmap_view.parent = grid
         vol.method = "translucent"
         lut_og = lut_og_2d
         new_lut = lut_og.copy()
@@ -190,34 +168,10 @@ def on_key_press(event):
         update_cmap_view()
         vol.update()
 
-    elif event.text == "3":
-        cmap_view.parent = None
-        vol.method = "attenuated_mip"
-        vol.cmap = mip_colormap
-        vol.transfer_function = BaseTransferFunction()
-        print("attenuated_mip, base transfer function")
-        vol.update()
-
-    elif event.text == "4":
-        cmap_view.parent = None
-        vol.method = "attenuated_mip"
-        vol.cmap = mip_colormap
-        vol.transfer_function = DepthColorTF()
-        print("attenuated_mip, depth color transfer function")
-        vol.update()
-
-    elif event.text == "5":
-        cmap_view.parent = None
-        vol.method = "iso"
-        vol.cmap = mip_colormap
-        vol.transfer_function = BaseTransferFunction()
-        print("attenuated_mip, depth color transfer function")
-        vol.update()
-
     if event.text in "[]":
         if event.text == "[":
             vol.relative_step_size *= 0.9
-        else:
+        elif event.text == "]":
             vol.relative_step_size *= 1.1
         print("relative step size:", vol.relative_step_size)
         vol.update()
