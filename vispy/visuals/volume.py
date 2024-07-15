@@ -253,6 +253,34 @@ vec3 intersectLinePlane(vec3 linePosition,
     return linePosition + ( scaleFactor * lineVector );
 }
 
+vec3 intersectLineSphere(vec3 origin,
+                         vec3 direction,
+                         vec3 center,
+                         float radius,
+                         out bool hit_sphere) {
+    vec3 oc = origin - center;
+    // a = 1 because direction is normalized
+    float b = 2 * dot(oc, direction);
+    float c = dot(oc, oc) - radius * radius;
+    float discriminant = b * b - 4 * c;
+    if (discriminant < 0) {
+        // no intersection
+        hit_sphere = false;
+        return vec3(0.0);
+    }
+    float t0 = (-b - sqrt(discriminant)) / 2.0;
+    float t1 = (-b + sqrt(discriminant)) / 2.0 ;
+    if (t0 <= 0.0 && t1 <= 0.0) {
+        // both intersections are behind the camera
+        hit_sphere = false;
+        return vec3(0.0);
+    }
+    // it's okay one of the intersections is behind the camera
+    // we still want the depth from the "front" of the sphere
+    hit_sphere = true;
+    return origin + min(t0, t1) * direction;
+}
+
 $def_tf
 
 // for some reason, this has to be the last function in order for the
@@ -329,24 +357,11 @@ void main() {
 _RAYCASTING_SETUP_VOLUME = """
     vec3 center = u_shape / 2.0;
     float radius = length(u_shape) / 2.0;
-    vec3 oc = nearpos - center;
-    // a = 1 because direction is normalized
-    float b = 2 * dot(oc, view_ray);
-    float c = dot(oc, oc) - radius * radius;
-    float discriminant = b * b - 4 * c;
-    if (discriminant < 0) {
-        // no intersection
-        discard;
-    }
-    float t0 = (-b - sqrt(discriminant)) / 2.0;
-    float t1 = (-b + sqrt(discriminant)) / 2.0 ;
-    if (t0 <= 0.0 && t1 <= 0.0) {
-        // both intersections are behind the camera
-        discard;
-    }
-    // it's okay one of the intersections is behind the camera
-    // we still want the depth from the "front" of the sphere
-    vec3 sphere_intersection = nearpos + min(t0, t1) * view_ray;
+    bool hit_sphere;
+    vec3 sphere_intersection = intersectLineSphere(nearpos, view_ray, center, radius, hit_sphere);
+    if (!hit_sphere) { discard; }
+    vec3 depth_origin = sphere_intersection;
+    float max_depth = length(u_shape);
 
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
@@ -380,6 +395,9 @@ _RAYCASTING_SETUP_PLANE = """
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
     vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
+    vec3 depth_origin = intersection - u_plane_normal * u_plane_thickness / 2;
+    float max_depth = u_plane_thickness;
+
     // and texture coordinates
     vec3 intersection_tex = (intersection + 0.5) / u_shape;
 
@@ -452,7 +470,7 @@ _MIP_SNIPPETS = dict(
             frag_depth_point = max_loc_tex * u_shape;
             vec4 max_color = $get_data(max_loc_tex);
             gl_FragColor = applyTransferFunction(max_color, frag_depth_point,
-                                                 sphere_intersection, step);
+                                                 depth_origin, step, max_depth);
         } else {
             discard;
         }
@@ -487,7 +505,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
             frag_depth_point = max_loc_tex * u_shape;
             vec4 max_color = $get_data(max_loc_tex);
             gl_FragColor = applyTransferFunction(max_color, frag_depth_point,
-                                                 sphere_intersection, step);
+                                                 depth_origin, step, max_depth);
         }
         else {
             discard;
@@ -542,7 +560,7 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyTransferFunction(color, loc, start_loc, step);
+        color = applyTransferFunction(color, loc, depth_origin, step, max_depth);
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.001);
@@ -571,7 +589,7 @@ _ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyTransferFunction(color, loc, start_loc, step);
+        color = applyTransferFunction(color, loc, depth_origin, step, max_depth);
 
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,

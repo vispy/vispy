@@ -46,9 +46,9 @@ class DepthColorTF(BaseTransferFunction):
 
     glsl_tf = """\
     uniform float u_depth_color_scale;
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step) {
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step, float max_depth) {
         vec3 d = loc - start_loc;
-        float depth = u_depth_color_scale * length(d) / length(u_shape);
+        float depth = u_depth_color_scale * length(d) / max_depth;
         depth = smoothstep(0.0, 1.0, depth);
         depth = depth * (clim.y - clim.x) + clim.x;
         vec4 hue = applyColormap(depth);
@@ -82,7 +82,6 @@ vol = scene.visuals.Volume(
     cmap=mip_colormap,
     relative_step_size=0.5,
     transfer_function=DepthColorTF(),
-    gamma=1.0,
 )
 cam = scene.cameras.TurntableCamera(parent=view.scene, fov=60, name='Turntable', scale_factor=320.0)
 view.camera = cam
