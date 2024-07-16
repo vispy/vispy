@@ -452,11 +452,11 @@ _MIP_SNIPPETS = dict(
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
             // Calculate starting location of ray for sampling
+            vec3 loc = start_loc + step * maxi;
             vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
-            loc = start_loc_refine;
 
             // Variables to keep track of current value and where max was encountered
-            vec3 max_loc_tex = start_loc_refine;
+            vec3 max_loc_tex = loc;
 
             vec3 small_step = step * 0.1;
             for (int i=0; i<10; i++) {
