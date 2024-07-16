@@ -133,32 +133,10 @@ vec4 applyColormap(float data) {
     return color;
 }
 
-vec3 calculateGradient(vec3 loc, vec3 step) {
-    // calculate gradient within the volume by finite differences
-    vec3 N;
-    vec4 prev;
-    vec4 next;
-
-    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
-    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
-    N.x = colorToVal(prev) - colorToVal(next);
-
-    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
-    next = $get_data(loc + vec3(0.0, step.y, 0.0));
-    N.y = colorToVal(prev) - colorToVal(next);
-
-    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
-    next = $get_data(loc + vec3(0.0, 0.0, step.z));
-    N.z = colorToVal(prev) - colorToVal(next);
-
-    return N;
-}
-
 vec3 calculateGradient(vec3 loc, vec3 step, inout vec4 maxColor) {
     // calculate gradient within the volume by finite differences
     // overwrite maxColor with the maximum encountered color
-    // this is just overloading the above function, but it also
-    // keeps track of maxColor for the isosurface shader
+    // keeps track of maxColor from the local samples
     vec3 N;
     vec4 prev;
     vec4 next;
