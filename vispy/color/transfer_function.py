@@ -13,7 +13,7 @@ class BaseTransferFunction:
         the transfer function can compute colors directly.
     """
     glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step) {
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step, float max_depth) {
         return applyColormap(colorToVal(color));
     }
     """
