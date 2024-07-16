@@ -6,7 +6,7 @@
 
 """
 Volume Rendering with a Depth Color Transfer Function
-================
+=====================================================
 
 This example demonstrates how to use a transfer function to color the volume based on the depth of
 the maximum value.

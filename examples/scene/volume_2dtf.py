@@ -6,7 +6,7 @@
 
 """
 Volume Rendering with 2D Transfer Function
-================
+==========================================
 
 This example demonstrates how to use higher order transfer functions to control volume rendering.
 The transfer function is a 2D texture that is sampled based on the data value and the gradient
