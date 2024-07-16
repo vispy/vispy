@@ -25,12 +25,12 @@ Controls:
 """
 import numpy as np
 from vispy import app, scene, io
-from vispy.color import BaseTransferFunction, TextureSamplingTF
+from vispy.color import TextureSamplingTF
 
 # Read and normalize volume data
 mri_data = np.load(io.load_data_file('brain/mri.npz'))['data']
 mri_data = np.flipud(np.rollaxis(mri_data, 1)).astype(np.float32)
-mri_data = (mri_data - mri_data.min()) / mri_data.ptp()
+mri_data = (mri_data - mri_data.min()) / np.ptp(mri_data)
 
 # Prepare canvas
 canvas = scene.SceneCanvas(keys='interactive', size=(768, 1024), show=True)
