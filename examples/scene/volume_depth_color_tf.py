@@ -15,7 +15,7 @@ Controls:
 
 * 1  - Show attenuated MIP, colored by depth of max value
 * 2  - Show attenuated MIP
-* - / = - Decrease/increase depth color scale
+* - / = - Decrease/increase gamma (change how depth affects color)
 * [ / ] - Decrease/increase attenuation
 
 """
@@ -45,10 +45,9 @@ class DepthColorTF(BaseTransferFunction):
     """Transfer function that colors the volume based on the depth of the maximum value."""
 
     glsl_tf = """\
-    uniform float u_depth_color_scale;
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step, float max_depth) {
-        vec3 d = loc - start_loc;
-        float depth = u_depth_color_scale * length(d) / max_depth;
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 origin, vec3 step, float max_depth) {
+        vec3 d = loc - origin;
+        float depth = pow(length(d) / max_depth, gamma);
         depth = smoothstep(0.0, 1.0, depth);
         depth = depth * (clim.y - clim.x) + clim.x;
         vec4 hue = applyColormap(depth);
@@ -59,19 +58,6 @@ class DepthColorTF(BaseTransferFunction):
 
     def __init__(self):
         super().__init__()
-        self._depth_color_scale = 1.0
-
-    @property
-    def depth_color_scale(self):
-        return self._depth_color_scale
-
-    @depth_color_scale.setter
-    def depth_color_scale(self, value):
-        self._depth_color_scale = value
-
-    def get_uniforms(self):
-        return {"u_depth_color_scale": self.depth_color_scale}
-
 
 # basic volume rendering visual
 vol = scene.visuals.Volume(
@@ -104,14 +90,11 @@ def on_key_press(event):
         vol.update()
 
     if event.text in "-=":
-        if not hasattr(vol.transfer_function, "depth_color_scale"):
-            return
         if event.text == "-":
-            vol.transfer_function.depth_color_scale *= 0.9
+            vol.gamma *= 0.9
         elif event.text == "=":
-            vol.transfer_function.depth_color_scale *= 1.1
-        vol._need_tf_update = True
-        print("depth_color_scale:", vol.transfer_function.depth_color_scale)
+            vol.gamma *= 1.1
+        print("gamma:", vol.gamma)
         vol.update()
 
     if event.text in "[]":
@@ -119,7 +102,7 @@ def on_key_press(event):
             vol.attenuation *= 0.9
         elif event.text == "]":
             vol.attenuation *= 1.1
-        print("relative step size:", vol.relative_step_size)
+        print("attenutation:", vol.attenuation)
         vol.update()
 
 

@@ -4,16 +4,30 @@ import vispy.gloo
 
 
 class BaseTransferFunction:
-    """Class representing a 2D transfer function.
+    """Base class for transfer functions that applies a colormap to a data value.
 
-    Parameters
-    ----------
-    lut : array-like
-        Lookup table for the transfer function. This may be None (default) if
-        the transfer function can compute colors directly.
+    This class may be subclassed to implement more sophisticated transfer functions for raycasting
+    volume data.
+
+    To subclass, implement a `applyTransferFunction` function in GLSL. This method takes several
+    parameters and must return a `vec4` color value. The parameters are:
+        color : vec4
+            The color value from the texture.
+        loc : vec3
+            The location in the volume data (in world coordinates), the exact meaning of this
+            depends on the rendering method, but it is conceptually similar to `gl_FragDepth`.
+        origin : vec3
+            The origin of the ray. In volume rendering, this is a point on a bounding sphere of the
+            volume. In plane rendering, this is a point on the surface of the slab.
+        step : vec3
+            The step vector for the cast ray (direction and length).
+        max_depth : float
+            The maximum depth the ray may travel from `depth_origin` to `loc`. This is useful for
+            normalizing values based on texture depth.
     """
+
     glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 start_loc, vec3 step, float max_depth) {
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 origin, vec3 step, float max_depth) {
         return applyColormap(colorToVal(color));
     }
     """
@@ -26,6 +40,15 @@ class BaseTransferFunction:
 
 
 class TextureSamplingTF(BaseTransferFunction):
+    """Transfer function that samples a 2D texture to apply a higher-order colormap to a data value.
+
+    This class may be subclassed to implement more sophisticated transfer functions for raycasting
+    volume data.
+
+    For example, a subclass could implement a 2D transfer function that uses the data value and
+    gradient magnitude to sample a 2D transfer function.
+    """
+
     glsl_lut = """\
     uniform sampler2D texture2D_TF_LUT;
     vec4 sampleTFLUT(float u, float v) {
@@ -55,7 +78,7 @@ class TextureSamplingTF(BaseTransferFunction):
             return self.glsl_lut + self.glsl_tf
 
     def get_uniforms(self):
+        base_uniforms = super().get_uniforms()
         if self._lut is None:
-            return {}
-        else:
-            return {"texture2D_TF_LUT": self.lut}
+            return base_uniforms
+        return base_uniforms | {"texture2D_TF_LUT": self.lut}

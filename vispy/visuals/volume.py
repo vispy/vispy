@@ -309,7 +309,7 @@ void main() {
             {
                 // Get sample color
                 vec4 color = $get_data(loc);
-                float val = color.r;
+                float val = colorToVal(color);
                 texture_sampled = true;
 
                 $in_loop
@@ -414,11 +414,13 @@ _RAYCASTING_SETUP_PLANE = """
 _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
+        vec4 maxcolor = vec4(0.0); // The 'color' of the maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
         """,
     in_loop="""
         if ( val > maxval ) {
             maxval = val;
+            maxcolor = color;
             maxi = iter;
             if ( maxval >= clim.y ) {
                 // stop if no chance of finding a higher maxval
@@ -429,25 +431,28 @@ _MIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
-            // Calculate starting location of ray for sampling
-            vec3 loc = start_loc + step * maxi;
-            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
-
             // Variables to keep track of current value and where max was encountered
-            vec3 max_loc_tex = loc;
+            vec3 max_loc_tex = start_loc + step * float(maxi);
+
+            // refine the location of the maximum value starting half a step back
+            // step through N substeps of length step/N
+            int substeps = 10;
+            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
+            vec3 loc = start_loc_refine;
 
             vec3 small_step = step * 0.1;
-            for (int i=0; i<10; i++) {
-                float val = $get_data(loc).r;
-                if ( val > maxval) {
+            for (int i=0; i < substeps; i++) {
+                vec4 color = $get_data(loc);
+                float val = colorToVal(color);
+                if ( val > maxval ) {
                     maxval = val;
+                    maxcolor = color;
                     max_loc_tex = start_loc_refine + (small_step * i);
                 }
                 loc += small_step;
             }
             frag_depth_point = max_loc_tex * u_shape;
-            vec4 max_color = $get_data(max_loc_tex);
-            gl_FragColor = applyTransferFunction(max_color, frag_depth_point,
+            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point,
                                                  depth_origin, step, max_depth);
         } else {
             discard;
@@ -458,6 +463,7 @@ _MIP_SNIPPETS = dict(
 _ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
+        vec4 maxcolor = vec4(0.0); // The 'color' of the maximum encountered value
         float sumval = 0.0; // The sum of the encountered values
         float scale = 0.0; // The cumulative attenuation
         int maxi = -1;  // Where the maximum value was encountered
@@ -474,6 +480,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
             iter = nsteps;
         } else if( val * scale > maxval ) {
             maxval = val * scale;
+            maxcolor = color;
             maxi = iter;
             max_loc_tex = loc;
         }
@@ -481,8 +488,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     after_loop="""
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
-            vec4 max_color = $get_data(max_loc_tex);
-            gl_FragColor = applyTransferFunction(max_color, frag_depth_point,
+            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point,
                                                  depth_origin, step, max_depth);
         }
         else {
@@ -707,6 +713,9 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
+    transfer_function: None | TransferFunction (subclass of BaseTransferFunction)
+        The transfer function to use for mapping values to colors.
+        If None, a simple transfer function is used/ linearly mapping colors iwth .
     raycasting_mode : {'volume', 'plane'}
         Whether to cast a ray through the whole volume or perpendicular to a
         plane through the volume defined.
