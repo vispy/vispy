@@ -104,7 +104,7 @@ hist_data = np.histogram2d(
     range=((0, 1), (0, 1)),
 )[0].astype(np.float32)
 
-hist = scene.visuals.Image(np.log2(hist_data + 1e-3), parent=cmap_view.scene, cmap="grays")
+hist = scene.visuals.Image(np.log(hist_data + 1e-3), parent=cmap_view.scene, cmap="grays")
 cmap = scene.visuals.Image(vol.transfer_function._lut, parent=cmap_view.scene)
 
 

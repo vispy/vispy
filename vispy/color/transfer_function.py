@@ -10,7 +10,13 @@ class BaseTransferFunction:
     volume data.
 
     To subclass, implement a `applyTransferFunction` function in GLSL. This method takes several
-    parameters and must return a `vec4` color value. The parameters are:
+    parameters and must return a `vec4` color value. `get_glsl` should return the GLSL code for the
+    transfer function. If you add any uniforms to the GLSL code, you must also implement a
+    `get_uniforms` method that returns a dictionary of uniform names and values.
+
+    The `applyTransferFunction` function has the following signature and arguments:
+
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 origin, vec3 step, float max_depth)
         color : vec4
             The color value from the texture.
         loc : vec3
