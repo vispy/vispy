@@ -333,7 +333,7 @@ void main() {
 """  # noqa
 
 _RAYCASTING_SETUP_VOLUME = """
-    vec3 center = u_shape / 2.0;
+    vec3 center = u_shape / 2.0 - 0.5;
     float radius = length(u_shape) / 2.0;
     bool hit_sphere;
     vec3 sphere_intersection = intersectLineSphere(nearpos, view_ray, center, radius, hit_sphere);
@@ -715,7 +715,7 @@ class VolumeVisual(Visual):
         in OpenGL 4.0.
     transfer_function: None | TransferFunction (subclass of BaseTransferFunction)
         The transfer function to use for mapping values to colors.
-        If None, a simple transfer function is used/ linearly mapping colors iwth .
+        If None, a simple transfer function is used, mapping colors with `applyColormap`.
     raycasting_mode : {'volume', 'plane'}
         Whether to cast a ray through the whole volume or perpendicular to a
         plane through the volume defined.
