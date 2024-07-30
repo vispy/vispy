@@ -108,7 +108,7 @@ install most of the VisPy dependencies for you. If your computer is low on hard
 disk space, or you would like a minimal python installation, you may install
 the `Miniconda <https://conda.io/miniconda.html>`_ package also from
 Continuum Analytics. Once Anaconda is installed, create a
-`conda python environment <https://conda.io/docs/user-guide/tasks/manage-python.html>`_.
+`conda python environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-python.html>`_.
 
 Via conda
 ---------
