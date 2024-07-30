@@ -238,6 +238,7 @@ vec3 intersectLineSphere(vec3 origin,
                          out bool hit_sphere) {
     vec3 oc = origin - center;
     // a = 1 because direction is normalized
+    // this is the quadratic equation
     float b = 2 * dot(oc, direction);
     float c = dot(oc, oc) - radius * radius;
     float discriminant = b * b - 4 * c;
@@ -247,7 +248,7 @@ vec3 intersectLineSphere(vec3 origin,
         return vec3(0.0);
     }
     float t0 = (-b - sqrt(discriminant)) / 2.0;
-    float t1 = (-b + sqrt(discriminant)) / 2.0 ;
+    float t1 = (-b + sqrt(discriminant)) / 2.0;
     if (t0 <= 0.0 && t1 <= 0.0) {
         // both intersections are behind the camera
         hit_sphere = false;
@@ -333,14 +334,6 @@ void main() {
 """  # noqa
 
 _RAYCASTING_SETUP_VOLUME = """
-    vec3 center = u_shape / 2.0 - 0.5;
-    float radius = length(u_shape) / 2.0;
-    bool hit_sphere;
-    vec3 sphere_intersection = intersectLineSphere(nearpos, view_ray, center, radius, hit_sphere);
-    if (!hit_sphere) { discard; }
-    vec3 depth_origin = sphere_intersection;
-    float max_depth = length(u_shape);
-
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
     distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
@@ -352,6 +345,17 @@ _RAYCASTING_SETUP_VOLUME = """
 
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
+
+    // find the intersection (if any) with a bounding sphere
+    // use "front" for the origin of the ray - it works better
+    // than "nearpos" when using orthographic projection
+    vec3 center = u_shape / 2.0 - 0.5;
+    float radius = length(u_shape) / 2.0;
+    bool hit_sphere;
+    vec3 sphere_intersection = intersectLineSphere(front, view_ray, center, radius, hit_sphere);
+    if (!hit_sphere) { discard; }
+    vec3 depth_origin = sphere_intersection;
+    float max_depth = length(u_shape);
 
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
