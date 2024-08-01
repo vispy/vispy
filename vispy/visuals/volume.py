@@ -364,6 +364,7 @@ _RAYCASTING_SETUP_PLANE = """
     vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
     vec3 depth_origin = intersection - normalize(u_plane_normal) * u_plane_thickness / 2.0;
+    vec3 depth_plane_normal = u_plane_normal;
     float max_depth = u_plane_thickness;
 
     // and texture coordinates
