@@ -45,10 +45,10 @@ class DepthColorTF(BaseTransferFunction):
     """Transfer function that colors the volume based on the depth of the maximum value."""
 
     glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 origin, vec3 step, float max_depth) {
-        vec3 d = loc - origin;
-        float depth = pow(length(d) / max_depth, gamma);
-        depth = smoothstep(0.0, 1.0, depth);
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 step, vec3 depth_origin, vec3
+                               depth_plane_normal, float max_depth) {
+        float depth = dot(loc - depth_origin, depth_plane_normal);
+        depth = smoothstep(0.0, 1.0, depth / max_depth);
         depth = depth * (clim.y - clim.x) + clim.x;
         vec4 hue = applyColormap(depth);
         vec4 final_color = vec4(color.r * hue.rgb, 1.0);
@@ -56,8 +56,6 @@ class DepthColorTF(BaseTransferFunction):
     }
     """
 
-    def __init__(self):
-        super().__init__()
 
 # basic volume rendering visual
 vol = scene.visuals.Volume(
@@ -69,7 +67,8 @@ vol = scene.visuals.Volume(
     relative_step_size=0.5,
     transfer_function=DepthColorTF(),
 )
-cam = scene.cameras.TurntableCamera(parent=view.scene, fov=60, name='Turntable', scale_factor=320.0)
+
+cam = scene.cameras.ArcballCamera(parent=view.scene, fov=60, name='Turntable', scale_factor=320.0)
 view.camera = cam
 view.camera.scale_factor = 320.0
 
@@ -104,6 +103,13 @@ def on_key_press(event):
             vol.attenuation *= 1.1
         print("attenutation:", vol.attenuation)
         vol.update()
+
+    if event.text == "f":
+        if view.camera.fov == 60:
+            view.camera.fov = 0
+        else:
+            view.camera.fov = 60
+        print("fov:", view.camera.fov)
 
 
 if __name__ == '__main__':

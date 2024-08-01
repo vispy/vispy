@@ -49,10 +49,11 @@ class GradientMagnitudeTF(TextureSamplingTF):
     """
 
     glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 origin, vec3 step, float max_depth) {
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 step,
+                               vec3 depth_origin, vec3 depth_plane_normal, float max_depth) {
         // calculate normal vector from gradient
         vec3 dstep = 1.5 / u_shape;
-        // pass a dummy value for the "maxColor" which we're not going to use
+        // pass a dummy value for the "maxColor", which we're not going to use
         vec4 _dummy = vec4(0.0);
         vec3 N = calculateGradient(loc, dstep, _dummy);
         // also calculate the gradient magnitude

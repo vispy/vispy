@@ -22,18 +22,22 @@ class BaseTransferFunction:
         loc : vec3
             The location in the volume data (in world coordinates), the exact meaning of this
             depends on the rendering method, but it is conceptually similar to `gl_FragDepth`.
-        origin : vec3
-            The origin of the ray. In volume rendering, this is a point on a bounding sphere of the
-            volume. In plane rendering, this is a point on the surface of the slab.
         step : vec3
             The step vector for the cast ray (direction and length).
+        depth_origin : vec3
+            The origin of the ray. In volume rendering, this is a point on a plane just in front of
+            the volume. In plane rendering, this is a point on the surface of the slab.
+        depth_plane_normal: vec3
+            The normal of the depth plane. In volume rendering this is a (unit) vector in the
+            direction of the center of the near clipping plane to the center of the volume.
         max_depth : float
             The maximum depth the ray may travel from `depth_origin` to `loc`. This is useful for
             normalizing values based on texture depth.
     """
 
     glsl_tf = """\
-    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 origin, vec3 step, float max_depth) {
+    vec4 applyTransferFunction(vec4 color, vec3 loc, vec3 step, vec3 depth_origin, vec3
+                               depth_plane_normal, float max_depth) {
         return applyColormap(colorToVal(color));
     }
     """

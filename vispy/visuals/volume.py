@@ -61,6 +61,7 @@ uniform vec3 u_shape;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
+varying vec3 v_clip_normal;  // TODO: this could probably be a uniform
 
 void main() {
     v_position = a_position;
@@ -76,6 +77,14 @@ void main() {
     // intersection of ray and far clipping plane (z = +1 in clip coords)
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
+
+    // center of the near and far clipping planes
+    vec4 nearplane_center = $transformi(vec4(0.0, 0.0, -1.0, 1.0));
+    vec4 farplane_center = $transformi(vec4(0.0, 0.0, 1.0, 1.0));
+    // normal of the clipping/image plane
+    v_clip_normal = normalize(
+        farplane_center.xyz / farplane_center.w - nearplane_center.xyz / nearplane_center.w
+    );
 
     gl_Position = $transform(vec4(v_position, 1.0));
 }
@@ -97,6 +106,7 @@ uniform float u_minip_cutoff;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
+varying vec3 v_clip_normal;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
 const vec4 u_ambient = vec4(0.2, 0.2, 0.2, 1.0);
@@ -231,35 +241,6 @@ vec3 intersectLinePlane(vec3 linePosition,
     return linePosition + ( scaleFactor * lineVector );
 }
 
-vec3 intersectLineSphere(vec3 origin,
-                         vec3 direction,
-                         vec3 center,
-                         float radius,
-                         out bool hit_sphere) {
-    vec3 oc = origin - center;
-    // a = 1 because direction is normalized
-    // this is the quadratic equation
-    float b = 2 * dot(oc, direction);
-    float c = dot(oc, oc) - radius * radius;
-    float discriminant = b * b - 4 * c;
-    if (discriminant < 0) {
-        // no intersection
-        hit_sphere = false;
-        return vec3(0.0);
-    }
-    float t0 = (-b - sqrt(discriminant)) / 2.0;
-    float t1 = (-b + sqrt(discriminant)) / 2.0;
-    if (t0 <= 0.0 && t1 <= 0.0) {
-        // both intersections are behind the camera
-        hit_sphere = false;
-        return vec3(0.0);
-    }
-    // it's okay one of the intersections is behind the camera
-    // we still want the depth from the "front" of the sphere
-    hit_sphere = true;
-    return origin + min(t0, t1) * direction;
-}
-
 $def_tf
 
 // for some reason, this has to be the last function in order for the
@@ -346,22 +327,27 @@ _RAYCASTING_SETUP_VOLUME = """
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
 
-    // find the intersection (if any) with a bounding sphere
-    // use "front" for the origin of the ray - it works better
-    // than "nearpos" when using orthographic projection
-    vec3 center = u_shape / 2.0 - 0.5;
-    float radius = length(u_shape) / 2.0;
-    bool hit_sphere;
-    vec3 sphere_intersection = intersectLineSphere(front, view_ray, center, radius, hit_sphere);
-    if (!hit_sphere) { discard; }
-    vec3 depth_origin = sphere_intersection;
-    float max_depth = length(u_shape);
-
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
     float f_nsteps = float(nsteps);
     if( nsteps < 1 )
         discard;
+
+    // get the ray intersection with a plane tangent to
+    // the bounding sphere at the front of the volume
+    // this will be the "depth origin" for the volume rendering
+    // which can be used (e.g.) for coloring a MIP by depth
+    vec3 center = u_shape / 2.0 - 0.5;
+    float radius = length(u_shape) / 2.0;
+    vec3 depth_plane_normal = v_clip_normal;
+    vec3 depth_plane_pos = center - radius * depth_plane_normal;
+    float max_depth = 2.0 * radius;
+    vec3 depth_origin = intersectLinePlane(
+        v_position.xyz,
+        view_ray,
+        depth_plane_pos,
+        depth_plane_normal
+    );
 
     // Get starting location and step vector in texture coordinates
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
@@ -377,7 +363,7 @@ _RAYCASTING_SETUP_PLANE = """
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
     vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
-    vec3 depth_origin = intersection - u_plane_normal * u_plane_thickness / 2;
+    vec3 depth_origin = intersection - normalize(u_plane_normal) * u_plane_thickness / 2.0;
     float max_depth = u_plane_thickness;
 
     // and texture coordinates
@@ -456,8 +442,8 @@ _MIP_SNIPPETS = dict(
                 loc += small_step;
             }
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point,
-                                                 depth_origin, step, max_depth);
+            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point, step,
+                                                 depth_origin, depth_plane_normal, max_depth);
         } else {
             discard;
         }
@@ -492,8 +478,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     after_loop="""
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point,
-                                                 depth_origin, step, max_depth);
+            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point, step,
+                                                 depth_origin, depth_plane_normal, max_depth);
         }
         else {
             discard;
@@ -548,7 +534,8 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyTransferFunction(color, loc, depth_origin, step, max_depth);
+        color = applyTransferFunction(color, loc, step,
+                                      depth_origin, depth_plane_normal, max_depth);
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.001);
@@ -577,7 +564,8 @@ _ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyTransferFunction(color, loc, depth_origin, step, max_depth);
+        color = applyTransferFunction(color, loc, step,
+                                      depth_origin, depth_plane_normal, max_depth);
 
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -936,7 +924,6 @@ class VolumeVisual(Visual):
         if self._vol_shape != shape:
             self._vol_shape = shape
             self._need_vertex_update = True
-        self._vol_shape = shape
 
     @property
     def rendering_methods(self):
@@ -1437,6 +1424,7 @@ class VolumeVisual(Visual):
     def _prepare_transforms(self, view):
         trs = view.transforms
         view.view_program.vert['transform'] = trs.get_transform()
+        view.view_program.vert['transformi'] = trs.get_transform('render', 'visual')
 
         view_tr_f = trs.get_transform('visual', 'document')
         view_tr_i = view_tr_f.inverse
