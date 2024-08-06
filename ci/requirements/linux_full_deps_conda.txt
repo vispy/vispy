@@ -11,7 +11,7 @@ meshio
 networkx
 numpy
 pillow
-pyqt=5
+pyside6
 pysdl2
 pytest
 pytest-cov
