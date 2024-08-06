@@ -6,12 +6,12 @@ freetype-py
 glfw!=3.3.1
 imageio
 jupyter
-matplotlib
+matplotlib-base
 meshio
 networkx
 numpy
 pillow
-pyside6
+pyqt=5
 pysdl2
 pytest
 pytest-cov
