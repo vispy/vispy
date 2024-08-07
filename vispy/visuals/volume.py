@@ -44,7 +44,7 @@ from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D, Texture
 from ..gloo import VertexBuffer, IndexBuffer
 from . import Visual
 from .shaders import Function
-from ..color import get_colormap
+from ..color import get_colormap, BaseTransferFunction
 from ..io import load_spatial_filters
 
 import numpy as np
@@ -61,6 +61,7 @@ uniform vec3 u_shape;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
+varying vec3 v_clip_normal;  // TODO: this could probably be a uniform
 
 void main() {
     v_position = a_position;
@@ -76,6 +77,14 @@ void main() {
     // intersection of ray and far clipping plane (z = +1 in clip coords)
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
+
+    // center of the near and far clipping planes
+    vec4 nearplane_center = $transformi(vec4(0.0, 0.0, -1.0, 1.0));
+    vec4 farplane_center = $transformi(vec4(0.0, 0.0, 1.0, 1.0));
+    // normal of the clipping/image plane
+    v_clip_normal = normalize(
+        farplane_center.xyz / farplane_center.w - nearplane_center.xyz / nearplane_center.w
+    );
 
     gl_Position = $transform(vec4(v_position, 1.0));
 }
@@ -97,6 +106,7 @@ uniform float u_minip_cutoff;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
+varying vec3 v_clip_normal;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
 const vec4 u_ambient = vec4(0.2, 0.2, 0.2, 1.0);
@@ -133,31 +143,42 @@ vec4 applyColormap(float data) {
     return color;
 }
 
+vec3 calculateGradient(vec3 loc, vec3 step, inout vec4 maxColor) {
+    // calculate gradient within the volume by finite differences
+    // overwrite maxColor with the maximum encountered color
+    // keeps track of maxColor from the local samples
+    vec3 N;
+    vec4 prev;
+    vec4 next;
+
+    prev = $get_data(loc + vec3(-step.x, 0.0, 0.0));
+    next = $get_data(loc + vec3(step.x, 0.0, 0.0));
+    N.x = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    prev = $get_data(loc + vec3(0.0, -step.y, 0.0));
+    next = $get_data(loc + vec3(0.0, step.y, 0.0));
+    N.y = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    prev = $get_data(loc + vec3(0.0, 0.0, -step.z));
+    next = $get_data(loc + vec3(0.0, 0.0, step.z));
+    N.z = colorToVal(prev) - colorToVal(next);
+    maxColor = max(max(prev, next), maxColor);
+
+    return N;
+}
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
-{   
+{
     // Calculate color by incorporating lighting
-    vec4 color1;
-    vec4 color2;
 
     // View direction
     vec3 V = normalize(view_ray);
 
-    // calculate normal vector from gradient
-    vec3 N; // normal
-    color1 = $get_data(loc+vec3(-step[0],0.0,0.0) );
-    color2 = $get_data(loc+vec3(step[0],0.0,0.0) );
-    N[0] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    color1 = $get_data(loc+vec3(0.0,-step[1],0.0) );
-    color2 = $get_data(loc+vec3(0.0,step[1],0.0) );
-    N[1] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]) );
-    color2 = $get_data(loc+vec3(0.0,0.0,step[2]) );
-    N[2] = colorToVal(color1) - colorToVal(color2);
-    betterColor = max(max(color1, color2),betterColor);
-    float gm = length(N); // gradient magnitude
+    // Calculate normal vector from gradient, updating color based on local max
+    // this function modifies betterColor
+    vec3 N = calculateGradient(loc, step, betterColor);
     N = normalize(N);
 
     // Flip normal so it points towards viewer
@@ -165,9 +186,6 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
 
     // Get color of the texture (albeido)
-    color1 = betterColor;
-    color2 = color1;
-    // todo: parametrise color1_to_color2
 
     // Init colors
     vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);
@@ -199,13 +217,12 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     }
 
     // Calculate final color by componing different components
-    final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
-    final_color.a = color2.a;
+    final_color = betterColor * (ambient_color + diffuse_color) + specular_color;
+    final_color.a = betterColor.a;
 
     // Done
     return final_color;
 }
-
 
 vec3 intersectLinePlane(vec3 linePosition, 
                         vec3 lineVector, 
@@ -223,6 +240,8 @@ vec3 intersectLinePlane(vec3 linePosition,
     // calculate intersection
     return linePosition + ( scaleFactor * lineVector );
 }
+
+$def_tf
 
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
@@ -244,7 +263,7 @@ void main() {
     // vec3 start_loc - the starting location of the ray in texture coordinates
     // vec3 step - the step vector in texture coordinates
     // int nsteps - the number of steps to make through the texture
-    
+
     $raycasting_setup
 
     // For testing: show the number of steps. This helps to establish
@@ -272,7 +291,7 @@ void main() {
             {
                 // Get sample color
                 vec4 color = $get_data(loc);
-                float val = color.r;
+                float val = colorToVal(color);
                 texture_sampled = true;
 
                 $in_loop
@@ -314,6 +333,22 @@ _RAYCASTING_SETUP_VOLUME = """
     if( nsteps < 1 )
         discard;
 
+    // get the ray intersection with a plane tangent to
+    // the bounding sphere at the front of the volume
+    // this will be the "depth origin" for the volume rendering
+    // which can be used (e.g.) for coloring a MIP by depth
+    vec3 center = u_shape / 2.0 - 0.5;
+    float radius = length(u_shape) / 2.0;
+    vec3 depth_plane_normal = v_clip_normal;
+    vec3 depth_plane_pos = center - radius * depth_plane_normal;
+    float max_depth = 2.0 * radius;
+    vec3 depth_origin = intersectLinePlane(
+        v_position.xyz,
+        view_ray,
+        depth_plane_pos,
+        depth_plane_normal
+    );
+
     // Get starting location and step vector in texture coordinates
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
@@ -328,6 +363,10 @@ _RAYCASTING_SETUP_PLANE = """
     // 0.5 offset needed to get back to correct texture coordinates (vispy#2239)
     vec3 intersection = intersectLinePlane(v_position.xyz, view_ray,
                                            u_plane_position, u_plane_normal);
+    vec3 depth_origin = intersection - normalize(u_plane_normal) * u_plane_thickness / 2.0;
+    vec3 depth_plane_normal = u_plane_normal;
+    float max_depth = u_plane_thickness;
+
     // and texture coordinates
     vec3 intersection_tex = (intersection + 0.5) / u_shape;
 
@@ -366,11 +405,13 @@ _RAYCASTING_SETUP_PLANE = """
 _MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
+        vec4 maxcolor = vec4(0.0); // The 'color' of the maximum encountered value
         int maxi = -1;  // Where the maximum value was encountered
         """,
     in_loop="""
         if ( val > maxval ) {
             maxval = val;
+            maxcolor = color;
             maxi = iter;
             if ( maxval >= clim.y ) {
                 // stop if no chance of finding a higher maxval
@@ -381,24 +422,29 @@ _MIP_SNIPPETS = dict(
     after_loop="""
         // Refine search for max value, but only if anything was found
         if ( maxi > -1 ) {
-            // Calculate starting location of ray for sampling
-            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
-            loc = start_loc_refine;
-
             // Variables to keep track of current value and where max was encountered
-            vec3 max_loc_tex = start_loc_refine;
+            vec3 max_loc_tex = start_loc + step * float(maxi);
+
+            // refine the location of the maximum value starting half a step back
+            // step through N substeps of length step/N
+            int substeps = 10;
+            vec3 start_loc_refine = start_loc + step * (float(maxi) - 0.5);
+            vec3 loc = start_loc_refine;
 
             vec3 small_step = step * 0.1;
-            for (int i=0; i<10; i++) {
-                float val = $get_data(loc).r;
-                if ( val > maxval) {
+            for (int i=0; i < substeps; i++) {
+                vec4 color = $get_data(loc);
+                float val = colorToVal(color);
+                if ( val > maxval ) {
                     maxval = val;
+                    maxcolor = color;
                     max_loc_tex = start_loc_refine + (small_step * i);
                 }
                 loc += small_step;
             }
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point, step,
+                                                 depth_origin, depth_plane_normal, max_depth);
         } else {
             discard;
         }
@@ -408,6 +454,7 @@ _MIP_SNIPPETS = dict(
 _ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
+        vec4 maxcolor = vec4(0.0); // The 'color' of the maximum encountered value
         float sumval = 0.0; // The sum of the encountered values
         float scale = 0.0; // The cumulative attenuation
         int maxi = -1;  // Where the maximum value was encountered
@@ -424,6 +471,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
             iter = nsteps;
         } else if( val * scale > maxval ) {
             maxval = val * scale;
+            maxcolor = color;
             maxi = iter;
             max_loc_tex = loc;
         }
@@ -431,7 +479,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     after_loop="""
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            gl_FragColor = applyTransferFunction(maxcolor, frag_depth_point, step,
+                                                 depth_origin, depth_plane_normal, max_depth);
         }
         else {
             discard;
@@ -486,7 +535,8 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyTransferFunction(color, loc, step,
+                                      depth_origin, depth_plane_normal, max_depth);
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.001);
@@ -515,7 +565,8 @@ _ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyTransferFunction(color, loc, step,
+                                      depth_origin, depth_plane_normal, max_depth);
 
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -655,6 +706,9 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
+    transfer_function: None | TransferFunction (subclass of BaseTransferFunction)
+        The transfer function to use for mapping values to colors.
+        If None, a simple transfer function is used, mapping colors with `applyColormap`.
     raycasting_mode : {'volume', 'plane'}
         Whether to cast a ray through the whole volume or perpendicular to a
         plane through the volume defined.
@@ -709,7 +763,7 @@ class VolumeVisual(Visual):
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
                  clipping_planes_coord_system='scene', mip_cutoff=None,
-                 minip_cutoff=None):
+                 minip_cutoff=None, transfer_function=None):
 
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if clipping_planes_coord_system not in tr:
@@ -770,6 +824,9 @@ class VolumeVisual(Visual):
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
+
+        if transfer_function is not None:
+            self.transfer_function = transfer_function
 
         # Set plane params
         if plane_position is None:
@@ -868,7 +925,6 @@ class VolumeVisual(Visual):
         if self._vol_shape != shape:
             self._vol_shape = shape
             self._need_vertex_update = True
-        self._vol_shape = shape
 
     @property
     def rendering_methods(self):
@@ -925,6 +981,22 @@ class VolumeVisual(Visual):
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
         self.update()
+
+    @property
+    def transfer_function(self):
+        return self._transfer_function
+
+    @transfer_function.setter
+    def transfer_function(self, transfer_function):
+        self._transfer_function = transfer_function
+        self._need_tf_update = True
+        self.update()
+
+    def _transfer_function_update(self):
+        self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
+        for key, value in self._transfer_function.get_uniforms().items():
+            self.shared_program[key] = value
+        self._need_tf_update = False
 
     @property
     def interpolation_methods(self):
@@ -1092,6 +1164,9 @@ class VolumeVisual(Visual):
                              (known_methods, method))
         self._method = method
 
+        # reset the transfer function, as it may be different for different render methods
+        self.transfer_function = BaseTransferFunction()
+
         # $get_data needs to be unset and re-set, since it's present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['get_data'] = None
@@ -1101,6 +1176,7 @@ class VolumeVisual(Visual):
         self.shared_program.frag['after_loop'] = self._after_loop_snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program.frag['def_tf'] = self._transfer_function.get_glsl()
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
         self.shared_program['u_mip_cutoff'] = self._mip_cutoff
         self.shared_program['u_minip_cutoff'] = self._minip_cutoff
@@ -1349,6 +1425,7 @@ class VolumeVisual(Visual):
     def _prepare_transforms(self, view):
         trs = view.transforms
         view.view_program.vert['transform'] = trs.get_transform()
+        view.view_program.vert['transformi'] = trs.get_transform('render', 'visual')
 
         view_tr_f = trs.get_transform('visual', 'document')
         view_tr_i = view_tr_f.inverse
@@ -1364,3 +1441,6 @@ class VolumeVisual(Visual):
 
         if self._need_interpolation_update:
             self._build_interpolation()
+
+        if self._need_tf_update:
+            self._transfer_function_update()
