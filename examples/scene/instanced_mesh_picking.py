@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Picking Instanced of InstancedMeshes
+Picking Instance of InstancedMeshes
 =========================
 
 Demonstrates how to identify (pick) individual instanced meshes.
