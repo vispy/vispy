@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 """
 Picking Instance of InstancedMeshes
-=========================
+===================================
 
 Demonstrates how to identify (pick) individual instanced meshes.
 
