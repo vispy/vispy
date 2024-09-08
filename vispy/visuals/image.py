@@ -94,7 +94,8 @@ _APPLY_CLIM_FLOAT = """
         // If data is NaN, don't draw it at all
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
         if (!(data <= 0.0 || 0.0 <= data)) {
-            discard;
+            // discard;
+            return data;
         }
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
