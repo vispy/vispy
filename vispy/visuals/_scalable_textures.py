@@ -291,10 +291,11 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
 
         range_min, range_max = self._data_limits
         clim_min, clim_max = self.clim
-        if clim_min == clim_max:
+        full_range = range_max - range_min
+        if clim_min == clim_max or full_range == 0:
             return 0, np.inf
-        clim_min = (clim_min - range_min) / (range_max - range_min)
-        clim_max = (clim_max - range_min) / (range_max - range_min)
+        clim_min = (clim_min - range_min) / full_range
+        clim_max = (clim_max - range_min) / full_range
         return clim_min, clim_max
 
     @staticmethod
