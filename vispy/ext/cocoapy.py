@@ -1285,7 +1285,7 @@ NSApplicationActivationPolicyProhibited = 2
 
 # QUARTZ / COREGRAPHICS
 
-quartz = cdll.LoadLibrary(util.find_library('quartz'))
+quartz = cdll.LoadLibrary(util.find_library('Quartz'))
 
 CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
 CGError = c_int32                # CGError.h
