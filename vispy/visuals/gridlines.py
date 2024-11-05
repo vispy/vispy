@@ -27,8 +27,6 @@ vec4 grid_color(vec2 pos) {
     local_pos /= local_pos.w;
     dx = dx / dx.w - local_pos;
     dy = dy / dy.w - local_pos;
-    if (px_pos.z > 1 || px_pos.z < -1)
-        discard;
 
     // Pixel length along each axis, rounded to the nearest power of 10
     vec2 px = s * vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
@@ -65,17 +63,14 @@ vec4 grid_color(vec2 pos) {
         discard;
     }
 
-    // outside the defined region
-    if (any(lessThan(local_pos.xy, u_gridlines_bounds.xz)) ||
-        any(greaterThan(local_pos.xy, u_gridlines_bounds.yw))) {
+    if (any(lessThan(local_pos.xy + u_border_width / 2, u_gridlines_bounds.xz)) ||
+        any(greaterThan(local_pos.xy - u_border_width / 2, u_gridlines_bounds.yw))) {
+        discard;
+    }
 
-        // inside the defined border width
-        if (all(greaterThan(local_pos.xy, u_gridlines_bounds.xz - u_border_width)) &&
-            all(lessThan(local_pos.xy, u_gridlines_bounds.yw + u_border_width))) {
-            alpha = 1;
-        } else {
-            discard;
-        }
+    if (any(lessThan(local_pos.xy - u_gridlines_bounds.xz, vec2(u_border_width / 2))) ||
+        any(lessThan(u_gridlines_bounds.yw - local_pos.xy, vec2(u_border_width / 2)))) {
+        alpha = 1;
     }
 
     return vec4($color.rgb, $color.a * alpha);
@@ -97,7 +92,7 @@ class GridLinesVisual(ImageVisual):
     """
 
     def __init__(self, scale=(1, 1), color='w',
-                 bounds=(-np.inf, np.inf, -np.inf, np.inf),
+                 bounds=None,
                  border_width=2):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
@@ -120,8 +115,18 @@ class GridLinesVisual(ImageVisual):
 
     @bounds.setter
     def bounds(self, value):
+        if value is None:
+            value = (None,) * 4
+        bounds = []
+        for i, v in enumerate(value):
+            if v is None:
+                if i % 2:
+                    v = -np.inf
+                else:
+                    v = np.inf
+            bounds.append(v)
         self.shared_program['u_gridlines_bounds'] = value
-        self._bounds = value
+        self._bounds = bounds
         self.update()
 
     @property
