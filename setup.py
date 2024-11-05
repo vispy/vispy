@@ -23,16 +23,13 @@ Announcing:
 """
 
 import os
+import sys
 from os import path as op
-from distutils import log
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, find_packages
 
 import numpy as np
 from Cython.Build import cythonize
-
-log.set_verbosity(log.DEBUG)
-log.info('setup.py entered')
-log.info('$PATH=%s' % os.environ['PATH'])
+from Cython.Distutils import Extension
 
 name = 'vispy'
 description = 'Interactive visualization in Python'
@@ -56,9 +53,16 @@ def set_builtin(name, value):
 
 
 extensions = [Extension('vispy.visuals.text._sdf_cpu',
-                        [op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')],
-                        include_dirs=[np.get_include()]),
+                        sources=[op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')],
+                        include_dirs=[np.get_include()],
+                        cython_directives={"language_level": "3"},
+                        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+                        ),
               ]
+
+install_requires = ['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging']
+if sys.version_info < (3, 9):
+    install_requires.append("importlib-resources")
 
 readme = open('README.rst', 'r').read()
 setup(
@@ -70,7 +74,7 @@ setup(
     },
     author='Vispy contributors',
     author_email='vispy@googlegroups.com',
-    license='(new) BSD',
+    license='BSD-3-Clause',
     url='http://vispy.org',
     download_url='https://pypi.python.org/pypi/vispy',
     keywords=[
@@ -92,9 +96,8 @@ setup(
     long_description_content_type='text/x-rst',
     platforms='any',
     provides=['vispy'],
-    python_requires='>=3.6',
-    install_requires=['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging'],
-    setup_requires=['numpy', 'cython', 'setuptools_scm', 'setuptools_scm_git_archive', 'packaging'],
+    python_requires='>=3.9',
+    install_requires=install_requires,
     extras_require={
         'ipython-static': ['ipython'],
         'pyglet': ['pyglet>=1.2'],
@@ -103,6 +106,7 @@ setup(
         'pyside': ['PySide'],
         'pyside2': ['PySide2'],
         'pyside6': ['PySide6'],
+        'glfw': ['glfw'],
         'sdl2': ['PySDL2'],
         'wx': ['wxPython'],
         'tk': ['pyopengltk'],
@@ -147,9 +151,10 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Framework :: IPython'
     ],
 )

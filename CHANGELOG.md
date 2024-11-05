@@ -1,5 +1,92 @@
 # Release Notes
 
+
+## [v0.14.3](https://github.com/vispy/vispy/tree/v0.14.3) (2024-06-17)
+
+**Enhancements:**
+
+- Clip step size based on maximum detail on an 8K monitor [\#2589](https://github.com/vispy/vispy/pull/2589) ([jni](https://github.com/jni))
+
+**Fixed bugs:**
+
+- Fix integral computation in attenuated mip [\#2588](https://github.com/vispy/vispy/pull/2588) ([jni](https://github.com/jni))
+- Reset VertexAttribDivisor even if None [\#2583](https://github.com/vispy/vispy/pull/2583) ([aganders3](https://github.com/aganders3))
+
+**Merged pull requests:**
+
+- Fix CI: failing tests and linting errors not failing checks [\#2597](https://github.com/vispy/vispy/pull/2597) ([aganders3](https://github.com/aganders3))
+- Bump pypa/cibuildwheel from 2.18.0 to 2.18.1 [\#2586](https://github.com/vispy/vispy/pull/2586) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.17.0 to 2.18.0 [\#2584](https://github.com/vispy/vispy/pull/2584) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump peaceiris/actions-gh-pages from 3 to 4 [\#2582](https://github.com/vispy/vispy/pull/2582) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Fix gallery link in README.rst [\#2579](https://github.com/vispy/vispy/pull/2579) ([inigoalonso](https://github.com/inigoalonso))
+- Bump pypa/cibuildwheel from 2.16.5 to 2.17.0 [\#2578](https://github.com/vispy/vispy/pull/2578) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+
+## [v0.14.2](https://github.com/vispy/vispy/tree/v0.14.2) (2024-03-14)
+
+**Enhancements:**
+
+- Radius of ellipse can now be specified as numpy.array [\#2561](https://github.com/vispy/vispy/pull/2561) ([ullmannJan](https://github.com/ullmannJan))
+- Add ivec2, ivec3, ivec4 to ATYPEINFO in glir.py [\#2545](https://github.com/vispy/vispy/pull/2545) ([hmaarrfk](https://github.com/hmaarrfk))
+- Improve Markers symbols validation performance [\#2533](https://github.com/vispy/vispy/pull/2533) ([Czaki](https://github.com/Czaki))
+
+**Fixed bugs:**
+
+- Correction to Vispy.Visuals.Markers.set\_data [\#2565](https://github.com/vispy/vispy/pull/2565) ([c40zAtGitHub](https://github.com/c40zAtGitHub))
+- Fix SurfacePlotVisual not allowing 2D x and y inputs [\#2554](https://github.com/vispy/vispy/pull/2554) ([ullmannJan](https://github.com/ullmannJan))
+- Change `devicePixelRatio` calls to `devicePixelRatioF` to get a floating point number instead of an integer [\#2540](https://github.com/vispy/vispy/pull/2540) ([dalthviz](https://github.com/dalthviz))
+
+**Merged pull requests:**
+
+- Fix a few typos in the docs [\#2573](https://github.com/vispy/vispy/pull/2573) ([kraasch](https://github.com/kraasch))
+- Bump pypa/cibuildwheel from 2.16.4 to 2.16.5 [\#2572](https://github.com/vispy/vispy/pull/2572) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.16.2 to 2.16.4 [\#2571](https://github.com/vispy/vispy/pull/2571) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/cache from 3 to 4 [\#2569](https://github.com/vispy/vispy/pull/2569) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Fix typo in plot widget error message [\#2563](https://github.com/vispy/vispy/pull/2563) ([jeertmans](https://github.com/jeertmans))
+- Bump actions/upload-artifact from 3 to 4 [\#2559](https://github.com/vispy/vispy/pull/2559) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/setup-python from 4 to 5 [\#2556](https://github.com/vispy/vispy/pull/2556) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.16.1 to 2.16.2 [\#2536](https://github.com/vispy/vispy/pull/2536) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+
+## [v0.14.1](https://github.com/vispy/vispy/tree/v0.14.1) (2023-10-03)
+
+**Fixed bugs:**
+
+- return to oldest supported numpy [\#2535](https://github.com/vispy/vispy/pull/2535) ([brisvag](https://github.com/brisvag))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.16.0 to 2.16.1 [\#2534](https://github.com/vispy/vispy/pull/2534) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.15.0 to 2.16.0 [\#2531](https://github.com/vispy/vispy/pull/2531) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump docker/setup-qemu-action from 2 to 3 [\#2529](https://github.com/vispy/vispy/pull/2529) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/checkout from 3 to 4 [\#2527](https://github.com/vispy/vispy/pull/2527) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+
+## [v0.14.0](https://github.com/vispy/vispy/tree/v0.14.0) (2023-09-08)
+
+**Enhancements:**
+
+- Remove deprecated code from vispy.color.get\_colormap [\#2519](https://github.com/vispy/vispy/pull/2519) ([codypiersall](https://github.com/codypiersall))
+- Cache make\_pattern on DashAtlas [\#2508](https://github.com/vispy/vispy/pull/2508) ([aganders3](https://github.com/aganders3))
+- Add push/pop gl\_state for visuals \(used in picking\) [\#2502](https://github.com/vispy/vispy/pull/2502) ([aganders3](https://github.com/aganders3))
+- Add primitive picking filters for Mesh and Markers visuals [\#2500](https://github.com/vispy/vispy/pull/2500) ([aganders3](https://github.com/aganders3))
+
+**Fixed bugs:**
+
+- Fix spherical markers depth buffer with scaling='visual' [\#2506](https://github.com/vispy/vispy/pull/2506) ([brisvag](https://github.com/brisvag))
+- Update \_glfw.py [\#2496](https://github.com/vispy/vispy/pull/2496) ([smyeungx](https://github.com/smyeungx))
+- Fix mesh shading with flipped normals [\#2493](https://github.com/vispy/vispy/pull/2493) ([brisvag](https://github.com/brisvag))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.14.1 to 2.15.0 and add Python 3.12 wheels [\#2515](https://github.com/vispy/vispy/pull/2515) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.14.0 to 2.14.1 [\#2509](https://github.com/vispy/vispy/pull/2509) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.13.1 to 2.14.0 [\#2507](https://github.com/vispy/vispy/pull/2507) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.13.0 to 2.13.1 [\#2498](https://github.com/vispy/vispy/pull/2498) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.12.3 to 2.13.0 [\#2492](https://github.com/vispy/vispy/pull/2492) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump mamba-org/provision-with-micromamba from 15 to 16 [\#2490](https://github.com/vispy/vispy/pull/2490) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Add lasso selection example [\#2485](https://github.com/vispy/vispy/pull/2485) ([DanAurea](https://github.com/DanAurea))
+
 ## [v0.13.0](https://github.com/vispy/vispy/tree/v0.13.0) (2023-05-12)
 
 **Enhancements:**

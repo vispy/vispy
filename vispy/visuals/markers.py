@@ -4,19 +4,19 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """Marker Visual and shader definitions."""
-
 import numpy as np
 
 from ..color import ColorArray
 from ..gloo import VertexBuffer
 from .shaders import Function, Variable
 from .visual import Visual
+from ..util.event import Event
 
 
 _VERTEX_SHADER = """
 uniform float u_antialias;
 uniform float u_px_scale;
-uniform int u_scaling;
+uniform bool u_scaling;
 uniform bool u_spherical;
 
 attribute vec3 a_position;
@@ -48,26 +48,15 @@ void main (void) {
     gl_Position = $framebuffer_to_render(fb_pos);
 
     // NOTE: gl_stuff uses framebuffer coords!
-    if (u_scaling == 1) {
+    if (u_scaling) {
         // scaling == "scene": scale marker using entire visual -> framebuffer set of transforms
-        x = $framebuffer_to_visual(fb_pos + vec4(big_float, 0, 0, 0));
-        x = (x - pos);
-        size_vec = $visual_to_framebuffer(pos + normalize(x) * a_size);
-        $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
-        v_edgewidth = ($v_size / a_size) * a_edgewidth;
-    }
-    else if (u_scaling == 2) {
         // scaling == "visual": scale marker using only the Visual's transform
-        // move horizontally in framebuffer space
-        // then go to scene coordinates (not visual, so scaling is accounted for)
-        x = $framebuffer_to_scene(fb_pos + vec4(big_float, 0, 0, 0));
-        // subtract position, so we get the scene-coordinate vector describing
-        // an "horizontal direction parallel to the screen"
-        vec4 scene_pos = $framebuffer_to_scene(fb_pos);
-        x = (x - scene_pos);
-        // multiply that direction by the size (in scene space) and add it to the position
+        pos = $framebuffer_to_scene_or_visual(fb_pos);
+        x = $framebuffer_to_scene_or_visual(fb_pos + vec4(big_float, 0, 0, 0));
+        x = (x - pos);
+        // multiply that direction by the size and add it to the position
         // this gives us the position of the edge of the point, which we convert in screen space
-        size_vec = $scene_to_framebuffer(scene_pos + normalize(x) * a_size);
+        size_vec = $scene_or_visual_to_framebuffer(pos + normalize(x) * a_size);
         // divide by `w` for perspective, and subtract pos
         // this gives us the actual screen-space size of the point
         $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
@@ -83,12 +72,13 @@ void main (void) {
     gl_PointSize = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
 
     if (u_spherical == true) {
+        // similar as above for scaling, but in towards the screen direction
         // Get the framebuffer z direction relative to this sphere in visual coords
-        vec4 z = $framebuffer_to_visual(fb_pos + vec4(0, 0, big_float, 0));
+        vec4 z = $framebuffer_to_scene_or_visual(fb_pos + vec4(0, 0, big_float, 0));
         z = (z - pos);
         // Get the depth of the sphere in its middle point on the screen
         // size/2 because we need the radius, not the diameter
-        vec4 depth_z_vec = $visual_to_framebuffer(pos + normalize(z) * a_size / 2);
+        vec4 depth_z_vec = $scene_or_visual_to_framebuffer(pos + normalize(z) * a_size / 2);
         v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
         // size ratio between aliased and non-aliased, needed for correct depth
         v_alias_ratio = gl_PointSize / $v_size;
@@ -506,9 +496,11 @@ class MarkersVisual(Visual):
         The symbol size in screen (or data, if scaling is on) px.
     edge_width : float or array or None
         The width of the symbol outline in screen (or data, if scaling is on) px.
+        Defaults to 1.0 if None or not provided and ``edge_width_rel`` is not
+        provided.
     edge_width_rel : float or array or None
-        The width as a fraction of marker size. Exactly one of
-        `edge_width` and `edge_width_rel` must be supplied.
+        The width as a fraction of marker size. Can not be specified along with
+        edge_width. A ValueError will be raised if both are provided.
     edge_color : Color | ColorArray
         The color used to draw each symbol outline.
     face_color : Color | ColorArray
@@ -560,6 +552,7 @@ class MarkersVisual(Visual):
                  light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
+        self._scaling = "fixed"
 
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._symbol_func = Function(self._symbol_shader)
@@ -573,11 +566,11 @@ class MarkersVisual(Visual):
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._draw_mode = 'points'
 
+        self.events.add(data_updated=Event)
+
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
-        self._scaling = "fixed"
-        self._scaling_int = 0
         self.scaling = scaling
         self.antialias = antialias
         self.light_color = light_color
@@ -588,7 +581,7 @@ class MarkersVisual(Visual):
 
         self.freeze()
 
-    def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
+    def set_data(self, pos=None, size=10., edge_width=None, edge_width_rel=None,
                  edge_color='black', face_color='white',
                  symbol='o'):
         """Set the data used to display this visual.
@@ -601,9 +594,11 @@ class MarkersVisual(Visual):
             The symbol size in screen (or data, if scaling is on) px.
         edge_width : float or array or None
             The width of the symbol outline in screen (or data, if scaling is on) px.
+            Defaults to 1.0 if None or not provided and ``edge_width_rel`` is not
+        provided.
         edge_width_rel : float or array or None
-            The width as a fraction of marker size. Exactly one of
-            `edge_width` and `edge_width_rel` must be supplied.
+            The width as a fraction of marker size. Can not be specified along with
+            edge_width. A ValueError will be raised if both are provided.
         edge_color : Color | ColorArray
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
@@ -611,9 +606,11 @@ class MarkersVisual(Visual):
         symbol : str or array
             The style of symbol used to draw each marker (see Notes).
         """
-        if (edge_width is not None) + (edge_width_rel is not None) != 1:
-            raise ValueError('exactly one of edge_width and edge_width_rel '
-                             'must be non-None')
+        if edge_width is not None and edge_width_rel is not None:
+            raise ValueError("either edge_width or edge_width_rel "
+                             "should be provided, not both")
+        elif edge_width is None and edge_width_rel is None:
+            edge_width = 1.0
 
         if edge_width is not None:
             edge_width = np.asarray(edge_width)
@@ -623,10 +620,6 @@ class MarkersVisual(Visual):
             edge_width_rel = np.asarray(edge_width_rel)
             if np.any(edge_width_rel < 0):
                 raise ValueError('edge_width_rel cannot be negative')
-
-        if symbol is not None:
-            if not np.all(np.isin(np.asarray(symbol), self.symbols)):
-                raise ValueError(f'symbols must one of {self.symbols}')
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -656,12 +649,21 @@ class MarkersVisual(Visual):
             data['a_position'][:, :pos.shape[1]] = pos
             data['a_size'] = size
 
-            data['a_symbol'] = np.vectorize(self._symbol_shader_values.get)(symbol)
+            if symbol is None:
+                data["a_symbol"] = np.array(None)
+            else:
+                if isinstance(symbol, str):
+                    symbol = [symbol]
+                try:
+                    data['a_symbol'] = np.array([self._symbol_shader_values[x] for x in symbol])
+                except KeyError:
+                    raise ValueError(f'symbols must one of {self.symbols}')
 
             self._data = data
             self._vbo.set_data(data)
             self.shared_program.bind(self._vbo)
 
+        self.events.data_updated()
         self.update()
 
     @property
@@ -702,19 +704,17 @@ class MarkersVisual(Visual):
     @scaling.setter
     def scaling(self, value):
         scaling_modes = {
-            False: 0,
-            True: 1,
-            "fixed": 0,
-            "scene": 1,
-            "visual": 2,
+            False: "fixed",
+            True: "scene",
+            "fixed": "fixed",
+            "scene": "scene",
+            "visual": "visual",
         }
         if value not in scaling_modes:
             possible_options = ", ".join(repr(opt) for opt in scaling_modes)
             raise ValueError(f"Unknown scaling option {value!r}, expected one of: {possible_options}")
-        scaling_int = scaling_modes[value]
-        self.shared_program['u_scaling'] = scaling_int
-        self._scaling = value
-        self._scaling_int = scaling_int
+        self._scaling = scaling_modes[value]
+        self.shared_program['u_scaling'] = self._scaling != "fixed"
         self.update()
 
     @property
@@ -799,16 +799,15 @@ class MarkersVisual(Visual):
 
     def _prepare_transforms(self, view):
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform('visual', 'framebuffer')
-        view.view_program.vert['framebuffer_to_visual'] = view.get_transform('framebuffer', 'visual')
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
-        view.view_program.vert['framebuffer_to_scene'] = view.get_transform('framebuffer', 'scene')
-        view.view_program.vert['scene_to_framebuffer'] = view.get_transform('scene', 'framebuffer')
+        scaling = view._scaling if view._scaling != "fixed" else "scene"
+        view.view_program.vert['framebuffer_to_scene_or_visual'] = view.get_transform('framebuffer', scaling)
+        view.view_program.vert['scene_or_visual_to_framebuffer'] = view.get_transform(scaling, 'framebuffer')
 
     def _prepare_draw(self, view):
         if self._data is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        view.view_program['u_scaling'] = self._scaling_int
 
     def _compute_bounds(self, axis, view):
         pos = self._data['a_position']

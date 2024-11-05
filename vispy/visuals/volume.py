@@ -417,8 +417,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         // Scale and clamp accumulation in `sumval` by contrast limits so that:
         // * attenuation value does not depend on data values
         // * negative values do not amplify instead of attenuate
-        sumval = sumval + clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0);
-        scale = exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
+        sumval = sumval + u_relative_step_size * clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0);
+        scale = exp(-u_attenuation * (sumval - 1));
         if( maxval > scale * clim.y ) {
             // stop if no chance of finding a higher maxval
             iter = nsteps;
@@ -1165,9 +1165,40 @@ class VolumeVisual(Visual):
 
     @relative_step_size.setter
     def relative_step_size(self, value):
+        """Set the relative step size used during raycasting.
+
+        Very small values give increased detail when rendering volumes with
+        few voxels, but values that are too small give worse performance
+        (framerate), in extreme cases causing a GPU hang and for the process
+        to be killed by the OS. See discussion at:
+
+        https://github.com/vispy/vispy/pull/2587
+
+        For this reason, this setter issues a warning when the value is
+        smaller than ``side_len / (2 * MAX_CANVAS_SIZE)``, where ``side_len``
+        is the smallest side of the volume and ``MAX_CANVAS_SIZE`` is what
+        we consider to be the largest likely monitor resolution along its
+        longest side: 7680 pixels, equivalent to an 8K monitor.
+
+        This setter also raises a ValueError when the value is 0 or negative.
+        """
         value = float(value)
-        if value < 0.1:
-            raise ValueError('relative_step_size cannot be smaller than 0.1')
+        side_len = np.min(self._vol_shape)
+        MAX_CANVAS_SIZE = 7680
+        minimum_val = side_len / (2 * MAX_CANVAS_SIZE)
+        if value <= 0:
+            raise ValueError('relative_step_size cannot be 0 or negative.')
+        elif value < minimum_val:
+            warnings.warn(
+                f'To display a volume of shape {self._vol_shape} without '
+                f'artifacts, you need a step size no smaller than {side_len} /'
+                f'(2 * {MAX_CANVAS_SIZE}) = {minimum_val:,.3g}. To prevent '
+                'extreme degradation in rendering performance, the provided '
+                f'value of {value} is being clipped to {minimum_val:,.3g}. If '
+                'you believe you need a smaller step size, please raise an '
+                'issue at https://github.com/vispy/vispy/issues.'
+            )
+            value = minimum_val
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
 

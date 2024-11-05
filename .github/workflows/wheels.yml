@@ -20,23 +20,23 @@ jobs:
           - os: ubuntu-20.04
             arch: aarch64
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Set up QEMU
       if: ${{ matrix.arch == 'aarch64' }}
-      uses: docker/setup-qemu-action@v2
+      uses: docker/setup-qemu-action@v3
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.13.1
+      uses: pypa/cibuildwheel@v2.21.2
       env:
-        CIBW_SKIP: "cp36-* pp* *-win32 *-manylinux_i686 *-musllinux*"
+        CIBW_SKIP: "pp* *-win32 *-manylinux_i686 *-musllinux* cp313-*"
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
         CIBW_TEST_REQUIRES: "pytest pytest-sugar meshio pillow sphinx_gallery imageio"
         CIBW_TEST_COMMAND: "python -c \"import vispy; vispy.test('nobackend')\""
-        CIBW_BUILD_VERBOSITY: "2"
-        CIBW_BEFORE_BUILD: "pip install -U numpy Cython"
-        CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
-        CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev; pip install -U pip setuptools; pip install freetype-py"
+        CIBW_BEFORE_BUILD: "python -m pip install -U Cython pip setuptools"
+        CIBW_BEFORE_TEST: "python -m pip install -U Cython pip setuptools"
+        #CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
+        CIBW_BEFORE_BUILD_LINUX: "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev; pip install freetype-py"
         # If freetype-py is installed from source (no wheel found), include bundled freetype library
         CIBW_ENVIRONMENT_WINDOWS: "FREETYPEPY_BUNDLE_FT=1"
         CIBW_ENVIRONMENT: "GITHUB_ACTIONS=true"
@@ -44,41 +44,48 @@ jobs:
         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
         CIBW_ARCHS_MACOS: 'x86_64 arm64'
         CIBW_TEST_SKIP: '*-macosx_arm64'
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
+        name: wheels-${{ matrix.os }}-${{ matrix.arch }}
         path: ./wheelhouse/*.whl
 
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       name: Install Python
       with:
-        python-version: '3.7'
+        python-version: '3.9'
     - name: Build sdist
       run: |
         python -m pip install --upgrade pip setuptools build wheel
         python -m pip install numpy Cython
         python -m build -s -o dist/
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
+        name: sdist
         path: dist/*.tar.gz
 
   upload_test_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    # upload to Test PyPI for every commit on main branch
-    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          name: sdist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
           path: dist
       - uses: pypa/gh-action-pypi-publish@master
+        # upload to Test PyPI for every commit on main branch
+        if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
         with:
           user: __token__
           password: ${{ secrets.VISPY_TEST_PYPI_TOKEN }}
@@ -87,16 +94,30 @@ jobs:
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    # upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    # alternatively, to publish when a GitHub Release is created, use the following rule:
-    # if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-    - uses: actions/download-artifact@v3
-      with:
-        name: artifact
-        path: dist
-    - uses: pypa/gh-action-pypi-publish@master
-      with:
-        user: __token__
-        password: ${{ secrets.VISPY_PYPI_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-ubuntu-20.04-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-2019-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-macOS-latest-auto
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-ubuntu-20.04-aarch64
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@master
+        # upload to PyPI on every tag starting with 'v'
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+        with:
+          user: __token__
+          password: ${{ secrets.VISPY_PYPI_TOKEN }}

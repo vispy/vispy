@@ -73,7 +73,7 @@ class ArrayList(object):
                 if isinstance(data[0], (list, tuple)):
                     itemsize = [len(sublist) for sublist in data]
                     data = [item for sublist in data for item in sublist]
-            self._data = np.array(data, copy=False)
+            self._data = np.array(data)
             self._size = self._data.size
 
             # Default is one group with all data inside
@@ -88,7 +88,7 @@ class ArrayList(object):
                     _itemsize = np.ones(
                         self._count, dtype=int) * (self._size // self._count)
                 else:
-                    _itemsize = np.array(itemsize, copy=False)
+                    _itemsize = np.array(itemsize)
                     self._count = len(itemsize)
                     if _itemsize.sum() != self._size:
                         raise ValueError("Cannot partition data as requested")
@@ -302,7 +302,7 @@ class ArrayList(object):
             itemsize = [len(sublist) for sublist in data]
             data = [item for sublist in data for item in sublist]
 
-        data = np.array(data, copy=False).ravel()
+        data = np.array(data).ravel()
         size = data.size
 
         # Check item size and get item number
@@ -313,7 +313,7 @@ class ArrayList(object):
                 _count = size // itemsize
                 _itemsize = np.ones(_count, dtype=int) * (size // _count)
             else:
-                _itemsize = np.array(itemsize, copy=False)
+                _itemsize = np.array(itemsize)
                 _count = len(itemsize)
                 if _itemsize.sum() != size:
                     raise ValueError("Cannot partition data as requested")

@@ -327,7 +327,7 @@ def test_image_interpolation():
         assert np.allclose(render[center_left], black)
         assert np.allclose(render[center_right], white)
 
-        image.interpolation = 'bilinear'
+        image.interpolation = 'linear'
         render = c.render()
         assert np.allclose(render[left], black)
         assert np.allclose(render[right], white)

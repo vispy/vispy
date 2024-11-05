@@ -157,6 +157,27 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
                     _save_failed_test(image, std_image, standard_file)
                 raise
 
+# TODO: check for more properties of image
+def assert_image_reasonable(image):
+    """Check that an image is reasonable.
+    
+    The given image is checked to not be completely black or white.
+    
+    Parameters:
+    -----------
+    image : (h, w, 4) ndarray or 'screenshot'
+        The test result to check
+    """
+    if isinstance(image, str) and image == "screenshot":
+        image = _screenshot(alpha=True)
+
+    # check dimensions
+    assert image.ndim == 3
+    assert image.shape[2] == 4
+
+    # check white or black
+    assert image[...,:3].max() > 0
+    assert image[...,:3].min() < 255
 
 def assert_image_match(im1, im2, min_corr=0.9, px_threshold=50.,
                        px_count=None, max_px_diff=None, avg_px_diff=None,
