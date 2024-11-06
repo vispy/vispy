@@ -92,7 +92,7 @@ class GridLinesVisual(ImageVisual):
     """
 
     def __init__(self, scale=(1, 1), color='w',
-                 bounds=None,
+                 grid_bounds=None,
                  border_width=2):
         # todo: PlaneVisual should support subdivide/impostor methods from
         # image and gridlines should inherit from plane instead.
@@ -105,28 +105,28 @@ class GridLinesVisual(ImageVisual):
         cfun = Function('vec4 null(vec4 x) { return x; }')
         self.shared_program.frag['color_transform'] = cfun
         self.unfreeze()
-        self.bounds = bounds
+        self.grid_bounds = grid_bounds
         self.border_width = border_width
         self.freeze()
 
     @property
-    def bounds(self):
+    def grid_bounds(self):
         return self._bounds
 
-    @bounds.setter
-    def bounds(self, value):
+    @grid_bounds.setter
+    def grid_bounds(self, value):
         if value is None:
             value = (None,) * 4
-        bounds = []
+        grid_bounds = []
         for i, v in enumerate(value):
             if v is None:
                 if i % 2:
                     v = -np.inf
                 else:
                     v = np.inf
-            bounds.append(v)
+            grid_bounds.append(v)
         self.shared_program['u_gridlines_bounds'] = value
-        self._bounds = bounds
+        self._grid_bounds = grid_bounds
         self.update()
 
     @property
