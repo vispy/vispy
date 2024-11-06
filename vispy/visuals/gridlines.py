@@ -111,7 +111,7 @@ class GridLinesVisual(ImageVisual):
 
     @property
     def grid_bounds(self):
-        return self._bounds
+        return self._grid_bounds
 
     @grid_bounds.setter
     def grid_bounds(self, value):
@@ -155,4 +155,3 @@ class GridLinesVisual(ImageVisual):
 
         if view._need_method_update:
             self._update_method(view)
-
