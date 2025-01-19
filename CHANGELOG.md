@@ -1,5 +1,27 @@
 # Release Notes
 
+
+## [v0.14.3](https://github.com/vispy/vispy/tree/v0.14.3) (2024-06-17)
+
+**Enhancements:**
+
+- Clip step size based on maximum detail on an 8K monitor [\#2589](https://github.com/vispy/vispy/pull/2589) ([jni](https://github.com/jni))
+
+**Fixed bugs:**
+
+- Fix integral computation in attenuated mip [\#2588](https://github.com/vispy/vispy/pull/2588) ([jni](https://github.com/jni))
+- Reset VertexAttribDivisor even if None [\#2583](https://github.com/vispy/vispy/pull/2583) ([aganders3](https://github.com/aganders3))
+
+**Merged pull requests:**
+
+- Fix CI: failing tests and linting errors not failing checks [\#2597](https://github.com/vispy/vispy/pull/2597) ([aganders3](https://github.com/aganders3))
+- Bump pypa/cibuildwheel from 2.18.0 to 2.18.1 [\#2586](https://github.com/vispy/vispy/pull/2586) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.17.0 to 2.18.0 [\#2584](https://github.com/vispy/vispy/pull/2584) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump peaceiris/actions-gh-pages from 3 to 4 [\#2582](https://github.com/vispy/vispy/pull/2582) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Fix gallery link in README.rst [\#2579](https://github.com/vispy/vispy/pull/2579) ([inigoalonso](https://github.com/inigoalonso))
+- Bump pypa/cibuildwheel from 2.16.5 to 2.17.0 [\#2578](https://github.com/vispy/vispy/pull/2578) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+
 ## [v0.14.2](https://github.com/vispy/vispy/tree/v0.14.2) (2024-03-14)
 
 **Enhancements:**

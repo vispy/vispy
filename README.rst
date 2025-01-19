@@ -137,7 +137,7 @@ External links
 -  `Chat room <https://gitter.im/vispy/vispy>`__
 -  `Developer chat room <https://gitter.im/vispy/vispy-dev>`__
 -  `Wiki <http://github.com/vispy/vispy/wiki>`__
--  `Gallery <http://vispy.org/gallery.html>`__
+-  `Gallery <http://vispy.org/gallery/index.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
 
 .. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg

@@ -1,9 +1,9 @@
 [build-system]
 requires = [
-    "wheel",
-    "oldest-supported-numpy",
-    "setuptools>=42",
-    "setuptools_scm[toml]>=7.1",
+    "setuptools>=69.4.0",
+    # see https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-0-specific-advice
+    "numpy>=2.0.0rc2",
+    "setuptools_scm[toml]>=8.1",
     "Cython>=3.0.0"
 ]
 
