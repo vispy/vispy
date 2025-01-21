@@ -2,6 +2,7 @@ import sys
 from unittest import SkipTest
 
 import numpy as np
+import pytest
 from numpy.testing import assert_array_almost_equal
 
 from vispy.testing import run_tests_if_main
@@ -561,6 +562,7 @@ def test_triangulate_collinear_path():
     _assert_triangle_pts_in_input(t, pts)
 
 
+@pytest.mark.xfail(reason="See https://github.com/vispy/vispy/issues/2247")
 def test_triangulate_collinear_path_with_repeat():
     pts = np.array([
         [4, 4],
