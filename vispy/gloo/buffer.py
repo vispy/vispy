@@ -10,7 +10,7 @@ from traceback import extract_stack, format_list
 import weakref
 
 from . globject import GLObject
-from ..util import logger
+from ..util import logger, np_copy_if_needed
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -70,7 +70,7 @@ class Buffer(GLObject):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
-        data = np.array(data, copy=copy)
+        data = np.array(data, copy=copy or np_copy_if_needed)
         nbytes = data.nbytes
 
         if offset < 0:
@@ -98,7 +98,7 @@ class Buffer(GLObject):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
-        data = np.array(data, copy=copy)
+        data = np.array(data, copy=copy or np_copy_if_needed)
         nbytes = data.nbytes
 
         if nbytes != self._nbytes:
@@ -283,7 +283,7 @@ class DataBuffer(Buffer):
 
         # Make sure data is an array
         if not isinstance(data, np.ndarray):
-            data = np.array(data, dtype=self.dtype, copy=False)
+            data = np.array(data, dtype=self.dtype)
 
         # Make sure data is big enough
         if data.size < stop - start:
@@ -414,6 +414,10 @@ class VertexBuffer(DataBuffer):
         Buffer data (optional)
     """
 
+    def __init__(self, data=None, divisor=None):
+        super().__init__(data)
+        self.divisor = divisor
+
     _GLIR_TYPE = 'VertexBuffer'
 
     def _prepare_data(self, data, convert=False):
@@ -448,6 +452,14 @@ class VertexBuffer(DataBuffer):
             data = data.view(dtype=[dtype_def])
             self._last_dim = c
         return data
+
+    @property
+    def divisor(self):
+        return self._divisor
+
+    @divisor.setter
+    def divisor(self, value):
+        self._divisor = max(1, int(value)) if value else None
 
 
 def _last_stack_str():

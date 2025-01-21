@@ -16,6 +16,8 @@ except ImportError:
 
 from ..gallery_scraper import VisPyGalleryScraper
 
+pytest.importorskip("PyQt5", reason="Gallery scraper only supports PyQt5")
+
 
 def _create_fake_block_vars(canvas):
     block_vars = {

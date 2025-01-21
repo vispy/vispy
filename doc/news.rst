@@ -10,6 +10,7 @@ See the `Release Notes <https://github.com/vispy/vispy/blob/main/CHANGELOG.md>`_
 Announcements
 -------------
 
+- **PyCascades 2022 Sprint**, February 2022
 - Chan Zuckerberg Initiative - Essential Open Source Software for Science (Cycle 4) Grant Awarded, Sept 2021
 - **SciPy 2021 Sprint**, July 2021
 - Chan Zuckerberg Initiative - Essential Open Source Software for Science (Cycle 2) Grant Awarded, May 2020

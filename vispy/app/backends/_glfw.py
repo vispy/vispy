@@ -27,7 +27,7 @@ glfw = None
 try:
     import glfw
 except ImportError:
-    why_not = "Could not import glwf, you may need to `pip install glfw` first."
+    why_not = "Could not import glfw, you may need to `pip install glfw` first."
     available, testable, why_not, which = False, False, why_not, None
 except Exception as err:
     why_not = "Error importing glfw: " + str(err)
@@ -250,7 +250,7 @@ class CanvasBackend(BaseCanvasBackend):
                     raise ValueError('fullscreen must be <= %s'
                                      % len(monitor))
                 monitor = monitor[p.fullscreen]
-            use_size = glfw.get_video_mode(monitor)[:2]
+            use_size = glfw.get_video_mode(monitor)[0][:2]
             if use_size != tuple(p.size):
                 logger.debug('Requested size %s, will be ignored to '
                              'use fullscreen mode %s' % (p.size, use_size))
@@ -320,7 +320,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Set the window title. Has no effect for widgets
-        glfw.set_window_title(self._id, title.encode('utf-8'))
+        glfw.set_window_title(self._id, title)
 
     def _vispy_set_size(self, w, h):
         if self._id is None:

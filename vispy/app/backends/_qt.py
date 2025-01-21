@@ -5,7 +5,7 @@
 """
 Base code for the Qt backends. Note that this is *not* (anymore) a
 backend by itself! One has to explicitly use either PySide, PyQt4 or
-PySide2, PyQt5. Note that the automatic backend selection prefers
+PySide2, PyQt5 or PyQt6. Note that the automatic backend selection prefers
 a GUI toolkit that is already imported.
 
 The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will
@@ -22,11 +22,12 @@ known to cause unpredictable behavior and segfaults.
 from __future__ import division
 
 from time import sleep, time
+import math
 import os
 import sys
 import atexit
 import ctypes
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from ...util import logger
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -90,19 +91,19 @@ elif qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
         from PyQt5.QtCore import QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '5.4.0':
+        if Version(QT_VERSION_STR) >= Version('5.4.0'):
             from PyQt5.QtWidgets import QOpenGLWidget as QGLWidget
             from PyQt5.QtGui import QSurfaceFormat as QGLFormat
             QT5_NEW_API = True
         else:
             from PyQt5.QtOpenGL import QGLWidget, QGLFormat
     from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
-    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # 
+    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyqt6':
     _check_imports('PyQt6')
     if not USE_EGL:
         from PyQt6.QtCore import QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '6.0.0':
+        if Version(QT_VERSION_STR) >= Version('6.0.0'):
             from PyQt6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
             from PyQt6.QtGui import QSurfaceFormat as QGLFormat
             PYQT6_API = True
@@ -114,7 +115,7 @@ elif qt_lib == 'pyside6':
     _check_imports('PySide6')
     if not USE_EGL:
         from PySide6.QtCore import __version__ as QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '6.0.0':
+        if Version(QT_VERSION_STR) >= Version('6.0.0'):
             from PySide6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
             from PySide6.QtGui import QSurfaceFormat as QGLFormat
             PYSIDE6_API = True
@@ -126,7 +127,7 @@ elif qt_lib == 'pyside2':
     _check_imports('PySide2')
     if not USE_EGL:
         from PySide2.QtCore import __version__ as QT_VERSION_STR
-        if LooseVersion(QT_VERSION_STR) >= '5.4.0':
+        if Version(QT_VERSION_STR) >= Version('5.4.0'):
             from PySide2.QtWidgets import QOpenGLWidget as QGLWidget
             from PySide2.QtGui import QSurfaceFormat as QGLFormat
             QT5_NEW_API = True
@@ -191,7 +192,7 @@ KEYMAP = {
     qt_keys.Key_Return: keys.ENTER,
     qt_keys.Key_Tab: keys.TAB,
 }
-if PYQT6_API:
+if PYQT6_API or PYSIDE6_API:
     BUTTONMAP = {
         QtCore.Qt.MouseButton.NoButton: 0,
         QtCore.Qt.MouseButton.LeftButton: 1,
@@ -278,11 +279,11 @@ def _set_config(c):
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
     glformat.setAlphaBufferSize(c['alpha_size'])
-    if QT5_NEW_API or PYSIDE6_API:
+    if QT5_NEW_API:
         # Qt5 >= 5.4.0 - below options automatically enabled if nonzero.
         glformat.setSwapBehavior(glformat.DoubleBuffer if c['double_buffer']
                                  else glformat.SingleBuffer)
-    elif PYQT6_API:
+    elif PYQT6_API or PYSIDE6_API:
         glformat.setSwapBehavior(glformat.SwapBehavior.DoubleBuffer if c['double_buffer']
                                  else glformat.SwapBehavior.SingleBuffer)
     else:
@@ -385,9 +386,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         # must set physical size before setting visible or fullscreen
         # operations may make the size invalid
-        if hasattr(self, 'devicePixelRatio'):
+        if hasattr(self, 'devicePixelRatioF'):
             # handle high DPI displays in PyQt5
-            ratio = self.devicePixelRatio()
+            ratio = self.devicePixelRatioF()
         else:
             ratio = 1
         self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
@@ -410,24 +411,17 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             # either not PyQt5 backend or no parent window available
             pass
 
-        # Activate touch and gesture.
-        # NOTE: we only activate touch on OS X because there seems to be
-        # problems on Ubuntu computers with touchscreen.
-        # See https://github.com/vispy/vispy/pull/1143
-        if sys.platform == 'darwin':
-            if PYQT6_API:
-                self.setAttribute(QtCore.Qt.WidgetAttribute.WA_AcceptTouchEvents)
-                self.grabGesture(QtCore.Qt.GestureType.PinchGesture)
-            else:
-                self.setAttribute(QtCore.Qt.WA_AcceptTouchEvents)
-                self.grabGesture(QtCore.Qt.PinchGesture)
+        # QNativeGestureEvent does not keep track of last or total
+        # values like QGestureEvent does
+        self._native_gesture_scale_values = []
+        self._native_gesture_rotation_values = []
 
     def screen_changed(self, new_screen):
         """Window moved from one display to another, resize canvas.
 
         If display resolutions are the same this is essentially a no-op except for the redraw.
         If the display resolutions differ (HiDPI versus regular displays) the canvas needs to
-        be redrawn to reset the physical size based on the current `devicePixelRatio()` and
+        be redrawn to reset the physical size based on the current `devicePixelRatioF()` and
         redrawn with that new size.
 
         """
@@ -563,44 +557,85 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def keyReleaseEvent(self, ev):
         self._keyEvent(self._vispy_canvas.events.key_release, ev)
 
+    def _handle_native_gesture_event(self, ev):
+        if self._vispy_canvas is None:
+            return
+        t = ev.gestureType()
+        # this is a workaround for what looks like a Qt bug where
+        # QNativeGestureEvent gives the wrong local position.
+        # See: https://bugreports.qt.io/browse/QTBUG-59595
+        try:
+            pos = self.mapFromGlobal(ev.globalPosition().toPoint())
+        except AttributeError:
+            # globalPos is deprecated in Qt6
+            pos = self.mapFromGlobal(ev.globalPos())
+        pos = pos.x(), pos.y()
+
+        if t == QtCore.Qt.NativeGestureType.BeginNativeGesture:
+            self._vispy_canvas.events.touch(
+                type='gesture_begin',
+                pos=_get_event_xy(ev),
+                modifiers=self._modifiers(ev),
+            )
+        elif t == QtCore.Qt.NativeGestureType.EndNativeGesture:
+            self._native_touch_total_rotation = []
+            self._native_touch_total_scale = []
+            self._vispy_canvas.events.touch(
+                type='gesture_end',
+                pos=_get_event_xy(ev),
+                modifiers=self._modifiers(ev),
+            )
+        elif t == QtCore.Qt.NativeGestureType.RotateNativeGesture:
+            angle = ev.value()
+            last_angle = (
+                self._native_gesture_rotation_values[-1]
+                if self._native_gesture_rotation_values
+                else None
+            )
+            self._native_gesture_rotation_values.append(angle)
+            total_rotation_angle = math.fsum(self._native_gesture_rotation_values)
+            self._vispy_canvas.events.touch(
+                type="gesture_rotate",
+                pos=pos,
+                rotation=angle,
+                last_rotation=last_angle,
+                total_rotation_angle=total_rotation_angle,
+                modifiers=self._modifiers(ev),
+            )
+        elif t == QtCore.Qt.NativeGestureType.ZoomNativeGesture:
+            scale = ev.value()
+            last_scale = (
+                self._native_gesture_scale_values[-1]
+                if self._native_gesture_scale_values
+                else None
+            )
+            self._native_gesture_scale_values.append(scale)
+            total_scale_factor = math.fsum(self._native_gesture_scale_values)
+            self._vispy_canvas.events.touch(
+                type="gesture_zoom",
+                pos=pos,
+                last_scale=last_scale,
+                scale=scale,
+                total_scale_factor=total_scale_factor,
+                modifiers=self._modifiers(ev),
+            )
+        # QtCore.Qt.NativeGestureType.PanNativeGesture
+        # Qt6 docs seem to imply this is only supported on Wayland but I have
+        # not been able to test it.
+        # Two finger pan events are anyway converted to scroll/wheel events.
+        # On macOS, more fingers are usually swallowed by the OS (by spaces,
+        # mission control, etc.).
+
     def event(self, ev):
         out = super(QtBaseCanvasBackend, self).event(ev)
-        t = ev.type()
 
-        qt_event_types = QtCore.QEvent.Type if PYQT6_API else QtCore.QEvent
-        # Two-finger pinch.
-        if t == qt_event_types.TouchBegin:
-            self._vispy_canvas.events.touch(type='begin')
-        if t == qt_event_types.TouchEnd:
-            self._vispy_canvas.events.touch(type='end')
-        if t == qt_event_types.Gesture:
-            pinch_gesture = QtCore.Qt.GestureType.PinchGesture if PYQT6_API else QtCore.Qt.PinchGesture
-            gesture = ev.gesture(pinch_gesture)
-            if gesture:
-                (x, y) = _get_qpoint_pos(gesture.centerPoint())
-                scale = gesture.scaleFactor()
-                last_scale = gesture.lastScaleFactor()
-                rotation = gesture.rotationAngle()
-                self._vispy_canvas.events.touch(
-                    type="pinch",
-                    pos=(x, y),
-                    last_pos=None,
-                    scale=scale,
-                    last_scale=last_scale,
-                    rotation=rotation,
-                    total_rotation_angle=gesture.totalRotationAngle(),
-                    total_scale_factor=gesture.totalScaleFactor(),
-                )
-        # General touch event.
-        elif t == qt_event_types.TouchUpdate:
-            points = ev.touchPoints()
-            # These variables are lists of (x, y) coordinates.
-            pos = [_get_qpoint_pos(p.pos()) for p in points]
-            lpos = [_get_qpoint_pos(p.lastPos()) for p in points]
-            self._vispy_canvas.events.touch(type='touch',
-                                            pos=pos,
-                                            last_pos=lpos,
-                                            )
+        # QNativeGestureEvent is Qt 5+
+        if (
+            (QT5_NEW_API or PYSIDE6_API or PYQT6_API)
+            and isinstance(ev, QtGui.QNativeGestureEvent)
+        ):
+            self._handle_native_gesture_event(ev)
+
         return out
 
     def _keyEvent(self, func, ev):
@@ -624,7 +659,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                      [qt_keyboard_modifiers.ControlModifier, keys.CONTROL],
                      [qt_keyboard_modifiers.AltModifier, keys.ALT],
                      [qt_keyboard_modifiers.MetaModifier, keys.META]):
-            if q & qtmod:
+            if qtmod & q:
                 mod += (v,)
         return mod
 
@@ -878,11 +913,11 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        if hasattr(self, 'devicePixelRatio'):
-            # We take into account devicePixelRatio, which is non-unity on
+        if hasattr(self, 'devicePixelRatioF'):
+            # We take into account devicePixelRatioF, which is non-unity on
             # e.g HiDPI displays.
-            # self.devicePixelRatio() is a float and should have been in Qt5 according to the documentation
-            ratio = self.devicePixelRatio()
+            # self.devicePixelRatioF() is a float and should have been in Qt5 according to the documentation
+            ratio = self.devicePixelRatioF()
             w = int(w * ratio)
             h = int(h * ratio)
         self._vispy_set_physical_size(w, h)

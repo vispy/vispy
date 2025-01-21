@@ -27,7 +27,7 @@ class EllipseVisual(PolygonVisual):
         The width of the border in pixels
         Line widths > 1px are only
         guaranteed to work when using `border_method='agg'` method.
-    radius : float | tuple
+    radius : float | tuple | list | numpy.ndarray
         Radius or radii of the ellipse
         Defaults to  (0.1, 0.1)
     start_angle : float
@@ -65,13 +65,12 @@ class EllipseVisual(PolygonVisual):
     @staticmethod
     def _generate_vertices(center, radius, start_angle, span_angle,
                            num_segments):
-        if isinstance(radius, (list, tuple)):
+        if isinstance(radius, (list, tuple, np.ndarray)):
             if len(radius) == 2:
                 xr, yr = radius
             else:
-                raise ValueError("radius must be float or 2 value tuple/list"
-                                 " (got %s of length %d)" % (type(radius),
-                                                             len(radius)))
+                raise ValueError("radius must be float or 2 value tuple/list/numpy.ndarray "
+                                 f"(got {type(radius)} of length {len(radius)})")
         else:
             xr = yr = radius
 
@@ -79,7 +78,7 @@ class EllipseVisual(PolygonVisual):
 
         vertices = np.empty([num_segments + 2, 2], dtype=np.float32)
 
-        # split the total angle into num_segments intances
+        # split the total angle into num_segments instances
         theta = np.linspace(start_angle,
                             start_angle + np.deg2rad(span_angle),
                             num_segments + 1)

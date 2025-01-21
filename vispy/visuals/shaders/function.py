@@ -309,6 +309,9 @@ class Function(ShaderObject):
         """
         return FunctionCall(self, args)
 
+    def __contains__(self, key):
+        return key in self.template_vars
+
     # Public API methods
 
     @property

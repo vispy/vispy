@@ -238,7 +238,7 @@ def _make_test_data(shape, input_dtype):
 @requires_pyopengl()
 def test_set_data_does_not_change_input():
     # Create volume
-    V = scene.visuals.Volume(np.zeros((20, 20, 20)))
+    V = scene.visuals.Volume(np.zeros((20, 20, 20), dtype=np.float32))
 
     # calling Volume.set_data() should NOT alter the values of the input array
     # regardless of data type
@@ -249,12 +249,36 @@ def test_set_data_does_not_change_input():
         V.set_data(vol_copy, clim=(0, 200))
         assert np.allclose(vol, vol_copy)
 
-    # for those using float32 who want to avoid the copy operation,
-    # using set_data() with `copy=False` should be expected to alter the data.
-    vol2 = np.array(vol, dtype='float32', copy=True)
+    # dtype has to be the same as the one used to init the texture, or it will
+    # be first coerced to the same dtype as the init
+
+    vol2 = np.array(vol, dtype=np.float32, copy=True)
     assert np.allclose(vol, vol2)
+    # we explicitly create a copy when data would be altered by the texture,
+    # no matter what the user asks, so the data outside should never change
     V.set_data(vol2, clim=(0, 200), copy=False)
-    assert not np.allclose(vol, vol2)
+    assert np.allclose(vol, vol2)
+
+
+@requires_pyopengl()
+def test_set_data_changes_shape():
+    dtype = np.float32
+    # Create initial volume
+    V = scene.visuals.Volume(np.zeros((20, 20, 20), dtype=dtype))
+
+    # Sending new three dimensional data of different shape should alter volume shape
+    vol = np.zeros((25, 25, 10), dtype=dtype)
+    V.set_data(vol)
+    assert V._vol_shape == (25, 25, 10)
+
+    # Sending data of dimension other than 3 should raise a ValueError
+    vol2 = np.zeros((20, 20), dtype=dtype)
+    with pytest.raises(ValueError):
+        V.set_data(vol2)
+
+    vol2 = np.zeros((20, 20, 20, 20), dtype=dtype)
+    with pytest.raises(ValueError):
+        V.set_data(vol2)
 
 
 @requires_pyopengl()
@@ -291,6 +315,228 @@ def test_changing_cmap():
             current_cmap = c.render()
             with pytest.raises(AssertionError):
                 np.testing.assert_allclose(grays, current_cmap)
+
+
+@requires_pyopengl()
+@requires_application()
+def test_plane_depth():
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
+
+        # two planes at 45 degrees relative to the camera. If depth is set correctly, we should see one half
+        # of the screen red and the other half white
+        scene.visuals.Volume(
+            np.ones((80, 80, 80), dtype=np.uint8),
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            raycasting_mode="plane",
+            plane_normal=(0, 1, 1),
+            parent=v.scene,
+        )
+
+        scene.visuals.Volume(
+            np.ones((80, 80, 80), dtype=np.uint8),
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="reds",
+            raycasting_mode="plane",
+            plane_normal=(0, 1, -1),
+            parent=v.scene,
+        )
+
+        # render with grays colormap
+        rendered = c.render()
+        left = rendered[40, 20]
+        right = rendered[40, 60]
+        assert np.array_equal(left, [255, 0, 0, 255])
+        assert np.array_equal(right, [255, 255, 255, 255])
+
+
+@requires_pyopengl()
+@requires_application()
+def test_volume_depth():
+    """Check that depth setting is properly performed for the volume visual
+
+    Render a volume with a blue ball in front of a red plane in front of a
+    blue plane, checking that the output image contains both red and blue pixels.
+    """
+    # A blue strip behind a red strip
+    # If depth is set correctly, we should see only red pixels
+    # the screen
+    blue_vol = np.zeros((80, 80, 80), dtype=np.uint8)
+    blue_vol[:, -1, :] = 1  # back plane blue
+    blue_vol[30:50, 30:50, 30:50] = 1  # blue in center
+
+    red_vol = np.zeros((80, 80, 80), dtype=np.uint8)
+    red_vol[:, -5, :] = 1  # red plane in front of blue plane
+
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
+
+        scene.visuals.Volume(
+            red_vol,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="reds",
+            parent=v.scene,
+        )
+
+        scene.visuals.Volume(
+            blue_vol,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="blues",
+            parent=v.scene,
+        )
+
+        # render
+        rendered = c.render()
+        reds = np.sum(rendered[:, :, 0])
+        greens = np.sum(rendered[:, :, 1])
+        blues = np.sum(rendered[:, :, 2])
+        assert reds > 0
+        np.testing.assert_allclose(greens, 0)
+        assert blues > 0
+
+
+@requires_pyopengl()
+@requires_application()
+def test_mip_cutoff():
+    """
+    Ensure fragments are properly discarded based on the mip_cutoff
+    for the mip and attenuated_mip rendering methods
+    """
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
+
+        vol = scene.visuals.Volume(
+            np.ones((80, 80, 80), dtype=np.uint8),
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            parent=v.scene,
+        )
+
+        # we should see white
+        rendered = c.render()
+        assert np.array_equal(rendered[40, 40], [255, 255, 255, 255])
+
+        vol.mip_cutoff = 10
+        # we should see black
+        rendered = c.render()
+        assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
+
+        # repeat for attenuated_mip
+        vol.method = 'attenuated_mip'
+        vol.mip_cutoff = None
+
+        # we should see white
+        rendered = c.render()
+        assert np.array_equal(rendered[40, 40], [255, 255, 255, 255])
+
+        vol.mip_cutoff = 10
+        # we should see black
+        rendered = c.render()
+        assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
+
+
+@requires_pyopengl()
+@requires_application()
+def test_minip_cutoff():
+    """
+    Ensure fragments are properly discarded based on the minip_cutoff
+    for the minip rendering method
+    """
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 120.0
+
+        # just surface of the cube is ones, but it should win over the twos inside
+        data = np.ones((80, 80, 80), dtype=np.uint8)
+        data[1:-1, 1:-1, 1:-1] = 2
+
+        vol = scene.visuals.Volume(
+            data,
+            interpolation="nearest",
+            method='minip',
+            clim=(0, 2),
+            cmap="grays",
+            parent=v.scene,
+        )
+
+        # we should see gray (half of cmap)
+        rendered = c.render()
+        assert np.array_equal(rendered[40, 40], [128, 128, 128, 255])
+
+        # discard fragments above -10 (everything)
+        vol.minip_cutoff = -10
+        # we should see black
+        rendered = c.render()
+        assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
+
+
+@requires_pyopengl()
+@requires_application()
+def test_volume_set_data_different_dtype():
+    size = (80, 80)
+    data = np.array([[[0, 127]]], dtype=np.int8)
+    left = (40, 10)
+    right = (40, 70)
+    white = (255, 255, 255, 255)
+    black = (0, 0, 0, 255)
+
+    with TestingCanvas(size=size[::-1], bgcolor="w") as c:
+        view = c.central_widget.add_view()
+        view.camera = 'arcball'
+        view.camera.fov = 0
+        view.camera.center = 0.5, 0, 0
+        view.camera.scale_factor = 2
+        volume = scene.visuals.Volume(
+            data,
+            cmap='grays',
+            clim=[0, 127],
+            parent=view.scene
+        )
+
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # same data as float should change nothing
+        volume.set_data(data.astype(np.float32))
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
+
+        # something inverted, different dtype
+        new_data = np.array([[[127, 0]]], dtype=np.float16)
+        volume.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], white)
+        assert np.allclose(render[right], black)
+
+        # out of bounds should clip (2000 > 127)
+        new_data = np.array([[[0, 2000]]], dtype=np.float64)
+        volume.set_data(new_data)
+        render = c.render()
+        assert np.allclose(render[left], black)
+        assert np.allclose(render[right], white)
 
 
 run_tests_if_main()

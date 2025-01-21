@@ -7,7 +7,7 @@ import numpy as np
 
 from vispy.gloo import Texture2D, VertexBuffer
 from vispy.visuals.shaders import Function, Varying
-from vispy.visuals.filters import Filter
+from vispy.visuals.filters import Filter, PrimitivePickingFilter
 from ...color import Color
 
 
@@ -177,6 +177,7 @@ void shade() {
         vec3 u = dFdx(v_pos_scene.xyz);
         vec3 v = dFdy(v_pos_scene.xyz);
         normal = cross(u, v);
+    } else {
         // Note(asnt): The normal calculated above always points in the
         // direction of the camera. Reintroduce the original orientation of the
         // face.
@@ -387,6 +388,10 @@ class ShadingFilter(Filter):
     <https://github.com/vispy/vispy/blob/main/examples/basics/scene/mesh_shading.py>`_
     example script.
     """
+    _shaders = {
+        'vertex': shading_vertex_template,
+        'fragment': shading_fragment_template,
+    }
 
     def __init__(self, shading='flat',
                  ambient_coefficient=(1, 1, 1, 1),
@@ -412,8 +417,8 @@ class ShadingFilter(Filter):
 
         self._enabled = enabled
 
-        vfunc = Function(shading_vertex_template)
-        ffunc = Function(shading_fragment_template)
+        vfunc = Function(self._shaders['vertex'])
+        ffunc = Function(self._shaders['fragment'])
 
         self._normals = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         vfunc['normal'] = self._normals
@@ -572,6 +577,29 @@ class ShadingFilter(Filter):
         super()._detach(visual)
 
 
+instanced_shading_vertex_template = shading_vertex_template.replace(
+    "$normal",
+    "mat3($instance_transform_x, $instance_transform_y, $instance_transform_z) * $normal"
+)
+
+
+class InstancedShadingFilter(ShadingFilter):
+    """Shading filter modified for use with :class:`~vispy.visuals.InstancedMeshVisual`.
+
+    See :class:`ShadingFilter` for details and usage.
+    """
+    _shaders = {
+        'vertex': instanced_shading_vertex_template,
+        'fragment': ShadingFilter._shaders['fragment'],
+    }
+
+    def _attach(self, visual):
+        super()._attach(visual)
+        self.vshader['instance_transform_x'] = visual._instance_transforms_vbos[0]
+        self.vshader['instance_transform_y'] = visual._instance_transforms_vbos[1]
+        self.vshader['instance_transform_z'] = visual._instance_transforms_vbos[2]
+
+
 wireframe_vertex_template = """
 varying vec3 v_bc;
 
@@ -721,19 +749,48 @@ class WireframeFilter(Filter):
         self.fshader['width'] = self._width
         self.fshader['wireframe_only'] = 1 if self._wireframe_only else 0
         self.fshader['faces_only'] = 1 if self._faces_only else 0
-        faces = self._visual.mesh_data.get_faces()
-        n_faces = len(faces)
+        if self._visual.mesh_data.is_empty():
+            n_faces = 0
+        else:
+            n_faces = len(self._visual.mesh_data.get_faces())
         bc = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='float')
         bc = np.tile(bc[None, ...], (n_faces, 1, 1))
         self._bc.set_data(bc, convert=True)
 
-    def on_mesh_data_updated(self, event):
+    def on_data_updated(self, event):
         self._update_data()
 
     def _attach(self, visual):
         super()._attach(visual)
-        visual.events.data_updated.connect(self.on_mesh_data_updated)
+        visual.events.data_updated.connect(self.on_data_updated)
 
     def _detach(self, visual):
-        visual.events.data_updated.disconnect(self.on_mesh_data_updated)
+        visual.events.data_updated.disconnect(self.on_data_updated)
         super()._detach(visual)
+
+
+class FacePickingFilter(PrimitivePickingFilter):
+    """Filter used to color mesh faces by a picking ID.
+
+    Note that the ID color uses the alpha channel, so this may not be used
+    with blending enabled.
+
+    Examples
+    --------
+    :ref:`sphx_glr_gallery_scene_face_picking.py`
+    """
+
+    def _get_picking_ids(self):
+        if self._visual.mesh_data.is_empty():
+            n_faces = 0
+        else:
+            n_faces = len(self._visual.mesh_data.get_faces())
+
+        # we only care about the number of faces changing
+        if self._n_primitives == n_faces:
+            return None
+        self._n_primitives = n_faces
+
+        ids = np.arange(1, n_faces + 1, dtype=np.uint32)
+        ids = np.repeat(ids, 3, axis=0)  # repeat id for each vertex
+        return ids

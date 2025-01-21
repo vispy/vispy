@@ -14,7 +14,7 @@ import gc
 import pytest
 import functools
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from ..util.check_environment import has_backend
 
@@ -251,7 +251,7 @@ def has_ipython(version='3.0'):
     except Exception:
         return False, "IPython library not found"
     else:
-        if LooseVersion(IPython.__version__) >= LooseVersion(version):
+        if Version(IPython.__version__) >= Version(version):
             return True, "IPython present"
         else:
             message = (
@@ -284,8 +284,7 @@ def _has_scipy(min_version):
     try:
         assert isinstance(min_version, str)
         import scipy  # noqa, analysis:ignore
-        from distutils.version import LooseVersion
-        this_version = LooseVersion(scipy.__version__)
+        this_version = Version(scipy.__version__)
         if this_version < min_version:
             return False
     except Exception:

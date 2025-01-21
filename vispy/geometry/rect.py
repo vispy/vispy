@@ -113,6 +113,12 @@ class Rect(object):
         return (self.pos[0] + self.size[0] * 0.5,
                 self.pos[1] + self.size[1] * 0.5)
 
+    @center.setter
+    def center(self, value):
+        delta_x = value[0] - self.center[0]
+        delta_y = value[1] - self.center[1]
+        self.pos = (self.pos[0] + delta_x, self.pos[1] + delta_y)
+
     def padded(self, padding):
         """Return a new Rect padded (smaller) by padding on all sides
 

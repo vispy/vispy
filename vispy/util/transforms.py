@@ -54,7 +54,7 @@ def scale(s, dtype=None):
 
 
 def rotate(angle, axis, dtype=None):
-    """The 3x3 rotation matrix for rotation about a vector.
+    """The 4x4 rotation matrix for rotation about a vector.
 
     Parameters
     ----------

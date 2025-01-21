@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
+import pytest
 
 from vispy.gloo import Texture1D, Texture2D, Texture3D, TextureAtlas
 from vispy.testing import requires_pyopengl, run_tests_if_main, assert_raises
@@ -642,7 +643,8 @@ def _test_texture_opengl_formats(Texture, baseshape):
             (1, 'red'),
             (2, 'rg'),
             (3, 'rgb'),
-            (4, 'rgba')
+            (4, 'rgba'),
+            (1, 'depth_component'),
         ]
     )
 
@@ -674,7 +676,8 @@ def _test_texture_internalformats(Texture, baseshape):
         (1, 'red', ['red', 'r8', 'r16', 'r16f', 'r32f']),
         (2, 'rg', ['rg', 'rg8', 'rg16', 'rg16f', 'rg32f']),
         (3, 'rgb', ['rgb', 'rgb8', 'rgb16', 'rgb16f', 'rgb32f']),
-        (4, 'rgba', ['rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f'])
+        (4, 'rgba', ['rgba', 'rgba8', 'rgba16', 'rgba16f', 'rgba32f']),
+        (1, 'depth_component', ['depth_component']),
     ]
 
     for channels in range(1, 5):
@@ -710,6 +713,20 @@ def test_texture_2D_internalformats():
 @requires_pyopengl()
 def test_texture_3D_internalformats():
     _test_texture_internalformats(Texture3D, (10, 10, 10))
+
+
+@requires_pyopengl()
+@pytest.mark.parametrize('input_dtype', [np.uint8, np.uint16, np.float32, np.float64])
+@pytest.mark.parametrize('output_dtype', [np.uint8, np.uint16, np.float32, np.float64])
+@pytest.mark.parametrize('ndim', [2, 3])
+def test_texture_set_data_different_dtype(input_dtype, output_dtype, ndim):
+    shape = (20,) * ndim
+    data = np.random.rand(*shape).astype(input_dtype)
+    Texture = Texture2D if ndim == 2 else Texture3D
+
+    tex = Texture(data)
+    tex[:10] = np.array(1, dtype=output_dtype)
+    tex.set_data(data.astype(output_dtype))
 
 
 run_tests_if_main()

@@ -21,7 +21,7 @@ def _string_to_rgb(color):
     if not color.startswith('#'):
         if color.lower() not in _color_dict:
             raise ValueError('Color "%s" unknown' % color)
-        color = _color_dict[color]
+        color = _color_dict[color.lower()]
         assert color[0] == '#'
     # hex color
     color = color[1:]
@@ -162,6 +162,13 @@ class ColorArray(object):
     def _name(cls):
         """Helper to get the class name once it's been created"""
         return cls.__name__
+
+    def __array__(self, dtype=None):
+        """Get a standard numpy array representing RGBA."""
+        rgba = self.rgba
+        if dtype is not None:
+            rgba = rgba.astype(dtype)
+        return rgba
 
     def __len__(self):
         return self._rgba.shape[0]

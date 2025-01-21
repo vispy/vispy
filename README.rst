@@ -23,7 +23,7 @@ large datasets. Applications of VisPy include:
 Releases
 --------
 
-See [CHANGELOG.md](./CHANGELOG.md).
+See `CHANGELOG.md <./CHANGELOG.md>`_.
 
 Announcements
 -------------
@@ -96,6 +96,22 @@ expectations of members, the penalties for violating these expectations, and
 how violations can be reported to the members of the community in charge of
 enforcing this Code of Conduct.
 
+Governance
+----------
+
+The VisPy project maintainers make decisions about the project based on a
+simple consensus model. This is described in more detail on the
+`governance page <https://vispy.org/governance/GOVERNANCE.html>`_ of the vispy
+website as well as the
+`list of maintainers <https://vispy.org/governance/MAINTAINERS.html>`_.
+
+In addition to decisions about the VisPy project, there is also a steering
+committee for the overall VisPy organization. More information about this
+committee can also be found on the `steering committee page <https://vispy.org/org/STEERING-COMMITTEE.html>`_
+of the vispy website,
+along with the organization's `charter <https://vispy.org/org/CHARTER.html>`_ and
+other related documents (linked in the charter).
+
 Genesis
 -------
 
@@ -121,7 +137,7 @@ External links
 -  `Chat room <https://gitter.im/vispy/vispy>`__
 -  `Developer chat room <https://gitter.im/vispy/vispy-dev>`__
 -  `Wiki <http://github.com/vispy/vispy/wiki>`__
--  `Gallery <http://vispy.org/gallery.html>`__
+-  `Gallery <http://vispy.org/gallery/index.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
 
 .. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg

@@ -2,6 +2,10 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+from __future__ import annotations
+
+from typing import Optional
+
 from functools import lru_cache
 
 import numpy as np
@@ -37,7 +41,7 @@ class PlanesClipper(Filter):
     }
     """
 
-    def __init__(self, clipping_planes=None, coord_system='scene'):
+    def __init__(self, clipping_planes: Optional[np.ndarray] = None, coord_system: str = 'scene'):
         tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
         if coord_system not in tr:
             raise ValueError(f'Invalid coordinate system {coord_system}. Must be one of {tr}.')
@@ -48,6 +52,11 @@ class PlanesClipper(Filter):
             fcode=Function(self.FRAG_CODE), fhook='pre', fpos=1,
         )
 
+        # initialize clipping planes
+        self._clipping_planes = np.empty((0, 2, 3), dtype=np.float32)
+        self._clipping_planes_func = Function(self._build_clipping_planes_glsl(0))
+        self.fshader['clip_with_planes'] = self._clipping_planes_func
+
         v_position = Varying('v_position', 'vec4')
         self.vshader['v_position'] = v_position
         self.fshader['v_position'] = v_position
@@ -55,7 +64,7 @@ class PlanesClipper(Filter):
         self.clipping_planes = clipping_planes
 
     @property
-    def coord_system(self):
+    def coord_system(self) -> str:
         """
         Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
         """
@@ -68,7 +77,7 @@ class PlanesClipper(Filter):
 
     @staticmethod
     @lru_cache(maxsize=10)
-    def _build_clipping_planes_func(n_planes):
+    def _build_clipping_planes_glsl(n_planes: int) -> str:
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc) {{
@@ -87,24 +96,27 @@ class PlanesClipper(Filter):
         for idx in range(n_planes):
             all_clips.append(clip_template.format(idx=idx))
         formatted_code = func_template.format(clips=''.join(all_clips))
-        return Function(formatted_code)
+        return formatted_code
 
     @property
-    def clipping_planes(self):
+    def clipping_planes(self) -> np.ndarray:
         """Get the set of planes used to clip the mesh.
         Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
         """
         return self._clipping_planes
 
     @clipping_planes.setter
-    def clipping_planes(self, value):
+    def clipping_planes(self, value: Optional[np.ndarray]):
         if value is None:
-            value = np.empty([0, 2, 3])
+            value = np.empty((0, 2, 3), dtype=np.float32)
+
+        # only recreate function if amount of clipping planes changes
+        if len(value) != len(self._clipping_planes):
+            self._clipping_planes_func = Function(self._build_clipping_planes_glsl(len(value)))
+            self.fshader['clip_with_planes'] = self._clipping_planes_func
+
         self._clipping_planes = value
 
-        clip_func = self._build_clipping_planes_func(len(value))
-        self.fshader['clip_with_planes'] = clip_func
-
         for idx, plane in enumerate(value):
-            clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
-            clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
+            self._clipping_planes_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            self._clipping_planes_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])

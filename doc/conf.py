@@ -15,7 +15,8 @@ from datetime import date
 import sys
 import os
 import re
-import warnings
+from pathlib import Path
+
 import vispy
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -39,6 +40,7 @@ extensions = ['sphinx.ext.autodoc',
               'numpydoc',
               'sphinxcontrib.apidoc',
               'sphinx_gallery.gen_gallery',
+              'myst_parser',
               ]
 
 # API docs
@@ -48,17 +50,23 @@ apidoc_excluded_paths = ["../vispy/ext"]
 apidoc_separate_modules = True
 
 # Sphinx Gallery
-from sphinx_gallery.sorting import FileNameSortKey
+# the following files are ignored from gallery processing
+ignore_files = ['plotting/export.py',
+                'gloo/geometry_shader.py',
+                ]
+ignore_pattern_regex = [re.escape(os.sep) + f for f in ignore_files]
+ignore_pattern_regex = "|".join(ignore_pattern_regex)
+
 sphinx_gallery_conf = {
     'examples_dirs': ['../examples/gloo', '../examples/scene', '../examples/plotting'],
     'gallery_dirs': ['gallery/gloo', 'gallery/scene', 'gallery/plotting'],
     'filename_pattern': re.escape(os.sep),
-    'ignore_pattern': re.escape(os.sep) + 'plotting/export.py',
+    'ignore_pattern': ignore_pattern_regex,
     'only_warn_on_example_error': True,
     'image_scrapers': ('vispy',),
     'reset_modules': tuple(),  # remove default matplotlib/seaborn resetters
     'first_notebook_cell': '%gui qt',  # tell notebooks to use Qt backend
-    'within_subsection_order': FileNameSortKey,
+    'within_subsection_order': "FileNameSortKey",
 }
 # Let vispy.app.application:Application.run know that we are generating gallery images
 os.environ["_VISPY_RUNNING_GALLERY_EXAMPLES"] = "1"
@@ -133,41 +141,42 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 html_theme = 'pydata_sphinx_theme'
 
-# Tell the theme where the code lives
+# Create custom 'edit' URLs for API modules since they are dynamically generated.
+# We precompute this so the values in the `html_context` are static, and it can be cached
+# `modules.rst` is a special case, and we link it to the main `vispy` package
+edit_link_paths = {"api/modules.rst": "vispy/__init__.py"}
+for root, dirs, files in os.walk("../vispy"):
+    # remove leading "../"
+    root = Path(root).relative_to("..")
+    if root.name == "__pycache__":
+        continue
+    for file in files:
+        full_path = root / file
+        if full_path.name == "__init__.py":
+            package_name = ".".join(root.parts)
+            apidoc_file_name = "api" / Path(package_name + ".rst")
+        elif full_path.suffix == ".py":
+            module_name = ".".join(full_path.with_suffix("").parts)
+            apidoc_file_name = "api" / Path(module_name + ".rst")
+        edit_link_paths[str(apidoc_file_name)] = full_path
 
-
-def _custom_edit_url(github_user, github_repo, github_version, doc_path, file_name, default_edit_page_url_template):
-    """Create custom 'edit' URLs for API modules since they are dynamically generated."""
-    if file_name.startswith("api/"):
-        # this is a dynamically generated API page, link to actual Python source
-        modpath = os.sep.join(os.path.splitext(file_name[4:])[0].split("."))
-        if modpath == "modules":
-            # main package listing
-            modpath = "vispy"
-        rel_modpath = os.path.join("..", modpath)
-        if os.path.isdir(rel_modpath):
-            doc_path = modpath + "/"
-            file_name = "__init__.py"
-        elif os.path.isfile(rel_modpath + ".py"):
-            doc_path = os.path.dirname(modpath)
-            file_name = os.path.basename(modpath) + ".py"
-        else:
-            warnings.warn(f"Not sure how to generate the API URL for: {file_name}")
-    return default_edit_page_url_template.format(github_user=github_user,
-                                                 github_repo=github_repo,
-                                                 github_version=github_version,
-                                                 doc_path=doc_path,
-                                                 file_name=file_name)
-
+edit_page_url_template = """\
+{%- if file_name in edit_link_paths %}
+    {% set file_name = edit_link_paths[file_name] %}
+    https://github.com/{{github_user}}/{{github_repo}}/edit/{{github_version}}/{{file_name}}
+{%- else %}
+    {# the last slash between doc_path and file_name is not needed for non-apidoc files #}
+    https://github.com/{{github_user}}/{{github_repo}}/edit/{{github_version}}/{{doc_path}}{{file_name}}
+{%- endif %}
+"""
 
 html_context = {
     "github_user": "vispy",
     "github_repo": "vispy",
     "github_version": "main",
     "doc_path": "doc",
-    "edit_page_url_template": "{{ vispy_custom_edit_url(github_user, github_repo, github_version, doc_path, file_name, default_edit_page_url_template) }}",
-    "default_edit_page_url_template": "https://github.com/{github_user}/{github_repo}/edit/{github_version}/{doc_path}{file_name}",
-    "vispy_custom_edit_url": _custom_edit_url,
+    "edit_link_paths": edit_link_paths,
+    "edit_page_url_template": edit_page_url_template,
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -177,6 +186,7 @@ html_theme_options = {
     "use_edit_page_button": True,
     "github_url": "https://github.com/vispy/vispy",
     "twitter_url": "https://twitter.com/vispyproject",
+    "header_links_before_dropdown": 7,
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -337,11 +347,11 @@ numpydoc_show_class_members = False
 # -----------------------------------------------------------------------------
 # intersphinx
 # -----------------------------------------------------------------------------
-_python_doc_base = 'https://docs.python.org/3.9'
+_python_doc_base = "https://docs.python.org/3"
 intersphinx_mapping = {
-    _python_doc_base: None,
-    'https://docs.scipy.org/doc/numpy': None,
-    'https://docs.scipy.org/doc/scipy/reference': None,
+    "python": (_python_doc_base, None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://scipy.github.io/devdocs/", None),
 }
 
 

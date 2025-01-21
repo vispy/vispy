@@ -23,7 +23,7 @@ canvas.show()
 # Set up a viewbox to display the image with interactive pan/zoom
 view = canvas.central_widget.add_view()
 
-interpolation = 'bicubic'
+interpolation = 'cubic'
 img_data = read_png(load_data_file('mona_lisa/mona_lisa_sm.png'))
 image = scene.visuals.Image(img_data, interpolation=interpolation,
                             parent=view.scene, method='impostor')

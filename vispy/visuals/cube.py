@@ -30,7 +30,7 @@ class CubeVisual(BoxVisual):
     def __init__(self, size=1.0, vertex_colors=None, face_colors=None,
                  color=(0.5, 0.5, 1, 1), edge_color=None, **kwargs):
         warnings.warn("The CubeVisual is deprecated in favor of BoxVisual",
-                      DeprecationWarning)
+                      DeprecationWarning, stacklevel=2)
         if isinstance(size, tuple):
             width, height, depth = size
         else:

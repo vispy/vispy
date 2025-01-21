@@ -1,4 +1,4 @@
-"""
+"""GL definitions converted to Python by codegen/createglapi.py.
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
@@ -8,11 +8,13 @@ Constants for OpenGL ES 2.0.
 
 
 class Enum(int):
-    ''' Enum (integer) with a meaningfull repr. '''
+    """Enum (integer) with a meaningfull repr."""
+    
     def __new__(cls, name, value):
         base = int.__new__(cls, value)
         base.name = name
         return base
+        
     def __repr__(self):
         return self.name
 
@@ -149,6 +151,7 @@ GL_LOW_FLOAT = Enum('GL_LOW_FLOAT', 36336)
 GL_LOW_INT = Enum('GL_LOW_INT', 36339)
 GL_LUMINANCE = Enum('GL_LUMINANCE', 6409)
 GL_LUMINANCE_ALPHA = Enum('GL_LUMINANCE_ALPHA', 6410)
+GL_MAX = Enum('GL_MAX', 32776)
 GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS = Enum('GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS', 35661)
 GL_MAX_CUBE_MAP_TEXTURE_SIZE = Enum('GL_MAX_CUBE_MAP_TEXTURE_SIZE', 34076)
 GL_MAX_FRAGMENT_UNIFORM_VECTORS = Enum('GL_MAX_FRAGMENT_UNIFORM_VECTORS', 36349)
@@ -162,6 +165,7 @@ GL_MAX_VERTEX_UNIFORM_VECTORS = Enum('GL_MAX_VERTEX_UNIFORM_VECTORS', 36347)
 GL_MAX_VIEWPORT_DIMS = Enum('GL_MAX_VIEWPORT_DIMS', 3386)
 GL_MEDIUM_FLOAT = Enum('GL_MEDIUM_FLOAT', 36337)
 GL_MEDIUM_INT = Enum('GL_MEDIUM_INT', 36340)
+GL_MIN = Enum('GL_MIN', 32775)
 GL_MIRRORED_REPEAT = Enum('GL_MIRRORED_REPEAT', 33648)
 GL_NEAREST = Enum('GL_NEAREST', 9728)
 GL_NEAREST_MIPMAP_LINEAR = Enum('GL_NEAREST_MIPMAP_LINEAR', 9986)
@@ -322,7 +326,7 @@ GL_ZERO = Enum('GL_ZERO', 0)
 
 
 ENUM_MAP = {}
-for ob in list(globals().values()):
-    if repr(ob).startswith('GL_'):
+for var_name, ob in list(globals().items()):
+    if var_name.startswith('GL_'):
         ENUM_MAP[int(ob)] = ob
-del ob
+del ob, var_name

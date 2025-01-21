@@ -82,4 +82,41 @@ def test_panzoom_center():
         assert v.camera.center == (-12.8, -12.8, 0)
 
 
+@requires_application()
+def test_panzoom_gesture_zoom():
+    with TestingCanvas(size=(120, 200)) as canvas:
+        view = canvas.central_widget.add_view()
+        imdata = io.load_crate().astype('float32') / 255
+        scene.visuals.Image(imdata, parent=view.scene)
+        view.camera = scene.PanZoomCamera(aspect=1)
+
+        assert view.camera.rect.size == (1, 1)
+
+        canvas.events.touch(
+            type="gesture_zoom",
+            pos=(60, 100),
+            scale=-1.0,
+        )
+
+        assert view.camera.rect.size == (2, 2)
+
+
+@requires_application()
+def test_turntable_gesture_zoom():
+    with TestingCanvas(size=(120, 200)) as canvas:
+        view = canvas.central_widget.add_view()
+        imdata = io.load_crate().astype('float32') / 255
+        scene.visuals.Image(imdata, parent=view.scene)
+        view.camera = scene.TurntableCamera()
+
+        initial_scale_factor = view.camera.scale_factor
+        canvas.events.touch(
+            type="gesture_zoom",
+            pos=(60, 100),
+            scale=-1.0,
+        )
+
+        assert view.camera.scale_factor == 2 * initial_scale_factor
+
+
 run_tests_if_main()

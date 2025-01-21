@@ -5,16 +5,18 @@
 
 from __future__ import division
 
+import warnings
+
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..gloo.texture import should_cast_to_f32
 from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
 from ..io import load_spatial_filters
 from ._scalable_textures import CPUScaledTexture2D, GPUScaledTexture2D
+from ..util import np_copy_if_needed
 
 
 _VERTEX_SHADER = """
@@ -129,6 +131,36 @@ _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 
 _C2L_RED = 'float cmap(vec4 color) { return color.r; }'
 
+_CUSTOM_FILTER = """
+vec4 texture_lookup(vec2 texcoord) {
+    // based on https://gist.github.com/kingbedjed/373c8811efcf1b3a155d29a13c1e5b61
+    vec2 tex_pixel = 1 / $shape;
+    vec2 kernel_pixel = 1 / $kernel_shape;
+    vec2 sampling_corner = texcoord - ($kernel_shape / 2 * tex_pixel);
+
+    // loop over kernel pixels
+    vec2 kernel_pos, tex_pos;
+    vec4 color = vec4(0);
+    float weight;
+
+    // offset 0.5 to sample center of pixels
+    for (float i = 0.5; i < $kernel_shape.x; i++) {
+        for (float j = 0.5; j < $kernel_shape.y; j++) {
+            kernel_pos = vec2(i, j) * kernel_pixel;
+            tex_pos = sampling_corner + vec2(i, j) * tex_pixel;
+            // TODO: allow other edge effects, like mirror or wrap
+            if (tex_pos.x >= 0 && tex_pos.y >= 0 && tex_pos.x <= 1 && tex_pos.y <= 1) {
+                weight = texture2D($kernel, kernel_pos).r;
+                // make sure to clamp or we sample outside
+                color += texture2D($texture, clamp(tex_pos, 0, 1)) * weight;
+            }
+        }
+    }
+
+    return color;
+}
+"""
+
 
 class ImageVisual(Visual):
     """Visual subclass displaying an image.
@@ -174,15 +206,16 @@ class ImageVisual(Visual):
         Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
         by default: 1.
     interpolation : str
-        Selects method of image interpolation. Makes use of the two Texture2D
+        Selects method of texture interpolation. Makes use of the two hardware
         interpolation methods and the available interpolation methods defined
         in vispy/gloo/glsl/misc/spatial_filters.frag
 
-            * 'nearest': Default, uses 'nearest' with Texture2D interpolation.
-            * 'bilinear': uses 'linear' with Texture2D interpolation.
-            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'bicubic',
+            * 'nearest': Default, uses 'nearest' with Texture interpolation.
+            * 'linear': uses 'linear' with Texture interpolation.
+            * 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric', 'cubic',
                 'catrom', 'mitchell', 'spline16', 'spline36', 'gaussian',
                 'bessel', 'sinc', 'lanczos', 'blackman'
+            * 'custom': uses the sampling kernel provided through 'custom_kernel'.
     texture_format: numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
@@ -204,6 +237,8 @@ class ImageVisual(Visual):
         GPU which allows for faster color limit changes. Additionally, when
         32-bit float data is provided it won't be copied before being
         transferred to the GPU.
+    custom_kernel: numpy.ndarray
+        Kernel used for texture sampling when interpolation is set to 'custom'.
     **kwargs : dict
         Keyword arguments to pass to `Visual`.
 
@@ -220,6 +255,7 @@ class ImageVisual(Visual):
 
     _func_templates = {
         'texture_lookup_interpolated': _INTERPOLATION_TEMPLATE,
+        'texture_lookup_custom': _CUSTOM_FILTER,
         'texture_lookup': _TEXTURE_LOOKUP,
         'clim_float': _APPLY_CLIM_FLOAT,
         'clim': _APPLY_CLIM,
@@ -231,7 +267,8 @@ class ImageVisual(Visual):
 
     def __init__(self, data=None, method='auto', grid=(1, 1),
                  cmap='viridis', clim='auto', gamma=1.0,
-                 interpolation='nearest', texture_format=None, **kwargs):
+                 interpolation='nearest', texture_format=None,
+                 custom_kernel=np.ones((1, 1)), **kwargs):
         """Initialize image properties, texture storage, and interpolation methods."""
         self._data = None
 
@@ -287,43 +324,54 @@ class ImageVisual(Visual):
         self.clim = clim or "auto"  # None -> "auto"
         self.cmap = cmap
         self.gamma = gamma
+        self.custom_kernel = custom_kernel
+
         if data is not None:
             self.set_data(data)
         self.freeze()
 
     def _init_interpolation(self, interpolation_names):
-        # create interpolation shader functions for available
-        # interpolations
-        fun = [Function(self._func_templates['texture_lookup_interpolated'] % n)
+        # create interpolation shader functions for available interpolations
+        fun = [Function(self._func_templates['texture_lookup_interpolated'] % (n + '2D'))
                for n in interpolation_names]
         interpolation_names = [n.lower() for n in interpolation_names]
+
+        # add custom filter
+        fun.append(Function(self._func_templates['texture_lookup_custom']))
+        interpolation_names.append('custom')
 
         interpolation_fun = dict(zip(interpolation_names, fun))
         interpolation_names = tuple(sorted(interpolation_names))
 
-        # overwrite "nearest" and "bilinear" spatial-filters
+        # overwrite "nearest" and "linear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
         hardware_lookup = Function(self._func_templates['texture_lookup'])
         interpolation_fun['nearest'] = hardware_lookup
-        interpolation_fun['bilinear'] = hardware_lookup
+        interpolation_fun['linear'] = hardware_lookup
+        # alias bilinear to linear and bicubic to cubic (but deprecate)
+        interpolation_names = interpolation_names + ('bilinear', 'bicubic')
         return interpolation_names, interpolation_fun
 
-    def _init_texture(self, data, texture_format):
-        if self._interpolation == 'bilinear':
+    def _init_texture(self, data, texture_format, **texture_kwargs):
+        if self._interpolation == 'linear':
             texture_interpolation = 'linear'
         else:
             texture_interpolation = 'nearest'
 
         if texture_format is None:
             tex = CPUScaledTexture2D(
-                data, interpolation=texture_interpolation)
+                data, interpolation=texture_interpolation,
+                **texture_kwargs
+            )
         else:
             tex = GPUScaledTexture2D(
                 data, internalformat=texture_format,
-                interpolation=texture_interpolation)
+                interpolation=texture_interpolation,
+                **texture_kwargs
+            )
         return tex
 
-    def set_data(self, image):
+    def set_data(self, image, copy=False):
         """Set the image data.
 
         Parameters
@@ -333,9 +381,11 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = np.asarray(image)
-        if should_cast_to_f32(data.dtype):
-            data = data.astype(np.float32)
+        data = np.array(image, copy=copy or np_copy_if_needed)
+        if np.iscomplexobj(data):
+            raise TypeError(
+                "Complex data types not supported. Please use 'ComplexImage' instead"
+            )
         # can the texture handle this data?
         self._texture.check_data_format(data)
         if self._data is None or self._data.shape[:2] != data.shape[:2]:
@@ -443,24 +493,62 @@ class ImageVisual(Visual):
         """Get names of possible interpolation methods."""
         return self._interpolation_names
 
+    @property
+    def custom_kernel(self):
+        """Kernel used by 'custom' interpolation for texture sampling"""
+        return self._custom_kernel
+
+    @custom_kernel.setter
+    def custom_kernel(self, value):
+        value = np.asarray(value, dtype=np.float32)
+        if value.ndim != 2:
+            raise ValueError(f'kernel must have 2 dimensions; got {value.ndim}')
+        self._custom_kernel = value
+        self._custom_kerneltex = Texture2D(value, interpolation='nearest', internalformat='r32f')
+        if self._data_lookup_fn is not None and 'kernel' in self._data_lookup_fn:
+            self._data_lookup_fn['kernel'] = self._custom_kerneltex
+            self._data_lookup_fn['kernel_shape'] = value.shape[::-1]
+        self.update()
+
     # The interpolation code could be transferred to a dedicated filter
     # function in visuals/filters as discussed in #1051
     def _build_interpolation(self):
         """Rebuild the _data_lookup_fn for different interpolations."""
         interpolation = self._interpolation
+        # alias bilinear to linear
+        if interpolation == 'bilinear':
+            warnings.warn(
+                "'bilinear' interpolation is Deprecated. Use 'linear' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            interpolation = 'linear'
+        # alias bicubic to cubic
+        if interpolation == 'bicubic':
+            warnings.warn(
+                "'bicubic' interpolation is Deprecated. Use 'cubic' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            interpolation = 'cubic'
         self._data_lookup_fn = self._interpolation_fun[interpolation]
         self.shared_program.frag['get_data'] = self._data_lookup_fn
 
-        # only 'bilinear' uses 'linear' texture interpolation
-        if interpolation == 'bilinear':
+        # only 'linear' and 'custom' use 'linear' texture interpolation
+        if interpolation in ('linear', 'custom'):
             texture_interpolation = 'linear'
         else:
-            # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
-            # so u_kernel and shape setting is skipped
             texture_interpolation = 'nearest'
-            if interpolation != 'nearest':
+
+        # 'nearest' (and also 'linear') doesn't use spatial_filters.frag
+        # so u_kernel and shape setting is skipped
+        if interpolation not in ('nearest', 'linear'):
+            self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+            if interpolation == 'custom':
+                self._data_lookup_fn['kernel'] = self._custom_kerneltex
+                self._data_lookup_fn['kernel_shape'] = self._custom_kernel.shape[::-1]
+            else:
                 self.shared_program['u_kernel'] = self._kerneltex
-                self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
 
         if self._texture.interpolation != texture_interpolation:
             self._texture.interpolation = texture_interpolation
@@ -521,22 +609,25 @@ class ImageVisual(Visual):
         self._prepare_transforms(view)
 
     def _build_texture(self):
-        pre_clims = self._texture.clim
+        try:
+            pre_clims = self._texture.clim_normalized
+        except RuntimeError:
+            pre_clims = "auto"
         pre_internalformat = self._texture.internalformat
-        self._texture.scale_and_set_data(self._data)
-        post_clims = self._texture.clim
+        # copy was already made on `set_data` if requested
+        self._texture.scale_and_set_data(self._data, copy=False)
+        post_clims = self._texture.clim_normalized
         post_internalformat = self._texture.internalformat
         # color transform needs rebuilding if the internalformat was changed
         # new color limits need to be assigned if the normalized clims changed
         # otherwise, the original color transform should be fine
-        # Note that this assumes that if clim changed, clim_normalized changed
         new_if = post_internalformat != pre_internalformat
         new_cl = post_clims != pre_clims
-        if not new_if and new_cl and not self._need_colortransform_update:
+        if new_if:
+            self._need_colortransform_update = True
+        elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
             self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
-        elif new_if:
-            self._need_colortransform_update = True
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):

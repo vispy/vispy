@@ -133,6 +133,8 @@ class BaseCamera(Node):
         viewbox.events.mouse_release.connect(self.viewbox_mouse_event)
         viewbox.events.mouse_move.connect(self.viewbox_mouse_event)
         viewbox.events.mouse_wheel.connect(self.viewbox_mouse_event)
+        viewbox.events.gesture_zoom.connect(self.viewbox_mouse_event)
+        viewbox.events.gesture_rotate.connect(self.viewbox_mouse_event)
         viewbox.events.resize.connect(self.viewbox_resize_event)
         # todo: also add key events! (and also on viewbox (they're missing)
 
@@ -144,6 +146,8 @@ class BaseCamera(Node):
         viewbox.events.mouse_release.disconnect(self.viewbox_mouse_event)
         viewbox.events.mouse_move.disconnect(self.viewbox_mouse_event)
         viewbox.events.mouse_wheel.disconnect(self.viewbox_mouse_event)
+        viewbox.events.gesture_zoom.disconnect(self.viewbox_mouse_event)
+        viewbox.events.gesture_rotate.disconnect(self.viewbox_mouse_event)
         viewbox.events.resize.disconnect(self.viewbox_resize_event)
 
     @property
@@ -224,8 +228,8 @@ class BaseCamera(Node):
     @fov.setter
     def fov(self, fov):
         fov = float(fov)
-        if fov < 0 or fov >= 180:
-            raise ValueError("fov must be between 0 and 180.")
+        if fov < 0 or fov > 180:
+            raise ValueError("fov must be 0 <= fov <= 180.")
         self._fov = fov
         self.view_changed()
 

@@ -12,12 +12,62 @@ Backend requirements
 ====================
 
 VisPy requires at least one toolkit for opening a window and creates an OpenGL
-context. This can be done using one Qt, GLFW, SDL2, Wx, or Pyglet. You can also
-use a Jupyter notebook with visualizations appearing inline.
+context. This can be done using any one of the following.
+
+.. list-table::
+   :widths: 25 25 50
+   :header-rows: 1
+
+   * - Backend
+     - Status
+     - Dependencies
+   * - pyqt4
+     - Stable
+     - pyqt4
+   * - pyqt5
+     - Stable
+     - pyqt5
+   * - pyqt6
+     - Stable
+     - pyqt6
+   * - pyside
+     - Stable
+     - pyside
+   * - pyside2
+     - Stable
+     - pyside2
+   * - pyside6
+     - Stable
+     - pyside6
+   * - glfw
+     - Stable
+     - glfw (python)
+   * - sdl2
+     - Stable
+     - pysdl2 (pysdl2-dll recommended for MacOS/Windows)
+   * - wx
+     - Stable
+     - wxPython
+   * - pyglet
+     - Stable
+     - pyglet
+   * - tkinter
+     - Experimental
+     - pyopengltk
+
+You can also use a Jupyter notebook with visualizations appearing inline with the ``jupyter_rfb`` backend (requires ``jupyter_rfb`` package).
 
 .. warning::
 
    You only need to have one of these packages, no need to install them all!
+
+Optional dependencies
+=====================
+
+VisPy has various optional dependencies to support features that may not be relevant for all users. The below is a list of dependencies that you may want to install to use the functionality mentioned.
+
+* **pillow**: Pillow (imported as PIL) is used to read image files. Some VisPy examples will use Pillow to load the image data that will then be shown by VisPy.
+* **triangle**: The `Triangle C package <https://www.cs.cmu.edu/~quake/triangle.html>`_ is used via it's `triangle python <https://github.com/drufat/triangle>`_ bindings. Please acknowledge and adhere to the licensing terms of both packages. Within VisPy `triangle`, if installed, is used to calculate a constrained Delaunay triangulation for `PolygonCollections`.
 
 Hardware requirements
 =====================
@@ -58,7 +108,7 @@ install most of the VisPy dependencies for you. If your computer is low on hard
 disk space, or you would like a minimal python installation, you may install
 the `Miniconda <https://conda.io/miniconda.html>`_ package also from
 Continuum Analytics. Once Anaconda is installed, create a
-`conda python environment <https://conda.io/docs/user-guide/tasks/manage-python.html>`_.
+`conda python environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-python.html>`_.
 
 Via conda
 ---------
@@ -205,7 +255,7 @@ Windows
 
 In Windows, you should open the the Nvidia-console and add your specific
 python to the list of programs that should use the dedicated graphics card.
-Note that this setting is seperate for different conda environments so make
+Note that this setting is separate for different conda environments so make
 sure you have selected the one you are using VisPy with.
 
 Linux
