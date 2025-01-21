@@ -99,7 +99,7 @@ class Triangulation(object):
         self._tops = self.edges.max(axis=1)
         self._bottoms = self.edges.min(axis=1)
 
-        # inintialize sweep front
+        # initialize sweep front
         # values in this list are indexes into self.pts
         self._front = [0, 2, 1]
 
@@ -398,7 +398,7 @@ class Triangulation(object):
 
                     upper_polygon.append(front[front_index+front_dir])
 
-        # (iii) triangluate empty areas
+        # (iii) triangulate empty areas
 
         for polygon in [lower_polygon, upper_polygon]:
             dist = self._distances_from_line((i, j), polygon)
