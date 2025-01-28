@@ -269,6 +269,7 @@ Text = create_visual_node(visuals.TextVisual)
 Tube = create_visual_node(visuals.TubeVisual)
 # Visual = create_visual_node(visuals.Visual)  # Should not be created
 Volume = create_visual_node(visuals.VolumeVisual)
+ComplexVolume = create_visual_node(visuals.ComplexVolumeVisual)
 Windbarb = create_visual_node(visuals.WindbarbVisual)
 XYZAxis = create_visual_node(visuals.XYZAxisVisual)
 
