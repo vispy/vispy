@@ -2,6 +2,7 @@ import sys
 from unittest import SkipTest
 
 import numpy as np
+import pytest
 from numpy.testing import assert_array_almost_equal
 
 from vispy.testing import run_tests_if_main
@@ -501,6 +502,93 @@ def test_edge_event():
 
     t = T(pts * [-1, 1], edges)
     t.triangulate()
+
+
+def test_triangulate_triangle():
+    pts = np.array([
+        [4, 4],
+        [1, 4],
+        [1, 2],
+    ])
+    t = _triangulation_from_points(pts)
+
+    t.triangulate()
+
+    assert len(t.tris) == 1
+    _assert_triangle_pts_in_input(t, pts)
+
+
+def test_triangulate_square():
+    pts = np.array([
+        [4, 4],
+        [1, 4],
+        [1, 2],
+        [4, 2],
+    ])
+    t = _triangulation_from_points(pts)
+
+    t.triangulate()
+
+    assert len(t.tris) == 2
+    _assert_triangle_pts_in_input(t, pts)
+
+
+def test_triangulate_triangle_with_collinear_pts():
+    pts = np.array([
+        [4, 4],
+        [3, 4],
+        [1, 4],
+        [1, 2],
+    ])
+    t = _triangulation_from_points(pts)
+
+    t.triangulate()
+
+    assert len(t.tris) in (1, 2)
+    _assert_triangle_pts_in_input(t, pts)
+
+
+def test_triangulate_collinear_path():
+    pts = np.array([
+        [4, 4],
+        [3, 4],
+        [1, 4],
+    ])
+    t = _triangulation_from_points(pts)
+
+    t.triangulate()
+
+    assert len(t.tris) == 0
+    _assert_triangle_pts_in_input(t, pts)
+
+
+@pytest.mark.xfail(reason="See https://github.com/vispy/vispy/issues/2247")
+def test_triangulate_collinear_path_with_repeat():
+    pts = np.array([
+        [4, 4],
+        [3, 4],
+        [1, 4],
+        [4, 4],
+        [1, 2],
+    ])
+    t = _triangulation_from_points(pts)
+
+    t.triangulate()
+
+    assert len(t.tris) == 0
+    _assert_triangle_pts_in_input(t, pts)
+
+
+def _assert_triangle_pts_in_input(t, input_pts):
+    pt_indices_in_tris = set(v for tri in t.tris for v in tri)
+    for i in pt_indices_in_tris:
+        assert np.any(np.all(t.pts[i] == input_pts, axis=1))
+
+
+def _triangulation_from_points(points):
+    inds = np.arange(points.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    return T(points, edges)
 
 
 run_tests_if_main()
