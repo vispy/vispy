@@ -80,23 +80,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: sdist
-          path: dist
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels-ubuntu-20.04-auto
-          path: dist
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels-windows-2019-auto
-          path: dist
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels-macOS-latest-auto
-          path: dist
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels-ubuntu-20.04-aarch64
+          pattern: wheels-*
+          merge-multiple: true
           path: dist
       - uses: pypa/gh-action-pypi-publish@master
         # upload to PyPI on every tag starting with 'v'
