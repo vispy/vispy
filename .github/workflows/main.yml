@@ -160,7 +160,7 @@ jobs:
   # linux runs
   build_0:
     name: vispy tests - linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs: [lint]
     defaults:
       # use login shell to make use of .bash_profile /.bashrc
