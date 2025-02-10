@@ -14,11 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2019, macOS-latest, macos-13]
+        os: [ubuntu-20.04, windows-2019, macOS-latest, macos-13, ubuntu-22.04-arm]
         arch: [auto]
-        include:
-          - os: ubuntu-20.04
-            arch: aarch64
     steps:
     - uses: actions/checkout@v4
       with:
