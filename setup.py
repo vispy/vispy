@@ -114,6 +114,7 @@ setup(
                 'sphinx-gallery', 'myst-parser', 'pillow', 'pytest',
                 'pyopengl'],
         'io': ['meshio', 'Pillow'],
+        'test': ['pytest', 'pytest-sugar', 'meshio', 'pillow', 'sphinx_gallery', 'imageio']
     },
     packages=find_packages(exclude=['make']),
     ext_modules=cythonize(extensions, language_level=3),
