@@ -126,7 +126,7 @@ class SurfacePlotVisual(MeshVisual):
             # convert (width, height, 4) to (num_verts, 4)
             vert_shape = self.__vertices.shape
             num_vertices = vert_shape[0] * vert_shape[1]
-            colors = colors.reshape(num_vertices, 3)
+            colors = colors.reshape(num_vertices, 4)
         return colors
 
     def set_data(self, x=None, y=None, z=None, colors=None):
