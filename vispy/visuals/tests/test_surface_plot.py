@@ -12,7 +12,8 @@ import pytest
 @requires_application()
 @pytest.mark.parametrize('x1dim', [True, False])
 @pytest.mark.parametrize('y1dim', [True, False])
-def test_surface_plot(x1dim:bool, y1dim:bool):
+@pytest.mark.parametrize('use_vertex_colors', [True, False])
+def test_surface_plot(x1dim:bool, y1dim:bool, use_vertex_colors:bool):
     """Test SurfacePlot visual"""
     with TestingCanvas(bgcolor='w') as c:
         
@@ -29,7 +30,8 @@ def test_surface_plot(x1dim:bool, y1dim:bool):
         # color vertices
         cnorm = z / abs(np.amax(z))
         colormap = get_colormap("viridis").map(cnorm)
-        colormap.reshape(z.shape + (-1,))
+        if not use_vertex_colors:
+            colormap = colormap.reshape(z.shape + (-1,))
 
         # 1 or 2 dimensional x and y data
         x_input = x if x1dim else xv
@@ -41,7 +43,10 @@ def test_surface_plot(x1dim:bool, y1dim:bool):
                               y=y_input,
                               shading=None)
         
-        surface.mesh_data.set_vertex_colors(colormap)
+        if use_vertex_colors:
+            surface.mesh_data.set_vertex_colors(colormap)
+        else:
+            surface.set_data(colors=colormap)
 
         # c.draw_visual(surface) 
         view.add(surface)
