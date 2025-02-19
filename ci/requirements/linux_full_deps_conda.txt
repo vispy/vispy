@@ -12,7 +12,7 @@ networkx
 numpy
 pillow
 pyqt=5
-pysdl2
+pysdl2!=3.1.7
 pytest
 pytest-cov
 pytest-sugar
