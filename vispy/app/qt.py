@@ -3,37 +3,27 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 # Force the selection of an application backend. If the user has already
-# imported PyQt or PySide, this should result in selection of the corresponding
-# backend.
+# imported PyQt5/6 or PySide2/6, this should result in selection of the
+# corresponding backend.
 from .backends import qt_lib
 
 if qt_lib is None:
     raise RuntimeError("Module backends._qt should not be imported directly.")
-elif qt_lib in 'pyqt4':
-    from PyQt4 import QtGui
-    QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
-elif qt_lib == 'pyside':
-    from PySide import QtGui
-    QWidget, QGridLayout = QtGui.QWidget, QtGui.QGridLayout  # Compat
 elif qt_lib == 'pyqt5':
     from PyQt5 import QtWidgets
-    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib == 'pyqt6':
     from PyQt6 import QtWidgets
-    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib == 'pyside2':
     from PySide2 import QtWidgets
-    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib == 'pyside6':
     from PySide6 import QtWidgets
-    QWidget, QGridLayout = QtWidgets.QWidget, QtWidgets.QGridLayout  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
 else:
     raise RuntimeError("Module backends._qt should not be imported directly.")
 
 
-class QtCanvas(QWidget):
+class QtCanvas(QtWidgets.QWidget):
     """Qt widget containing a vispy Canvas.
 
     This is a convenience class that allows a vispy canvas to be embedded
@@ -62,8 +52,8 @@ class QtCanvas(QWidget):
             raise TypeError('canvas argument must be an instance or subclass '
                             'of Canvas.')
 
-        QWidget.__init__(self, parent)
-        self.layout = QGridLayout()
+        QtWidgets.QWidget.__init__(self, parent)
+        self.layout = QtWidgets.QGridLayout()
         self.setLayout(self.layout)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self._canvas = canvas
@@ -78,7 +68,7 @@ class QtCanvas(QWidget):
 
     def update(self):
         """Call update() on both this widget and the internal canvas."""
-        QWidget.update(self)
+        QtWidgets.QWidget.update(self)
         self._canvas.update()
 
 

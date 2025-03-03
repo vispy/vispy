@@ -35,7 +35,7 @@ def has_backend(backend, has=(), capable=(), out=()):
     from ..app.backends import BACKENDMAP
     using = os.getenv('_VISPY_TESTING_APP', None)
     if using is not None and using != backend:
-        # e.g., we are on  a 'pyglet' run but the test requires PyQt4
+        # e.g., we are on a 'pyglet' run but the test requires PyQt5
         ret = (False,) if len(out) > 0 else False
         for o in out:
             ret += (None,)
