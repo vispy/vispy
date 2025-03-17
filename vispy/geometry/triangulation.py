@@ -185,7 +185,7 @@ class Triangulation(object):
                 for j in self._bottoms[self._tops == i]:
                     # Make sure edge (j, i) is present in mesh
                     # because edge event may have created a new front list
-                    self._edge_event(i, j)
+                    self._edge_event(i, int(j))
                     front = self._front
 
         self._finalize()
