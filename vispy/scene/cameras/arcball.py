@@ -6,7 +6,6 @@ from __future__ import division
 
 import numpy as np
 
-
 from ...util import transforms
 from ...util.quaternion import Quaternion
 from ...visuals.transforms import MatrixTransform
@@ -57,7 +56,7 @@ class ArcballCamera(Base3DRotationCamera):
 
     def _update_rotation(self, event):
         """Update rotation parmeters based on mouse movement"""
-        p2 = event.mouse_event.pos
+        p2 = event.pos[:2]
         if self._event_value is None:
             self._event_value = p2
         wh = self._viewbox.size
