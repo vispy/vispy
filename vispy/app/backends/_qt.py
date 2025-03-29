@@ -575,6 +575,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.touch(
                 type='gesture_begin',
                 pos=_get_event_xy(ev),
+                modifiers=self._modifiers(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.EndNativeGesture:
             self._native_touch_total_rotation = []
@@ -582,6 +583,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.touch(
                 type='gesture_end',
                 pos=_get_event_xy(ev),
+                modifiers=self._modifiers(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.RotateNativeGesture:
             angle = ev.value()
@@ -598,6 +600,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                 rotation=angle,
                 last_rotation=last_angle,
                 total_rotation_angle=total_rotation_angle,
+                modifiers=self._modifiers(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.ZoomNativeGesture:
             scale = ev.value()
@@ -614,6 +617,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
                 last_scale=last_scale,
                 scale=scale,
                 total_scale_factor=total_scale_factor,
+                modifiers=self._modifiers(ev),
             )
         # QtCore.Qt.NativeGestureType.PanNativeGesture
         # Qt6 docs seem to imply this is only supported on Wayland but I have
