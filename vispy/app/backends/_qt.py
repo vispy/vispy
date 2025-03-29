@@ -275,6 +275,11 @@ capability = dict(  # things that can be set by the backend
 def _set_config(c):
     """Set the OpenGL configuration"""
     glformat = QGLFormat()
+    if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
+        if USE_EGL:
+            glformat.setRenderableType(QGLFormat.OpenGLES)
+        else:
+            glformat.setRenderableType(QGLFormat.OpenGL)
     glformat.setRedBufferSize(c['red_size'])
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
