@@ -123,11 +123,10 @@ class SurfacePlotVisual(MeshVisual):
             return
         colors = np.asarray(colors)
         if colors.ndim == 3:
-            assert colors.shape[-1] == 3 or colors.shape[-1] == 4
             # convert (width, height, 4) to (num_verts, 4)
             vert_shape = self.__vertices.shape
             num_vertices = vert_shape[0] * vert_shape[1]
-            colors = colors.reshape(num_vertices, colors.shape[-1])
+            colors = colors.reshape(num_vertices, 3)
         return colors
 
     def set_data(self, x=None, y=None, z=None, colors=None):
@@ -166,16 +165,14 @@ class SurfacePlotVisual(MeshVisual):
 
         colors = self._prepare_mesh_colors(colors)
         update_colors = colors is not None
+        if update_colors:
+            self.__meshdata.set_vertex_colors(colors)
         if update_faces:
             self.__meshdata.set_faces(self.__faces)
         if update_vertices:
             self.__meshdata.set_vertices(
                 self.__vertices.reshape(self.__vertices.shape[0] *
                                         self.__vertices.shape[1], 3))
-         # we need update vertices first, otherwise `set_vertex_colors` 
-         # will raise error. (in meshdata.n_vertices, _vertices is None)
-        if update_colors:
-            self.__meshdata.set_vertex_colors(colors)
         if update_faces or update_vertices or update_colors:
             MeshVisual.set_data(self, meshdata=self.__meshdata)
 
