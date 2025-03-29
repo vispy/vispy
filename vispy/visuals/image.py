@@ -89,14 +89,26 @@ _TEXTURE_LOOKUP = """
         return texture2D($texture, texcoord);
     }"""
 
-_APPLY_CLIM_FLOAT = """
-    float apply_clim(float data) {
-        // If data is NaN, don't draw it at all
+
+_HANDLE_BAD_COLOR = """
+    float handle_bad_color(vec4 data) {
+        // If data is NaN, use the bad_color or discard the fragment
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
-        if (!(data <= 0.0 || 0.0 <= data)) {
-            // discard;
+        if (!(data.r <= 0.0 || 0.0 <= data.r) || !(data.g <= 0.0 || 0.0 <= data.g) || !(data.b <= 0.0 || 0.0 <= data.b) || !(data.a <= 0.0 || 0.0 <= data.a) {
+            if ($bad_color.a == 0) {
+                // more perfomant to not render the fragment
+                discard;
+            } else {
+                return $bad_color;
+            }
+        } else {
             return data;
         }
+    }
+"""
+
+_APPLY_CLIM_FLOAT = """
+    float apply_clim(float data) {
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
         return data;
@@ -260,6 +272,7 @@ class ImageVisual(Visual):
         'texture_lookup': _TEXTURE_LOOKUP,
         'clim_float': _APPLY_CLIM_FLOAT,
         'clim': _APPLY_CLIM,
+        'bad_color': _HANDLE_BAD_COLOR,
         'gamma_float': _APPLY_GAMMA_FLOAT,
         'gamma': _APPLY_GAMMA,
         'null_color_transform': _NULL_COLOR_TRANSFORM,
@@ -640,6 +653,7 @@ class ImageVisual(Visual):
     def _build_color_transform(self):
         if self._data.ndim == 2 or self._data.shape[2] == 1:
             # luminance data
+            # bad_color handling is part of the colormap already, not needed here
             fclim = Function(self._func_templates['clim_float'])
             fgamma = Function(self._func_templates['gamma_float'])
             # NOTE: red_to_luminance only uses the red component, fancy internalformats
@@ -649,9 +663,11 @@ class ImageVisual(Visual):
             )
         else:
             # RGB/A image data (no colormap)
+            fbad = Function(self._func_templates['bad_color'])
+            fbad['bad_color'] = self.cmap.get_bad_color().rgba
             fclim = Function(self._func_templates['clim'])
             fgamma = Function(self._func_templates['gamma'])
-            fun = FunctionChain(None, [Function(self._func_templates['null_color_transform']), fclim, fgamma])
+            fun = FunctionChain(None, [Function(self._func_templates['null_color_transform']), fbad, fclim, fgamma])
         fclim['clim'] = self._texture.clim_normalized
         fgamma['gamma'] = self.gamma
         return fun
