@@ -386,7 +386,9 @@ class MeshData(object):
         if indexed is None:
             return self._vertex_normals
         elif indexed == 'faces':
-            return self._vertex_normals[self.get_faces()]
+            if self._vertex_normals_indexed_by_faces is None:
+                self._vertex_normals_indexed_by_faces = self._vertex_normals[self.get_faces()]
+            return self._vertex_normals_indexed_by_faces
 
     def get_vertex_colors(self, indexed=None):
         """Get vertex colors
