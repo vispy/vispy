@@ -5,9 +5,10 @@
 from __future__ import division  # just to be safe...
 import warnings
 
+import re
 import numpy as np
 
-from .color_array import ColorArray
+from .color_array import ColorArray, Color
 from ..ext.cubehelix import cubehelix
 from hsluv import hsluv_to_rgb
 from ..util.check_environment import has_matplotlib
@@ -244,6 +245,7 @@ class BaseColormap(object):
 
     def __init__(self, colors=None):
         # Ensure the colors are arrays.
+        self._bad_color = Color('transparent')
         if colors is not None:
             self.colors = colors
         if not isinstance(self.colors, ColorArray):
@@ -252,6 +254,22 @@ class BaseColormap(object):
         if len(self.colors) > 0:
             self.glsl_map = _process_glsl_template(self.glsl_map,
                                                    self.colors.rgba)
+        self.set_bad_color()
+
+    def set_bad_color(self, color=(0, 0, 0, 0), alpha=None):
+        color = Color(color, alpha)
+        self._bad_color = color
+        r, g, b, a = color.rgba
+        vecstr = f'vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f})'
+
+        if '!(t <= 0.0 || 0.0 <= t)' in self.glsl_map:
+            self.glsl_map = re.sub(r'return vec4\([^\)]+\); // bad', f'return {vecstr}; // bad', self.glsl_map, count=1)
+        else:
+            if_statement = f"\nif (!(t <= 0.0 || 0.0 <= t)) {{\nreturn {vecstr}; // bad\n}}"
+            self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{if_statement}', self.glsl_map)
+
+    def get_bad_color(self):
+        return self._bad_color
 
     def map(self, item):
         """Return a rgba array for the requested items.
@@ -428,7 +446,11 @@ class Colormap(BaseColormap):
         colors : list
             List of rgba colors.
         """
-        return self._map_function(self.colors.rgba, x, self._controls)
+        x = np.array([x]) if np.isscalar(x) else np.array(x)
+        shape = x.shape
+        colors = self._map_function(self.colors.rgba, x, self._controls)
+        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
+        return colors.astype(np.float32).reshape(shape+(4,))
 
     def texture_lut(self):
         """Return a texture2D object for LUT after its value is set. Can be None."""
@@ -537,10 +559,16 @@ class _Fire(BaseColormap):
     """
 
     def map(self, t):
+        t = np.array([t]) if np.isscalar(t) else np.array(t)
+        shape = t.shape
+        t = t.ravel()[..., np.newaxis]
+
         a, b, d = self.colors.rgba
         c = _mix_simple(a, b, t)
         e = _mix_simple(b, d, t**2)
-        return _mix_simple(c, e, t)
+        colors = _mix_simple(c, e, t)
+        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
+        return colors.astype(np.float32).reshape(shape+(4,))
 
 
 class _Grays(BaseColormap):
@@ -551,10 +579,12 @@ class _Grays(BaseColormap):
     """
 
     def map(self, t):
-        if isinstance(t, np.ndarray):
-            return np.hstack([t, t, t, np.ones(t.shape)]).astype(np.float32)
-        else:
-            return np.array([t, t, t, 1.0], dtype=np.float32)
+        t = np.array([t]) if np.isscalar(t) else np.array(t)
+        shape = t.shape
+        t = t.ravel()
+        colors = np.c_[t, t, t, np.ones(t.shape)]
+        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
+        return colors.reshape(shape+(4,)).astype(np.float32)
 
 
 class _Ice(BaseColormap):
@@ -565,11 +595,12 @@ class _Ice(BaseColormap):
     """
 
     def map(self, t):
-        if isinstance(t, np.ndarray):
-            return np.hstack([t, t, np.ones(t.shape),
-                              np.ones(t.shape)]).astype(np.float32)
-        else:
-            return np.array([t, t, 1.0, 1.0], dtype=np.float32)
+        t = np.array([t]) if np.isscalar(t) else np.array(t)
+        shape = t.shape
+        t = t.ravel()
+        colors = np.c_[t, t, np.ones(t.shape), np.ones(t.shape)]
+        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
+        return colors.reshape(shape+(4,)).astype(np.float32)
 
 
 class _Hot(BaseColormap):
@@ -584,9 +615,15 @@ class _Hot(BaseColormap):
     """
 
     def map(self, t):
+        t = np.array([t]) if np.isscalar(t) else np.array(t)
+        shape = t.shape
+        t = t.ravel()[..., np.newaxis]
+
         rgba = self.colors.rgba
         smoothed = smoothstep(rgba[0, :3], rgba[1, :3], t)
-        return np.hstack((smoothed, np.ones((len(t), 1))))
+        colors = np.hstack((smoothed, np.ones((len(t), 1))))
+        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
+        return colors.reshape(shape+(4,)).astype(np.float32)
 
 
 class _Winter(BaseColormap):
@@ -600,9 +637,15 @@ class _Winter(BaseColormap):
     """
 
     def map(self, t):
-        return _mix_simple(self.colors.rgba[0],
+        t = np.array([t]) if np.isscalar(t) else np.array(t)
+        shape = t.shape
+        t = t.ravel()[..., np.newaxis]
+
+        colors = _mix_simple(self.colors.rgba[0],
                            self.colors.rgba[1],
                            np.sqrt(t))
+        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
+        return colors.astype(np.float32).reshape(shape+(4,))
 
 
 class SingleHue(Colormap):
