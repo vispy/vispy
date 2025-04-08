@@ -499,6 +499,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
         if not vispy_event.handled:
             ev.ignore()
 
@@ -511,6 +512,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             button=BUTTONMAP[ev.button()],
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
         if not vispy_event.handled:
             ev.ignore()
 
@@ -523,6 +525,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
         if not vispy_event.handled:
             ev.ignore()
 
@@ -535,6 +538,8 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             pos=_get_event_xy(ev),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        # Note that the handler can return None, this is equivalent to not handling the event
         if vispy_event is None or not vispy_event.handled:
             # Theoretically, a parent widget might want to listen to all of
             # the mouse move events, including those that VisPy ignores
@@ -561,6 +566,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             pos=_get_event_xy(ev),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
         if not vispy_event.handled:
             ev.ignore()
 
@@ -635,7 +641,10 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Two finger pan events are anyway converted to scroll/wheel events.
         # On macOS, more fingers are usually swallowed by the OS (by spaces,
         # mission control, etc.).
-        if vispy_event is not None and not vispy_event.handled:
+
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        # Note that some handlers return None, this is equivalent to not handling the event
+        if vispy_event is None or not vispy_event.handled:
             ev.ignore()
 
     def event(self, ev):
@@ -661,6 +670,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             key = None
         mod = self._modifiers(ev)
         vispy_event = func(native=ev, key=key, text=str(ev.text()), modifiers=mod)
+        # If vispy did not handle the event, clear the accept parameter of the qt event
         if not vispy_event.handled:
             ev.ignore()
 
@@ -790,6 +800,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
     def resizeEvent(self, event):
         w, h = event.size().width(), event.size().height()
         vispy_event = self._vispy_canvas.events.resize(size=(w, h))
+        # If vispy did not handle the event, clear the accept parameter of the qt event
         if not vispy_event.handled:
             event.ignore()
 
