@@ -91,10 +91,11 @@ _TEXTURE_LOOKUP = """
 
 
 _HANDLE_BAD_COLOR = """
-    float handle_bad_color(vec4 data) {
-        // If data is NaN, use the bad_color or discard the fragment
+    vec4 handle_bad_color(vec4 data) {
+        // If data is NaN, use the bad_color or discard the fragment,
+        // otherwise pass the data through
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
-        if (!(data.r <= 0.0 || 0.0 <= data.r) || !(data.g <= 0.0 || 0.0 <= data.g) || !(data.b <= 0.0 || 0.0 <= data.b) || !(data.a <= 0.0 || 0.0 <= data.a) {
+        if (!(data.r <= 0.0 || 0.0 <= data.r) || !(data.g <= 0.0 || 0.0 <= data.g) || !(data.b <= 0.0 || 0.0 <= data.b) || !(data.a <= 0.0 || 0.0 <= data.a)) {
             if ($bad_color.a == 0) {
                 // more perfomant to not render the fragment
                 discard;
@@ -441,7 +442,7 @@ class ImageVisual(Visual):
             return
         else:
             # shortcut so we don't have to rebuild the whole color transform
-            self.shared_program.frag['color_transform'][1]['clim'] = norm_clims
+            self.shared_program.frag['color_transform'][2]['clim'] = norm_clims
 
     @property
     def cmap(self):
@@ -467,7 +468,7 @@ class ImageVisual(Visual):
         self._gamma = float(value)
         # shortcut so we don't have to rebuild the color transform
         if not self._need_colortransform_update:
-            self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
+            self.shared_program.frag['color_transform'][3]['gamma'] = self._gamma
         self.update()
 
     @property
@@ -641,7 +642,7 @@ class ImageVisual(Visual):
             self._need_colortransform_update = True
         elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
-            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
+            self.shared_program.frag['color_transform'][2]['clim'] = self._texture.clim_normalized
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
@@ -653,13 +654,15 @@ class ImageVisual(Visual):
     def _build_color_transform(self):
         if self._data.ndim == 2 or self._data.shape[2] == 1:
             # luminance data
-            # bad_color handling is part of the colormap already, not needed here
+            # bad_color handling is part of the colormap already, not needed here,
+            # but we put a noop functions to simplify indexing in the different cases
+            fbad = Function('float noop (float data) {return data;}')
             fclim = Function(self._func_templates['clim_float'])
             fgamma = Function(self._func_templates['gamma_float'])
             # NOTE: red_to_luminance only uses the red component, fancy internalformats
             #   may need to use the other components or a different function chain
             fun = FunctionChain(
-                None, [Function(self._func_templates['red_to_luminance']), fclim, fgamma, Function(self.cmap.glsl_map)]
+                None, [Function(self._func_templates['red_to_luminance']), fbad, fclim, fgamma, Function(self.cmap.glsl_map)]
             )
         else:
             # RGB/A image data (no colormap)
