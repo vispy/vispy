@@ -449,8 +449,8 @@ class Colormap(BaseColormap):
         x = np.array([x]) if np.isscalar(x) else np.array(x)
         shape = x.shape
         colors = self._map_function(self.colors.rgba, x, self._controls)
-        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
-        return colors.astype(np.float32).reshape(shape+(4,))
+        colors[np.isnan(x).any(axis=-1)] = self._bad_color.rgba
+        return colors.astype(np.float32)
 
     def texture_lut(self):
         """Return a texture2D object for LUT after its value is set. Can be None."""
@@ -567,8 +567,8 @@ class _Fire(BaseColormap):
         c = _mix_simple(a, b, t)
         e = _mix_simple(b, d, t**2)
         colors = _mix_simple(c, e, t)
-        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
-        return colors.astype(np.float32).reshape(shape+(4,))
+        colors[np.isnan(t).any(axis=-1)] = self._bad_color.rgba
+        return colors.astype(np.float32)
 
 
 class _Grays(BaseColormap):
@@ -583,8 +583,8 @@ class _Grays(BaseColormap):
         shape = t.shape
         t = t.ravel()
         colors = np.c_[t, t, t, np.ones(t.shape)]
-        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
-        return colors.reshape(shape+(4,)).astype(np.float32)
+        colors[np.isnan(t).any(axis=-1)] = self._bad_color.rgba
+        return colors.astype(np.float32)
 
 
 class _Ice(BaseColormap):
@@ -599,8 +599,8 @@ class _Ice(BaseColormap):
         shape = t.shape
         t = t.ravel()
         colors = np.c_[t, t, np.ones(t.shape), np.ones(t.shape)]
-        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
-        return colors.reshape(shape+(4,)).astype(np.float32)
+        colors[np.isnan(t).any(axis=-1)] = self._bad_color.rgba
+        return colors.astype(np.float32)
 
 
 class _Hot(BaseColormap):
@@ -622,8 +622,8 @@ class _Hot(BaseColormap):
         rgba = self.colors.rgba
         smoothed = smoothstep(rgba[0, :3], rgba[1, :3], t)
         colors = np.hstack((smoothed, np.ones((len(t), 1))))
-        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
-        return colors.reshape(shape+(4,)).astype(np.float32)
+        colors[np.isnan(t).any(axis=-1)] = self._bad_color.rgba
+        return colors.astype(np.float32)
 
 
 class _Winter(BaseColormap):
@@ -644,8 +644,8 @@ class _Winter(BaseColormap):
         colors = _mix_simple(self.colors.rgba[0],
                            self.colors.rgba[1],
                            np.sqrt(t))
-        colors[np.isnan(colors).any(axis=-1)] = self._bad_color
-        return colors.astype(np.float32).reshape(shape+(4,))
+        colors[np.isnan(t).any(axis=-1)] = self._bad_color.rgba
+        return colors.astype(np.float32)
 
 
 class SingleHue(Colormap):
