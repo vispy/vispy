@@ -263,7 +263,6 @@ class BaseColormap(object):
         color = Color(color, alpha)
         self._bad_color = color
         r, g, b, a = color.rgba
-        print(color, r, g, b, a)
 
         if a == 0:
             ret_or_discard = "discard"
