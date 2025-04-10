@@ -248,6 +248,8 @@ class BaseColormap(object):
     def __init__(self, colors=None):
         # Ensure the colors are arrays.
         self._bad_color = Color('transparent')
+        self._high_color = Color('transparent')
+        self._low_color = Color('transparent')
         if colors is not None:
             self.colors = colors
         if not isinstance(self.colors, ColorArray):
@@ -257,8 +259,10 @@ class BaseColormap(object):
             self.glsl_map = _process_glsl_template(self.glsl_map,
                                                    self.colors.rgba)
         self.set_bad_color()
+        self.set_high_color()
+        self.set_low_color()
 
-    def set_bad_color(self, color=(0, 0, 0, 0), alpha=None):
+    def set_bad_color(self, color=None, alpha=None):
         color = (0, 0, 0, 0) if color is None else color
         color = Color(color, alpha)
         self._bad_color = color
@@ -281,6 +285,48 @@ class BaseColormap(object):
 
     def get_bad_color(self):
         return self._bad_color
+
+    def set_high_color(self, color=None, alpha=None):
+        if color is not None:
+            color = Color(color, alpha)
+            self._high_color = color
+            r, g, b, a = color.rgba
+
+            high_color_glsl = f"""// high_color_start
+            if (t == 1.0) {{
+                return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
+            }} // high_color_end"""
+        else:
+            high_color_glsl = ''
+
+        if '// high_color_start' in self.glsl_map:
+            self.glsl_map = re.sub(r'// high_color_start.*// high_color_end', high_color_glsl, self.glsl_map, count=1, flags=re.DOTALL)
+        else:
+            self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{high_color_glsl}', self.glsl_map)
+
+    def get_high_color(self):
+        return self._high_color
+
+    def set_low_color(self, color=None, alpha=None):
+        if color is not None:
+            color = Color(color, alpha)
+            self._low_color = color
+            r, g, b, a = color.rgba
+
+            low_color_glsl = f"""// low_color_start
+            if (t == 0.0) {{
+                return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
+            }} // low_color_end"""
+        else:
+            low_color_glsl = ''
+
+        if '// low_color_start' in self.glsl_map:
+            self.glsl_map = re.sub(r'// low_color_start.*// low_color_end', low_color_glsl, self.glsl_map, count=1, flags=re.DOTALL)
+        else:
+            self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{low_color_glsl}', self.glsl_map)
+
+    def get_low_color(self):
+        return self._low_color
 
     def map(self, item):
         """Return a rgba array for the requested items.
@@ -309,6 +355,11 @@ class BaseColormap(object):
 
         """
         raise NotImplementedError()
+
+    def _map_special_colors(self, param, colors):
+        colors = np.where(np.isnan(param.reshape(-1, 1)), self._bad_color.rgba, colors)
+        colors = np.where(np.isnan(param == 1).reshape(-1, 1), self._high_color.rgba, colors)
+        return np.where(np.isnan(param == 0).reshape(-1, 1), self._low_color.rgba, colors)
 
     def texture_lut(self):
         """Return a texture2D object for LUT after its value is set. Can be None."""
@@ -458,7 +509,7 @@ class Colormap(BaseColormap):
             List of rgba colors.
         """
         colors = self._map_function(self.colors.rgba, x, self._controls)
-        return np.where(np.isnan(x.reshape(-1, 1)), self._bad_color.rgba, colors)
+        return self._map_special_colors(x, colors)
 
     def texture_lut(self):
         """Return a texture2D object for LUT after its value is set. Can be None."""
@@ -571,7 +622,7 @@ class _Fire(BaseColormap):
         c = _mix_simple(a, b, t)
         e = _mix_simple(b, d, t**2)
         colors = np.atleast_2d(_mix_simple(c, e, t))
-        return np.where(np.isnan(t.reshape(-1, 1)), self._bad_color.rgba, colors)
+        return self._map_special_colors(t, colors)
 
 
 class _Grays(BaseColormap):
@@ -583,7 +634,7 @@ class _Grays(BaseColormap):
 
     def map(self, t):
         colors = np.c_[t, t, t, np.ones(t.shape)]
-        return np.where(np.isnan(t.reshape(-1, 1)), self._bad_color.rgba, colors)
+        return self._map_special_colors(t, colors)
 
 
 class _Ice(BaseColormap):
@@ -595,7 +646,7 @@ class _Ice(BaseColormap):
 
     def map(self, t):
         colors = np.c_[t, t, np.ones(t.shape), np.ones(t.shape)]
-        return np.where(np.isnan(t.reshape(-1, 1)), self._bad_color.rgba, colors)
+        return self._map_special_colors(t, colors)
 
 
 class _Hot(BaseColormap):
@@ -613,7 +664,7 @@ class _Hot(BaseColormap):
         rgba = self.colors.rgba
         smoothed = smoothstep(rgba[0, :3], rgba[1, :3], t)
         colors = np.hstack((smoothed, np.ones((len(t), 1))))
-        return np.where(np.isnan(t.reshape(-1, 1)), self._bad_color.rgba, colors)
+        return self._map_special_colors(t, colors)
 
 
 class _Winter(BaseColormap):
@@ -630,7 +681,7 @@ class _Winter(BaseColormap):
         colors = _mix_simple(self.colors.rgba[0],
                            self.colors.rgba[1],
                            np.sqrt(t))
-        return np.where(np.isnan(t.reshape(-1, 1)), self._bad_color.rgba, colors)
+        return self._map_special_colors(t, colors)
 
 
 class SingleHue(Colormap):
