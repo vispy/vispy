@@ -264,14 +264,9 @@ class BaseColormap(object):
         self._bad_color = color
         r, g, b, a = color.rgba
 
-        if a == 0:
-            ret_or_discard = "discard"
-        else:
-            ret_or_discard = f"return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f})"
-
         bad_color_glsl = f"""// bad_color_start
         if (!(t <= 0.0 || 0.0 <= t)) {{
-            {ret_or_discard};
+            return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
         }} // bad_color_end"""
 
         if '// bad_color_start' in self.glsl_map:
