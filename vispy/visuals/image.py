@@ -428,7 +428,7 @@ class ImageVisual(Visual):
             return
         else:
             # shortcut so we don't have to rebuild the whole color transform
-            self.shared_program.frag['color_transform'][2]['clim'] = norm_clims
+            self.shared_program.frag['color_transform'][1]['clim'] = norm_clims
 
     @property
     def cmap(self):
@@ -454,7 +454,7 @@ class ImageVisual(Visual):
         self._gamma = float(value)
         # shortcut so we don't have to rebuild the color transform
         if not self._need_colortransform_update:
-            self.shared_program.frag['color_transform'][3]['gamma'] = self._gamma
+            self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
         self.update()
 
     @property
@@ -661,7 +661,7 @@ class ImageVisual(Visual):
             self._need_colortransform_update = True
         elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
-            self.shared_program.frag['color_transform'][2]['clim'] = self._texture.clim_normalized
+            self.shared_program.frag['color_transform'][1]['clim'] = self._texture.clim_normalized
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
