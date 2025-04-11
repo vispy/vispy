@@ -263,6 +263,7 @@ class BaseColormap(object):
         self.set_low_color()
 
     def set_bad_color(self, color=None, alpha=None):
+        """Set the color mapping for NaN values."""
         color = (0, 0, 0, 0) if color is None else color
         color = Color(color, alpha)
         self._bad_color = color
@@ -287,13 +288,14 @@ class BaseColormap(object):
         return self._bad_color
 
     def set_high_color(self, color=None, alpha=None):
+        """Set the color mapping for values equal to max clim."""
         if color is not None:
             color = Color(color, alpha)
             self._high_color = color
             r, g, b, a = color.rgba
 
             high_color_glsl = f"""// high_color_start
-            if (t == 1.0) {{
+            if (1 - t <= 1e-12) {{ // use epsilon to work around numerical imprecision
                 return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
             }} // high_color_end"""
         else:
@@ -308,13 +310,14 @@ class BaseColormap(object):
         return self._high_color
 
     def set_low_color(self, color=None, alpha=None):
+        """Set the color mapping for values equal to min clim."""
         if color is not None:
             color = Color(color, alpha)
             self._low_color = color
             r, g, b, a = color.rgba
 
             low_color_glsl = f"""// low_color_start
-            if (t == 0.0) {{
+            if (t <= 1e-12) {{ // use epsilon to work around numerical imprecision
                 return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
             }} // low_color_end"""
         else:
@@ -357,6 +360,7 @@ class BaseColormap(object):
         raise NotImplementedError()
 
     def _map_special_colors(self, param, colors):
+        """Apply special mapping to edge cases (NaN and max/min clim)."""
         colors = np.where(np.isnan(param.reshape(-1, 1)), self._bad_color.rgba, colors)
         colors = np.where(np.isnan(param == 1).reshape(-1, 1), self._high_color.rgba, colors)
         return np.where(np.isnan(param == 0).reshape(-1, 1), self._low_color.rgba, colors)
