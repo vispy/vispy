@@ -159,11 +159,12 @@ def _glsl_mix(controls=None, colors=None, texture_map_data=None):
     LUT[:, 0, 2] = np.interp(x, controls, c_rgba[:, 2])
     LUT[:, 0, 3] = np.interp(x, controls, c_rgba[:, 3])
 
-    s2 = "uniform sampler2D texture2D_LUT;"
-    s = "{\n return texture2D(texture2D_LUT, \
-          vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
-
-    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
+    return """
+    uniform sampler2D texture2D_LUT;
+    vec4 colormap(float t) {
+        return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));
+    }
+    """
 
 
 def _glsl_step(controls=None, colors=None, texture_map_data=None):
@@ -193,11 +194,12 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
     colors_rgba = ColorArray(colors[:])._rgba
     LUT[:, 0, :] = colors_rgba[j]
 
-    s2 = "uniform sampler2D texture2D_LUT;"
-    s = "{\n return texture2D(texture2D_LUT, \
-           vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
-
-    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
+    return """
+    uniform sampler2D texture2D_LUT;
+    vec4 colormap(float t) {
+        return texture2D(texture2D_LUT, vec2(0.0, clamp(t, 0.0, 1.0)));
+    }
+    """
 
 
 # Mini GLSL template system for colors.
@@ -257,16 +259,20 @@ class BaseColormap(object):
         self.set_bad_color()
 
     def set_bad_color(self, color=(0, 0, 0, 0), alpha=None):
+        color = (0, 0, 0, 0) if color is None else color
         color = Color(color, alpha)
         self._bad_color = color
         r, g, b, a = color.rgba
-        vecstr = f'vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f})'
 
-        if '!(t <= 0.0 || 0.0 <= t)' in self.glsl_map:
-            self.glsl_map = re.sub(r'return vec4\([^\)]+\); // bad', f'return {vecstr}; // bad', self.glsl_map, count=1)
+        bad_color_glsl = f"""// bad_color_start
+        if (!(t <= 0.0 || 0.0 <= t)) {{
+            return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
+        }} // bad_color_end"""
+
+        if '// bad_color_start' in self.glsl_map:
+            self.glsl_map = re.sub(r'// bad_color_start.*// bad_color_end', bad_color_glsl, self.glsl_map, count=1, flags=re.DOTALL)
         else:
-            if_statement = f"\nif (!(t <= 0.0 || 0.0 <= t)) {{\nreturn {vecstr}; // bad\n}}"
-            self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{if_statement}', self.glsl_map)
+            self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{bad_color_glsl}', self.glsl_map)
 
     def get_bad_color(self):
         return self._bad_color
