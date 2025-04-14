@@ -197,6 +197,33 @@ def test_image_nan_rgb(texture_format, num_bands):
 
 
 @requires_application()
+@pytest.mark.parametrize('low_color', [None, (1, 0, 0, 1)])
+@pytest.mark.parametrize('high_color', [None, (0, 1, 0, 1)])
+def test_image_low_high_colors(low_color, high_color):
+    size = (80, 80)
+    data = np.ones(size)
+    data[:20, :20] = 0
+    data[-20:, -20:] = 2
+
+    expected = (np.zeros(size + (4,)) * 255).astype(np.uint8)
+    expected[:] = (128, 128, 128, 255)
+    # 0 maps to low color, 2 to high color, 1 to normal middle gray mapping
+    if low_color is None:
+        low_color = (0, 0, 0, 1)
+    expected[:20, :20] = np.array(low_color) * 255
+    if high_color is None:
+        high_color = (1, 1, 1, 1)
+    expected[-20:, -20:] = np.array(high_color) * 255
+
+    with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
+        image = Image(data, cmap='grays', clim=(0, 2), parent=c.scene)
+        image.low_color = low_color
+        image.high_color = high_color
+        rendered = c.render()
+        np.testing.assert_allclose(rendered, expected)
+
+
+@requires_application()
 @pytest.mark.parametrize('num_channels', [0, 1, 3, 4])
 @pytest.mark.parametrize('texture_format', [None, 'auto'])
 def test_image_equal_clims(texture_format, num_channels):

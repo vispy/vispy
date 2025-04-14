@@ -295,6 +295,7 @@ class BaseColormap(object):
             }} // high_color_end"""
         else:
             high_color_glsl = ''
+            self._high_color = None
 
         if '// high_color_start' in self.glsl_map:
             self.glsl_map = re.sub(r'// high_color_start.*// high_color_end', high_color_glsl, self.glsl_map, count=1, flags=re.DOTALL)
@@ -317,6 +318,7 @@ class BaseColormap(object):
             }} // low_color_end"""
         else:
             low_color_glsl = ''
+            self._low_color = None
 
         if '// low_color_start' in self.glsl_map:
             self.glsl_map = re.sub(r'// low_color_start.*// low_color_end', low_color_glsl, self.glsl_map, count=1, flags=re.DOTALL)
@@ -357,8 +359,11 @@ class BaseColormap(object):
     def _map_special_colors(self, param, colors):
         """Apply special mapping to edge cases (NaN and max/min clim)."""
         colors = np.where(np.isnan(param.reshape(-1, 1)), self._bad_color.rgba, colors)
-        colors = np.where(np.isnan(param == 1).reshape(-1, 1), self._high_color.rgba, colors)
-        return np.where(np.isnan(param == 0).reshape(-1, 1), self._low_color.rgba, colors)
+        if self._high_color is not None:
+            colors = np.where((param == 1).reshape(-1, 1), self._high_color.rgba, colors)
+        if self._low_color is not None:
+            colors = np.where((param == 0).reshape(-1, 1), self._low_color.rgba, colors)
+        return colors
 
     def texture_lut(self):
         """Return a texture2D object for LUT after its value is set. Can be None."""
