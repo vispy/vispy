@@ -66,7 +66,7 @@ Buffers
 
 We explained earlier that the vertex shader act on the vertices. The question
 is thus where do those vertices comes from? The idea of modern GL is that
-vertices are stored on the GPU and needs to be uploaded (only once) to the GPU
+vertices are stored on the GPU and need to be uploaded (only once) to the GPU
 before rendering. The way to do that is to build buffers onto the CPU and to
 send them onto the GPU. If your data does not change, no need to upload it
 again. That is the big difference with the previous fixed pipeline where data

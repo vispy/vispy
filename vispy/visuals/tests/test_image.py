@@ -128,28 +128,30 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
 @pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
 @requires_application()
 @pytest.mark.parametrize('texture_format', [None, 'auto'])
-def test_image_nan_single_band(texture_format):
-    size = (40, 40)
-    data = np.ones((40, 40))
-    data[:5, :5] = np.nan
-    data[:5, -5:] = 0
+@pytest.mark.parametrize('bad_color', [None, (1, 0, 0, 1)])
+def test_image_nan(texture_format, bad_color):
+    size = (80, 80)
+    data = np.ones(size)
+    data[:20, :20] = np.nan
+    data[-20: -20:] = 0
 
-    expected = (np.ones((40, 40, 4)) * 255).astype(np.uint8)
-    # black square
-    expected[:5, -5:, :3] = 0
+    expected = (np.ones(size + (4,)) * 255).astype(np.uint8)
+    expected[-20: -20:] = (0, 0, 0, 225)
     if texture_format is None:
         # CPU scaling's NaNs get converted to 0s
-        expected[:5, :5, :3] = 0
+        expected[:20, :20] = (0, 0, 0, 255)
     else:
         # GPU receives NaNs
-        # nan - transparent square
-        expected[:5, :5, 0] = 0
-        expected[:5, :5, 1] = 255  # match the 'green' background
-        expected[:5, :5, 2] = 0
+        # nan - mapped to bad color
+        if bad_color is None:
+            # no bad color means transparent, so we should see the green canvas
+            bad_color = (0, 1, 0, 1)
+        expected[:20, :20] = np.array(bad_color) * 255
 
     with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
-        Image(data, cmap='grays',
+        image = Image(data, cmap='grays', clim=(0, 1),
               texture_format=texture_format, parent=c.scene)
+        image.bad_color = bad_color
         rendered = c.render()
         np.testing.assert_allclose(rendered, expected)
 

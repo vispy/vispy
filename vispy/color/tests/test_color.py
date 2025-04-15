@@ -349,4 +349,19 @@ def test_normalize():
     assert_allclose([y.min(), y.max()], [0.2975, 1-0.2975], 1e-1, 1e-1)
 
 
+def test_colormap_bad_color():
+    """Test NaN handling."""
+    fire = get_colormap('fire')
+    assert_array_equal(fire[np.nan].rgba, np.zeros((1, 4)))
+
+    green = (0, 1, 0, 1)
+    fire.set_bad_color(green)
+    assert_array_equal(fire[np.nan].rgba, [green])
+    assert_array_equal(fire.get_bad_color(), green)
+
+    fire.set_bad_color()
+    assert_array_equal(fire[np.nan].rgba, np.zeros((1, 4)))
+
+
+
 run_tests_if_main()
