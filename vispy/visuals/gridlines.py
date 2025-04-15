@@ -20,16 +20,15 @@ vec4 grid_color(vec2 pos) {
     px_pos /= px_pos.w;
 
     // Compute vectors representing width, height of pixel in local coords
-    float s = 1.;
     vec4 local_pos = $map_doc_to_local(px_pos);
-    vec4 dx = $map_doc_to_local(px_pos + vec4(1.0 / s, 0, 0, 0));
-    vec4 dy = $map_doc_to_local(px_pos + vec4(0, 1.0 / s, 0, 0));
+    vec4 dx = $map_doc_to_local(px_pos + vec4(1.0, 0, 0, 0));
+    vec4 dy = $map_doc_to_local(px_pos + vec4(0, 1.0, 0, 0));
     local_pos /= local_pos.w;
     dx = dx / dx.w - local_pos;
     dy = dy / dy.w - local_pos;
 
     // Pixel length along each axis, rounded to the nearest power of 10
-    vec2 px = s * vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
+    vec2 px = vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
     float log10 = log(10.0);
     float sx = pow(10.0, floor(log(px.x) / log10) + 1.) * $scale.x;
     float sy = pow(10.0, floor(log(px.y) / log10) + 1.) * $scale.y;
