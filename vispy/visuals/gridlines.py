@@ -88,6 +88,11 @@ class GridLinesVisual(ImageVisual):
     color : Color
         The base color for grid lines. The final color may have its alpha
         channel modified.
+    grid_bounds : tuple or None
+        The lower and upper bound for each axis beyond which no grid is rendered.
+        In the form of (minx, maxx, miny, maxy).
+    border_width : float
+        Tickness of the border rendered at the bounds of the grid.
     """
 
     def __init__(self, scale=(1, 1), color='w',
