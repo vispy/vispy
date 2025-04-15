@@ -247,9 +247,6 @@ class BaseColormap(object):
 
     def __init__(self, colors=None):
         # Ensure the colors are arrays.
-        self._bad_color = Color('transparent')
-        self._high_color = Color('transparent')
-        self._low_color = Color('transparent')
         if colors is not None:
             self.colors = colors
         if not isinstance(self.colors, ColorArray):
@@ -283,7 +280,7 @@ class BaseColormap(object):
         return self._bad_color
 
     def set_high_color(self, color=None, alpha=None):
-        """Set the color mapping for values equal to max clim."""
+        """Set the color mapping for values greater than or equal to max clim."""
         if color is not None:
             color = Color(color, alpha)
             self._high_color = color
@@ -306,7 +303,7 @@ class BaseColormap(object):
         return self._high_color
 
     def set_low_color(self, color=None, alpha=None):
-        """Set the color mapping for values equal to min clim."""
+        """Set the color mapping for values less than or equal to min clim."""
         if color is not None:
             color = Color(color, alpha)
             self._low_color = color
