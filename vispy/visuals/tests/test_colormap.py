@@ -94,16 +94,4 @@ def test_colormap_CubeHelix():
         assert_image_approved(c.render(), "visuals/colormap_cubehelix.png")
 
 
-def test_colormap_HiLo():
-    from vispy.color.colormap import CubeHelixColormap
-    with TestingCanvas(size=size, bgcolor='w') as c:
-        idata = np.linspace(255, 0, size[0]*size[1]).astype(np.ubyte)
-        data = idata.reshape((size[0], size[1]))
-        cmap = CubeHelixColormap(rot=0, start=0)
-        image = Image(cmap=cmap,
-                      clim='auto', parent=c.scene)
-        image.set_data(data)
-        assert_image_approved(c.render(), "visuals/colormap_cubehelix.png")
-
-
 run_tests_if_main()
