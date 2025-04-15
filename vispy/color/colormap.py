@@ -688,6 +688,13 @@ class _Winter(BaseColormap):
         return self._map_special_colors(t, colors)
 
 
+class _HiLo(_Grays):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.set_low_color('blue')
+        self.set_high_color('red')
+
+
 class SingleHue(Colormap):
     """A colormap which is solely defined by the given hue and value.
 
@@ -1172,6 +1179,7 @@ _colormaps = dict(
     husl=HSLuv(),
     diverging=Diverging(),
     RdYeBuCy=RedYellowBlueCyan(),
+    HiLo=_HiLo(),
 )
 
 

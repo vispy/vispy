@@ -469,28 +469,6 @@ class ImageVisual(Visual):
         self.update()
 
     @property
-    def high_color(self):
-        """Color used to render NaN values."""
-        return self._cmap.get_high_color()
-
-    @high_color.setter
-    def high_color(self, color):
-        self._cmap.set_high_color(color)
-        self._need_colortransform_update = True
-        self.update()
-
-    @property
-    def low_color(self):
-        """Color used to render NaN values."""
-        return self._cmap.get_low_color()
-
-    @low_color.setter
-    def low_color(self, color):
-        self._cmap.set_low_color(color)
-        self._need_colortransform_update = True
-        self.update()
-
-    @property
     def method(self):
         """Get rendering method name."""
         return self._method
