@@ -20,7 +20,11 @@ def test_gridlines():
         grid.transform = STTransform(translate=(40, 40))
         render = c.render()
         np.testing.assert_array_equal(render[40, 40], (151, 151, 151, 255))
-        np.testing.assert_array_equal(render[41, 41], (0, 0, 0, 255))
+        np.testing.assert_array_equal(render[50, 50], (0, 0, 0, 255))
+
+        grid.grid_bounds = (-10, 10, -10, 10)
+        render = c.render()
+        np.testing.assert_array_equal(render[50, 50], (255, 255, 255, 255))
 
 
 run_tests_if_main()
