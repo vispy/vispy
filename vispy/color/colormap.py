@@ -303,10 +303,10 @@ class BaseColormap(object):
         r, g, b, a = self.low_color.rgba
 
         low_color_glsl = f"""
-            // Map low_color
-            if (t <= 1e-12) {{ // use epsilon to work around numerical imprecision
-                return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
-            }}"""
+        // Map low_color
+        if (t <= 1e-12) {{ // use epsilon to work around numerical imprecision
+            return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
+        }}"""
 
         self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{low_color_glsl}', self.glsl_map)
 
