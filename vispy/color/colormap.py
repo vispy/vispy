@@ -254,7 +254,7 @@ class BaseColormap(object):
     # for luminance to RGBA conversion.
     texture_map_data = None
 
-    def __init__(self, colors=None, bad_color=None, low_color=None, high_color=None):
+    def __init__(self, colors=None, *, bad_color=None, low_color=None, high_color=None):
         # Ensure the colors are arrays.
         if colors is not None:
             self.colors = colors
@@ -451,7 +451,7 @@ class Colormap(BaseColormap):
 
     """
 
-    def __init__(self, colors, controls=None, interpolation='linear',
+    def __init__(self, colors, controls=None, interpolation='linear', *,
                  bad_color=None, low_color=None, high_color=None):
         self.interpolation = interpolation
         ncontrols = self._ncontrols(len(colors))
