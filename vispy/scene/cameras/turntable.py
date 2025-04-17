@@ -73,6 +73,9 @@ class TurntableCamera(Base3DRotationCamera):
         super(TurntableCamera, self).__init__(fov=fov, **kwargs)
 
         # Set camera attributes
+        self._azimuth = azimuth
+        self._elevation = elevation
+        self._roll = roll
         self.azimuth = azimuth
         self.elevation = elevation
         self.roll = roll
@@ -90,7 +93,10 @@ class TurntableCamera(Base3DRotationCamera):
     @elevation.setter
     def elevation(self, elev):
         elev = float(elev)
-        self._elevation = min(90, max(-90, elev))
+        elev = min(90, max(-90, elev))
+        if elev == self._elevation:
+            return
+        self._elevation = elev
         self.view_changed()
 
     @property
@@ -108,6 +114,8 @@ class TurntableCamera(Base3DRotationCamera):
             azim += 360
         while azim > 180:
             azim -= 360
+        if azim == self._azimuth:
+            return
         self._azimuth = azim
         self.view_changed()
 
@@ -123,6 +131,8 @@ class TurntableCamera(Base3DRotationCamera):
             roll += 360
         while roll > 180:
             roll -= 360
+        if roll == self._roll:
+            return
         self._roll = roll
         self.view_changed()
 

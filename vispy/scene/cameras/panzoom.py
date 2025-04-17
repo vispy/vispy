@@ -164,7 +164,7 @@ class PanZoomCamera(BaseCamera):
     def center(self, center):
         if not (isinstance(center, (tuple, list)) and len(center) in (2, 3)):
             raise ValueError('center must be a 2 or 3 element tuple')
-        rect = Rect(self.rect) or Rect(*DEFAULT_RECT_TUPLE)
+        rect = Rect(self.rect) or Rect(*DEFAULT_RECT_TUPLE)  # make a copy of self.rect
         rect.center = center[:2]
         self.rect = rect
 
@@ -246,6 +246,9 @@ class PanZoomCamera(BaseCamera):
             event.handled = False
 
     def _update_transform(self):
+        if self._resetting:  # base camera linking operation
+            return
+
         rect = self.rect
         self._real_rect = Rect(rect)
         vbr = self._viewbox.rect.flipped(x=self.flip[0], y=(not self.flip[1]))
