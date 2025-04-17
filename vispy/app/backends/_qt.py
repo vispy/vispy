@@ -93,7 +93,9 @@ elif qt_lib == 'pyqt5':
         from PyQt5.QtCore import QT_VERSION_STR
         if Version(QT_VERSION_STR) >= Version('5.4.0'):
             from PyQt5.QtWidgets import QOpenGLWidget as QGLWidget
-            from PyQt5.QtGui import QSurfaceFormat as QGLFormat
+            from PyQt5.QtGui import QSurfaceFormat
+            OpenGLRenderableType = QSurfaceFormat.RenderableType.OpenGL
+            QGLFormat = QSurfaceFormat
             QT5_NEW_API = True
         else:
             from PyQt5.QtOpenGL import QGLWidget, QGLFormat
@@ -105,7 +107,9 @@ elif qt_lib == 'pyqt6':
         from PyQt6.QtCore import QT_VERSION_STR
         if Version(QT_VERSION_STR) >= Version('6.0.0'):
             from PyQt6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
-            from PyQt6.QtGui import QSurfaceFormat as QGLFormat
+            from PyQt6.QtGui import QSurfaceFormat
+            OpenGLRenderableType = QSurfaceFormat.RenderableType.OpenGL
+            QGLFormat = QSurfaceFormat
             PYQT6_API = True
         else:
             from PyQt6.QtOpenGL import QGLWidget, QGLFormat
@@ -117,7 +121,9 @@ elif qt_lib == 'pyside6':
         from PySide6.QtCore import __version__ as QT_VERSION_STR
         if Version(QT_VERSION_STR) >= Version('6.0.0'):
             from PySide6.QtOpenGLWidgets import QOpenGLWidget as QGLWidget
-            from PySide6.QtGui import QSurfaceFormat as QGLFormat
+            from PySide6.QtGui import QSurfaceFormat
+            OpenGLRenderableType = QSurfaceFormat.OpenGL
+            QGLFormat = QSurfaceFormat
             PYSIDE6_API = True
         else:
             from PySide6.QtOpenGL import QGLWidget, QGLFormat
@@ -129,7 +135,9 @@ elif qt_lib == 'pyside2':
         from PySide2.QtCore import __version__ as QT_VERSION_STR
         if Version(QT_VERSION_STR) >= Version('5.4.0'):
             from PySide2.QtWidgets import QOpenGLWidget as QGLWidget
-            from PySide2.QtGui import QSurfaceFormat as QGLFormat
+            from PySide2.QtGui import QSurfaceFormat
+            OpenGLRenderableType = QSurfaceFormat.OpenGL
+            QGLFormat = QSurfaceFormat
             QT5_NEW_API = True
         else:
             from PySide2.QtOpenGL import QGLWidget, QGLFormat
@@ -276,10 +284,7 @@ def _set_config(c):
     """Set the OpenGL configuration"""
     glformat = QGLFormat()
     if QT5_NEW_API or PYSIDE6_API or PYQT6_API:
-        if USE_EGL:
-            glformat.setRenderableType(QGLFormat.OpenGLES)
-        else:
-            glformat.setRenderableType(QGLFormat.OpenGL)
+        glformat.setRenderableType(OpenGLRenderableType)
     glformat.setRedBufferSize(c['red_size'])
     glformat.setGreenBufferSize(c['green_size'])
     glformat.setBlueBufferSize(c['blue_size'])
