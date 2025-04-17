@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+from contextlib import contextmanager
 
 from ...util import keys
 from ..node import Node
@@ -62,7 +63,6 @@ class BaseCamera(Node):
         # Linked cameras
         self._linked_cameras = {}
         self._linked_cameras_no_update = None
-        self._setting_state = False
 
         # Variables related to transforms
         self.transform = NullTransform()
@@ -237,6 +237,12 @@ class BaseCamera(Node):
         self._fov = fov
         self.view_changed()
 
+    @contextmanager
+    def _block_updates(self):
+        prev, self._resetting = self._resetting, True
+        yield
+        self._resetting = prev
+
     # Camera methods
 
     def set_range(self, x=None, y=None, z=None, margin=0.05):
@@ -280,31 +286,30 @@ class BaseCamera(Node):
             return
 
         # There is a viewbox, we're going to set the range for real
-        self._resetting = True
+        with self._block_updates():
 
-        # Get bounds from viewbox if not given
-        if all([(b is None) for b in bounds]):
-            bounds = self._viewbox.get_scene_bounds()
-        else:
-            for i in range(3):
-                if bounds[i] is None:
-                    bounds[i] = self._viewbox.get_scene_bounds(i)
+            # Get bounds from viewbox if not given
+            if all([(b is None) for b in bounds]):
+                bounds = self._viewbox.get_scene_bounds()
+            else:
+                for i in range(3):
+                    if bounds[i] is None:
+                        bounds[i] = self._viewbox.get_scene_bounds(i)
 
-        # Calculate ranges and margins
-        ranges = [b[1] - b[0] for b in bounds]
-        margins = [(r*margin or 0.1) for r in ranges]
-        # Assign limits for this camera
-        bounds_margins = [(b[0]-m, b[1]+m) for b, m in zip(bounds, margins)]
-        self._xlim, self._ylim, self._zlim = bounds_margins
-        # Store center location
-        if (not init) or (self._center is None):
-            self._center = [(b[0] + r / 2) for b, r in zip(bounds, ranges)]
+            # Calculate ranges and margins
+            ranges = [b[1] - b[0] for b in bounds]
+            margins = [(r*margin or 0.1) for r in ranges]
+            # Assign limits for this camera
+            bounds_margins = [(b[0]-m, b[1]+m) for b, m in zip(bounds, margins)]
+            self._xlim, self._ylim, self._zlim = bounds_margins
+            # Store center location
+            if (not init) or (self._center is None):
+                self._center = [(b[0] + r / 2) for b, r in zip(bounds, ranges)]
 
-        # Let specific camera handle it
-        self._set_range(init)
+            # Let specific camera handle it
+            self._set_range(init)
 
         # Finish
-        self._resetting = False
         self.view_changed()
 
     def _set_range(self, init):
@@ -360,35 +365,34 @@ class BaseCamera(Node):
         """
         state = state or {}
         state.update(kwargs)
-        self._setting_state = True
 
-        # In first pass, process tuple keys which select subproperties. This
-        # is an undocumented feature used for selective linking of camera state.
-        #
-        # Subproperties are handled by first copying old value of the root
-        # property, then setting the subproperty on this copy, and finally
-        # assigning the copied object back to the camera property. There needs
-        # to be an assignment of the root property so setters are called and
-        # update is triggered.
-        for key in list(state.keys()):
-            if isinstance(key, tuple):
-                key1 = key[0]
-                if key1 not in state:
-                    root_prop = getattr(self, key1)
-                    # We make copies by passing the old object to the type's
-                    # constructor. This needs to be supported as is the case in
-                    # e.g. the geometry.Rect class.
-                    state[key1] = root_prop.__class__(root_prop)
-                nested_setattr(state[key1], key[1:], state[key])
+        with self._block_updates():
+            # In first pass, process tuple keys which select subproperties. This
+            # is an undocumented feature used for selective linking of camera state.
+            #
+            # Subproperties are handled by first copying old value of the root
+            # property, then setting the subproperty on this copy, and finally
+            # assigning the copied object back to the camera property. There needs
+            # to be an assignment of the root property so setters are called and
+            # update is triggered.
+            for key in list(state.keys()):
+                if isinstance(key, tuple):
+                    key1 = key[0]
+                    if key1 not in state:
+                        root_prop = getattr(self, key1)
+                        # We make copies by passing the old object to the type's
+                        # constructor. This needs to be supported as is the case in
+                        # e.g. the geometry.Rect class.
+                        state[key1] = root_prop.__class__(root_prop)
+                    nested_setattr(state[key1], key[1:], state[key])
 
-        # In second pass, assign the new root properties.
-        for key, val in state.items():
-            if isinstance(key, tuple):
-                continue
-            if key not in self._state_props:
-                raise KeyError('Not a valid camera state property %r' % key)
-            setattr(self, key, val)
-        self._setting_state = False
+            # In second pass, assign the new root properties.
+            for key, val in state.items():
+                if isinstance(key, tuple):
+                    continue
+                if key not in self._state_props:
+                    raise KeyError('Not a valid camera state property %r' % key)
+                setattr(self, key, val)
         self.view_changed()
 
     def link(self, camera, props=None, axis=None):
@@ -515,7 +519,7 @@ class BaseCamera(Node):
 
     def _set_scene_transform(self, tr):
         """Called by subclasses to configure the viewbox scene transform."""
-        if self._setting_state:
+        if self._resetting:
             return
         # todo: check whether transform has changed, connect to
         # transform.changed event

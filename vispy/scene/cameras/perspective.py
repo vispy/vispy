@@ -140,7 +140,7 @@ class PerspectiveCamera(BaseCamera):
         # Do we have a viewbox
         if self._viewbox is None:
             return
-        if self._setting_state:  # base camera linking operation
+        if self._resetting:  # base camera linking operation
             return
 
         # Calculate viewing range for x and y

@@ -246,7 +246,7 @@ class PanZoomCamera(BaseCamera):
             event.handled = False
 
     def _update_transform(self):
-        if self._setting_state:  # base camera linking operation
+        if self._resetting:  # base camera linking operation
             return
 
         rect = self.rect
