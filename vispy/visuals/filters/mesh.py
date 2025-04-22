@@ -530,7 +530,7 @@ class ShadingFilter(Filter):
         self._shininess = float(shininess)
         self._update_data()
 
-    def _update_data(self):
+    def _update_data(self, event=None):
         if not self._attached or not self._visual.visible:
             return
 
@@ -576,11 +576,11 @@ class ShadingFilter(Filter):
             self._update_data()
 
         visual.events.data_updated.connect(self.on_mesh_data_updated)
-        visual.events.visible.connect(self._update_data)
+        visual.events.update.connect(self._update_data)
 
     def _detach(self, visual):
         visual.events.data_updated.disconnect(self.on_mesh_data_updated)
-        visual.events.visible.disconnect(self._update_data)
+        visual.events.update.disconnect(self._update_data)
         super()._detach(visual)
 
 
