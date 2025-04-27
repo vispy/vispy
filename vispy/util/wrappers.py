@@ -29,10 +29,8 @@ def use(app=None, gl=None):
     ----------
     app : str
         The app backend to use (case insensitive). Standard backends:
-            * 'PyQt4': use Qt widget toolkit via PyQt4.
             * 'PyQt5': use Qt widget toolkit via PyQt5.
             * 'PyQt6': use Qt widget toolkit via PyQt6.
-            * 'PySide': use Qt widget toolkit via PySide.
             * 'PySide2': use Qt widget toolkit via PySide2.
             * 'PySide6': use Qt widget toolkit via PySide6.
             * 'PyGlet': use Pyglet backend.

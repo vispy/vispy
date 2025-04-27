@@ -55,7 +55,7 @@ context. This can be done using one Qt, GLFW, SDL2, Wx, or Pyglet.
 
 .. warning::
 
-   For Raspbian/Raspberry we rely on Qt4 for now!
+   For Raspbian/Raspberry we rely on Qt5 for now!
 
 
 Package requirements
@@ -65,8 +65,8 @@ The only mandatory requirement for VisPy is the `numpy <http://numpy.org>`_
 package. This is already distributed with Raspbian. Nevertheless you need to
 install some system packages to get VisPy compiled, installed and running:
 
-- `python3-pyqt4` - Python3 bindings for Qt4
-- `python3-pyqt4-opengl` - Python3 bindings for Qt's OpenGL module
+- `python3-pyqt5` - Python3 bindings for Qt5
+- `python3-pyqt5.opengl` - Python3 bindings for Qt's OpenGL module
 - `cython3` - C-Extensions for Python3
 
 Please use the Raspbian package manager to retrieve these packages.
