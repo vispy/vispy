@@ -1,5 +1,42 @@
 # Release Notes
 
+## [v0.15.0](https://github.com/vispy/vispy/tree/v0.15.0) (2025-04-22)
+
+**Enhancements:**
+
+- Add high and low color settings for colormaps \(HiLo mapping\) [\#2663](https://github.com/vispy/vispy/pull/2663) ([brisvag](https://github.com/brisvag))
+- Allow setting bad color on colormap \(continue \#2620\) [\#2659](https://github.com/vispy/vispy/pull/2659) ([brisvag](https://github.com/brisvag))
+- Add modifiers to QT native gesture events [\#2631](https://github.com/vispy/vispy/pull/2631) ([arambert](https://github.com/arambert))
+- Implement limiting size for gridlines \(2\) [\#2630](https://github.com/vispy/vispy/pull/2630) ([brisvag](https://github.com/brisvag))
+- Various optimizations related to camera linking and mesh normals [\#2532](https://github.com/vispy/vispy/pull/2532) ([djhoese](https://github.com/djhoese))
+
+**Fixed bugs:**
+
+- Fix bad\_color handling and simplify some logic [\#2662](https://github.com/vispy/vispy/pull/2662) ([brisvag](https://github.com/brisvag))
+- Fix type of vertice passed to function for adding triangles [\#2647](https://github.com/vispy/vispy/pull/2647) ([Czaki](https://github.com/Czaki))
+- Fix mesh colors reshaping [\#2645](https://github.com/vispy/vispy/pull/2645) ([BenZickel](https://github.com/BenZickel))
+- Use visual coordinates in ArcballCamera [\#2642](https://github.com/vispy/vispy/pull/2642) ([Seon82](https://github.com/Seon82))
+- fix: prevent zerodiv error when auto-calculating clims in scalable textures [\#2621](https://github.com/vispy/vispy/pull/2621) ([tlambert03](https://github.com/tlambert03))
+- Set self.\_data\_dtype in scale\_and\_set\_data for CPU scaled textures [\#2601](https://github.com/vispy/vispy/pull/2601) ([aganders3](https://github.com/aganders3))
+- Ignore unhandled Qt events [\#2600](https://github.com/vispy/vispy/pull/2600) ([gselzer](https://github.com/gselzer))
+- Ignore all flat triangles in triangulation [\#2248](https://github.com/vispy/vispy/pull/2248) ([andy-sweet](https://github.com/andy-sweet))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.23.1 to 2.23.2 [\#2660](https://github.com/vispy/vispy/pull/2660) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Fix small mistake in docs [\#2658](https://github.com/vispy/vispy/pull/2658) ([jspast](https://github.com/jspast))
+- Bump pypa/cibuildwheel from 2.23.0 to 2.23.1 [\#2655](https://github.com/vispy/vispy/pull/2655) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.22.0 to 2.23.0 [\#2652](https://github.com/vispy/vispy/pull/2652) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.21.2 to 2.22.0 [\#2632](https://github.com/vispy/vispy/pull/2632) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump mamba-org/setup-micromamba from 1 to 2 [\#2626](https://github.com/vispy/vispy/pull/2626) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.21.1 to 2.21.2 [\#2625](https://github.com/vispy/vispy/pull/2625) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.21.0 to 2.21.1 [\#2623](https://github.com/vispy/vispy/pull/2623) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.20.0 to 2.21.0 [\#2622](https://github.com/vispy/vispy/pull/2622) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.19.2 to 2.20.0 [\#2611](https://github.com/vispy/vispy/pull/2611) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Add variable name in errors to help debugging [\#2605](https://github.com/vispy/vispy/pull/2605) ([brisvag](https://github.com/brisvag))
+- Bump pypa/cibuildwheel from 2.19.1 to 2.19.2 [\#2604](https://github.com/vispy/vispy/pull/2604) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.18.1 to 2.19.1 [\#2602](https://github.com/vispy/vispy/pull/2602) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 
 ## [v0.14.3](https://github.com/vispy/vispy/tree/v0.14.3) (2024-06-17)
 
