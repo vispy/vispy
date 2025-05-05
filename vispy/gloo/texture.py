@@ -11,6 +11,7 @@ import warnings
 
 from .globject import GLObject
 from .util import check_enum
+from ..util import np_copy_if_needed
 
 
 def get_dtype_limits(dtype):
@@ -29,7 +30,7 @@ def convert_dtype_and_clip(data, dtype, copy=False):
     new_min, new_max = get_dtype_limits(dtype)
     if new_max >= old_max and new_min <= old_min:
         # no need to clip
-        return np.array(data, dtype=dtype, copy=copy)
+        return np.array(data, dtype=dtype, copy=copy or np_copy_if_needed)
     else:
         # to reduce copying, we clip into a pre-generated array of the right dtype
         new_data = np.empty_like(data, dtype=dtype)
@@ -158,7 +159,7 @@ class BaseTexture(GLObject):
         if data is not None:
             if shape is not None:
                 raise ValueError('Texture needs data or shape, not both.')
-            data = np.array(data, copy=False)
+            data = np.array(data)
             # So we can test the combination
             self._resize(data.shape, format, internalformat)
             self._set_data(data)
@@ -427,7 +428,7 @@ class BaseTexture(GLObject):
 
         # Make sure data is an array
         if not isinstance(data, np.ndarray):
-            data = np.array(data, copy=False)
+            data = np.array(data)
         # Make sure data is big enough
         if data.shape != shape:
             data = np.resize(data, shape)

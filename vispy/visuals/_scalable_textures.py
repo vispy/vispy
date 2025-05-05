@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 
 from vispy.gloo.texture import Texture2D, Texture3D, convert_dtype_and_clip
+from vispy.util import np_copy_if_needed
 
 
 def get_default_clim_from_dtype(dtype):
@@ -290,15 +291,16 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
 
         range_min, range_max = self._data_limits
         clim_min, clim_max = self.clim
-        if clim_min == clim_max:
+        full_range = range_max - range_min
+        if clim_min == clim_max or full_range == 0:
             return 0, np.inf
-        clim_min = (clim_min - range_min) / (range_max - range_min)
-        clim_max = (clim_max - range_min) / (range_max - range_min)
+        clim_min = (clim_min - range_min) / full_range
+        clim_max = (clim_max - range_min) / full_range
         return clim_min, clim_max
 
     @staticmethod
     def _scale_data_on_cpu(data, clim, copy=True):
-        data = np.array(data, dtype=np.float32, copy=copy)
+        data = np.array(data, dtype=np.float32, copy=copy or np_copy_if_needed)
         if clim[0] != clim[1]:
             # we always must copy the data if we change it here, otherwise it might change
             # unexpectedly the data held outside of here
@@ -311,7 +313,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
     def scale_and_set_data(self, data, offset=None, copy=True):
         """Upload new data to the GPU, scaling if necessary."""
         if self._data_dtype is None:
-            data.dtype == self._data_dtype
+            self._data_dtype = data.dtype
 
         # ensure dtype is the same as it was before, or funny things happen
         # no copy is performed unless asked for or necessary

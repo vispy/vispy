@@ -80,7 +80,10 @@ class PerspectiveCamera(BaseCamera):
 
     @scale_factor.setter
     def scale_factor(self, value):
-        self._scale_factor = abs(float(value))
+        value = abs(float(value))
+        if value == self._scale_factor:
+            return
+        self._scale_factor = value
         self.view_changed()
 
     @property
@@ -136,6 +139,8 @@ class PerspectiveCamera(BaseCamera):
     def _update_transform(self, event=None):
         # Do we have a viewbox
         if self._viewbox is None:
+            return
+        if self._resetting:  # base camera linking operation
             return
 
         # Calculate viewing range for x and y

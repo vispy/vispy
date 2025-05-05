@@ -7,6 +7,8 @@ cimport numpy as np
 from libc.math cimport sqrt
 cimport cython
 
+np.import_array()
+
 __all__ = ['_get_distance_field']
 
 dtype = np.float32

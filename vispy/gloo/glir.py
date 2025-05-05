@@ -1045,6 +1045,9 @@ class GlirProgram(GlirObject):
         'vec2': (2, gl.GL_FLOAT, np.float32),
         'vec3': (3, gl.GL_FLOAT, np.float32),
         'vec4': (4, gl.GL_FLOAT, np.float32),
+        'ivec2': (2, gl.GL_INT, np.int32),
+        'ivec3': (3, gl.GL_INT, np.int32),
+        'ivec4': (4, gl.GL_INT, np.int32),
         'int': (1, gl.GL_INT, np.int32),
         'bool': (1, gl.GL_BOOL, np.int32)
     }
@@ -1280,8 +1283,13 @@ class GlirProgram(GlirObject):
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo_handle)
                 gl.glEnableVertexAttribArray(attr_handle)
                 func(attr_handle, *args)
-                if divisor is not None:
-                    gl.glVertexAttribDivisor(attr_handle, divisor)
+                if hasattr(gl, "glVertexAttribDivisor"):
+                    gl.glVertexAttribDivisor(attr_handle, divisor or 0)
+                elif divisor is not None:
+                    logger.warning(
+                        'Instanced rendering is not supported by the current'
+                        f'backend ("{gl.current_backend.__name__}")'
+                    )
             else:
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
                 gl.glDisableVertexAttribArray(attr_handle)

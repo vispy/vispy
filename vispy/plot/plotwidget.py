@@ -267,7 +267,7 @@ class PlotWidget(scene.Widget):
         if meshdata is not None:
             if not all(x is None for x in (vertices, faces, fname)):
                 raise ValueError('vertices, faces, and fname must be None if '
-                                 'fname is not None')
+                                 'meshdata is not None')
         else:
             meshdata = MeshData(vertices, faces, vertex_colors=vertex_colors,
                                 face_colors=face_colors)

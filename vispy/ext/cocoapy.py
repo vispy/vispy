@@ -18,26 +18,6 @@ else:
     string_types = basestring,  # noqa
 
 
-# handle dlopen cache changes in macOS 11 (Big Sur)
-# ref https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
-try:
-    import OpenGL.GL   # noqa
-except ImportError:
-    # print('Drat, patching for Big Sur')
-    orig_util_find_library = util.find_library
-
-    def new_util_find_library(name):
-        res = orig_util_find_library(name)
-        if res:
-            return res
-        lut = {
-            'objc': 'libobjc.dylib',
-            'quartz': 'Quartz.framework/Quartz'
-        }
-        return lut.get(name, name+'.framework/'+name)
-    util.find_library = new_util_find_library
-
-
 # Based on Pyglet code
 
 ##############################################################################
@@ -1285,7 +1265,7 @@ NSApplicationActivationPolicyProhibited = 2
 
 # QUARTZ / COREGRAPHICS
 
-quartz = cdll.LoadLibrary(util.find_library('quartz'))
+quartz = cdll.LoadLibrary(util.find_library('Quartz'))
 
 CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
 CGError = c_int32                # CGError.h

@@ -362,7 +362,7 @@ class Program(GLObject):
                         data = TextureCube(data)
                     else:
                         # This should not happen
-                        raise RuntimeError('Unknown type %s' % type_)
+                        raise RuntimeError('Unknown type %s for %s' % (type_, name))
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     self.glir.associate(data.glir)
@@ -442,7 +442,7 @@ class Program(GLObject):
                     self._glir.command('ATTRIBUTE', self._id,
                                        name, type_, value, divisor)
             else:
-                raise KeyError('Cannot set data for a %s.' % kind)
+                raise KeyError('Cannot set data for a %s (%s).' % (kind, name))
         else:
             # This variable is not defined in the current source code,
             # so we cannot establish whether this is a uniform or

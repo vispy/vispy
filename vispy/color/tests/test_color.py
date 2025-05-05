@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
+from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_allclose
 
 from vispy.color import (Color, ColorArray, get_color_names,
                          Colormap,
@@ -347,6 +347,32 @@ def test_normalize():
 
     y = _normalize(np.random.randn(100, 5), -10., 10.)
     assert_allclose([y.min(), y.max()], [0.2975, 1-0.2975], 1e-1, 1e-1)
+
+
+def test_colormap_bad_color():
+    """Test NaN handling."""
+    red = (1, 0, 0, 1)
+    white = (1, 1, 1, 1)
+    green = (0, 1, 0, 1)
+    cm = Colormap([white, green], bad_color=red)
+    assert_array_equal(cm[0].rgba, [white])
+    assert_array_equal(cm[1].rgba, [green])
+
+
+def test_colormap_high_low_color():
+    """Test handling of clim extremes."""
+    hilo = get_colormap('HiLo')
+    white = (1, 1, 1, 1)
+    gray = (0.5, 0.5, 0.5, 1)
+    black = (0, 0, 0, 1)
+    red = (1, 0, 0, 1)
+    blue = (0, 0, 1, 1)
+
+    assert_array_equal(hilo[0].rgba, [blue])
+    assert_array_almost_equal(hilo[0.000001].rgba, [black])
+    assert_array_equal(hilo[0.5].rgba, [gray])
+    assert_array_almost_equal(hilo[0.999999].rgba, [white])
+    assert_array_equal(hilo[1].rgba, [red])
 
 
 run_tests_if_main()

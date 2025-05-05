@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """Marker Visual and shader definitions."""
-
 import numpy as np
 
 from ..color import ColorArray
@@ -497,9 +496,11 @@ class MarkersVisual(Visual):
         The symbol size in screen (or data, if scaling is on) px.
     edge_width : float or array or None
         The width of the symbol outline in screen (or data, if scaling is on) px.
+        Defaults to 1.0 if None or not provided and ``edge_width_rel`` is not
+        provided.
     edge_width_rel : float or array or None
-        The width as a fraction of marker size. Exactly one of
-        `edge_width` and `edge_width_rel` must be supplied.
+        The width as a fraction of marker size. Can not be specified along with
+        edge_width. A ValueError will be raised if both are provided.
     edge_color : Color | ColorArray
         The color used to draw each symbol outline.
     face_color : Color | ColorArray
@@ -580,7 +581,7 @@ class MarkersVisual(Visual):
 
         self.freeze()
 
-    def set_data(self, pos=None, size=10., edge_width=1., edge_width_rel=None,
+    def set_data(self, pos=None, size=10., edge_width=None, edge_width_rel=None,
                  edge_color='black', face_color='white',
                  symbol='o'):
         """Set the data used to display this visual.
@@ -593,9 +594,11 @@ class MarkersVisual(Visual):
             The symbol size in screen (or data, if scaling is on) px.
         edge_width : float or array or None
             The width of the symbol outline in screen (or data, if scaling is on) px.
+            Defaults to 1.0 if None or not provided and ``edge_width_rel`` is not
+        provided.
         edge_width_rel : float or array or None
-            The width as a fraction of marker size. Exactly one of
-            `edge_width` and `edge_width_rel` must be supplied.
+            The width as a fraction of marker size. Can not be specified along with
+            edge_width. A ValueError will be raised if both are provided.
         edge_color : Color | ColorArray
             The color used to draw each symbol outline.
         face_color : Color | ColorArray
@@ -603,9 +606,11 @@ class MarkersVisual(Visual):
         symbol : str or array
             The style of symbol used to draw each marker (see Notes).
         """
-        if (edge_width is not None) + (edge_width_rel is not None) != 1:
-            raise ValueError('exactly one of edge_width and edge_width_rel '
-                             'must be non-None')
+        if edge_width is not None and edge_width_rel is not None:
+            raise ValueError("either edge_width or edge_width_rel "
+                             "should be provided, not both")
+        elif edge_width is None and edge_width_rel is None:
+            edge_width = 1.0
 
         if edge_width is not None:
             edge_width = np.asarray(edge_width)
@@ -615,10 +620,6 @@ class MarkersVisual(Visual):
             edge_width_rel = np.asarray(edge_width_rel)
             if np.any(edge_width_rel < 0):
                 raise ValueError('edge_width_rel cannot be negative')
-
-        if symbol is not None:
-            if not np.all(np.isin(np.asarray(symbol), self.symbols)):
-                raise ValueError(f'symbols must one of {self.symbols}')
 
         edge_color = ColorArray(edge_color).rgba
         if len(edge_color) == 1:
@@ -648,7 +649,15 @@ class MarkersVisual(Visual):
             data['a_position'][:, :pos.shape[1]] = pos
             data['a_size'] = size
 
-            data['a_symbol'] = np.vectorize(self._symbol_shader_values.get)(symbol)
+            if symbol is None:
+                data["a_symbol"] = np.array(None)
+            else:
+                if isinstance(symbol, str):
+                    symbol = [symbol]
+                try:
+                    data['a_symbol'] = np.array([self._symbol_shader_values[x] for x in symbol])
+                except KeyError:
+                    raise ValueError(f'symbols must one of {self.symbols}')
 
             self._data = data
             self._vbo.set_data(data)
