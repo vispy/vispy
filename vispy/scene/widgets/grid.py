@@ -476,7 +476,7 @@ class Grid(Widget):
 
         value_vectorized = np.vectorize(lambda x: x.value())
 
-        for index, (_, val) in enumerate(self._grid_widgets.items()):
+        for (_, val) in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = val
 
             width = np.sum(value_vectorized(
