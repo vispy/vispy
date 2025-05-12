@@ -413,12 +413,16 @@ class Grid(Widget):
             (y, x, ys, xs, widget) = val
             stretch_grid[x:x+xs, y:y+ys] = widget.stretch
 
+        if isinstance(self.spacing, tuple):
+            width_spacing, height_spacing = self.spacing
+        else:
+            width_spacing = height_spacing = self.spacing
         # even though these are REQUIRED, these should never fail
         # since they're added first, and thus the slack will "simply work".
         Grid._add_total_width_constraints(self._solver,
-                                          self._width_grid, self._var_w, self.spacing[0])
+                                          self._width_grid, self._var_w, width_spacing)
         Grid._add_total_height_constraints(self._solver,
-                                           self._height_grid, self._var_h, self.spacing[1])
+                                           self._height_grid, self._var_h, height_spacing)
 
         try:
             # these are REQUIRED constraints for width and height.
@@ -439,8 +443,8 @@ class Grid(Widget):
                                       self._height_grid,
                                       self._grid_widgets,
                                       self._widget_grid,
-                                      self.spacing[0],
-                                      self.spacing[1])
+                                      width_spacing,
+                                      height_spacing)
 
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
@@ -448,8 +452,8 @@ class Grid(Widget):
                                          self._var_w,
                                          self._var_h,
                                          self._grid_widgets,
-                                         self.spacing[0],
-                                         self.spacing[1])
+                                         width_spacing,
+                                         height_spacing)
 
         self._solver.updateVariables()
 
