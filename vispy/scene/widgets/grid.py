@@ -493,12 +493,12 @@ class Grid(Widget):
             if col == 0:
                 x = 0
             else:
-                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + self.width_spacing
+                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + self.width_spacing * col
 
             if row == 0:
                 y = 0
             else:
-                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + self.height_spacing
+                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + self.height_spacing * row
 
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)
