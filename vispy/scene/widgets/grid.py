@@ -416,9 +416,9 @@ class Grid(Widget):
         # even though these are REQUIRED, these should never fail
         # since they're added first, and thus the slack will "simply work".
         Grid._add_total_width_constraints(self._solver,
-                                          self._width_grid, self._var_w, self.width_spacing)
+                                          self._width_grid, self._var_w, self.spacing[0])
         Grid._add_total_height_constraints(self._solver,
-                                           self._height_grid, self._var_h, self.height_spacing)
+                                           self._height_grid, self._var_h, self.spacing[1])
 
         try:
             # these are REQUIRED constraints for width and height.
