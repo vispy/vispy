@@ -21,18 +21,22 @@ class Grid(Widget):
 
     Parameters
     ----------
-    spacing : int
+    spacing : int | tuple[int, int]
         Spacing between widgets.
     **kwargs : dict
         Keyword arguments to pass to `Widget`.
     """
 
-    def __init__(self, spacing=6, **kwargs):
+    def __init__(self, spacing=0, **kwargs):
         """Create solver and basic grid parameters."""
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._grid_widgets = {}
-        self.spacing = spacing
+
+        if isinstance(spacing, tuple):
+            self.width_spacing, self.height_spacing = spacing
+        else:
+            self.width_spacing = self.height_spacing = spacing
         self._n_added = 0
         self._default_class = ViewBox  # what to add when __getitem__ is used
         self._solver = Solver()
@@ -292,7 +296,7 @@ class Grid(Widget):
 
     @staticmethod
     def _add_stretch_constraints(solver, width_grid, height_grid,
-                                 grid_widgets, widget_grid, spacing):
+                                 grid_widgets, widget_grid, width_spacing, height_spacing):
         xmax = len(height_grid)
         ymax = len(width_grid)
 
@@ -301,13 +305,13 @@ class Grid(Widget):
 
         for (y, x, ys, xs, widget) in grid_widgets.values():
             for ws in width_grid[y:y+ys]:
-                total_w = np.sum(ws[x:x+xs]) + spacing * (xmax - 1)
+                total_w = np.sum(ws[x:x+xs]) + width_spacing * (xmax - 1)
 
                 for sw in stretch_widths[y:y+ys]:
                     sw.append((total_w, widget.stretch[0]))
 
             for hs in height_grid[x:x+xs]:
-                total_h = np.sum(hs[y:y+ys]) + spacing * (ymax - 1)
+                total_h = np.sum(hs[y:y+ys]) + height_spacing * (ymax - 1)
 
                 for sh in stretch_heights[x:x+xs]:
                     sh.append((total_h, widget.stretch[1]))
@@ -340,7 +344,7 @@ class Grid(Widget):
 
     @staticmethod
     def _add_widget_dim_constraints(solver, width_grid, height_grid,
-                                    total_var_w, total_var_h, grid_widgets, spacing):
+                                    total_var_w, total_var_h, grid_widgets, width_spacing, height_spacing):
         assert(total_var_w is not None)
         assert(total_var_h is not None)
 
@@ -356,7 +360,7 @@ class Grid(Widget):
             (y, x, ys, xs, widget) = val
 
             for ws in width_grid[y:y+ys]:
-                total_w = np.sum(ws[x:x+xs]) + spacing * (xs - 1)
+                total_w = np.sum(ws[x:x+xs]) + width_spacing * (xs - 1)
                 # assert(total_w is not None)
                 solver.addConstraint(total_w >= widget.width_min)
 
@@ -366,7 +370,7 @@ class Grid(Widget):
                     solver.addConstraint(total_w <= total_var_w)
 
             for hs in height_grid[x:x+xs]:
-                total_h = np.sum(hs[y:y+ys]) + spacing * (ys - 1)
+                total_h = np.sum(hs[y:y+ys]) + height_spacing * (ys - 1)
                 solver.addConstraint(total_h >= widget.height_min)
 
                 if widget.height_max is not None:
@@ -414,9 +418,9 @@ class Grid(Widget):
         # even though these are REQUIRED, these should never fail
         # since they're added first, and thus the slack will "simply work".
         Grid._add_total_width_constraints(self._solver,
-                                          self._width_grid, self._var_w, self.spacing)
+                                          self._width_grid, self._var_w, self.width_spacing)
         Grid._add_total_height_constraints(self._solver,
-                                           self._height_grid, self._var_h, self.spacing)
+                                           self._height_grid, self._var_h, self.height_spacing)
 
         try:
             # these are REQUIRED constraints for width and height.
@@ -437,7 +441,8 @@ class Grid(Widget):
                                       self._height_grid,
                                       self._grid_widgets,
                                       self._widget_grid,
-                                      self.spacing)
+                                      self.width_spacing,
+                                      self.height_spacing)
 
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
@@ -445,7 +450,8 @@ class Grid(Widget):
                                          self._var_w,
                                          self._var_h,
                                          self._grid_widgets,
-                                         self.spacing)
+                                         self.width_spacing,
+                                         self.height_spacing)
 
         self._solver.updateVariables()
 
@@ -486,12 +492,12 @@ class Grid(Widget):
             if col == 0:
                 x = 0
             else:
-                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + self.spacing
+                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + self.width_spacing
 
             if row == 0:
                 y = 0
             else:
-                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + self.spacing
+                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + self.height_spacing
 
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)
