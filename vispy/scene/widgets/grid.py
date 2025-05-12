@@ -484,6 +484,11 @@ class Grid(Widget):
 
         value_vectorized = np.vectorize(lambda x: x.value())
 
+        if isinstance(self.spacing, tuple):
+            width_spacing, height_spacing = self.spacing
+        else:
+            width_spacing = height_spacing = self.spacing
+
         for (_, val) in self._grid_widgets.items():
             (row, col, rspan, cspan, widget) = val
 
@@ -494,12 +499,12 @@ class Grid(Widget):
             if col == 0:
                 x = 0
             else:
-                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + self.spacing[0] * col
+                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + width_spacing * col
 
             if row == 0:
                 y = 0
             else:
-                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + self.spacing[1] * row
+                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + height_spacing * row
 
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)
