@@ -258,6 +258,24 @@ class Grid(Widget):
             locs[r:r + rs, c:c + cs] = key
         return locs
 
+    @property
+    def spacing(self):
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, value):
+        if not (
+            isinstance(value, int)
+            or isinstance(value, tuple)
+            and len(value) == 2
+            and isinstance(value[0], int)
+            and isinstance(value[1], int)
+        ):
+            raise ValueError('spacing must be of type int | tuple[int, int]')
+
+        self._spacing = value
+        self._need_solver_recreate = True
+
     def __repr__(self):
         return (('<Grid at %s:\n' % hex(id(self))) +
                 str(self.layout_array + 1) + '>')
