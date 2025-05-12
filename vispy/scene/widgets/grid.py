@@ -22,7 +22,8 @@ class Grid(Widget):
     Parameters
     ----------
     spacing : int | tuple[int, int]
-        Spacing between widgets.
+        Spacing between widgets. If `tuple` then it must be of length two, the first element
+        being `width_spacing` and the second being `height_spacing`.
     **kwargs : dict
         Keyword arguments to pass to `Widget`.
     """
