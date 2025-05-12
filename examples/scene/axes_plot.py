@@ -16,7 +16,6 @@ from vispy import scene, app
 
 canvas = scene.SceneCanvas(keys='interactive', size=(600, 600), show=True)
 grid = canvas.central_widget.add_grid(margin=10)
-grid.spacing = 0
 
 title = scene.Label("Plot Title", color='white')
 title.height_max = 40
