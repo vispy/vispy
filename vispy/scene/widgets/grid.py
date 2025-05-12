@@ -34,10 +34,7 @@ class Grid(Widget):
         self._cells = {}
         self._grid_widgets = {}
 
-        if isinstance(spacing, tuple):
-            self.width_spacing, self.height_spacing = spacing
-        else:
-            self.width_spacing = self.height_spacing = spacing
+        self.spacing = spacing
         self._n_added = 0
         self._default_class = ViewBox  # what to add when __getitem__ is used
         self._solver = Solver()
@@ -442,8 +439,8 @@ class Grid(Widget):
                                       self._height_grid,
                                       self._grid_widgets,
                                       self._widget_grid,
-                                      self.width_spacing,
-                                      self.height_spacing)
+                                      self.spacing[0],
+                                      self.spacing[1])
 
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
@@ -451,8 +448,8 @@ class Grid(Widget):
                                          self._var_w,
                                          self._var_h,
                                          self._grid_widgets,
-                                         self.width_spacing,
-                                         self.height_spacing)
+                                         self.spacing[0],
+                                         self.spacing[1])
 
         self._solver.updateVariables()
 
@@ -493,12 +490,12 @@ class Grid(Widget):
             if col == 0:
                 x = 0
             else:
-                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + self.width_spacing * col
+                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + self.spacing[0] * col
 
             if row == 0:
                 y = 0
             else:
-                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + self.height_spacing * row
+                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + self.spacing[1] * row
 
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)
