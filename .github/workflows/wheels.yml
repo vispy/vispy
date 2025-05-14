@@ -80,6 +80,11 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          name: sdist
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
           pattern: wheels-*
           merge-multiple: true
           path: dist
