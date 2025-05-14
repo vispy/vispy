@@ -5,6 +5,7 @@
 
 from __future__ import division
 import numpy as np
+from collections import defaultdict
 
 from vispy.geometry import Rect
 from .widget import Widget
@@ -46,6 +47,9 @@ class Grid(Widget):
 
         self._width_grid = None
         self._height_grid = None
+
+        self._width_layout = None
+        self._height_layout = None
 
         # self._height_stay = None
         # self._width_stay = None
@@ -281,7 +285,11 @@ class Grid(Widget):
                 str(self.layout_array + 1) + '>')
 
     @staticmethod
-    def _add_total_width_constraints(solver, width_grid, _var_w, spacing):
+    def _add_total_width_constraints(solver, width_grid, width_layout, _var_w, spacing):
+        # Width_grid takes every column included in the grid visualization, instead of every view.
+        # so we have to set spacing to 0 to prevent spacing when having 1 viewbox, but col_span > 1.
+        spacing = 0 if len(width_layout) == 1 else spacing
+
         for ws in width_grid:
             width_expr = ws[0]
             for w in ws[1:]:
@@ -289,7 +297,8 @@ class Grid(Widget):
             solver.addConstraint(width_expr == _var_w)
 
     @staticmethod
-    def _add_total_height_constraints(solver, height_grid, _var_h, spacing):
+    def _add_total_height_constraints(solver, height_grid, height_layout, _var_h, spacing):
+        spacing = 0 if len(height_layout) == 1 else spacing
         for hs in height_grid:
             height_expr = hs[0]
             for h in hs[1:]:
@@ -311,7 +320,7 @@ class Grid(Widget):
                 solver.addConstraint(hs[0] == h)
 
     @staticmethod
-    def _add_stretch_constraints(solver, width_grid, height_grid,
+    def _add_stretch_constraints(solver, width_grid, height_grid, width_layout, height_layout,
                                  grid_widgets, widget_grid, width_spacing, height_spacing):
         xmax = len(height_grid)
         ymax = len(width_grid)
@@ -412,16 +421,28 @@ class Grid(Widget):
 
         # self._height_stay = None
         # self._width_stay = None
+        self._width_layout = defaultdict(list)
+        self._height_layout = defaultdict(list)
+
+        for value in self._grid_widgets.values():
+            self._width_layout[value[1]].append(value[-2])
+            self._height_layout[value[0]].append(value[-3])
 
         # add widths
-        self._width_grid = np.array([[Variable("width(x: %s, y: %s)" % (x, y))
-                                      for x in range(0, xmax)]
-                                     for y in range(0, ymax)])
+        self._width_grid = np.array(
+            [
+                [Variable(f"width(x: {x}, y: {y})") for x in range(0, xmax)]
+                for y in range(0, ymax)
+            ]
+        )
 
         # add heights
-        self._height_grid = np.array([[Variable("height(x: %s, y: %s" % (x, y))
-                                       for y in range(0, ymax)]
-                                      for x in range(0, xmax)])
+        self._height_grid = np.array(
+            [
+                [Variable(f"height(x: {x}, y: {y}") for y in range(0, ymax)]
+                for x in range(0, xmax)
+            ]
+        )
 
         # setup stretch
         stretch_grid = np.zeros(shape=(xmax, ymax, 2), dtype=float)
@@ -438,9 +459,9 @@ class Grid(Widget):
         # even though these are REQUIRED, these should never fail
         # since they're added first, and thus the slack will "simply work".
         Grid._add_total_width_constraints(self._solver,
-                                          self._width_grid, self._var_w, width_spacing)
+                                          self._width_grid, self._width_layout, self._var_w, width_spacing)
         Grid._add_total_height_constraints(self._solver,
-                                           self._height_grid, self._var_h, height_spacing)
+                                           self._height_grid, self._height_layout, self._var_h, height_spacing)
 
         try:
             # these are REQUIRED constraints for width and height.
@@ -459,6 +480,8 @@ class Grid(Widget):
         Grid._add_stretch_constraints(self._solver,
                                       self._width_grid,
                                       self._height_grid,
+                                      self._width_layout,
+                                      self._height_layout,
                                       self._grid_widgets,
                                       self._widget_grid,
                                       width_spacing,
@@ -507,13 +530,17 @@ class Grid(Widget):
         else:
             width_spacing = height_spacing = self.spacing
 
-        for (_, val) in self._grid_widgets.items():
+        for index, (_, val) in enumerate(self._grid_widgets.items()):
             (row, col, rspan, cspan, widget) = val
 
             width = np.sum(value_vectorized(
                            self._width_grid[row][col:col+cspan]))
             height = np.sum(value_vectorized(
                             self._height_grid[col][row:row+rspan]))
+
+            if len(self._width_grid) == 1 and cspan != 1:
+                width_spacing = 0
+
             if col == 0:
                 x = 0
             else:
