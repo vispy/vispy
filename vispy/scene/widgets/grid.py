@@ -288,20 +288,22 @@ class Grid(Widget):
     def _add_total_width_constraints(solver, width_grid, width_layout, _var_w, spacing):
         # Width_grid takes every column included in the grid visualization, instead of every view.
         # so we have to set spacing to 0 to prevent spacing when having 1 viewbox, but col_span > 1.
-        spacing = 0 if len(width_layout) == 1 else spacing
+        spacing = 0 if len(width_layout) == 1 else spacing * (len(width_layout) - 1)
 
         for ws in width_grid:
-            width_expr = ws[0]
-            for w in ws[1:]:
+            width_expr = ws[0] + spacing
+            for index, w in enumerate(ws[1:]):
+                spacing = 0 if index == len(ws[1:]) - 1 else spacing
                 width_expr += w + spacing
             solver.addConstraint(width_expr == _var_w)
 
     @staticmethod
     def _add_total_height_constraints(solver, height_grid, height_layout, _var_h, spacing):
-        spacing = 0 if len(height_layout) == 1 else spacing
+        spacing = 0 if len(height_layout) == 1 else spacing * (len(height_layout) - 1)
         for hs in height_grid:
-            height_expr = hs[0]
-            for h in hs[1:]:
+            height_expr = hs[0] + spacing
+            for index, h in enumerate(hs[1:]):
+                spacing = 0 if index == len(hs[1:]) - 1 else spacing
                 height_expr += h + spacing
             solver.addConstraint(height_expr == _var_h)
 
@@ -329,14 +331,15 @@ class Grid(Widget):
         stretch_heights = [[] for _ in range(0, xmax)]
 
         for (y, x, ys, xs, widget) in grid_widgets.values():
-            for ws in width_grid[y:y+ys]:
-                total_w = np.sum(ws[x:x+xs]) + width_spacing * (xmax - 1)
+            for index, ws in enumerate(width_grid[y:y+ys]):
+                width_spacing = 0 if index == len(width_grid) - 1 or all(cspan > 1 for cspan in width_layout[index]) else width_spacing
+                total_w = np.sum(ws[x:x+xs]) + width_spacing
 
                 for sw in stretch_widths[y:y+ys]:
                     sw.append((total_w, widget.stretch[0]))
 
             for hs in height_grid[x:x+xs]:
-                total_h = np.sum(hs[y:y+ys]) + height_spacing * (ymax - 1)
+                total_h = np.sum(hs[y:y+ys]) + height_spacing * (len(height_layout) - 1)
 
                 for sh in stretch_heights[x:x+xs]:
                     sh.append((total_h, widget.stretch[1]))
@@ -368,7 +371,7 @@ class Grid(Widget):
                                      'weak')
 
     @staticmethod
-    def _add_widget_dim_constraints(solver, width_grid, height_grid,
+    def _add_widget_dim_constraints(solver, width_grid, height_grid, width_layout, height_layout,
                                     total_var_w, total_var_h, grid_widgets, width_spacing, height_spacing):
         assert(total_var_w is not None)
         assert(total_var_h is not None)
@@ -385,7 +388,7 @@ class Grid(Widget):
             (y, x, ys, xs, widget) = val
 
             for ws in width_grid[y:y+ys]:
-                total_w = np.sum(ws[x:x+xs]) + width_spacing * (xs - 1)
+                total_w = np.sum(ws[x:x+xs]) + width_spacing * (len(width_layout) - 1)
                 # assert(total_w is not None)
                 solver.addConstraint(total_w >= widget.width_min)
 
@@ -395,7 +398,7 @@ class Grid(Widget):
                     solver.addConstraint(total_w <= total_var_w)
 
             for hs in height_grid[x:x+xs]:
-                total_h = np.sum(hs[y:y+ys]) + height_spacing * (ys - 1)
+                total_h = np.sum(hs[y:y+ys]) + height_spacing * (len(height_layout) - 1)
                 solver.addConstraint(total_h >= widget.height_min)
 
                 if widget.height_max is not None:
@@ -490,6 +493,8 @@ class Grid(Widget):
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
                                          self._height_grid,
+                                         self._width_layout,
+                                         self._height_layout,
                                          self._var_w,
                                          self._var_h,
                                          self._grid_widgets,
@@ -530,21 +535,40 @@ class Grid(Widget):
         else:
             width_spacing = height_spacing = self.spacing
 
+        total_width_spacing = 0
         for index, (_, val) in enumerate(self._grid_widgets.items()):
             (row, col, rspan, cspan, widget) = val
 
+
+            width_increase_spacing = 0
+            current_widget_total_span = col + cspan
+
+            # We need to check if there is any widget that has a span falling within the range of the current widgets
+            # span. For each span range that falls within we need to increase the width.
+            if cspan > 1:
+                for i in range(col + cspan - 1):
+                    # Use set in order to prevent same cspans adding spacing width twice.
+                    for widget_cspan in set(self._width_layout[i]):
+                        if widget_cspan + i < current_widget_total_span:
+                            width_increase_spacing += width_spacing
+
+
+
             width = np.sum(value_vectorized(
-                           self._width_grid[row][col:col+cspan]))
+                           self._width_grid[row][col:col+cspan]) + width_increase_spacing)
             height = np.sum(value_vectorized(
                             self._height_grid[col][row:row+rspan]))
 
-            if len(self._width_grid) == 1 and cspan != 1:
-                width_spacing = 0
+            # if len(self._width_grid) == 1 and cspan != 1:
+            #     total_width_spacing = 0
+
+            if any(span == 1 for span in self._width_layout[col]):
+                total_width_spacing += width_spacing * col
 
             if col == 0:
                 x = 0
             else:
-                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + width_spacing * col
+                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + total_width_spacing
 
             if row == 0:
                 y = 0
