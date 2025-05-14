@@ -327,8 +327,8 @@ class Grid(Widget):
         xmax = len(height_grid)
         ymax = len(width_grid)
 
-        stretch_widths = [[] for _ in range(0, ymax)]
-        stretch_heights = [[] for _ in range(0, xmax)]
+        stretch_widths = [[] for _ in range(ymax)]
+        stretch_heights = [[] for _ in range(xmax)]
 
         for (y, x, ys, xs, widget) in grid_widgets.values():
             for index, ws in enumerate(width_grid[y:y+ys]):
@@ -338,8 +338,10 @@ class Grid(Widget):
                 for sw in stretch_widths[y:y+ys]:
                     sw.append((total_w, widget.stretch[0]))
 
-            for hs in height_grid[x:x+xs]:
-                total_h = np.sum(hs[y:y+ys]) + height_spacing * (len(height_layout) - 1)
+            for index, hs in enumerate(height_grid[x:x+xs]):
+                height_spacing = 0 if index == len(height_grid) - 1 or all(
+                    rspan > 1 for rspan in height_layout[index]) else height_spacing
+                total_h = np.sum(hs[y:y+ys]) + height_spacing
 
                 for sh in stretch_heights[x:x+xs]:
                     sh.append((total_h, widget.stretch[1]))
@@ -536,34 +538,42 @@ class Grid(Widget):
             width_spacing = height_spacing = self.spacing
 
         total_width_spacing = 0
+        total_height_spacing = 0
         for index, (_, val) in enumerate(self._grid_widgets.items()):
             (row, col, rspan, cspan, widget) = val
 
 
             width_increase_spacing = 0
-            current_widget_total_span = col + cspan
+            height_increase_spacing = 0
+            current_widget_total_cspan = col + cspan
+            current_widget_total_rspan = row + rspan
 
             # We need to check if there is any widget that has a span falling within the range of the current widgets
             # span. For each span range that falls within we need to increase the width.
             if cspan > 1:
-                for i in range(col + cspan - 1):
+                for i in range(current_widget_total_cspan - 1):
                     # Use set in order to prevent same cspans adding spacing width twice.
                     for widget_cspan in set(self._width_layout[i]):
-                        if widget_cspan + i < current_widget_total_span:
+                        if widget_cspan + i < current_widget_total_cspan:
                             width_increase_spacing += width_spacing
 
-
+            if rspan > 1:
+                for i in range(current_widget_total_rspan - 1):
+                    # Use set in order to prevent same rspans adding spacing height twice.
+                    for widget_rspan in set(self._height_layout[i]):
+                        if widget_rspan + i < current_widget_total_rspan:
+                            height_increase_spacing += height_spacing
 
             width = np.sum(value_vectorized(
                            self._width_grid[row][col:col+cspan]) + width_increase_spacing)
             height = np.sum(value_vectorized(
-                            self._height_grid[col][row:row+rspan]))
-
-            # if len(self._width_grid) == 1 and cspan != 1:
-            #     total_width_spacing = 0
+                            self._height_grid[col][row:row+rspan]) + height_increase_spacing)
 
             if any(span == 1 for span in self._width_layout[col]):
                 total_width_spacing += width_spacing * col
+
+            if any(span == 1 for span in self._height_layout[row]):
+                total_height_spacing += height_spacing * row
 
             if col == 0:
                 x = 0
@@ -573,7 +583,7 @@ class Grid(Widget):
             if row == 0:
                 y = 0
             else:
-                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + height_spacing * row
+                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + total_height_spacing
 
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)
