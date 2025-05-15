@@ -4,7 +4,11 @@
 """Grid widget for providing a gridded layout to child widgets."""
 
 from __future__ import division
+
+from typing import Any
+
 import numpy as np
+from numpy.typing import NDArray
 from collections import defaultdict
 
 from vispy.geometry import Rect
@@ -283,32 +287,140 @@ class Grid(Widget):
     def __repr__(self):
         return (('<Grid at %s:\n' % hex(id(self))) +
                 str(self.layout_array + 1) + '>')
+    
+    @staticmethod
+    def _calculate_total_spacing(layout, index, spacing) -> int:
+        """Calculate the total amount of spacing a given grid row or column.
+
+        Parameters
+        ----------
+        layout: dict[int, dict[int, list[int]]
+            Either width_layout or height_layout. In case of width_layout, the keys are the rows and the values
+            dictionaries with as keys the columns and as values the column spans for Viewboxes assigned to the specific
+            grid cell. In case of height_layout, the keys are the columns and the values dictionaries with as keys the
+            rows and as values the column spans for Viewboxes assigned to the specific grid cell.
+        index: int
+            Either the row or column index.
+        spacing: float
+            The amount of spacing between single adjacent Viewbox widgets in the grid.
+
+        Returns
+        -------
+        int
+            Total amount of spacing for a given column or row.
+        """
+        return sum(
+            spacing
+            for value in list(layout[index].values())[:-1]
+            if any(span == 1 for span in value)
+        )
+
+    @staticmethod
+    def _calculate_spacing_offset(layout, index, other_index, spacing) -> int:
+        """Calculate the offset due to spacing for the x or y position of Viewbox in grid.
+
+        Parameters
+        ----------
+        layout: dict[int, dict[int, list[int]]]
+            Either width_layout or height_layout. In case of width_layout, the keys are the rows and the values
+            dictionaries with as keys the columns and as values the column spans for Viewboxes assigned to the specific
+            grid cell. In case of height_layout, the keys are the columns and the values dictionaries with as keys the
+            rows and as values the column spans for Viewboxes assigned to the specific grid cell.
+        index: int
+            Either the row or column index.
+        other_index: int
+            If index corresponds to row, then other index corresponds to column and vice versa.
+        spacing: float
+            The amount of spacing between single adjacent Viewbox widgets in the grid.
+
+        Returns
+        -------
+        int
+            Offset due to spacing for the x or y position of Viewbox in grid."""
+        return (
+            sum(
+                spacing
+                for subindex in range(index)
+                if any(span == 1 for span in layout[other_index][subindex])
+            )
+            if index != 0
+            else 0
+        )
+
+    @staticmethod
+    def _add_spacing_to_widget_dim_length(layout, index, current_widget_total_span, span, spacing):
+        """Add spacing to widget dimension length.
+
+        Spacing has to be added in case 1 Viewbox spans 2 or more Viewboxes that have spacing inbetween them.
+
+        Parameters
+        ----------
+        layout: dict[int, dict[int, list[int]]]
+            Either width_layout or height_layout. In case of width_layout, the keys are the rows and the values
+            dictionaries with as keys the columns and as values the column spans for Viewboxes assigned to the specific
+            grid cell. In case of height_layout, the keys are the columns and the values dictionaries with as keys the
+            rows and as values the column spans for Viewboxes assigned to the specific grid cell.
+        index: int
+            Either the row or column index. If row index then span corresponds to column span and vice versa.
+        current_widget_total_span: int
+            Current widget row or col index + span.
+        span: int
+            The col or row span in the sense of how many columns or rows does the Viewbox span.
+        spacing: float
+            The amount of spacing between single adjacent Viewbox widgets in the grid.
+
+        Returns
+        -------
+        increase_spacing: int
+            The amount of spacing to add to the widget dim length to properly span the other Viewbox widgets."""
+        increase_spacing = 0
+        if span > 1:
+            for i in range(current_widget_total_span - 1):
+                # Use set in order to prevent same cspans adding spacing width twice.
+                for widget_span in layout[index][i]:
+                    if widget_span + i < current_widget_total_span:
+                        increase_spacing += spacing
+        return increase_spacing
 
     @staticmethod
     def _add_total_width_constraints(solver, width_grid, width_layout, _var_w, spacing):
-        # Width_grid takes every column included in the grid visualization, instead of every view.
-        # so we have to set spacing to 0 to prevent spacing when having 1 viewbox, but col_span > 1.
-        spacing = 0 if len(width_layout) == 1 else spacing * (len(width_layout) - 1)
+        for row_index, ws in enumerate(width_grid):
+            # Width_grid takes every column included in the grid visualization, instead of every view.
+            # so we have to set spacing to 0 to prevent spacing when having 1 viewbox, but col_span > 1.
+            spacing = 0 if len(width_layout[row_index]) == 1 else spacing
+            width_expr = ws[0]
+            for w in ws[1:]:
+                width_expr += w
 
-        for ws in width_grid:
-            width_expr = ws[0] + spacing
-            for index, w in enumerate(ws[1:]):
-                spacing = 0 if index == len(ws[1:]) - 1 else spacing
-                width_expr += w + spacing
+            width_expr += Grid._calculate_total_spacing(width_layout, row_index, spacing)
             solver.addConstraint(width_expr == _var_w)
 
     @staticmethod
     def _add_total_height_constraints(solver, height_grid, height_layout, _var_h, spacing):
-        spacing = 0 if len(height_layout) == 1 else spacing * (len(height_layout) - 1)
-        for hs in height_grid:
-            height_expr = hs[0] + spacing
-            for index, h in enumerate(hs[1:]):
-                spacing = 0 if index == len(hs[1:]) - 1 else spacing
-                height_expr += h + spacing
+        for col_index, hs in enumerate(height_grid):
+            spacing = 0 if len(height_layout[col_index]) == 1 else spacing
+            height_expr = hs[0]
+            for h in hs[1:]:
+                height_expr += h
+
+            height_expr += Grid._calculate_total_spacing(height_layout, col_index, spacing)
             solver.addConstraint(height_expr == _var_h)
 
     @staticmethod
-    def _add_gridding_width_constraints(solver, width_grid):
+    def _add_gridding_width_constraints(solver: Solver, width_grid: NDArray[Variable]):
+        """Add constraint: all widths in each row are equal.
+
+        With all widths the reserved space for a widget with a col_span and row_span of 1 is meant, e.g. we have 3
+        widgets arranged in columns with col_span 1 and those are being constrained to all be of width 100.
+
+        Parameters
+        ----------
+        solver: Solver
+            Solver for a system of linear equations.
+        height_grid:
+            The width grid in shape col * row with each element being a Variable in the solver representing the height
+            of each grid box.
+        """
         # access widths of one "y", different x
         for ws in width_grid.T:
             for w in ws[1:]:
@@ -316,6 +428,19 @@ class Grid(Widget):
 
     @staticmethod
     def _add_gridding_height_constraints(solver, height_grid):
+        """Add constraint: all heights in each column are equal.
+
+        With all heights the reserved space for a widget with a col_span and row_span of 1 is meant, e.g. we have 3
+        widgets arranged in rows with col_span 1 and those are being constrained to all be of height 100.
+
+        Parameters
+        ----------
+        solver: Solver
+            Solver for a system of linear equations.
+        height_grid:
+            The width grid in shape row * col with each element being a Variable in the solver representing the width
+            of each grid box.
+        """
         # access heights of one "y"
         for hs in height_grid.T:
             for h in hs[1:]:
@@ -332,7 +457,7 @@ class Grid(Widget):
 
         for (y, x, ys, xs, widget) in grid_widgets.values():
             for index, ws in enumerate(width_grid[y:y+ys]):
-                width_spacing = 0 if index == len(width_grid) - 1 or all(cspan > 1 for cspan in width_layout[index]) else width_spacing
+                width_spacing = 0 if index == 0 or all(cspan > 1 for cspan in width_layout[y][index]) else width_spacing
                 total_w = np.sum(ws[x:x+xs]) + width_spacing
 
                 for sw in stretch_widths[y:y+ys]:
@@ -340,7 +465,7 @@ class Grid(Widget):
 
             for index, hs in enumerate(height_grid[x:x+xs]):
                 height_spacing = 0 if index == len(height_grid) - 1 or all(
-                    rspan > 1 for rspan in height_layout[index]) else height_spacing
+                    rspan > 1 for rspan in height_layout[x][index]) else height_spacing
                 total_h = np.sum(hs[y:y+ys]) + height_spacing
 
                 for sh in stretch_heights[x:x+xs]:
@@ -373,8 +498,7 @@ class Grid(Widget):
                                      'weak')
 
     @staticmethod
-    def _add_widget_dim_constraints(solver, width_grid, height_grid, width_layout, height_layout,
-                                    total_var_w, total_var_h, grid_widgets, width_spacing, height_spacing):
+    def _add_widget_dim_constraints(solver, width_grid, height_grid, total_var_w, total_var_h, grid_widgets):
         assert(total_var_w is not None)
         assert(total_var_h is not None)
 
@@ -390,7 +514,7 @@ class Grid(Widget):
             (y, x, ys, xs, widget) = val
 
             for ws in width_grid[y:y+ys]:
-                total_w = np.sum(ws[x:x+xs]) + width_spacing * (len(width_layout) - 1)
+                total_w = np.sum(ws[x:x+xs])
                 # assert(total_w is not None)
                 solver.addConstraint(total_w >= widget.width_min)
 
@@ -400,7 +524,7 @@ class Grid(Widget):
                     solver.addConstraint(total_w <= total_var_w)
 
             for hs in height_grid[x:x+xs]:
-                total_h = np.sum(hs[y:y+ys]) + height_spacing * (len(height_layout) - 1)
+                total_h = np.sum(hs[y:y+ys])
                 solver.addConstraint(total_h >= widget.height_min)
 
                 if widget.height_max is not None:
@@ -424,14 +548,13 @@ class Grid(Widget):
         self._solver.addConstraint(self._var_w >= 0)
         self._solver.addConstraint(self._var_h >= 0)
 
-        # self._height_stay = None
-        # self._width_stay = None
-        self._width_layout = defaultdict(list)
-        self._height_layout = defaultdict(list)
+
+        self._width_layout = defaultdict(lambda: defaultdict(list))
+        self._height_layout = defaultdict(lambda: defaultdict(list))
 
         for value in self._grid_widgets.values():
-            self._width_layout[value[1]].append(value[-2])
-            self._height_layout[value[0]].append(value[-3])
+            self._width_layout[value[0]][value[1]].append(value[-2])
+            self._height_layout[value[1]][value[0]].append(value[-3])
 
         # add widths
         self._width_grid = np.array(
@@ -495,13 +618,10 @@ class Grid(Widget):
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
                                          self._height_grid,
-                                         self._width_layout,
-                                         self._height_layout,
                                          self._var_w,
                                          self._var_h,
-                                         self._grid_widgets,
-                                         width_spacing,
-                                         height_spacing)
+                                         self._grid_widgets
+                                         )
 
         self._solver.updateVariables()
 
@@ -537,53 +657,40 @@ class Grid(Widget):
         else:
             width_spacing = height_spacing = self.spacing
 
-        total_width_spacing = 0
-        total_height_spacing = 0
         for index, (_, val) in enumerate(self._grid_widgets.items()):
             (row, col, rspan, cspan, widget) = val
 
+            # To have the proper x or y position we need to know how much spacing has been applied so far. We can't
+            # just directly multiply with row or col because of spans potentially being higher than 1.
+            spacing_width_offset = Grid._calculate_spacing_offset(self._width_layout, col, row, width_spacing)
+            spacing_height_offset = Grid._calculate_spacing_offset(self._height_layout, row, col, height_spacing)
 
-            width_increase_spacing = 0
-            height_increase_spacing = 0
             current_widget_total_cspan = col + cspan
             current_widget_total_rspan = row + rspan
 
             # We need to check if there is any widget that has a span falling within the range of the current widgets
             # span. For each span range that falls within we need to increase the width.
-            if cspan > 1:
-                for i in range(current_widget_total_cspan - 1):
-                    # Use set in order to prevent same cspans adding spacing width twice.
-                    for widget_cspan in set(self._width_layout[i]):
-                        if widget_cspan + i < current_widget_total_cspan:
-                            width_increase_spacing += width_spacing
-
-            if rspan > 1:
-                for i in range(current_widget_total_rspan - 1):
-                    # Use set in order to prevent same rspans adding spacing height twice.
-                    for widget_rspan in set(self._height_layout[i]):
-                        if widget_rspan + i < current_widget_total_rspan:
-                            height_increase_spacing += height_spacing
+            width_increase_spacing = Grid._add_spacing_to_widget_dim_length(self._width_layout,
+                                                                            row, current_widget_total_cspan,
+                                                                            cspan, width_spacing)
+            height_increase_spacing = Grid._add_spacing_to_widget_dim_length(self._height_layout, col,
+                                                                             current_widget_total_rspan, rspan,
+                                                                             height_spacing)
 
             width = np.sum(value_vectorized(
                            self._width_grid[row][col:col+cspan]) + width_increase_spacing)
             height = np.sum(value_vectorized(
                             self._height_grid[col][row:row+rspan]) + height_increase_spacing)
 
-            if any(span == 1 for span in self._width_layout[col]):
-                total_width_spacing += width_spacing * col
-
-            if any(span == 1 for span in self._height_layout[row]):
-                total_height_spacing += height_spacing * row
-
             if col == 0:
                 x = 0
             else:
-                x = np.sum(value_vectorized(self._width_grid[row][0:col])) + total_width_spacing
+                x = np.sum(value_vectorized(self._width_grid[row][:col])) + spacing_width_offset
 
             if row == 0:
                 y = 0
             else:
-                y = np.sum(value_vectorized(self._height_grid[col][0:row])) + total_height_spacing
+                y = np.sum(value_vectorized(self._height_grid[col][:row])) + spacing_height_offset
 
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)

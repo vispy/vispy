@@ -5,7 +5,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Single viewbox with span higher than 1 should not show spacing despite spacing being defined
+Single viewbox in grid
+======================
+Demonstrate grid with single view with span higher than 1 and spacing is ignoring spacing
 """
 import sys
 import numpy as np

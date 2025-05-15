@@ -6,9 +6,9 @@
 # -----------------------------------------------------------------------------
 """
 Triple viewbox, 1 spanning the other 2
-=============================
+======================================
 
-Demonstrate a viewbox with col_span being 2 to span the other 2 viewboxes taking into account spacing.
+Demonstrate a viewbox with row_span being 2 to span the other 2 viewboxes taking into account spacing.
 """
 import sys
 import numpy as np
