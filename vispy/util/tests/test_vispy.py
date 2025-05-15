@@ -10,7 +10,7 @@ from vispy.testing import (requires_application, run_tests_if_main,
                            assert_raises, assert_equal, assert_not_equal)
 
 
-@requires_application('pyside')
+@requires_application('pyside2')
 def test_use():
 
     # Set default app to None, so we can test the use function
@@ -34,7 +34,7 @@ def test_use():
         assert_not_equal(vispy.app._default_app.default_app, None)
 
         # Again, but now wrong app
-        wrong_name = 'glfw' if app_name.lower() != 'glfw' else 'pyqt4'
+        wrong_name = 'glfw' if app_name.lower() != 'glfw' else 'pyqt5'
         assert_raises(RuntimeError, vispy.use, wrong_name)
 
         # And both
