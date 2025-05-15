@@ -1,5 +1,16 @@
 # Release Notes
 
+## [v0.15.1](https://github.com/vispy/vispy/tree/v0.15.1) (2025-05-15)
+
+**Fixed bugs:**
+
+- Restore sdist upload to pypi  [\#2672](https://github.com/vispy/vispy/pull/2672) ([Czaki](https://github.com/Czaki))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 2.23.2 to 2.23.3 [\#2669](https://github.com/vispy/vispy/pull/2669) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+
 ## [v0.15.0](https://github.com/vispy/vispy/tree/v0.15.0) (2025-04-22)
 
 **Enhancements:**
