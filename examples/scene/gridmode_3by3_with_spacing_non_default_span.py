@@ -31,7 +31,7 @@ vb2 = grid.add_view(name='vb2', border_color='yellow', row=0, col=1)
 vb2.parent = canvas.scene
 vb2.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
 
-vb3 = grid.add_view(name='vb3', border_color='yellow', row=0, col=2, row_span=2)
+vb3 = grid.add_view(name='vb3', border_color='red', row=0, col=2, row_span=2)
 vb3.parent = canvas.scene
 vb3.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
 
@@ -43,7 +43,7 @@ vb5 = grid.add_view(name='vb5', border_color='yellow',  row=1, col=1)
 vb5.parent = canvas.scene
 vb5.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
 
-vb6 = grid.add_view(name='vb6', border_color='yellow',  row=1, col=2)
+vb6 = grid.add_view(name='vb6',  row=1, col=2)
 vb6.parent = canvas.scene
 vb6.camera = scene.TurntableCamera(elevation=30, azimuth=30, up='+y')
 
@@ -84,8 +84,8 @@ line4 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',
                            antialias=False, name='line1', parent=vb4.scene)
 line5 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',
                            antialias=False, name='line1', parent=vb5.scene)
-line6 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',
-                           antialias=False, name='line1', parent=vb6.scene)
+# line6 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',
+#                            antialias=False, name='line1', parent=vb6.scene)
 line7 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',
                            antialias=False, name='line1', parent=vb7.scene)
 line8 = scene.visuals.Line(pos=pos.copy(), color=color, method='gl',

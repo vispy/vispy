@@ -55,9 +55,6 @@ class Grid(Widget):
         self._width_layout = None
         self._height_layout = None
 
-        # self._height_stay = None
-        # self._width_stay = None
-
         Widget.__init__(self, **kwargs)
 
     def __getitem__(self, idxs):
@@ -290,7 +287,7 @@ class Grid(Widget):
     
     @staticmethod
     def _calculate_total_spacing(layout, index, spacing) -> int:
-        """Calculate the total amount of spacing a given grid row or column.
+        """Calculate the total amount of spacing in a given grid row or column.
 
         Parameters
         ----------
@@ -316,7 +313,7 @@ class Grid(Widget):
         )
 
     @staticmethod
-    def _calculate_spacing_offset(layout, index, other_index, spacing) -> int:
+    def _calculate_spacing_offset(layout, index, spacing) -> int:
         """Calculate the offset due to spacing for the x or y position of Viewbox in grid.
 
         Parameters
@@ -327,7 +324,7 @@ class Grid(Widget):
             grid cell. In case of height_layout, the keys are the columns and the values dictionaries with as keys the
             rows and as values the column spans for Viewboxes assigned to the specific grid cell.
         index: int
-            Either the row or column index.
+            Either the row or column index. If row, layout is the height_layout, if column, width_layout.
         other_index: int
             If index corresponds to row, then other index corresponds to column and vice versa.
         spacing: float
@@ -341,7 +338,7 @@ class Grid(Widget):
             sum(
                 spacing
                 for subindex in range(index)
-                if any(span == 1 for span in layout[other_index][subindex])
+                if any(span == 1 for other_index in range(len(layout)) for span in layout[other_index][subindex] )
             )
             if index != 0
             else 0
@@ -377,34 +374,35 @@ class Grid(Widget):
         if span > 1:
             for i in range(current_widget_total_span - 1):
                 # Use set in order to prevent same cspans adding spacing width twice.
-                for widget_span in layout[index][i]:
-                    if widget_span + i < current_widget_total_span:
-                        increase_spacing += spacing
+                if any(n_span - 1 + grid_dim_index < current_widget_total_span for grid_dim_index, grid_span in layout[index].items() for n_span in grid_span):
+                    increase_spacing += spacing
         return increase_spacing
 
-    @staticmethod
-    def _add_total_width_constraints(solver, width_grid, width_layout, _var_w, spacing):
-        for row_index, ws in enumerate(width_grid):
-            # Width_grid takes every column included in the grid visualization, instead of every view.
-            # so we have to set spacing to 0 to prevent spacing when having 1 viewbox, but col_span > 1.
-            spacing = 0 if len(width_layout[row_index]) == 1 else spacing
-            width_expr = ws[0]
-            for w in ws[1:]:
-                width_expr += w
-
-            width_expr += Grid._calculate_total_spacing(width_layout, row_index, spacing)
-            solver.addConstraint(width_expr == _var_w)
 
     @staticmethod
-    def _add_total_height_constraints(solver, height_grid, height_layout, _var_h, spacing):
-        for col_index, hs in enumerate(height_grid):
-            spacing = 0 if len(height_layout[col_index]) == 1 else spacing
-            height_expr = hs[0]
-            for h in hs[1:]:
-                height_expr += h
+    def _add_total_dim_length_constraints(solver, grid_dim_variables, layout, _var_dim_length, spacing):
+        """Add constraint: total height == sum(col heights) + sum(spacing).
 
-            height_expr += Grid._calculate_total_spacing(height_layout, col_index, spacing)
-            solver.addConstraint(height_expr == _var_h)
+        The total height of the grid is constrained to be equal to the sum of the heights of
+        its columns, including spacing between widgets.
+
+        Parameters
+        ----------
+        solver: Solver
+            Solver for a system of linear equations.
+        height_grid
+        """
+        spacing_ls = []
+        for col_index, hs in enumerate(grid_dim_variables):
+            spacing = 0 if len(layout[col_index]) == 1 else spacing
+            spacing_ls.append(Grid._calculate_total_spacing(layout, col_index, spacing))
+
+        for ds in grid_dim_variables:
+            dim_length_expr = ds[0]
+            for d in ds[1:]:
+                dim_length_expr += d
+            dim_length_expr += max(spacing_ls)
+            solver.addConstraint(dim_length_expr == _var_dim_length)
 
     @staticmethod
     def _add_gridding_width_constraints(solver: Solver, width_grid: NDArray[Variable]):
@@ -447,8 +445,8 @@ class Grid(Widget):
                 solver.addConstraint(hs[0] == h)
 
     @staticmethod
-    def _add_stretch_constraints(solver, width_grid, height_grid, width_layout, height_layout,
-                                 grid_widgets, widget_grid, width_spacing, height_spacing):
+    def _add_stretch_constraints(solver, width_grid, height_grid,
+                                 grid_widgets, widget_grid):
         xmax = len(height_grid)
         ymax = len(width_grid)
 
@@ -456,17 +454,13 @@ class Grid(Widget):
         stretch_heights = [[] for _ in range(xmax)]
 
         for (y, x, ys, xs, widget) in grid_widgets.values():
-            for index, ws in enumerate(width_grid[y:y+ys]):
-                width_spacing = 0 if index == 0 or all(cspan > 1 for cspan in width_layout[y][index]) else width_spacing
-                total_w = np.sum(ws[x:x+xs]) + width_spacing
-
+            for ws in width_grid[y:y+ys]:
+                total_w = np.sum(ws[x:x+xs])
                 for sw in stretch_widths[y:y+ys]:
                     sw.append((total_w, widget.stretch[0]))
 
-            for index, hs in enumerate(height_grid[x:x+xs]):
-                height_spacing = 0 if index == len(height_grid) - 1 or all(
-                    rspan > 1 for rspan in height_layout[x][index]) else height_spacing
-                total_h = np.sum(hs[y:y+ys]) + height_spacing
+            for hs in height_grid[x:x+xs]:
+                total_h = np.sum(hs[y:y+ys])
 
                 for sh in stretch_heights[x:x+xs]:
                     sh.append((total_h, widget.stretch[1]))
@@ -567,7 +561,7 @@ class Grid(Widget):
         # add heights
         self._height_grid = np.array(
             [
-                [Variable(f"height(x: {x}, y: {y}") for y in range(0, ymax)]
+                [Variable(f"height(x: {x}, y: {y})") for y in range(0, ymax)]
                 for x in range(0, xmax)
             ]
         )
@@ -586,9 +580,9 @@ class Grid(Widget):
             width_spacing = height_spacing = self.spacing
         # even though these are REQUIRED, these should never fail
         # since they're added first, and thus the slack will "simply work".
-        Grid._add_total_width_constraints(self._solver,
+        Grid._add_total_dim_length_constraints(self._solver,
                                           self._width_grid, self._width_layout, self._var_w, width_spacing)
-        Grid._add_total_height_constraints(self._solver,
+        Grid._add_total_dim_length_constraints(self._solver,
                                            self._height_grid, self._height_layout, self._var_h, height_spacing)
 
         try:
@@ -608,12 +602,9 @@ class Grid(Widget):
         Grid._add_stretch_constraints(self._solver,
                                       self._width_grid,
                                       self._height_grid,
-                                      self._width_layout,
-                                      self._height_layout,
                                       self._grid_widgets,
                                       self._widget_grid,
-                                      width_spacing,
-                                      height_spacing)
+                                      )
 
         Grid._add_widget_dim_constraints(self._solver,
                                          self._width_grid,
@@ -662,8 +653,8 @@ class Grid(Widget):
 
             # To have the proper x or y position we need to know how much spacing has been applied so far. We can't
             # just directly multiply with row or col because of spans potentially being higher than 1.
-            spacing_width_offset = Grid._calculate_spacing_offset(self._width_layout, col, row, width_spacing)
-            spacing_height_offset = Grid._calculate_spacing_offset(self._height_layout, row, col, height_spacing)
+            spacing_width_offset = Grid._calculate_spacing_offset(self._width_layout, col, width_spacing)
+            spacing_height_offset = Grid._calculate_spacing_offset(self._height_layout, row, height_spacing)
 
             current_widget_total_cspan = col + cspan
             current_widget_total_rspan = row + rspan
@@ -678,9 +669,9 @@ class Grid(Widget):
                                                                              height_spacing)
 
             width = np.sum(value_vectorized(
-                           self._width_grid[row][col:col+cspan]) + width_increase_spacing)
+                           self._width_grid[row][col:col+cspan])) + width_increase_spacing
             height = np.sum(value_vectorized(
-                            self._height_grid[col][row:row+rspan]) + height_increase_spacing)
+                            self._height_grid[col][row:row+rspan])) + height_increase_spacing
 
             if col == 0:
                 x = 0

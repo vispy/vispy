@@ -18,7 +18,7 @@ from vispy import scene
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
-grid = canvas.central_widget.add_grid(spacing=(50,150))
+grid = canvas.central_widget.add_grid(spacing=(0,0))
 
 # Create two ViewBoxes, place side-by-side
 vb1 = grid.add_view(name='vb1', border_color='yellow', row=0, col=0, row_span=2, col_span=2)
