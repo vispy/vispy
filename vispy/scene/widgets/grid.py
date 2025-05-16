@@ -708,9 +708,6 @@ class Grid(Widget):
             spacing_width_offset = Grid._calculate_spacing_offset(self._width_layout, col, width_spacing)
             spacing_height_offset = Grid._calculate_spacing_offset(self._height_layout, row, height_spacing)
 
-            current_widget_total_cspan = col + cspan
-            current_widget_total_rspan = row + rspan
-
             # We need to check if there is any widget that has a span falling within the range of the current widgets
             # span. For each span range that falls within we need to increase the width.
             width_increase_spacing = Grid._add_spacing_to_widget_dim_length(self._width_layout, row, cspan,
