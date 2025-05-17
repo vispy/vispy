@@ -508,14 +508,6 @@ class Grid(Widget):
             ]
         )
 
-        # setup stretch
-        stretch_grid = np.zeros(shape=(xmax, ymax, 2), dtype=float)
-        stretch_grid.fill(1)
-
-        for (_, val) in self._grid_widgets.items():
-            (y, x, ys, xs, widget) = val
-            stretch_grid[x:x+xs, y:y+ys] = widget.stretch
-
         if isinstance(self.spacing, tuple):
             width_spacing, height_spacing = self.spacing
         else:
