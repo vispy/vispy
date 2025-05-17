@@ -322,9 +322,10 @@ class Grid(Widget):
     def _add_gridding_dim_constraints(solver: Solver, grid_dim_variables: NDArray[Variable]):
         """Add constraint: all viewbox dims in each dimension are equal.
 
-        With all widths/heights the reserved space for a widget with a col_span and row_span of is meant, e.g. we have 3
+        With all dims the reserved space for a widget with a col_span and row_span of 1 is meant, e.g. we have 3
         widgets arranged in columns or rows with col_span or row_span 1 and those are being constrained to all be of
-        width/height 100.
+        width/height 100. In other words the same dim length is reserved for each position in the grid, not taking
+        into account the spacing between grid positions.
 
         Parameters
         ----------
