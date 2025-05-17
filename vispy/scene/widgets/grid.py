@@ -5,11 +5,10 @@
 
 from __future__ import division
 
-from typing import Any
+from typing import Tuple, Union, Dict
 
 import numpy as np
 from numpy.typing import NDArray
-from collections import defaultdict
 
 from vispy.geometry import Rect
 from .widget import Widget
@@ -268,7 +267,7 @@ class Grid(Widget):
         return self._spacing
 
     @spacing.setter
-    def spacing(self, value: int | tuple[int, int]):
+    def spacing(self, value: Union[int, Tuple[int, int]]):
         if not (
             isinstance(value, int)
             or isinstance(value, tuple)
@@ -342,7 +341,7 @@ class Grid(Widget):
 
     @staticmethod
     def _add_stretch_constraints(solver: Solver, width_grid: NDArray[Variable] , height_grid: NDArray[Variable],
-                                 grid_widgets: dict[int, tuple[int, int, int, int, ViewBox]],
+                                 grid_widgets: Dict[int, Tuple[int, int, int, int, ViewBox]],
                                  widget_grid: NDArray[ViewBox]):
         """
         Add proportional stretch constraints to the linear system solver of the grid.
@@ -420,7 +419,7 @@ class Grid(Widget):
     @staticmethod
     def _add_widget_dim_constraints(solver: Solver, width_grid: NDArray[Variable], height_grid: NDArray[Variable],
                                     total_var_w: Variable, total_var_h: Variable,
-                                    grid_widgets: dict[int, tuple[int, int, int, int, ViewBox]]):
+                                    grid_widgets: Dict[int, Tuple[int, int, int, int, ViewBox]]):
         """Add constraints based on min/max width/height of widgets.
 
         These constraints ensure that each widget's dimensions stay within its
