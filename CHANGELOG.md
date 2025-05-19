@@ -1,5 +1,16 @@
 # Release Notes
 
+## [v0.15.2](https://github.com/vispy/vispy/tree/v0.15.2) (2025-05-19)
+
+**enhancements:**
+
+- add border width property and setter [\#2676](https://github.com/vispy/vispy/pull/2676) ([brisvag](https://github.com/brisvag))
+- implementation spacing parameter grid mode [\#2671](https://github.com/vispy/vispy/pull/2671) ([melonora](https://github.com/melonora))
+
+**fixed bugs:**
+
+- fix padding in grid widget [\#2675](https://github.com/vispy/vispy/pull/2675) ([brisvag](https://github.com/brisvag))
+
 ## [v0.15.1](https://github.com/vispy/vispy/tree/v0.15.1) (2025-05-15)
 
 **Fixed bugs:**
