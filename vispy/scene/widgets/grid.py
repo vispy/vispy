@@ -555,7 +555,7 @@ class Grid(Widget):
         if ymax <= 0 or xmax <= 0:
             return
 
-        rect = self.rect  # .padded(self.padding + self.margin)
+        rect = self.rect.padded(self.padding + self.margin)
         if rect.width <= 0 or rect.height <= 0:
             return
         if self._need_solver_recreate:
@@ -607,6 +607,9 @@ class Grid(Widget):
                 y = 0
             else:
                 y = np.sum(value_vectorized(self._height_grid[col][:row])) + spacing_height_offset
+
+            x += self.padding
+            y += self.padding
 
             if isinstance(widget, ViewBox):
                 widget.rect = Rect(x, y, width, height)
