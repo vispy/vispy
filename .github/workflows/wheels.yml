@@ -24,7 +24,7 @@ jobs:
       if: ${{ matrix.arch == 'aarch64' }}
       uses: docker/setup-qemu-action@v3
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.23.3
+      uses: pypa/cibuildwheel@v3.0.0
       env:
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
     - uses: actions/upload-artifact@v4
