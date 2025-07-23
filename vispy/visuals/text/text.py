@@ -425,6 +425,7 @@ class TextVisual(Visual):
         self._bold = bold
         self._italic = italic
         self._update_font()
+        self._vertices_data = None
         self._vertices = None
         self._color_vbo = None
         self._anchors = (anchor_x, anchor_y)
@@ -530,10 +531,10 @@ class TextVisual(Visual):
             n_char = sum(len(t) for t in text)
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
-            self._vertices = np.concatenate([
+            self._vertices_data = np.concatenate([
                 _text_to_vbo(t, self._font, self._anchors[0], self._anchors[1],
                              self._font._lowres_size) for t in text])
-            self._vertices = VertexBuffer(self._vertices)
+            self._vertices = VertexBuffer(self._vertices_data)
             idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
                    np.arange(0, 4*n_char, 4, dtype=np.uint32)[:, np.newaxis])
             self._index_buffer = IndexBuffer(idx.ravel())
