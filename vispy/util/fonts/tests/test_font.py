@@ -12,6 +12,7 @@ import pytest
 known_bad_fonts = set([
     'Noto Color Emoji',  # https://github.com/vispy/vispy/issues/1771
     'Bahnschrift',  # https://github.com/vispy/vispy/pull/1974
+    'Segoe UI',  # https://github.com/vispy/vispy/pull/2689
 ])
 
 # try both a vispy and system font   <--- what does this mean???
