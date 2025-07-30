@@ -12,6 +12,7 @@ import pytest
 known_bad_fonts = set([
     'Noto Color Emoji',  # https://github.com/vispy/vispy/issues/1771
     'Bahnschrift',  # https://github.com/vispy/vispy/pull/1974
+    'Segoe UI Variable',  # https://github.com/vispy/vispy/pull/2689
 ])
 
 # try both a vispy and system font   <--- what does this mean???
@@ -29,7 +30,7 @@ def test_font_list():
 @pytest.mark.parametrize('face', ['OpenSans'] + sorted(sys_fonts))
 def test_font_glyph(face):
     """Test loading glyphs"""
-    if face in known_bad_fonts or face.split(" ")[0] in known_bad_fonts:
+    if any(face.startswith(font_name) for font_name in known_bad_fonts):
         pytest.xfail()
     font_dict = dict(face=face, size=12, bold=False, italic=False)
     glyphs_dict = dict()

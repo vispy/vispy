@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2019, macOS-latest, macos-13, ubuntu-24.04-arm]
+        os: [ubuntu-latest, windows-2025, macOS-latest, macos-13, ubuntu-24.04-arm]
         arch: [auto]
     steps:
     - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
       if: ${{ matrix.arch == 'aarch64' }}
       uses: docker/setup-qemu-action@v3
     - name: Build wheels
-      uses: pypa/cibuildwheel@v3.0.1
+      uses: pypa/cibuildwheel@v3.1.1
       env:
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
     - uses: actions/upload-artifact@v4
