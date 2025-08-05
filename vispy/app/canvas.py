@@ -48,7 +48,7 @@ class Canvas(object):
         Whether to create the widget immediately. Default True.
     vsync : bool
         Enable vertical synchronization.
-        Note for Qt backend: this setting might not work on every platform [src](https://doc.qt.io/qt-6/qsurfaceformat.html#setSwapInterval).
+        Note for Qt backend: this setting might not work on `every platform <https://doc.qt.io/qt-6/qsurfaceformat.html#setSwapInterval>`_.
     resizable : bool
         Allow the window to be resized.
     decorate : bool
