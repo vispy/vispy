@@ -45,7 +45,13 @@ class SceneCanvas(app.Canvas, Frozen):
         Whether to create the widget immediately. Default True.
     vsync : bool
         Enable vertical synchronization.
-        Note for Qt backend: this setting might not work on every platform [src](https://doc.qt.io/qt-6/qsurfaceformat.html#setSwapInterval).
+        Note for some backends
+        (ex. `Qt-based backends <https://doc.qt.io/qt-6/qsurfaceformat.html#setSwapInterval>`_)
+        and some platforms this setting may not work as expected. Some GPU
+        drivers may require modifying vsync settings at a system or driver
+        level (ex. NVIDIA control panel). See documentation for the specific
+        backend engine and your system's GPU in the case of unexpected
+        behavior.
     resizable : bool
         Allow the window to be resized.
     decorate : bool
