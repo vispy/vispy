@@ -11,7 +11,7 @@ between two Qt widgets.
 
 # XXX THIS IS CURRENTLY BROKEN
 
-from PyQt5 import QtWidgets, QtCore  # can also use pyside
+from PyQt5 import QtWidgets, QtCore  # can also use pyside2
 from functools import partial
 
 from vispy.app import Timer

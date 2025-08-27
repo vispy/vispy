@@ -72,7 +72,7 @@ def _test_callbacks(canvas):
         backend._on_mouse_scroll(_id, 1, 0)
         backend._on_mouse_motion(_id, 10, 10)
         backend._on_close(_id)
-    elif any(x in backend_name.lower() for x in ('qt', 'pyside')):
+    elif any(x in backend_name.lower() for x in ('qt', 'pyside2')):
         # constructing fake Qt events is too hard :(
         pass
     elif 'sdl2' in backend_name.lower():
