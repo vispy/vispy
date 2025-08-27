@@ -20,7 +20,6 @@ from .node import Node
 from ..visuals.filters import Alpha, PickingFilter
 from typing import TypeVar
 
-
 _T = TypeVar("_T")
 
 
@@ -225,6 +224,7 @@ def generate_docstring(subclass, clsname):
     doc = '\n'.join(lines)
     return doc
 
+
 # This is _not_ automated to help with auto-completion of IDEs,
 # python REPL and IPython.
 # Explicitly initializing these members allow IDEs to lookup
@@ -235,6 +235,7 @@ def generate_docstring(subclass, clsname):
 
 Arrow = create_visual_node(visuals.ArrowVisual)
 Axis = create_visual_node(visuals.AxisVisual)
+Candle = create_visual_node(visuals.CandleVisual)
 Box = create_visual_node(visuals.BoxVisual)
 ColorBar = create_visual_node(visuals.ColorBarVisual)
 Compound = create_visual_node(visuals.CompoundVisual)
