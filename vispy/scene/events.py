@@ -67,6 +67,13 @@ class SceneMouseEvent(Event):
         return self.mouse_event.buttons
 
     @property
+    def modifiers(self):
+        """Tuple that specifies which modifier keys were pressed down at the
+        time of the event (shift, control, alt, meta).
+        """
+        return self.mouse_event.modifiers
+
+    @property
     def delta(self):
         """The increment by which the mouse wheel has moved."""
         return self.mouse_event.delta
