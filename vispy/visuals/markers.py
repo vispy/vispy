@@ -737,10 +737,10 @@ class MarkersVisual(Visual):
 
         edgewidth = edge_width if edge_width is not None else size * edge_width_rel
 
-        size_array = _as_numpy_array(size, n)
-        edgewidth_array = _as_numpy_array(edgewidth, n)
-        edge_color_array = _as_numpy_array(edge_color, n)
-        face_color_array = _as_numpy_array(face_color, n)
+        size_array = _broadcast_scalar(size, n)
+        edgewidth_array = _broadcast_scalar(edgewidth, n)
+        edge_color_array = _broadcast_color(edge_color, n)
+        face_color_array = _broadcast_color(face_color, n)
 
         return {
             'a_position': position,
@@ -1023,12 +1023,17 @@ class MarkersVisual(Visual):
             return (0, 0)
 
 
-def _as_numpy_array(value, n, dtype=np.float32):
-    """Broadcast scalar or 1D array to proper shape."""
+def _broadcast_scalar(value, n, dtype=np.float32):
+    """Broadcast scalar or array to length n."""
     array = np.asarray(value, dtype=dtype)
     if array.ndim == 0:
         return np.full(n, array, dtype=dtype)
-    elif array.ndim == 1 and len(array.shape) == 1 and array.shape[0] in (3, 4):
-        # tile color-like arrays
+    return array
+
+
+def _broadcast_color(color, n, dtype=np.float32):
+    """Broadcast color (4,) to (n, 4) or return (n, 4) as-is."""
+    array = np.asarray(color, dtype=dtype)
+    if array.ndim == 1:
         return np.tile(array, (n, 1))
     return array
