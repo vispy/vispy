@@ -97,16 +97,31 @@ def test_markers_instanced_rendering():
 
 @pytest.mark.parametrize('method', ['points', 'instanced'])
 def test_markers_empty_data(method):
-    """Test that setting empty data (not None) doesn't crash."""
+    """Test that setting empty data (not None) doesn't crash and clears existing data."""
+    data = np.random.rand(10, 3)
+
     # Test with empty array
     empty_pos = np.array([]).reshape(0, 2)
 
     markers = Markers(method=method)
     markers.set_data(pos=empty_pos)  # Should not crash
-    assert markers._data is None  # Should remain None with empty data
+    assert markers._data is None  # Should be None with empty data
 
-    # Test with None (should also work)
+    # Set some data
+    markers.set_data(pos=data)
+    assert markers._data is not None  # Should have data now
+
+    # Clear with empty array
+    markers.set_data(pos=empty_pos)
+    assert markers._data is None  # Should be cleared
+
+    # Set data again
+    markers.set_data(pos=data)
+    assert markers._data is not None
+
+    # Clear with None (should also work)
     markers.set_data(pos=None)
+    assert markers._data is None  # Should be cleared
 
 
 @pytest.mark.parametrize('method', ['points', 'instanced'])

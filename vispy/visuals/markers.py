@@ -621,6 +621,7 @@ class MarkersVisual(Visual):
         self._quad_vbo = None
         self._data = None
         self._scaling = "fixed"
+        self._canvas_size_limits = None
 
         if method == 'points':
             shaders = self._shaders
@@ -673,7 +674,7 @@ class MarkersVisual(Visual):
 
         self.freeze()
 
-    def _validate_edge_width(self, edge_width, edge_width_rel):
+    def _prepare_edge_width(self, edge_width, edge_width_rel):
         """Validate and return edge width parameters."""
         if edge_width is not None and edge_width_rel is not None:
             raise ValueError("either edge_width or edge_width_rel "
@@ -804,17 +805,26 @@ class MarkersVisual(Visual):
         symbol : str or array
             The style of symbol used to draw each marker (see Notes).
         """
-        edge_width, edge_width_rel = self._validate_edge_width(edge_width, edge_width_rel)
+        edge_width, edge_width_rel = self._prepare_edge_width(edge_width, edge_width_rel)
         edge_color, face_color = self._prepare_colors(edge_color, face_color)
 
         if pos is not None and len(pos):
-            data_dict = self._prepare_data_dict(pos, size, edge_width, edge_width_rel,
-                                                 edge_color, face_color, symbol)
+            data_dict = self._prepare_data_dict(
+                pos,
+                size,
+                edge_width,
+                edge_width_rel,
+                edge_color,
+                face_color,
+                symbol,
+            )
 
             if self._method == 'instanced':
                 self._upload_instanced_data(data_dict)
             else:
                 self._upload_points_data(data_dict)
+        else:
+            self._data = None
 
         self.events.data_updated()
         self.update()
