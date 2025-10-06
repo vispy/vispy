@@ -1,6 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# vispy: gallery 2
+
 """
+Markers with Instanced Rendering
+================================
+
 Compare instanced and GL_POINTS rendering methods for Markers visual.
 
 This example shows how instanced rendering works around platform point size limits
@@ -8,20 +16,22 @@ This example shows how instanced rendering works around platform point size limi
 canvas_size_limits feature for constraining marker sizes during zoom/pan.
 
 Controls:
-  m: Toggle between 'points' and 'instanced' rendering methods
-  s: Cycle through marker sizes
-  c: Toggle canvas size clamping (min 10px, max 100px)
-  z: Toggle scaling mode: 'fixed' vs 'scene' (grows/shrinks with zoom)
-  l: Toggle spherical lighting (3D sphere effect)
-  k: Cycle through marker shapes (disc, arrow, ring, etc.)
+* m: Toggle between 'points' and 'instanced' rendering methods
+* s: Cycle through marker sizes
+* c: Toggle canvas size clamping (min 10px, max 100px)
+* z: Toggle scaling mode: 'fixed' vs 'scene' (grows/shrinks with zoom)
+* l: Toggle spherical lighting (3D sphere effect)
+* k: Cycle through marker shapes (disc, arrow, ring, etc.)
 
 Notes:
-  - you may not see a difference between methods on your platform - that's fine!
-  - 'instanced' method should be the same across platforms (arbitrarily large markers)
-  - Canvas size clamping keeps markers readable during zoom
-  - Spherical lighting adds depth to markers with simulated 3D lighting
-  - There may be lighting direction differences between methods (known issue)
+
+* you may not see a difference between methods on your platform - that's fine!
+* 'instanced' method should be the same across platforms (arbitrarily large markers)
+* Canvas size clamping keeps markers readable during zoom
+* Spherical lighting adds depth to markers with simulated 3D lighting
+* There may be lighting direction differences between methods (known issue)
 """
+
 from itertools import cycle
 
 from vispy import scene, use
