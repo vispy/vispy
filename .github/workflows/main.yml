@@ -266,6 +266,13 @@ jobs:
       run: |
         if [ "${{ matrix.test }}" == 'standard' ]; then
           export DISPLAY=:99.0
+          # this is a workaround for pyopengl 3.1.7+ that changed library resolution order
+          # the new version breaks vispy SDL2 tests in CI, but has not been reproduced locally
+          # see previous discussions in:
+          # * https://github.com/vispy/vispy/pull/2636
+          # * https://github.com/vispy/vispy/pull/2668
+          # * https://github.com/vispy/vispy/pull/2673
+          export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGL.so.1
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
