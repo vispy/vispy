@@ -12,6 +12,7 @@ networkx
 numpy
 pillow
 pyqt=5
+sdl2<=2.30
 pysdl2
 pytest
 pytest-cov
