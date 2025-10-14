@@ -20,8 +20,6 @@ from .mesh import MeshVisual
 
 
 _VERTEX_SHADER = """
-uniform bool use_instance_colors;
-
 // these attributes will be defined on an instance basis
 attribute vec3 shift;
 attribute vec3 transform_x;
@@ -29,9 +27,10 @@ attribute vec3 transform_y;
 attribute vec3 transform_z;
 
 varying vec4 v_base_color;
+
 void main() {
 
-    v_base_color = $color_transform($base_color);
+    v_base_color = $color_transform($base_color) * $instance_color;
 
     // transform is generated from column vectors (new basis vectors)
     // https://en.wikibooks.org/wiki/GLSL_Programming/Vector_and_Matrix_Operations#Constructors
@@ -133,7 +132,7 @@ class InstancedMeshVisual(MeshVisual):
             colors = ColorArray(colors)
             self._instance_colors_vbo = VertexBuffer(colors.rgba, divisor=1)
         else:
-            self._instance_colors_vbo = Variable('base_color', self._color.rgba)
+            self._instance_colors_vbo = (1, 1, 1, 1)
 
         self._instance_colors = colors
         self.mesh_data_changed()
@@ -143,10 +142,13 @@ class InstancedMeshVisual(MeshVisual):
             super()._update_data()
 
         # set instance buffers
-        self.shared_program.vert['base_color'] = self._instance_colors_vbo
+        self.shared_program.vert['instance_color'] = self._instance_colors_vbo
         self.shared_program['transform_x'] = self._instance_transforms_vbos[0]
         self.shared_program['transform_y'] = self._instance_transforms_vbos[1]
         self.shared_program['transform_z'] = self._instance_transforms_vbos[2]
         self.shared_program['shift'] = self._instance_positions_vbo
 
         self.events.data_updated()
+
+    # TODO: bounds are not reported correctly at the moment! We should
+    #       overload `_compute_bounds` based on the instances
