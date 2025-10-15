@@ -8,17 +8,22 @@ from vispy.testing import (requires_application, TestingCanvas,
 from vispy.testing.image_tester import assert_image_approved
 
 
-@pytest.fixture(params=['points', 'instanced'])
+@pytest.fixture(scope='module', params=['points', 'instanced'])
 def rendering_method(request):
-    """Skip test if instanced rendering is requested but gl+ backend is unavailable."""
+    """Setup rendering method for entire module, skip if backend unavailable."""
     method = request.param
-    try:
-        use_gl('gl+' if method == 'instanced' else 'gl2')
-        yield method
-    except Exception:
-        pytest.skip("gl+ backend not available for instanced rendering test")
-    finally:
+
+    if method == 'instanced':
+        try:
+            use_gl('gl+')
+        except Exception:
+            pytest.skip("gl+ backend not available for instanced rendering")
+    else:
         use_gl('gl2')
+
+    yield method
+
+    use_gl('gl2')
 
 
 @requires_application()
@@ -41,11 +46,10 @@ def test_markers(rendering_method):
         assert_image_approved(c.render(), "visuals/markers.png")
 
 
-@pytest.mark.parametrize('method', ['points', 'instanced'])
-def test_markers_edge_width(method):
+def test_markers_edge_width(rendering_method):
     data = np.random.rand(10, 3)
     edge_width = np.random.rand(10)
-    marker = Markers(method=method)
+    marker = Markers(method=rendering_method)
 
     with pytest.raises(ValueError):
         marker.set_data(pos=data, edge_width_rel=1, edge_width=1)
@@ -61,9 +65,8 @@ def test_markers_edge_width(method):
         marker.set_data(pos=data, edge_width_rel=edge_width - 1, edge_width=None)
 
 
-@pytest.mark.parametrize('method', ['points', 'instanced'])
-def test_empty_markers_symbol(method):
-    markers = Markers(method=method)
+def test_empty_markers_symbol(rendering_method):
+    markers = Markers(method=rendering_method)
     markers.symbol = 'o'
 
 
@@ -85,14 +88,13 @@ def test_markers_method_parameter():
         Markers(method='invalid')
 
 
-@pytest.mark.parametrize('method', ['points', 'instanced'])
-def test_markers_empty_data(method):
+def test_markers_empty_data(rendering_method):
     """Test that setting empty data (not None) doesn't crash and clears existing data."""
     data = np.random.rand(10, 3)
 
     empty_pos = np.array([]).reshape(0, 2)
 
-    markers = Markers(method=method)
+    markers = Markers(method=rendering_method)
     markers.set_data(pos=empty_pos)  # Should not crash
     assert markers._data is None  # Should be None with empty data
 
@@ -109,11 +111,10 @@ def test_markers_empty_data(method):
     assert markers._data is None  # Should be cleared
 
 
-@pytest.mark.parametrize('method', ['points', 'instanced'])
-def test_markers_canvas_size_limits(method):
+def test_markers_canvas_size_limits(rendering_method):
     """Test canvas size clamping feature."""
     data = np.random.rand(10, 3)
-    markers = Markers(method=method)
+    markers = Markers(method=rendering_method)
 
     # default None (no clamping)
     assert markers.canvas_size_limits is None
