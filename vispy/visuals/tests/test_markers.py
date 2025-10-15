@@ -1,26 +1,28 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pytest
+from vispy.gloo.gl import use_gl
 from vispy.scene.visuals import Markers
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
 
 
-def _skip_instanced_if_unsupported(method):
+@pytest.fixture(params=['points', 'instanced'])
+def rendering_method(request):
     """Skip test if instanced rendering is requested but gl+ backend is unavailable."""
-    if method == 'instanced':
-        import vispy
-        try:
-            vispy.use(gl='gl+')
-        except Exception:
-            pytest.skip("gl+ backend not available for instanced rendering test")
+    method = request.param
+    try:
+        use_gl('gl+' if method == 'instanced' else 'gl2')
+        yield method
+    except Exception:
+        pytest.skip("gl+ backend not available for instanced rendering test")
+    finally:
+        use_gl('gl2')
 
 
 @requires_application()
-@pytest.mark.parametrize('method', ['points', 'instanced'])
-def test_markers(method):
-    _skip_instanced_if_unsupported(method)
+def test_markers(rendering_method):
     """Test basic marker / point-sprite support"""
     # this is probably too basic, but it at least ensures that point sprites
     # work for people
@@ -28,20 +30,19 @@ def test_markers(method):
     data = np.random.normal(size=(30, 2), loc=50, scale=10)
 
     with TestingCanvas() as c:
-        marker = Markers(parent=c.scene, method=method)
+        marker = Markers(parent=c.scene, method=rendering_method)
         marker.set_data(data)
         assert_image_approved(c.render(), "visuals/markers.png")
 
     # Test good correlation at high-dpi
     with TestingCanvas(px_scale=2) as c:
-        marker = Markers(parent=c.scene, method=method)
+        marker = Markers(parent=c.scene, method=rendering_method)
         marker.set_data(data)
         assert_image_approved(c.render(), "visuals/markers.png")
 
 
 @pytest.mark.parametrize('method', ['points', 'instanced'])
 def test_markers_edge_width(method):
-    _skip_instanced_if_unsupported(method)
     data = np.random.rand(10, 3)
     edge_width = np.random.rand(10)
     marker = Markers(method=method)
@@ -62,7 +63,6 @@ def test_markers_edge_width(method):
 
 @pytest.mark.parametrize('method', ['points', 'instanced'])
 def test_empty_markers_symbol(method):
-    _skip_instanced_if_unsupported(method)
     markers = Markers(method=method)
     markers.symbol = 'o'
 
@@ -85,26 +85,9 @@ def test_markers_method_parameter():
         Markers(method='invalid')
 
 
-@requires_application()
-def test_markers_instanced_rendering():
-    """Test that instanced rendering produces valid output."""
-    _skip_instanced_if_unsupported('instanced')
-    np.random.seed(57983)
-    data = np.random.normal(size=(30, 2), loc=50, scale=10)
-
-    with TestingCanvas() as c:
-        marker = Markers(parent=c.scene, method='instanced')
-        marker.set_data(data, size=20)
-        # just check that it renders without error
-        img = c.render()
-        assert img is not None
-        assert img.shape[0] > 0 and img.shape[1] > 0
-
-
 @pytest.mark.parametrize('method', ['points', 'instanced'])
 def test_markers_empty_data(method):
     """Test that setting empty data (not None) doesn't crash and clears existing data."""
-    _skip_instanced_if_unsupported(method)
     data = np.random.rand(10, 3)
 
     empty_pos = np.array([]).reshape(0, 2)
@@ -129,7 +112,6 @@ def test_markers_empty_data(method):
 @pytest.mark.parametrize('method', ['points', 'instanced'])
 def test_markers_canvas_size_limits(method):
     """Test canvas size clamping feature."""
-    _skip_instanced_if_unsupported(method)
     data = np.random.rand(10, 3)
     markers = Markers(method=method)
 
