@@ -639,9 +639,7 @@ class MouseEvent(Event):
         Event.__init__(self, type, **kwargs)
         self._pos = np.array([0, 0]) if (pos is None) else np.array(pos)
         self._button = int(button) if (button is not None) else None
-        # Explicitly add button to buttons if newly pressed, check #2344 for more reference
-        newly_pressed_buttons = [button] if button is not None and type == 'mouse_press' else []
-        self._buttons = [] if (buttons is None) else buttons + newly_pressed_buttons
+        self._buttons = [] if (buttons is None) else buttons
         self._modifiers = tuple(modifiers or ())
         self._delta = np.zeros(2) if (delta is None) else np.array(delta)
         self._last_event = last_event
@@ -653,11 +651,11 @@ class MouseEvent(Event):
         return self._pos
 
     @property
-    def button(self):
+    def button(self) -> int | None:
         return self._button
 
     @property
-    def buttons(self):
+    def buttons(self) -> list[int]:
         return self._buttons
 
     @property

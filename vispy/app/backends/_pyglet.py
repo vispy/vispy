@@ -207,6 +207,7 @@ class CanvasBackend(BaseCanvasBackend, _Window):
                                       screen=self._vispy_screen)
         if p.position is not None:
             self._vispy_set_position(*p.position)
+        self._buttons = []
 
     def _vispy_warmup(self):
         etime = time() + 0.1
@@ -326,9 +327,15 @@ class CanvasBackend(BaseCanvasBackend, _Window):
     def on_mouse_press(self, x, y, button, modifiers=None):
         if self._vispy_canvas is None:
             return
+
+        mouse_button = BUTTONMAP.get(button, 0)
+        if mouse_button not in self._buttons:
+            self._buttons.append(mouse_button)
+
         self._vispy_mouse_press(
             pos=(x, self.get_size()[1] - y),
-            button=BUTTONMAP.get(button, 0),
+            button=mouse_button,
+            buttons=self._buttons,
             modifiers=self._modifiers(),
         )
 #         if ev2.handled:
@@ -338,9 +345,14 @@ class CanvasBackend(BaseCanvasBackend, _Window):
         if self._vispy_canvas is None:
             return
         if True:  # (button & self._buttons_accepted) > 0:
+            mouse_button = BUTTONMAP.get(button, 0)
+            if mouse_button in self._buttons:
+                self._buttons.remove(mouse_button)
+
             self._vispy_mouse_release(
                 pos=(x, self.get_size()[1] - y),
-                button=BUTTONMAP.get(button, 0),
+                button=mouse_button,
+                buttons=self._buttons,
                 modifiers=self._modifiers(),
             )
             # self._buttons_accepted &= ~button
@@ -350,11 +362,18 @@ class CanvasBackend(BaseCanvasBackend, _Window):
             return
         self._vispy_mouse_move(
             pos=(x, self.get_size()[1] - y),
+            buttons=self._buttons,
             modifiers=self._modifiers(),
         )
 
     def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
-        self.on_mouse_motion(x, y, dx, dy)
+        if self._vispy_canvas is None:
+            return
+        self._vispy_mouse_move(
+            pos=(x, self.get_size()[1] - y),
+            buttons=self._buttons,
+            modifiers=self._modifiers(),
+        )
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self._vispy_canvas is None:

@@ -104,6 +104,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 button=ev["button"],
+                buttons=self._buttons(ev),
                 modifiers=self._modifiers(ev),
             )
         elif type == "pointer_up":
@@ -111,6 +112,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 button=ev["button"],
+                buttons=self._buttons(ev),
                 modifiers=self._modifiers(ev),
             )
         elif type == "pointer_move":
@@ -118,6 +120,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 button=ev["button"],
+                buttons=self._buttons(ev),
                 modifiers=self._modifiers(ev),
             )
         elif type == "double_click":
@@ -125,6 +128,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 button=ev["button"],
+                buttons=self._buttons(ev),
                 modifiers=self._modifiers(ev),
             )
         elif type == "wheel":
@@ -132,6 +136,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 delta=(ev["dx"] / 100, - ev["dy"] / 100),
+                buttons=self._buttons(ev),
                 modifiers=self._modifiers(ev),
             )
         elif type == "key_down":
@@ -156,6 +161,11 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             _stop_timers(self._vispy_canvas)
         else:
             pass  # event ignored / unknown
+
+    @staticmethod
+    def _buttons(ev) -> list[int]:
+        # ev["buttons"] is a tuple, this converts it to a list.
+        return [button for button in ev["buttons"]]
 
     def _modifiers(self, ev):
         return tuple(getattr(keys, m.upper()) for m in ev["modifiers"])

@@ -394,17 +394,32 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             return
         self._vispy_canvas.close()
 
+    @staticmethod
+    def _pressed_mouse_buttons(evt):
+        buttons = []
+        if evt.LeftIsDown():
+            buttons.append(1)
+        if evt.RightIsDown():
+            buttons.append(2)
+        if evt.MiddleIsDown():
+            buttons.append(3)
+        if evt.Aux1IsDown():
+            buttons.append(4)
+        if evt.Aux2IsDown():
+            buttons.append(5)
+
     def on_mouse_event(self, evt):
         if self._vispy_canvas is None:
             return
         pos = (evt.GetX(), evt.GetY())
+        buttons = self._pressed_mouse_buttons(evt)
         mods = _get_mods(evt)
         if evt.GetWheelRotation() != 0:
             delta = (0., float(evt.GetWheelRotation())/120.0)
             self._vispy_canvas.events.mouse_wheel(delta=delta, pos=pos,
-                                                  modifiers=mods)
+                                                  buttons=buttons, modifiers=mods)
         elif evt.Moving() or evt.Dragging():  # mouse move event
-            self._vispy_mouse_move(pos=pos, modifiers=mods)
+            self._vispy_mouse_move(pos=pos, buttons=buttons, modifiers=mods)
         elif evt.ButtonDown():
             if evt.LeftDown():
                 button = 1
@@ -414,7 +429,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                 button = 2
             else:
                 evt.Skip()
-            self._vispy_mouse_press(pos=pos, button=button, modifiers=mods)
+            self._vispy_mouse_press(pos=pos, button=button, buttons=buttons, modifiers=mods)
         elif evt.ButtonUp():
             if evt.LeftUp():
                 button = 1
@@ -424,7 +439,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                 button = 2
             else:
                 evt.Skip()
-            self._vispy_mouse_release(pos=pos, button=button, modifiers=mods)
+            self._vispy_mouse_release(pos=pos, button=button, buttons=buttons, modifiers=mods)
         elif evt.ButtonDClick():
             if evt.LeftDClick():
                 button = 1
@@ -434,9 +449,9 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                 button = 2
             else:
                 evt.Skip()
-            self._vispy_mouse_press(pos=pos, button=button, modifiers=mods)
+            self._vispy_mouse_press(pos=pos, button=button, buttons=buttons, modifiers=mods)
             self._vispy_mouse_double_click(pos=pos, button=button,
-                                           modifiers=mods)
+                                           buttons=buttons, modifiers=mods)
         evt.Skip()
 
     def on_key_down(self, evt):
