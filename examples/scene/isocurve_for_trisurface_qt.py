@@ -21,27 +21,21 @@ from vispy.geometry.generation import create_sphere
 from vispy.color.colormap import get_colormaps
 
 try:
+    # Only valid for PyQt5 < 5.11
     from sip import setapi
     setapi("QVariant", 2)
     setapi("QString", 2)
 except ImportError:
     pass
 
-try:
-    from PyQt4 import QtCore
-    from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import (QMainWindow, QWidget, QLabel,
+# To switch between PyQt5 and PySide2 bindings just change the from import
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QLabel,
                              QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
                              QSplitter)
-except Exception:
-    # To switch between PyQt5 and PySide2 bindings just change the from import
-    from PyQt5 import QtCore
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtWidgets import (QMainWindow, QWidget, QLabel,
-                                 QSpinBox, QComboBox, QGridLayout, QVBoxLayout,
-                                 QSplitter)
 
-# Provide automatic signal function selection for PyQtX/PySide2
+# Provide automatic signal function selection for PyQt5/PySide2
 pyqtsignal = QtCore.pyqtSignal if hasattr(QtCore, 'pyqtSignal') else QtCore.Signal
 
 
