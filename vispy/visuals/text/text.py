@@ -234,7 +234,7 @@ _FRAGMENT_SHADER = """
     """
 
 
-def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
+def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size, line_height):
     """Convert text characters to VBO"""
     # Necessary to flush commands before requesting current viewport because
     # There may be a set_viewport command waiting in the queue.
@@ -271,7 +271,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     # Get/set the fonts whitespace length and line height (size of this ok?)
     glyph = font[' ']
     spacewidth = glyph['advance'] * ratio
-    lineheight = height * 1.5
+    lineheight = height * line_height
 
     # Added escape sequences characters: {unicode:offset,...}
     #   ord('\a') = 7
@@ -382,6 +382,8 @@ class TextVisual(Visual):
         Font face to use.
     font_size : float
         Point size to use.
+    line_height : float
+        Line height multiplier.
     pos : tuple | list of tuple
         Position (x, y) or (x, y, z) of the text.
         Can also be a list of tuple if `text` is a list.
@@ -409,7 +411,7 @@ class TextVisual(Visual):
     }
 
     def __init__(self, text=None, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, pos=[0, 0, 0],
+                 italic=False, face='OpenSans', font_size=12, line_height=1.5, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
                  method='cpu', font_manager=None, depth_test=False):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
@@ -433,6 +435,7 @@ class TextVisual(Visual):
         self.color = color
         self.text = text
         self.font_size = font_size
+        self.line_height = line_height
         self.pos = pos
         self.rotation = rotation
         self._text_scale = STTransform()
@@ -477,6 +480,16 @@ class TextVisual(Visual):
     @font_size.setter
     def font_size(self, size):
         self._font_size = max(0.0, float(size))
+        self.update()
+
+    @property
+    def line_height(self):
+        """The line height multiplier."""
+        return self._line_height
+
+    @line_height.setter
+    def line_height(self, height):
+        self._line_height = max(0.0, float(height))
         self.update()
 
     @property
@@ -533,7 +546,7 @@ class TextVisual(Visual):
             # which may or may not exist when the object is initialized
             self._vertices_data = np.concatenate([
                 _text_to_vbo(t, self._font, self._anchors[0], self._anchors[1],
-                             self._font._lowres_size) for t in text])
+                             self._font._lowres_size, self._line_height) for t in text])
             self._vertices = VertexBuffer(self._vertices_data)
             idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
                    np.arange(0, 4*n_char, 4, dtype=np.uint32)[:, np.newaxis])
