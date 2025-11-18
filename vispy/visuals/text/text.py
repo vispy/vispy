@@ -266,7 +266,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size, line_height):
         y1 = y0 - glyph['size'][1]
         ascender = max(ascender, y0 - slop)
         descender = min(descender, y1 + slop)
-        height = max(height, glyph['size'][1] - 2*slop)
+        height = max(height, ascender - descender)
 
     # Get/set the fonts whitespace length and line height (size of this ok?)
     glyph = font[' ']
@@ -411,7 +411,7 @@ class TextVisual(Visual):
     }
 
     def __init__(self, text=None, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, line_height=1.5, pos=[0, 0, 0],
+                 italic=False, face='OpenSans', font_size=12, line_height=1, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
                  method='cpu', font_manager=None, depth_test=False):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
