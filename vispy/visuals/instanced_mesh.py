@@ -130,7 +130,7 @@ class InstancedMeshVisual(MeshVisual):
     def instance_colors(self, colors):
         if colors is not None:
             colors = ColorArray(colors)
-            self._instance_colors_vbo = VertexBuffer(colors.rgba, divisor=1)
+            self._instance_colors_vbo = VertexBuffer(np.ascontiguousarray(colors.rgba), divisor=1)
         else:
             self._instance_colors_vbo = (1, 1, 1, 1)
 
@@ -138,9 +138,6 @@ class InstancedMeshVisual(MeshVisual):
         self.mesh_data_changed()
 
     def _update_data(self):
-        with self.events.data_updated.blocker():
-            super()._update_data()
-
         # set instance buffers
         self.shared_program.vert['instance_color'] = self._instance_colors_vbo
         self.shared_program['transform_x'] = self._instance_transforms_vbos[0]
@@ -148,7 +145,7 @@ class InstancedMeshVisual(MeshVisual):
         self.shared_program['transform_z'] = self._instance_transforms_vbos[2]
         self.shared_program['shift'] = self._instance_positions_vbo
 
-        self.events.data_updated()
+        super()._update_data()
 
     # TODO: bounds are not reported correctly at the moment! We should
     #       overload `_compute_bounds` based on the instances
