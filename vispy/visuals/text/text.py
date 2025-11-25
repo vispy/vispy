@@ -260,7 +260,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size, line_height):
 
     # Also analyse chars with large ascender and descender, otherwise the
     # vertical alignment can be very inconsistent
-    for char in 'hy':
+    for char in 'ÅÉÑŐjgpqy':
         glyph = font[char]
         y0 = glyph['offset'][1] * ratio + slop
         y1 = y0 - glyph['size'][1]
