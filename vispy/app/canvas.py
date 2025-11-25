@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import division, print_function
+from __future__ import annotations, division, print_function
 
 import sys
 import numpy as np

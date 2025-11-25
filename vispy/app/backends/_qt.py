@@ -501,7 +501,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         return [BUTTONMAP.get(button) for button in buttons]
 
-
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
