@@ -258,8 +258,8 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size, line_height):
     # trigger SDF rendering, which changes our viewport
     # todo: get rid of call to glGetParameter!
 
-    # Also analyse chars with large ascender and descender, otherwise the
-    # vertical alignment can be very inconsistent
+    # Also analyse chars with large ascender, capitals with diacritics,
+    # and descender, otherwise the vertical alignment can be very inconsistent
     for char in 'ÅÉÑŐjgpqy':
         glyph = font[char]
         y0 = glyph['offset'][1] * ratio + slop
@@ -411,7 +411,7 @@ class TextVisual(Visual):
     }
 
     def __init__(self, text=None, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, line_height=1.2, pos=[0, 0, 0],
+                 italic=False, face='OpenSans', font_size=12, line_height=1.1, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
                  method='cpu', font_manager=None, depth_test=False):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
