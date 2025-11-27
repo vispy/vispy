@@ -329,6 +329,9 @@ class CanvasBackend(BaseCanvasBackend, _Window):
             return
 
         mouse_button = BUTTONMAP.get(button, 0)
+        if mouse_button == 0:
+            return
+
         if mouse_button not in self._buttons:
             self._buttons.append(mouse_button)
 
@@ -346,6 +349,9 @@ class CanvasBackend(BaseCanvasBackend, _Window):
             return
         if True:  # (button & self._buttons_accepted) > 0:
             mouse_button = BUTTONMAP.get(button, 0)
+            if mouse_button == 0:
+                return
+
             if mouse_button in self._buttons:
                 self._buttons.remove(mouse_button)
 
