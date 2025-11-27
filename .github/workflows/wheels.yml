@@ -17,14 +17,14 @@ jobs:
         os: [ubuntu-latest, windows-2025, macOS-latest, macos-13, ubuntu-24.04-arm]
         arch: [auto]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Set up QEMU
       if: ${{ matrix.arch == 'aarch64' }}
       uses: docker/setup-qemu-action@v3
     - name: Build wheels
-      uses: pypa/cibuildwheel@v3.2.1
+      uses: pypa/cibuildwheel@v3.3.0
       env:
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
     - uses: actions/upload-artifact@v5
@@ -36,7 +36,7 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - uses: actions/setup-python@v5
