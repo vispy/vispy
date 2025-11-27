@@ -491,15 +491,35 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         return self.size()
 
     def _buttonmap_to_list(self, buttons) -> list[int]:
-        if PYQT6_API or PYSIDE6_API:
-            # buttons: QFlags[MouseButton]
-            if buttons == QtCore.Qt.MouseButton.NoButton:
-                return []
-        else:
-            if buttons == 0:
-                return []
+        if buttons == QtCore.Qt.MouseButton.NoButton:
+            return []
 
-        return [BUTTONMAP.get(button) for button in buttons]
+        mouse_buttons = []
+
+        if PYQT6_API or PYSIDE6_API:
+            if QtCore.Qt.MouseButton.LeftButton in buttons:
+                mouse_buttons.append(1)
+            if QtCore.Qt.MouseButton.RightButton in buttons:
+                mouse_buttons.append(2)
+            if QtCore.Qt.MouseButton.MiddleButton in buttons:
+                mouse_buttons.append(3)
+            if QtCore.Qt.MouseButton.BackButton in buttons:
+                mouse_buttons.append(4)
+            if QtCore.Qt.MouseButton.ForwardButton in buttons:
+                mouse_buttons.append(5)
+        else:
+            if buttons & QtCore.Qt.MouseButton.LeftButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(1)
+            if buttons & QtCore.Qt.MouseButton.RightButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(2)
+            if buttons & QtCore.Qt.MouseButton.MiddleButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(3)
+            if buttons & QtCore.Qt.MouseButton.BackButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(4)
+            if buttons & QtCore.Qt.MouseButton.ForwardButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(5)
+
+        return mouse_buttons
 
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
