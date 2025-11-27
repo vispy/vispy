@@ -403,10 +403,8 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
             buttons.append(2)
         if evt.MiddleIsDown():
             buttons.append(3)
-        if evt.Aux1IsDown():
-            buttons.append(4)
-        if evt.Aux2IsDown():
-            buttons.append(5)
+
+        return buttons
 
     def on_mouse_event(self, evt):
         if self._vispy_canvas is None:
@@ -429,6 +427,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                 button = 2
             else:
                 evt.Skip()
+                return
             self._vispy_mouse_press(pos=pos, button=button, buttons=buttons, modifiers=mods)
         elif evt.ButtonUp():
             if evt.LeftUp():
@@ -439,6 +438,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                 button = 2
             else:
                 evt.Skip()
+                return
             self._vispy_mouse_release(pos=pos, button=button, buttons=buttons, modifiers=mods)
         elif evt.ButtonDClick():
             if evt.LeftDClick():
@@ -449,6 +449,7 @@ class CanvasBackend(GLCanvas, BaseCanvasBackend):
                 button = 2
             else:
                 evt.Skip()
+                return
             self._vispy_mouse_press(pos=pos, button=button, buttons=buttons, modifiers=mods)
             self._vispy_mouse_double_click(pos=pos, button=button,
                                            buttons=buttons, modifiers=mods)
