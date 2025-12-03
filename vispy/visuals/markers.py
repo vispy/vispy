@@ -13,7 +13,7 @@ from .visual import Visual
 from ..util.event import Event
 
 
-_VERTEX_SHADER_TEMPLATE = """
+_VERTEX_SHADER = """
 uniform float u_antialias;
 uniform float u_px_scale;
 uniform bool u_scaling;
@@ -27,7 +27,6 @@ attribute vec4 a_bg_color;
 attribute float a_edgewidth;
 attribute float a_size;
 attribute float a_symbol;
-{extra_attributes}
 
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
@@ -35,26 +34,25 @@ varying float v_edgewidth;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
-{extra_varyings}
 
 float big_float = 1e10; // prevents numerical imprecision
 
-void main (void) {{
+void main (void) {
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     // fluctuations can mess "fake integers" up, so we do +0.5 and floor to make sure it's right
     v_symbol = a_symbol + 0.5;
 
-    {pre_transform}
+    // Set up v_texcoord (hook may do nothing for points mode)
+    $setup_texcoord();
 
     vec4 pos = vec4(a_position, 1);
     vec4 fb_pos = $visual_to_framebuffer(pos);
     vec4 x;
     vec4 size_vec;
-    {initial_position}
 
     // NOTE: gl_stuff uses framebuffer coords!
-    if (u_scaling) {{
+    if (u_scaling) {
         // scaling == "scene": scale marker using entire visual -> framebuffer set of transforms
         // scaling == "visual": scale marker using only the Visual's transform
         pos = $framebuffer_to_scene_or_visual(fb_pos);
@@ -67,32 +65,35 @@ void main (void) {{
         // this gives us the actual screen-space size of the point
         $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
         v_edgewidth = ($v_size / a_size) * a_edgewidth;
-    }}
-    else {{
+    }
+    else {
         // scaling == "fixed": marker is always the same number of pixels
         $v_size = a_size * u_px_scale;
         v_edgewidth = a_edgewidth * u_px_scale;
-    }}
+    }
 
     // Optional canvas size clamping
     float original_size = $v_size;
-    if (u_canvas_size_min >= 0.0) {{
+    if (u_canvas_size_min >= 0.0) {
         $v_size = max($v_size, u_canvas_size_min);
-    }}
-    if (u_canvas_size_max >= 0.0) {{
+    }
+    if (u_canvas_size_max >= 0.0) {
         $v_size = min($v_size, u_canvas_size_max);
-    }}
+    }
     // Update edge width proportionally if size was clamped
-    if ($v_size != original_size) {{
+    if ($v_size != original_size) {
         v_edgewidth = v_edgewidth * ($v_size / original_size);
-    }}
+    }
 
     // Total size including edge and antialiasing
     float total_size = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
 
-    {post_size}
+    // Apply offset and set position (hook handles differences between modes)
+    vec4 final_fb_pos = $apply_offset(fb_pos, total_size);
+    gl_Position = $framebuffer_to_render(final_fb_pos);
+    gl_PointSize = total_size;  // Used for GL_POINTS, ignored for triangles
 
-    if (u_spherical == true) {{
+    if (u_spherical == true) {
         // similar as above for scaling, but in towards the screen direction
         // Get the framebuffer z direction relative to this sphere in visual coords
         vec4 z = $framebuffer_to_scene_or_visual(fb_pos + vec4(0, 0, big_float, 0));
@@ -103,35 +104,12 @@ void main (void) {{
         v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
         // size ratio between aliased and non-aliased, needed for correct depth
         v_alias_ratio = total_size / $v_size;
-    }}
-}}
+    }
+}
 """
 
-_VERTEX_SHADER = _VERTEX_SHADER_TEMPLATE.format(
-    extra_attributes="",
-    extra_varyings="",
-    pre_transform="",
-    initial_position="gl_Position = $framebuffer_to_render(fb_pos);",
-    post_size="gl_PointSize = total_size;",
-)
 
-_INSTANCED_VERTEX_SHADER = _VERTEX_SHADER_TEMPLATE.format(
-    extra_attributes="attribute vec2 a_quad_pos;",
-    extra_varyings="varying vec2 v_texcoord;",
-    pre_transform="""\
-    // Convert from (-0.5, 0.5) to (0, 1) for texture sampling
-    v_texcoord = a_quad_pos + 0.5;
-    v_texcoord.y = 1.0 - v_texcoord.y;""",
-    initial_position="",
-    post_size="""\
-    // Apply offset in framebuffer space
-    vec2 offset = a_quad_pos * total_size;
-    vec4 offset_fb_pos = fb_pos + vec4(offset, 0, 0);
-    gl_Position = $framebuffer_to_render(offset_fb_pos);""",
-)
-
-
-_FRAGMENT_SHADER_TEMPLATE = """#version 120
+_FRAGMENT_SHADER = """#version 120
 uniform vec3 u_light_position;
 uniform vec3 u_light_color;
 uniform float u_light_ambient;
@@ -145,7 +123,6 @@ varying float v_edgewidth;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
-{extra_varyings}
 
 
 bool isnan(float val) {
@@ -157,7 +134,7 @@ bool isinf(float val) {
 }
 
 void main()
-{{
+{
     // Discard plotting marker body and edge if zero-size or nan/inf.
     // Sometimes edgewidth becomes nan/inf even if size is not exactly zero here due to float
     // imprecision. We really are checking for `a_size == 0`, but this is the fragment shader proxy
@@ -170,7 +147,8 @@ void main()
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
-    float r = $marker({pointcoord}, size, int(v_symbol));
+    vec2 pointcoord = $pointcoord();
+    float r = $marker(pointcoord, size, int(v_symbol));
 
     // it takes into account an antialising layer
     // of size u_antialias inside the edge
@@ -183,22 +161,22 @@ void main()
     float d = abs(r) - t;
 
     if (r > 0.5*v_edgewidth + u_antialias)
-    {{
+    {
         // out of the marker (beyond the outer edge of the edge
         // including transition zone due to antialiasing)
         discard;
-    }}
+    }
 
     vec4 facecolor = v_bg_color;
     vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
     float depth_change = 0;
 
     // change color and depth if spherical mode is active
-    if (u_spherical == true) {{
+    if (u_spherical == true) {
         // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
         // and the aliasing ring has the same coordinates as the point just inside,
         // which is important for lighting
-        vec2 texcoord = ({pointcoord} * 2 - 1) * v_alias_ratio;
+        vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
         float x = clamp(texcoord.x, -1, 1);
         float y = clamp(texcoord.y, -1, 1);
         float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
@@ -225,62 +203,52 @@ void main()
         edgecolor = vec4(edgecolor.rgb * diffuse_color + specular_color, edgecolor.a * u_alpha);
         // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
         depth_change = -0.5 * z * v_depth_middle;
-    }}
+    }
 
     if (d < 0.0)
-    {{
+    {
         // inside the width of the edge
         // (core, out of the transition zone for antialiasing)
         gl_FragColor = edgecolor;
-    }}
+    }
     else if (v_edgewidth == 0.)
-    {{// no edge
+    {// no edge
         if (r > -u_antialias)
-        {{// outside
+        {// outside
             float alpha = 1.0 + r/u_antialias;
             alpha = exp(-alpha*alpha);
             gl_FragColor = vec4(facecolor.rgb, alpha*facecolor.a);
-        }}
+        }
         else
-        {{// inside
+        {// inside
             gl_FragColor = facecolor;
-        }}
-    }}
+        }
+    }
     else
-    {{// non-zero edge
+    {// non-zero edge
         float alpha = d/u_antialias;
         alpha = exp(-alpha*alpha);
         if (r > 0.)
-        {{
+        {
             // outer part of the edge: fade out into the background...
             gl_FragColor = vec4(edgecolor.rgb, alpha*edgecolor.a);
-        }}
+        }
         else
-        {{
+        {
             // inner part of the edge: fade into the face color
             gl_FragColor = mix(facecolor, edgecolor, alpha);
-        }}
-    }}
+        }
+    }
     gl_FragDepth = gl_FragCoord.z + depth_change;
-}}
+}
 """
-
-_FRAGMENT_SHADER = _FRAGMENT_SHADER_TEMPLATE.format(
-    pointcoord="gl_PointCoord",
-    extra_varyings=""
-)
-
-_INSTANCED_FRAGMENT_SHADER = _FRAGMENT_SHADER_TEMPLATE.format(
-    pointcoord="v_texcoord",
-    extra_varyings="varying vec2 v_texcoord;"
-)
-
 
 disc = """
 float r = length((pointcoord.xy - vec2(0.5,0.5))*size);
 r -= $v_size/2.;
 return r;
 """
+
 
 arrow = """
 const float sqrt2 = sqrt(2.);
@@ -618,10 +586,6 @@ class MarkersVisual(Visual):
         'vertex': _VERTEX_SHADER,
         'fragment': _FRAGMENT_SHADER,
     }
-    _instanced_shaders = {
-        'vertex': _INSTANCED_VERTEX_SHADER,
-        'fragment': _INSTANCED_FRAGMENT_SHADER,
-    }
     _symbol_shader_values = symbol_shader_values
     _symbol_shader = symbol_func
 
@@ -634,10 +598,13 @@ class MarkersVisual(Visual):
         self._scaling = "fixed"
         self._canvas_size_limits = None
 
-        if method == 'points':
-            shaders = self._shaders
-        elif method == 'instanced':
-            shaders = self._instanced_shaders
+        if method not in ('points', 'instanced'):
+            raise ValueError(f"method must be 'points' or 'instanced', got {method!r}")
+
+        self._method = method
+
+        # Set up quad vertices for instanced rendering
+        if method == 'instanced':
             # instancing draws a small quad for each marker
             quad_vertices = np.array([
                 # triangle 1
@@ -650,12 +617,8 @@ class MarkersVisual(Visual):
                 [-0.5, 0.5],   # top-left
             ], dtype=np.float32)
             self._quad_vbo = VertexBuffer(quad_vertices)
-        else:
-            raise ValueError(f"method must be 'points' or 'instanced', got {method!r}")
 
-        self._method = method
-
-        Visual.__init__(self, vcode=shaders['vertex'], fcode=shaders['fragment'])
+        Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._symbol_func = Function(self._symbol_shader)
         self.shared_program.frag['marker'] = self._symbol_func
         self._v_size_var = Variable('varying float v_size')
@@ -665,7 +628,43 @@ class MarkersVisual(Visual):
         self.shared_program['u_canvas_size_min'] = -1.0
         self.shared_program['u_canvas_size_max'] = -1.0
 
-        self._draw_mode = 'points' if self._method == 'points' else 'triangles'
+        if method == 'instanced':
+            self._draw_mode = 'triangles'
+            # instanced mode, use v_texcoord instead of gl_PointCoord
+            setup_texcoord_func = Function("""
+                void setup_texcoord() {
+                    vec2 coord = $a_quad_pos + 0.5;
+                    coord.y = 1.0 - coord.y;
+                    $v_texcoord = coord;
+                }
+            """)
+            # offset the framebuffer position to match gl_PointSize behavior (but without aliasing)
+            apply_offset_func = Function("""
+                vec4 apply_offset(vec4 fb_pos, float total_size) {
+                    vec2 offset = $a_quad_pos * total_size;
+                    return fb_pos + vec4(offset, 0, 0);
+                }
+            """)
+            pointcoord_func = Function("vec2 pointcoord() { return $v_texcoord; }")
+
+            # need to store a_quad_pos for later updates
+            self._a_quad_pos_var = Variable('attribute vec2 a_quad_pos')
+            v_texcoord_var = Variable('varying vec2 v_texcoord')
+
+            setup_texcoord_func['a_quad_pos'] = self._a_quad_pos_var
+            setup_texcoord_func['v_texcoord'] = v_texcoord_var
+            apply_offset_func['a_quad_pos'] = self._a_quad_pos_var
+            pointcoord_func['v_texcoord'] = v_texcoord_var
+        else:
+            self._draw_mode = 'points'
+            # GL_POINTS mode: noop setup, no offset, use gl_PointCoord for pointcoord
+            setup_texcoord_func = Function("void setup_texcoord() {}")
+            apply_offset_func = Function("vec4 apply_offset(vec4 fb_pos, float total_size) { return fb_pos; }")
+            pointcoord_func = Function("vec2 pointcoord() { return gl_PointCoord; }")
+
+        self.shared_program.vert['setup_texcoord'] = setup_texcoord_func
+        self.shared_program.vert['apply_offset'] = apply_offset_func
+        self.shared_program.frag['pointcoord'] = pointcoord_func
 
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -765,7 +764,7 @@ class MarkersVisual(Visual):
     def _upload_instanced_data(self, data_dict):
         """Upload data for instanced rendering."""
         self._data = data_dict
-        self.shared_program['a_quad_pos'] = self._quad_vbo
+        self._a_quad_pos_var.value = self._quad_vbo
 
         for attr_name, attr_data in data_dict.items():
             self.shared_program[attr_name] = VertexBuffer(
