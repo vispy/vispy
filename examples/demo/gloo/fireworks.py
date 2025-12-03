@@ -17,7 +17,7 @@ import numpy as np
 from vispy import gloo, app
 
 # import vispy
-# vispy.use('pyside', 'es2')
+# vispy.use('pyside2', 'es2')
 
 
 # Create a texture

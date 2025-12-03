@@ -28,7 +28,6 @@ from vispy import app
 from vispy.util.ptime import time
 from vispy.gloo.util import _screenshot
 
-# WARNING: doesn't work with Qt4 (update() does not call on_draw()??)
 app.use_app('glfw')
 
 vertex = """

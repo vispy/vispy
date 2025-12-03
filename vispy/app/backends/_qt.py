@@ -4,18 +4,18 @@
 
 """
 Base code for the Qt backends. Note that this is *not* (anymore) a
-backend by itself! One has to explicitly use either PySide, PyQt4 or
-PySide2, PyQt5 or PyQt6. Note that the automatic backend selection prefers
+backend by itself! One has to explicitly use PySide2, PyQt5, PySide6 or PyQt6.
+Note that the automatic backend selection prefers
 a GUI toolkit that is already imported.
 
-The _pyside, _pyqt4, _pyside2, _pyqt5 and _pyside6 modules will
+The _pyside2, _pyqt5, _pyside6 and _pyqt6 modules will
 import * from this module, and also keep a ref to the module object.
 Note that if two of the backends are used, this module is actually
 reloaded. This is a sorts of poor mans "subclassing" to get a working
 version for both backends using the same code.
 
 Note that it is strongly discouraged to use the
-PySide/PyQt4/PySide2/PyQt5/PySide6 backends simultaneously. It is
+PySide2/PyQt5/PySide6/PyQt6 backends simultaneously. It is
 known to cause unpredictable behavior and segfaults.
 """
 
@@ -55,7 +55,7 @@ elif sys.platform.startswith('win'):
 
 def _check_imports(lib):
     # Make sure no conflicting libraries have been imported.
-    libs = ['PyQt4', 'PyQt5', 'PyQt6', 'PySide', 'PySide2', 'PySide6']
+    libs = ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']
     libs.remove(lib)
     for lib2 in libs:
         lib2 += '.QtCore'
@@ -76,18 +76,12 @@ def _get_event_xy(ev):
 
 
 # Get what qt lib to try. This tells us wheter this module is imported
-# via _pyside or _pyqt4 or _pyqt5
+# via _pyside2 or _pyqt5 or _pyside6 or _pyqt6
 QGLWidget = object
 QT5_NEW_API = False
 PYSIDE6_API = False
 PYQT6_API = False
-if qt_lib == 'pyqt4':
-    _check_imports('PyQt4')
-    if not USE_EGL:
-        from PyQt4.QtOpenGL import QGLWidget, QGLFormat
-    from PyQt4 import QtGui, QtCore, QtTest
-    QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
-elif qt_lib == 'pyqt5':
+if qt_lib == 'pyqt5':
     _check_imports('PyQt5')
     if not USE_EGL:
         from PyQt5.QtCore import QT_VERSION_STR
@@ -98,7 +92,6 @@ elif qt_lib == 'pyqt5':
         else:
             from PyQt5.QtOpenGL import QGLWidget, QGLFormat
     from PyQt5 import QtGui, QtCore, QtWidgets, QtTest
-    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyqt6':
     _check_imports('PyQt6')
     if not USE_EGL:
@@ -110,7 +103,6 @@ elif qt_lib == 'pyqt6':
         else:
             from PyQt6.QtOpenGL import QGLWidget, QGLFormat
     from PyQt6 import QtGui, QtCore, QtWidgets, QtTest
-    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside6':
     _check_imports('PySide6')
     if not USE_EGL:
@@ -122,7 +114,6 @@ elif qt_lib == 'pyside6':
         else:
             from PySide6.QtOpenGL import QGLWidget, QGLFormat
     from PySide6 import QtGui, QtCore, QtWidgets, QtTest
-    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
 elif qt_lib == 'pyside2':
     _check_imports('PySide2')
     if not USE_EGL:
@@ -134,13 +125,6 @@ elif qt_lib == 'pyside2':
         else:
             from PySide2.QtOpenGL import QGLWidget, QGLFormat
     from PySide2 import QtGui, QtCore, QtWidgets, QtTest
-    QWidget, QApplication = QtWidgets.QWidget, QtWidgets.QApplication  # Compat
-elif qt_lib == 'pyside':
-    _check_imports('PySide')
-    if not USE_EGL:
-        from PySide.QtOpenGL import QGLWidget, QGLFormat
-    from PySide import QtGui, QtCore, QtTest
-    QWidget, QApplication = QtGui.QWidget, QtGui.QApplication  # Compat
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
 else:
@@ -208,9 +192,7 @@ else:
 # Properly log Qt messages
 def message_handler(*args):
 
-    if qt_lib in ("pyqt4", "pyside"):
-        msg_type, msg = args
-    elif qt_lib in ("pyqt5", "pyqt6", "pyside2", "pyside6"):  # Is this correct for pyside2?
+    if qt_lib in ("pyqt5", "pyqt6", "pyside2", "pyside6"):  # Is this correct for pyside2?
         msg_type, context, msg = args
     elif qt_lib:
         raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
@@ -246,10 +228,7 @@ def use_shared_contexts():
     return not (QT5_NEW_API or PYSIDE6_API or PYQT6_API) or forced_env_var
 
 
-try:
-    QtCore.qInstallMsgHandler(message_handler)
-except AttributeError:
-    QtCore.qInstallMessageHandler(message_handler)  # PyQt5, PyQt6
+QtCore.qInstallMessageHandler(message_handler)
 
 
 # -------------------------------------------------------------- capability ---
@@ -287,7 +266,7 @@ def _set_config(c):
         glformat.setSwapBehavior(glformat.SwapBehavior.DoubleBuffer if c['double_buffer']
                                  else glformat.SwapBehavior.SingleBuffer)
     else:
-        # Qt4 and Qt5 < 5.4.0 - buffers must be explicitly requested.
+        # Qt5 < 5.4.0 - buffers must be explicitly requested.
         glformat.setAccum(False)
         glformat.setRgba(True)
         glformat.setDoubleBuffer(True if c['double_buffer'] else False)
@@ -311,9 +290,9 @@ class ApplicationBackend(BaseApplicationBackend):
         # sharing is currently buggy and causes segmentation faults for tests with PyQt 5.6
         if (QT5_NEW_API or PYSIDE6_API) and use_shared_contexts():
             # For Qt5 >= 5.4.0 - Enable sharing of context between windows.
-            QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
+            QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
         elif PYQT6_API and use_shared_contexts():
-            QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)
+            QtWidgets.QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)
 
     def _vispy_get_backend_name(self):
         name = QtCore.__name__.split('.')[0]
@@ -322,7 +301,7 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_process_events(self):
         app = self._vispy_get_native_app()
         # sendPostedEvents replaces flush which has been removed from Qt6.0+
-        # This should be compatible with Qt4.x and Qt5.x
+        # This should be compatible with Qt5.x
         app.sendPostedEvents()
         app.processEvents()
 
@@ -331,8 +310,7 @@ class ApplicationBackend(BaseApplicationBackend):
         if hasattr(app, '_in_event_loop') and app._in_event_loop:
             pass  # Already in event loop
         else:
-            # app.exec_() for PyQt <=5 and app.exec() for PyQt >=5
-            exec_func = app.exec if hasattr(app, "exec") else app.exec_
+            exec_func = app.exec
             return exec_func()
 
     def _vispy_quit(self):
@@ -340,9 +318,9 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_get_native_app(self):
         # Get native app in save way. Taken from guisupport.py
-        app = QApplication.instance()
+        app = QtWidgets.QApplication.instance()
         if app is None:
-            app = QApplication([''])
+            app = QtWidgets.QApplication([''])
         # Store so it won't be deleted, but not on a vispy object,
         # or an application may produce error when closed.
         QtGui._qApp = app
@@ -386,11 +364,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         # must set physical size before setting visible or fullscreen
         # operations may make the size invalid
-        if hasattr(self, 'devicePixelRatioF'):
-            # handle high DPI displays in PyQt5
-            ratio = self.devicePixelRatioF()
-        else:
-            ratio = 1
+        ratio = QtWidgets.QApplication.instance().devicePixelRatio()
         self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
 
         if not p.resizable:
@@ -421,8 +395,8 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         If display resolutions are the same this is essentially a no-op except for the redraw.
         If the display resolutions differ (HiDPI versus regular displays) the canvas needs to
-        be redrawn to reset the physical size based on the current `devicePixelRatioF()` and
-        redrawn with that new size.
+        be redrawn to reset the physical size based on the current `QtWidgets.QApplication.devicePixelRatio()`
+        and redrawn with that new size.
 
         """
         self.resizeGL(*self._vispy_get_size())
@@ -549,16 +523,8 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         # Get scrolling
-        deltax, deltay = 0.0, 0.0
-        if hasattr(ev, 'orientation'):
-            if ev.orientation == QtCore.Qt.Horizontal:
-                deltax = ev.delta() / 120.0
-            else:
-                deltay = ev.delta() / 120.0
-        else:
-            # PyQt5 / PyQt6
-            delta = ev.angleDelta()
-            deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
+        delta = ev.angleDelta()
+        deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
         # Emit event
         vispy_event = self._vispy_canvas.events.mouse_wheel(
             native=ev,
@@ -654,7 +620,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def event(self, ev):
         out = super(QtBaseCanvasBackend, self).event(ev)
 
-        # QNativeGestureEvent is Qt 5+
+        # QNativeGestureEvent is available for Qt >= 5.2
         if (
             (QT5_NEW_API or PYSIDE6_API or PYQT6_API)
             and isinstance(ev, QtGui.QNativeGestureEvent)
@@ -701,7 +667,7 @@ egl = None
 # todo: Make work on Raspberry Pi!
 
 
-class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
+class CanvasBackendEgl(QtBaseCanvasBackend, QtWidgets.QWidget):
 
     def _init_specific(self, p, kwargs):
 
@@ -737,7 +703,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         else:
             hint = qt_window_types.Widget  # can also be a window type
 
-        QWidget.__init__(self, p.parent, hint)
+        QtWidgets.QWidget.__init__(self, p.parent, hint)
 
         qt_window_attributes = QtCore.Qt.WidgetAttribute if PYQT6_API else QtCore.Qt
         if 0:  # IS_LINUX or IS_RPI:
@@ -755,7 +721,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         self._initialized = True
 
     def get_window_id(self):
-        """Get the window id of a PySide Widget. Might also work for PyQt4."""
+        """Get the window id of a Widget."""
         # Get Qt win id
         winid = self.winId()
 
@@ -838,7 +804,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
     def paintEngine(self):
         if IS_LINUX and not IS_RPI:
             # For now we are drawing a screenshot
-            return QWidget.paintEngine(self)
+            return QtWidgets.QWidget.paintEngine(self)
         else:
             return None  # Disable Qt's native drawing system
 
@@ -887,7 +853,7 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
             self._surface.create()
             self._secondary_context.makeCurrent(self._surface)
         else:
-            # Qt4 and Qt5 < 5.4.0 - sharing is explicitly requested
+            # Qt5 < 5.4.0 - sharing is explicitly requested
             QGLWidget.__init__(self, p.parent, widget, hint)
             # unused with this API
             self._secondary_context = None
@@ -944,13 +910,13 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        if hasattr(self, 'devicePixelRatioF'):
-            # We take into account devicePixelRatioF, which is non-unity on
-            # e.g HiDPI displays.
-            # self.devicePixelRatioF() is a float and should have been in Qt5 according to the documentation
-            ratio = self.devicePixelRatioF()
-            w = int(w * ratio)
-            h = int(h * ratio)
+        # We take into account devicePixelRatioF, which is non-unity on
+        # e.g HiDPI displays.
+        # QtWidgets.QApplication.devicePixelRatio() is a float and should be
+        # available for Qt >= 5 according to the documentation
+        ratio = QtWidgets.QApplication.instance().devicePixelRatio()
+        w = int(w * ratio)
+        h = int(h * ratio)
         self._vispy_set_physical_size(w, h)
         self._vispy_canvas.events.resize(size=(self.width(), self.height()),
                                          physical_size=(w, h))

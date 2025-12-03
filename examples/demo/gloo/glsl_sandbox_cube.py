@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-A GLSL sandbox application based on the spinning cube. Requires PySide
+A GLSL sandbox application based on the spinning cube. Requires PySide2
 or PyQt5.
 """
 
@@ -15,8 +15,10 @@ try:
     from PyQt5.QtWidgets import (QWidget, QPlainTextEdit, QLabel, QPushButton,
                                  QHBoxLayout, QVBoxLayout)
 except ImportError:
-    from PyQt4.QtGui import (QWidget, QPlainTextEdit, QFont, QLabel,
-                             QPushButton, QHBoxLayout, QVBoxLayout)
+    from PySide2.QtGui import QFont
+    from PySide2.QtWidgets import (
+        QWidget, QPlainTextEdit, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
+    )
 
 VERT_CODE = """
 uniform   mat4 u_model;

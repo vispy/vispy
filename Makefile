@@ -68,18 +68,12 @@ extra: clean-test
 nobackend : clean-test
 	python make test nobackend
 
-pyqt4: clean-test
-	python make test pyqt4
-
 pyqt5: clean-test
 	python make test pyqt5
 
 pyqt6: clean-test
 	python make test pyqt6
 	
-pyside: clean-test
-	python make test pyside
-
 pyside2: clean-test
 	python make test pyside2
 
