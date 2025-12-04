@@ -147,7 +147,7 @@ void main()
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
-    vec2 pointcoord = $pointcoord();
+    vec2 pointcoord = $pointcoord;
     float r = $marker(pointcoord, size, int(v_symbol));
 
     // it takes into account an antialising layer
@@ -630,6 +630,7 @@ class MarkersVisual(Visual):
 
         if method == 'instanced':
             self._draw_mode = 'triangles'
+
             # instanced mode, use v_texcoord instead of gl_PointCoord
             setup_texcoord_func = Function("""
                 void setup_texcoord() {
@@ -638,6 +639,7 @@ class MarkersVisual(Visual):
                     $v_texcoord = coord;
                 }
             """)
+
             # offset the framebuffer position to match gl_PointSize behavior (but without aliasing)
             apply_offset_func = Function("""
                 vec4 apply_offset(vec4 fb_pos, float total_size) {
@@ -645,26 +647,24 @@ class MarkersVisual(Visual):
                     return fb_pos + vec4(offset, 0, 0);
                 }
             """)
-            pointcoord_func = Function("vec2 pointcoord() { return $v_texcoord; }")
 
-            # need to store a_quad_pos for later updates
-            self._a_quad_pos_var = Variable('attribute vec2 a_quad_pos')
             v_texcoord_var = Variable('varying vec2 v_texcoord')
-
-            setup_texcoord_func['a_quad_pos'] = self._a_quad_pos_var
             setup_texcoord_func['v_texcoord'] = v_texcoord_var
-            apply_offset_func['a_quad_pos'] = self._a_quad_pos_var
-            pointcoord_func['v_texcoord'] = v_texcoord_var
+            frag_pointcoord = v_texcoord_var
+
+            setup_texcoord_func['a_quad_pos'] = self._quad_vbo
+            apply_offset_func['a_quad_pos'] = self._quad_vbo
         else:
             self._draw_mode = 'points'
             # GL_POINTS mode: noop setup, no offset, use gl_PointCoord for pointcoord
             setup_texcoord_func = Function("void setup_texcoord() {}")
             apply_offset_func = Function("vec4 apply_offset(vec4 fb_pos, float total_size) { return fb_pos; }")
-            pointcoord_func = Function("vec2 pointcoord() { return gl_PointCoord; }")
+
+            frag_pointcoord = "gl_PointCoord"
 
         self.shared_program.vert['setup_texcoord'] = setup_texcoord_func
         self.shared_program.vert['apply_offset'] = apply_offset_func
-        self.shared_program.frag['pointcoord'] = pointcoord_func
+        self.shared_program.frag['pointcoord'] = frag_pointcoord
 
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -764,7 +764,6 @@ class MarkersVisual(Visual):
     def _upload_instanced_data(self, data_dict):
         """Upload data for instanced rendering."""
         self._data = data_dict
-        self._a_quad_pos_var.value = self._quad_vbo
 
         for attr_name, attr_data in data_dict.items():
             self.shared_program[attr_name] = VertexBuffer(
