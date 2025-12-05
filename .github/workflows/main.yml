@@ -50,7 +50,7 @@ jobs:
     name: lint and style checks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -83,7 +83,7 @@ jobs:
       run:
         shell: bash --login -e {0}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
@@ -139,7 +139,7 @@ jobs:
         export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
     - name: Upload website HTML artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: Sphinx Website
         path: |
@@ -191,7 +191,7 @@ jobs:
             test: "standard"
             new_qt: true
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
@@ -266,6 +266,13 @@ jobs:
       run: |
         if [ "${{ matrix.test }}" == 'standard' ]; then
           export DISPLAY=:99.0
+          # this is a workaround for pyopengl 3.1.7+ that changed library resolution order
+          # the new version breaks vispy SDL2 tests in CI, but has not been reproduced locally
+          # see previous discussions in:
+          # * https://github.com/vispy/vispy/pull/2636
+          # * https://github.com/vispy/vispy/pull/2668
+          # * https://github.com/vispy/vispy/pull/2673
+          export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGL.so.1
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
