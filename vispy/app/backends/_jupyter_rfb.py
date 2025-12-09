@@ -83,6 +83,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._logical_size = 1, 1
         self._physical_size = 1, 1
         self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
+        self._buttons = []
         # Init more based on kwargs (could maybe handle, title, show, context)
         self._vispy_set_size(*kwargs["size"])
         self.resizable = kwargs["resizable"]
@@ -100,17 +101,27 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             self._loop.call_soon(self._emit_resize_event)
             self._vispy_update()  # make sure to schedule a new draw
         elif type == "pointer_down":
+            button = ev["button"]
+            if button not in self._buttons:
+                self._buttons.append(button)
+
             self._vispy_mouse_press(
                 native=ev,
                 pos=(ev["x"], ev["y"]),
-                button=ev["button"],
+                button=button,
+                buttons=self._buttons,
                 modifiers=self._modifiers(ev),
             )
         elif type == "pointer_up":
+            button = ev["button"]
+            if button in self._buttons:
+                self._buttons.remove(button)
+
             self._vispy_mouse_release(
                 native=ev,
                 pos=(ev["x"], ev["y"]),
-                button=ev["button"],
+                button=button,
+                buttons=self._buttons,
                 modifiers=self._modifiers(ev),
             )
         elif type == "pointer_move":
@@ -118,6 +129,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 button=ev["button"],
+                buttons=self._buttons,
                 modifiers=self._modifiers(ev),
             )
         elif type == "double_click":
@@ -125,6 +137,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 button=ev["button"],
+                buttons=self._buttons,
                 modifiers=self._modifiers(ev),
             )
         elif type == "wheel":
@@ -132,6 +145,7 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
                 native=ev,
                 pos=(ev["x"], ev["y"]),
                 delta=(ev["dx"] / 100, - ev["dy"] / 100),
+                buttons=self._buttons,
                 modifiers=self._modifiers(ev),
             )
         elif type == "key_down":
