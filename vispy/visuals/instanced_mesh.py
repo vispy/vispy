@@ -139,6 +139,7 @@ class InstancedMeshVisual(MeshVisual):
 
     def _update_data(self):
         # set instance buffers
+        self.shared_program.vert['instance_color'] = (1, 1, 1, 1)
         self.shared_program.vert['instance_color'] = self._instance_colors_vbo
         self.shared_program['transform_x'] = self._instance_transforms_vbos[0]
         self.shared_program['transform_y'] = self._instance_transforms_vbos[1]
