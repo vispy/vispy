@@ -14,7 +14,6 @@ from ..gloo import VertexBuffer
 from ..gloo.texture import downcast_to_32bit_if_needed
 from ..color import ColorArray
 from .filters import InstancedShadingFilter
-from .shaders import Variable
 
 from .mesh import MeshVisual
 
@@ -132,14 +131,20 @@ class InstancedMeshVisual(MeshVisual):
             colors = ColorArray(colors)
             self._instance_colors_vbo = VertexBuffer(np.ascontiguousarray(colors.rgba), divisor=1)
         else:
+            # white means that colors are untouched (multiplied by base_color)
             self._instance_colors_vbo = (1, 1, 1, 1)
 
         self._instance_colors = colors
         self.mesh_data_changed()
 
     def _update_data(self):
-        # set instance buffers
+        # FIXME: this line is needed for the instanced colors to work correctly.
+        #        After hours of debugging, we don't know what is the issue, but it
+        #        seems that GLIR is doing *something* special when intializing a
+        #        uniform that other types of variables do not do, which is necessary
+        #        for specifically *instanced colors* to behave correctly here.
         self.shared_program.vert['instance_color'] = (1, 1, 1, 1)
+        # set instance buffers
         self.shared_program.vert['instance_color'] = self._instance_colors_vbo
         self.shared_program['transform_x'] = self._instance_transforms_vbos[0]
         self.shared_program['transform_y'] = self._instance_transforms_vbos[1]
