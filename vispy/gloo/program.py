@@ -532,7 +532,8 @@ class Program(GLObject):
             selection = indices.id, gltypes[indices.dtype], indices.size
             canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
         elif indices is None:
-            selection = 0, attributes[0].size
+            # for selection, use the size of the first *non-instance* attribute
+            selection = 0, attrs[0].size
             logger.debug("Program drawing %r with %r" % (mode, selection))
             canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
         else:

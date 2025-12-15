@@ -138,12 +138,6 @@ class InstancedMeshVisual(MeshVisual):
         self.mesh_data_changed()
 
     def _update_data(self):
-        # FIXME: this line is needed for the instanced colors to work correctly.
-        #        After hours of debugging, we don't know what is the issue, but it
-        #        seems that GLIR is doing *something* special when intializing a
-        #        uniform that other types of variables do not do, which is necessary
-        #        for specifically *instanced colors* to behave correctly here.
-        self.shared_program.vert['instance_color'] = (1, 1, 1, 1)
         # set instance buffers
         self.shared_program.vert['instance_color'] = self._instance_colors_vbo
         self.shared_program['transform_x'] = self._instance_transforms_vbos[0]
