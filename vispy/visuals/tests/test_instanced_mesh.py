@@ -42,7 +42,7 @@ def test_mesh_with_vertex_values():
         v = c.central_widget.add_view(border_width=0)
         v.add(mesh)
         render = c.render()
-        assert np.allclose(render[10, 10], (255, 0, 0, 255))
+        assert np.allclose(render[10, 10], (127, 0, 0, 255), atol=1)
         assert np.allclose(render[-10, -10], (0, 0, 255, 255))
         assert np.allclose(render[30, 40], (0, 0, 0, 255))
 

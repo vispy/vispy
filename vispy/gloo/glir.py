@@ -1127,6 +1127,11 @@ class GlirProgram(GlirObject):
         self._unset_variables = self._get_active_attributes_and_uniforms()
         self._handles = {}
         self._known_invalid = set()
+        # Clear attributes and samplers to avoid stale references when variables
+        # change type (e.g., switching from attribute to uniform)
+        self._attributes = {}
+        self._samplers = {}
+
         self._linked = True
 
     def _get_active_attributes_and_uniforms(self):
