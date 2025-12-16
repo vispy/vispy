@@ -1,5 +1,43 @@
 # Release Notes
 
+## [v0.16.0](https://github.com/vispy/vispy/tree/v0.16.0) (2025-12-16)
+
+**Enhancements:**
+
+- Fix mouse buttons state handling on certain backends [\#2713](https://github.com/vispy/vispy/pull/2713) ([t-wallet](https://github.com/t-wallet))
+- Add parameter to control line height in text visual [\#2711](https://github.com/vispy/vispy/pull/2711) ([brisvag](https://github.com/brisvag))
+- Updated Markers visual: instanced rendering and canvas size limits [\#2701](https://github.com/vispy/vispy/pull/2701) ([aganders3](https://github.com/aganders3))
+- Expose modifiers in SceneMouseEvent API [\#2699](https://github.com/vispy/vispy/pull/2699) ([t-wallet](https://github.com/t-wallet))
+
+**Fixed bugs:**
+
+- Fix interaction between instance colors and face colors [\#2705](https://github.com/vispy/vispy/pull/2705) ([brisvag](https://github.com/brisvag))
+- discard marker fragments if size was zero [\#2696](https://github.com/vispy/vispy/pull/2696) ([brisvag](https://github.com/brisvag))
+- Add missing update call to ImageVisual.set\_data [\#2688](https://github.com/vispy/vispy/pull/2688) ([krokosik](https://github.com/krokosik))
+- Bug fix: Incorrectly passed flag to re.sub [\#2681](https://github.com/vispy/vispy/pull/2681) ([ksofiyuk](https://github.com/ksofiyuk))
+- Only use last 2 event dimensions for arcball calculation [\#2677](https://github.com/vispy/vispy/pull/2677) ([brisvag](https://github.com/brisvag))
+
+**Merged pull requests:**
+
+- Bump actions/cache from 4 to 5 [\#2717](https://github.com/vispy/vispy/pull/2717) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/download-artifact from 6 to 7 [\#2716](https://github.com/vispy/vispy/pull/2716) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/upload-artifact from 5 to 6 [\#2715](https://github.com/vispy/vispy/pull/2715) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/checkout from 5 to 6 [\#2714](https://github.com/vispy/vispy/pull/2714) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 3.2.1 to 3.3.0 [\#2712](https://github.com/vispy/vispy/pull/2712) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/download-artifact from 5 to 6 [\#2708](https://github.com/vispy/vispy/pull/2708) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/upload-artifact from 4 to 5 [\#2707](https://github.com/vispy/vispy/pull/2707) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 3.1.3 to 3.2.1 [\#2704](https://github.com/vispy/vispy/pull/2704) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/setup-python from 5 to 6 [\#2698](https://github.com/vispy/vispy/pull/2698) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/download-artifact from 4 to 5 [\#2694](https://github.com/vispy/vispy/pull/2694) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/checkout from 4 to 5 [\#2693](https://github.com/vispy/vispy/pull/2693) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Add doc about Qt backend vsync limitation [\#2692](https://github.com/vispy/vispy/pull/2692) ([krokosik](https://github.com/krokosik))
+- Bump pypa/cibuildwheel from 3.1.1 to 3.1.3 [\#2691](https://github.com/vispy/vispy/pull/2691) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 3.0.1 to 3.1.1 [\#2686](https://github.com/vispy/vispy/pull/2686) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Keep hold of text vertex data on cpu [\#2684](https://github.com/vispy/vispy/pull/2684) ([brisvag](https://github.com/brisvag))
+- Bump pypa/cibuildwheel from 3.0.0 to 3.0.1 [\#2682](https://github.com/vispy/vispy/pull/2682) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 2.23.3 to 3.0.0 [\#2680](https://github.com/vispy/vispy/pull/2680) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Fix name typo [\#2678](https://github.com/vispy/vispy/pull/2678) ([brisvag](https://github.com/brisvag))
+
 ## [v0.15.2](https://github.com/vispy/vispy/tree/v0.15.2) (2025-05-19)
 
 **enhancements:**
