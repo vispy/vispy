@@ -52,7 +52,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -87,7 +87,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       env:
         cache-name: cache-vispy-data-website
         test-version: 1
@@ -139,7 +139,7 @@ jobs:
         export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
     - name: Upload website HTML artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: Sphinx Website
         path: |
@@ -195,7 +195,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       env:
         cache-name: cache-vispy-data-${{ matrix.test }}
         test-version: 2
