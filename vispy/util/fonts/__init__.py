@@ -11,4 +11,4 @@ fonts.
 __all__ = ['list_fonts']
 
 from ._triage import _load_glyph, list_fonts  # noqa, analysis:ignore
-from ._vispy_fonts import _vispy_fonts  # noqa, analysis:ignore
+from ._vispy_fonts import _vispy_fonts, register_vispy_font  # noqa, analysis:ignore
