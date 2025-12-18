@@ -162,19 +162,24 @@ class PlotWidget(scene.Widget):
 
         self._configured = True
 
-    def histogram(self, data, bins=10, color='w', orientation='h'):
+    def histogram(self, data=None, bins=10, color='w', orientation='h', **kwargs):
         """Calculate and show a histogram of data
 
         Parameters
         ----------
-        data : array-like
-            Data to histogram. Currently only 1D data is supported.
-        bins : int | array-like
-            Number of bins, or bin edges.
+        data : array-like, optional
+            Data to histogram.  May be `None` on initialization, use
+            :meth:`~vispy.visuals.histogram:HistogramVisual.set_raw_data`
+            on returned object to set data after initialization.
+        bins : int | array-like | str
+            Number of bins, bin edges, or bin edges and values.  See 
+            :class:`~vispy.visuals.histogram:HistogramVisual` docstring for details.
         color : instance of Color
             Color of the histogram.
         orientation : {'h', 'v'}
             Orientation of the histogram.
+        **kwargs : dict
+            Additional keyword arguments to pass to `Histogram`.
 
         Returns
         -------
@@ -182,7 +187,9 @@ class PlotWidget(scene.Widget):
             The histogram polygon.
         """
         self._configure_2d()
-        hist = scene.Histogram(data, bins, color, orientation)
+        hist = scene.Histogram(
+            data, bins=bins, color=color, orientation=orientation, **kwargs
+        )
         self.view.add(hist)
         self.view.camera.set_range()
         return hist
