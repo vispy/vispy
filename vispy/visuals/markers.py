@@ -31,6 +31,7 @@ attribute float a_symbol;
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
+varying float v_total_size;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
@@ -83,10 +84,17 @@ void main (void) {
     // Update edge width proportionally if size was clamped
     if ($v_size != original_size) {
         v_edgewidth = v_edgewidth * ($v_size / original_size);
+        // Floor: ensure edge is visible even when markers are clamped at max size
+        if (u_canvas_size_min >= 0.0) {
+            v_edgewidth = max(v_edgewidth, u_canvas_size_min * 0.5);
+        }
+        // Cap: prevent edge from exploding or dominating the marker when clamped at min size
+        v_edgewidth = min(v_edgewidth, $v_size * 0.5);
     }
 
     // Total size including edge and antialiasing
     float total_size = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
+    v_total_size = total_size;
 
     // Apply offset and set position (hook handles differences between modes)
     vec4 final_fb_pos = $apply_offset(fb_pos, total_size);
@@ -120,6 +128,7 @@ uniform bool u_spherical;
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
+varying float v_total_size;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
@@ -148,7 +157,7 @@ void main()
 
     // The marker function needs to be linked with this shader
     vec2 pointcoord = $pointcoord;
-    float r = $marker(pointcoord, size, int(v_symbol));
+    float r = $marker(pointcoord, v_total_size, int(v_symbol));
 
     // it takes into account an antialising layer
     // of size u_antialias inside the edge
@@ -239,7 +248,10 @@ void main()
             gl_FragColor = mix(facecolor, edgecolor, alpha);
         }
     }
-    gl_FragDepth = gl_FragCoord.z + depth_change;
+
+    // Apply depth change if spherical mode is active
+    // This is a hook that will be replaced with either depth write or noop
+    $write_depth(depth_change);
 }
 """
 
@@ -606,15 +618,15 @@ class MarkersVisual(Visual):
         # Set up quad vertices for instanced rendering
         if method == 'instanced':
             # instancing draws a small quad for each marker
+            # Use 4 vertices with TRIANGLE_STRIP (no index buffer needed!)
+            # TRIANGLE_STRIP automatically forms 2 triangles from 4 vertices
+            # Order: bottom-left, bottom-right, top-left, top-right
+            # Forms triangles: (0,1,2) and (2,1,3) with auto-reversed winding
             quad_vertices = np.array([
-                # triangle 1
-                [-0.5, -0.5],  # bottom-left
-                [0.5, -0.5],   # bottom-right
-                [-0.5, 0.5],   # top-left
-                # triangle 2
-                [0.5, -0.5],   # bottom-right
-                [0.5, 0.5],    # top-right
-                [-0.5, 0.5],   # top-left
+                [-0.5, -0.5],  # 0: bottom-left
+                [0.5, -0.5],   # 1: bottom-right
+                [-0.5, 0.5],   # 2: top-left
+                [0.5, 0.5],    # 3: top-right
             ], dtype=np.float32)
             self._quad_vbo = VertexBuffer(quad_vertices)
 
@@ -629,7 +641,7 @@ class MarkersVisual(Visual):
         self.shared_program['u_canvas_size_max'] = -1.0
 
         if method == 'instanced':
-            self._draw_mode = 'triangles'
+            self._draw_mode = 'triangle_strip'
 
             # instanced mode, use v_texcoord instead of gl_PointCoord
             setup_texcoord_func = Function("""
@@ -666,6 +678,10 @@ class MarkersVisual(Visual):
         self.shared_program.vert['apply_offset'] = apply_offset_func
         self.shared_program.frag['pointcoord'] = frag_pointcoord
 
+        # Set up depth write function based on spherical parameter
+        # This avoids gl_FragDepth in non-spherical shaders, enabling early-Z optimization
+        self._setup_depth_write_func(spherical)
+
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
 
@@ -683,6 +699,24 @@ class MarkersVisual(Visual):
         self.spherical = spherical
 
         self.freeze()
+
+    def _setup_depth_write_func(self, spherical):
+        """Set up the depth write function based on spherical mode."""
+        if spherical:
+            write_depth_func = Function("""
+                void write_depth(float depth_change) {
+                    // Write modified depth for spherical lighting
+                    gl_FragDepth = gl_FragCoord.z + depth_change;
+                }
+            """)
+        else:
+            write_depth_func = Function("""
+                void write_depth(float depth_change) {
+                    // No-op: leave gl_FragDepth unmodified for early-Z optimization
+                }
+            """)
+
+        self.shared_program.frag['write_depth'] = write_depth_func
 
     def _prepare_edge_width(self, edge_width, edge_width_rel):
         """Validate and return edge width parameters."""
@@ -761,19 +795,11 @@ class MarkersVisual(Visual):
             'a_symbol': symbol_values,
         }
 
-    def _upload_instanced_data(self, data_dict):
-        """Upload data for instanced rendering."""
-        self._data = data_dict
-
-        for attr_name, attr_data in data_dict.items():
-            self.shared_program[attr_name] = VertexBuffer(
-                np.require(attr_data, requirements='C'),
-                divisor=1
-            )
-
-    def _upload_points_data(self, data_dict):
-        """Upload data for points rendering."""
+    def _upload_data(self, data_dict):
+        """Upload data using interleaved buffer for both points and instanced rendering."""
         n = len(data_dict['a_position'])
+
+        # Create a single structured array for all attributes (interleaved layout)
         structured_data = np.zeros(n, dtype=[
             ('a_position', np.float32, 3),
             ('a_fg_color', np.float32, 4),
@@ -782,12 +808,23 @@ class MarkersVisual(Visual):
             ('a_edgewidth', np.float32),
             ('a_symbol', np.float32)
         ])
+
+        # Copy attribute data into structured array
         for attr_name, attr_data in data_dict.items():
             structured_data[attr_name] = attr_data
 
         self._data = structured_data
+
+        # Upload to VBO
         self._vbo.set_data(structured_data)
-        self.shared_program.bind(self._vbo)
+
+        # Create views and assign to program
+        # For instanced rendering, set divisor=1 on each view
+        divisor = 1 if self._method == 'instanced' else None
+        for name in structured_data.dtype.names:
+            view = self._vbo[name]
+            view.divisor = divisor
+            self.shared_program[name] = view
 
     def set_data(self, pos=None, size=10., edge_width=None, edge_width_rel=None,
                  edge_color='black', face_color='white',
@@ -828,10 +865,7 @@ class MarkersVisual(Visual):
                 symbol,
             )
 
-            if self._method == 'instanced':
-                self._upload_instanced_data(data_dict)
-            else:
-                self._upload_points_data(data_dict)
+            self._upload_data(data_dict)
         else:
             self._data = None
 
@@ -967,6 +1001,8 @@ class MarkersVisual(Visual):
     def spherical(self, value):
         self.shared_program['u_spherical'] = value
         self._spherical = value
+        # Update the depth write function to match the new spherical mode
+        self._setup_depth_write_func(value)
         self.update()
 
     @property
