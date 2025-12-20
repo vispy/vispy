@@ -698,7 +698,7 @@ class MarkersVisual(Visual):
         self.shared_program.vert['apply_offset'] = apply_offset_func
         self.shared_program.frag['pointcoord'] = frag_pointcoord
 
-        self._setup_spherical_funcs(spherical)
+        self._setup_lighting_functions(spherical)
 
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -718,7 +718,7 @@ class MarkersVisual(Visual):
 
         self.freeze()
 
-    def _setup_spherical_funcs(self, spherical):
+    def _setup_lighting_functions(self, spherical):
         """Set up lighting and depth functions based on spherical mode."""
         lighting_functions = _SPHERICAL_LIGHTING if spherical else _FLAT_LIGHTING
         self.shared_program.frag['lighting_functions'] = lighting_functions
@@ -1006,7 +1006,7 @@ class MarkersVisual(Visual):
     def spherical(self, value):
         self.shared_program['u_spherical'] = value
         self._spherical = value
-        self._setup_spherical_funcs(value)
+        self._setup_lighting_functions(value)
         self.update()
 
     @property
