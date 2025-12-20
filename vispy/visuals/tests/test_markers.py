@@ -64,7 +64,7 @@ def test_markers_method_parameter():
     markers_instanced = Markers(method='instanced')
     markers_instanced.set_data(pos=data)
     assert markers_instanced._method == 'instanced'
-    assert markers_instanced._draw_mode == 'triangles'
+    assert markers_instanced._draw_mode == 'triangle_strip'
 
     with pytest.raises(ValueError, match="method must be 'points' or 'instanced'"):
         Markers(method='invalid')
