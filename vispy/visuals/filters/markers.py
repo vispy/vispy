@@ -26,3 +26,14 @@ class MarkerPickingFilter(PrimitivePickingFilter):
         self._n_primitives = n_markers
 
         return np.arange(1, n_markers + 1, dtype=np.uint32)
+
+    def _update_id_colors(self):
+        """Update the ID colors buffer with appropriate divisor for rendering method."""
+        # Call parent implementation to update colors
+        super()._update_id_colors()
+
+        # Set divisor=1 for instanced rendering so each marker gets its own ID
+        if hasattr(self._visual, '_method') and self._visual._method == 'instanced':
+            self._id_colors.divisor = 1
+        else:
+            self._id_colors.divisor = None
