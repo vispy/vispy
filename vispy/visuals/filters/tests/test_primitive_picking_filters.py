@@ -40,18 +40,19 @@ def test_mesh_face_picking():
     assert ids[125 // 2, 3 * 125 // 4] == 2
 
 
-def test_empty_markers_picking():
-    markers = Markers()
+def test_empty_markers_picking(rendering_method):
+    markers = Markers(method=rendering_method)
     filter = MarkerPickingFilter()
     markers.attach(filter)
     filter.enabled = True
 
 
 @requires_application()
-def test_markers_picking():
+def test_markers_picking(rendering_method):
     markers = Markers(
         pos=np.array([[-0.5, -0.5], [0.5, 0.5]]),
         size=5,
+        method=rendering_method,
     )
     filter = MarkerPickingFilter()
     markers.attach(filter)

@@ -31,6 +31,7 @@ attribute float a_symbol;
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
+varying float v_total_size;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
@@ -83,10 +84,17 @@ void main (void) {
     // Update edge width proportionally if size was clamped
     if ($v_size != original_size) {
         v_edgewidth = v_edgewidth * ($v_size / original_size);
+        // Floor: ensure edge is visible even when markers are clamped at max size
+        if (u_canvas_size_min >= 0.0) {
+            v_edgewidth = max(v_edgewidth, u_canvas_size_min * 0.5);
+        }
+        // Cap: prevent edge from exploding or dominating the marker when clamped at min size
+        v_edgewidth = min(v_edgewidth, $v_size * 0.5);
     }
 
     // Total size including edge and antialiasing
     float total_size = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
+    v_total_size = total_size;
 
     // Apply offset and set position (hook handles differences between modes)
     vec4 final_fb_pos = $apply_offset(fb_pos, total_size);
@@ -120,6 +128,7 @@ uniform bool u_spherical;
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
+varying float v_total_size;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
@@ -132,6 +141,9 @@ bool isnan(float val) {
 bool isinf(float val) {
     return (val != 0.0 && val * 2.0 == val) ? true : false;
 }
+
+// provides `apply_lighting` and `write_depth` functions
+$lighting_functions
 
 void main()
 {
@@ -148,7 +160,7 @@ void main()
 
     // The marker function needs to be linked with this shader
     vec2 pointcoord = $pointcoord;
-    float r = $marker(pointcoord, size, int(v_symbol));
+    float r = $marker(pointcoord, v_total_size, int(v_symbol));
 
     // it takes into account an antialising layer
     // of size u_antialias inside the edge
@@ -167,43 +179,8 @@ void main()
         discard;
     }
 
-    vec4 facecolor = v_bg_color;
-    vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
-    float depth_change = 0;
-
-    // change color and depth if spherical mode is active
-    if (u_spherical == true) {
-        // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
-        // and the aliasing ring has the same coordinates as the point just inside,
-        // which is important for lighting
-        vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
-        float x = clamp(texcoord.x, -1, 1);
-        float y = clamp(texcoord.y, -1, 1);
-        float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
-        vec3 normal = vec3(x, y, z);
-
-        // Diffuse color
-        float diffuse = dot(u_light_position, normal);
-        // clamp, because 0 < theta < pi/2
-        diffuse = clamp(diffuse, 0, 1);
-        vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
-
-        // Specular color
-        //   reflect light wrt normal for the reflected ray, then
-        //   find the angle made with the eye
-        vec3 eye = vec3(0, 0, -1);
-        float specular = dot(reflect(u_light_position, normal), eye);
-        specular = clamp(specular, 0, 1);
-        // raise to the material's shininess, multiply with a
-        // small factor for spread
-        specular = pow(specular, 80);
-        vec3 specular_color = u_light_color * specular;
-
-        facecolor = vec4(facecolor.rgb * diffuse_color + specular_color, facecolor.a * u_alpha);
-        edgecolor = vec4(edgecolor.rgb * diffuse_color + specular_color, edgecolor.a * u_alpha);
-        // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
-        depth_change = -0.5 * z * v_depth_middle;
-    }
+    vec4 facecolor = apply_lighting(pointcoord, v_bg_color);
+    vec4 edgecolor = apply_lighting(pointcoord, vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a));
 
     if (d < 0.0)
     {
@@ -239,7 +216,62 @@ void main()
             gl_FragColor = mix(facecolor, edgecolor, alpha);
         }
     }
+
+    // Apply depth change if spherical mode is active
+    write_depth(pointcoord);
+}
+"""
+
+_SPHERICAL_LIGHTING = """
+vec4 apply_lighting(vec2 pointcoord, vec4 color) {
+    // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
+    // and the aliasing ring has the same coordinates as the point just inside,
+    // which is important for lighting
+    vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
+    float x = clamp(texcoord.x, -1, 1);
+    float y = clamp(texcoord.y, -1, 1);
+    float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
+    vec3 normal = vec3(x, y, z);
+
+    // Diffuse color
+    float diffuse = dot(u_light_position, normal);
+    // clamp, because 0 < theta < pi/2
+    diffuse = clamp(diffuse, 0, 1);
+    vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
+
+    // Specular color
+    //   reflect light wrt normal for the reflected ray, then
+    //   find the angle made with the eye
+    vec3 eye = vec3(0, 0, -1);
+    float specular = dot(reflect(u_light_position, normal), eye);
+    specular = clamp(specular, 0, 1);
+    // raise to the material's shininess, multiply with a
+    // small factor for spread
+    specular = pow(specular, 80);
+    vec3 specular_color = u_light_color * specular;
+
+    return vec4(color.rgb * diffuse_color + specular_color, color.a * u_alpha);
+}
+
+void write_depth(vec2 pointcoord) {
+    // Compute depth change and write modified depth for spherical lighting
+    vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
+    float x = clamp(texcoord.x, -1, 1);
+    float y = clamp(texcoord.y, -1, 1);
+    float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
+    // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
+    float depth_change = -0.5 * z * v_depth_middle;
     gl_FragDepth = gl_FragCoord.z + depth_change;
+}
+"""
+
+_FLAT_LIGHTING = """
+vec4 apply_lighting(vec2 pointcoord, vec4 color) {
+    return color;
+}
+
+void write_depth(vec2 pointcoord) {
+    // No-op: leave gl_FragDepth unmodified for early-Z optimization
 }
 """
 
@@ -606,15 +638,15 @@ class MarkersVisual(Visual):
         # Set up quad vertices for instanced rendering
         if method == 'instanced':
             # instancing draws a small quad for each marker
+            # Use 4 vertices with TRIANGLE_STRIP (no index buffer needed!)
+            # TRIANGLE_STRIP automatically forms 2 triangles from 4 vertices
+            # Order: bottom-left, bottom-right, top-left, top-right
+            # Forms triangles: (0,1,2) and (2,1,3) with auto-reversed winding
             quad_vertices = np.array([
-                # triangle 1
-                [-0.5, -0.5],  # bottom-left
-                [0.5, -0.5],   # bottom-right
-                [-0.5, 0.5],   # top-left
-                # triangle 2
-                [0.5, -0.5],   # bottom-right
-                [0.5, 0.5],    # top-right
-                [-0.5, 0.5],   # top-left
+                [-0.5, -0.5],  # 0: bottom-left
+                [0.5, -0.5],   # 1: bottom-right
+                [-0.5, 0.5],   # 2: top-left
+                [0.5, 0.5],    # 3: top-right
             ], dtype=np.float32)
             self._quad_vbo = VertexBuffer(quad_vertices)
 
@@ -629,7 +661,7 @@ class MarkersVisual(Visual):
         self.shared_program['u_canvas_size_max'] = -1.0
 
         if method == 'instanced':
-            self._draw_mode = 'triangles'
+            self._draw_mode = 'triangle_strip'
 
             # instanced mode, use v_texcoord instead of gl_PointCoord
             setup_texcoord_func = Function("""
@@ -666,6 +698,8 @@ class MarkersVisual(Visual):
         self.shared_program.vert['apply_offset'] = apply_offset_func
         self.shared_program.frag['pointcoord'] = frag_pointcoord
 
+        self._setup_lighting_functions(spherical)
+
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
 
@@ -683,6 +717,11 @@ class MarkersVisual(Visual):
         self.spherical = spherical
 
         self.freeze()
+
+    def _setup_lighting_functions(self, spherical):
+        """Set up lighting and depth functions based on spherical mode."""
+        lighting_functions = _SPHERICAL_LIGHTING if spherical else _FLAT_LIGHTING
+        self.shared_program.frag['lighting_functions'] = lighting_functions
 
     def _prepare_edge_width(self, edge_width, edge_width_rel):
         """Validate and return edge width parameters."""
@@ -761,19 +800,11 @@ class MarkersVisual(Visual):
             'a_symbol': symbol_values,
         }
 
-    def _upload_instanced_data(self, data_dict):
-        """Upload data for instanced rendering."""
-        self._data = data_dict
-
-        for attr_name, attr_data in data_dict.items():
-            self.shared_program[attr_name] = VertexBuffer(
-                np.require(attr_data, requirements='C'),
-                divisor=1
-            )
-
-    def _upload_points_data(self, data_dict):
-        """Upload data for points rendering."""
+    def _upload_data(self, data_dict):
+        """Upload data using interleaved buffer for both points and instanced rendering."""
         n = len(data_dict['a_position'])
+
+        # Create a single structured array for all attributes (interleaved layout)
         structured_data = np.zeros(n, dtype=[
             ('a_position', np.float32, 3),
             ('a_fg_color', np.float32, 4),
@@ -782,12 +813,23 @@ class MarkersVisual(Visual):
             ('a_edgewidth', np.float32),
             ('a_symbol', np.float32)
         ])
+
+        # Copy attribute data into structured array
         for attr_name, attr_data in data_dict.items():
             structured_data[attr_name] = attr_data
 
         self._data = structured_data
+
+        # Upload to VBO
         self._vbo.set_data(structured_data)
-        self.shared_program.bind(self._vbo)
+
+        # Create views and assign to program
+        # For instanced rendering, set divisor=1 on each view
+        divisor = 1 if self._method == 'instanced' else None
+        for name in structured_data.dtype.names:
+            view = self._vbo[name]
+            view.divisor = divisor
+            self.shared_program[name] = view
 
     def set_data(self, pos=None, size=10., edge_width=None, edge_width_rel=None,
                  edge_color='black', face_color='white',
@@ -828,10 +870,7 @@ class MarkersVisual(Visual):
                 symbol,
             )
 
-            if self._method == 'instanced':
-                self._upload_instanced_data(data_dict)
-            else:
-                self._upload_points_data(data_dict)
+            self._upload_data(data_dict)
         else:
             self._data = None
 
@@ -967,6 +1006,7 @@ class MarkersVisual(Visual):
     def spherical(self, value):
         self.shared_program['u_spherical'] = value
         self._spherical = value
+        self._setup_lighting_functions(value)
         self.update()
 
     @property
