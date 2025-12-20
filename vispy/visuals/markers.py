@@ -142,6 +142,9 @@ bool isinf(float val) {
     return (val != 0.0 && val * 2.0 == val) ? true : false;
 }
 
+// provides `apply_lighting` and `write_depth` functions
+$lighting_functions
+
 void main()
 {
     // Discard plotting marker body and edge if zero-size or nan/inf.
@@ -176,43 +179,8 @@ void main()
         discard;
     }
 
-    vec4 facecolor = v_bg_color;
-    vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
-    float depth_change = 0;
-
-    // change color and depth if spherical mode is active
-    if (u_spherical == true) {
-        // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
-        // and the aliasing ring has the same coordinates as the point just inside,
-        // which is important for lighting
-        vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
-        float x = clamp(texcoord.x, -1, 1);
-        float y = clamp(texcoord.y, -1, 1);
-        float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
-        vec3 normal = vec3(x, y, z);
-
-        // Diffuse color
-        float diffuse = dot(u_light_position, normal);
-        // clamp, because 0 < theta < pi/2
-        diffuse = clamp(diffuse, 0, 1);
-        vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
-
-        // Specular color
-        //   reflect light wrt normal for the reflected ray, then
-        //   find the angle made with the eye
-        vec3 eye = vec3(0, 0, -1);
-        float specular = dot(reflect(u_light_position, normal), eye);
-        specular = clamp(specular, 0, 1);
-        // raise to the material's shininess, multiply with a
-        // small factor for spread
-        specular = pow(specular, 80);
-        vec3 specular_color = u_light_color * specular;
-
-        facecolor = vec4(facecolor.rgb * diffuse_color + specular_color, facecolor.a * u_alpha);
-        edgecolor = vec4(edgecolor.rgb * diffuse_color + specular_color, edgecolor.a * u_alpha);
-        // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
-        depth_change = -0.5 * z * v_depth_middle;
-    }
+    vec4 facecolor = apply_lighting(pointcoord, v_bg_color);
+    vec4 edgecolor = apply_lighting(pointcoord, vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a));
 
     if (d < 0.0)
     {
@@ -250,8 +218,60 @@ void main()
     }
 
     // Apply depth change if spherical mode is active
-    // This is a hook that will be replaced with either depth write or noop
-    $write_depth(depth_change);
+    write_depth(pointcoord);
+}
+"""
+
+_SPHERICAL_LIGHTING = """
+vec4 apply_lighting(vec2 pointcoord, vec4 color) {
+    // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
+    // and the aliasing ring has the same coordinates as the point just inside,
+    // which is important for lighting
+    vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
+    float x = clamp(texcoord.x, -1, 1);
+    float y = clamp(texcoord.y, -1, 1);
+    float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
+    vec3 normal = vec3(x, y, z);
+
+    // Diffuse color
+    float diffuse = dot(u_light_position, normal);
+    // clamp, because 0 < theta < pi/2
+    diffuse = clamp(diffuse, 0, 1);
+    vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
+
+    // Specular color
+    //   reflect light wrt normal for the reflected ray, then
+    //   find the angle made with the eye
+    vec3 eye = vec3(0, 0, -1);
+    float specular = dot(reflect(u_light_position, normal), eye);
+    specular = clamp(specular, 0, 1);
+    // raise to the material's shininess, multiply with a
+    // small factor for spread
+    specular = pow(specular, 80);
+    vec3 specular_color = u_light_color * specular;
+
+    return vec4(color.rgb * diffuse_color + specular_color, color.a * u_alpha);
+}
+
+void write_depth(vec2 pointcoord) {
+    // Compute depth change and write modified depth for spherical lighting
+    vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
+    float x = clamp(texcoord.x, -1, 1);
+    float y = clamp(texcoord.y, -1, 1);
+    float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
+    // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
+    float depth_change = -0.5 * z * v_depth_middle;
+    gl_FragDepth = gl_FragCoord.z + depth_change;
+}
+"""
+
+_FLAT_LIGHTING = """
+vec4 apply_lighting(vec2 pointcoord, vec4 color) {
+    return color;
+}
+
+void write_depth(vec2 pointcoord) {
+    // No-op: leave gl_FragDepth unmodified for early-Z optimization
 }
 """
 
@@ -678,9 +698,7 @@ class MarkersVisual(Visual):
         self.shared_program.vert['apply_offset'] = apply_offset_func
         self.shared_program.frag['pointcoord'] = frag_pointcoord
 
-        # Set up depth write function based on spherical parameter
-        # This avoids gl_FragDepth in non-spherical shaders, enabling early-Z optimization
-        self._setup_depth_write_func(spherical)
+        self._setup_spherical_funcs(spherical)
 
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -700,23 +718,10 @@ class MarkersVisual(Visual):
 
         self.freeze()
 
-    def _setup_depth_write_func(self, spherical):
-        """Set up the depth write function based on spherical mode."""
-        if spherical:
-            write_depth_func = Function("""
-                void write_depth(float depth_change) {
-                    // Write modified depth for spherical lighting
-                    gl_FragDepth = gl_FragCoord.z + depth_change;
-                }
-            """)
-        else:
-            write_depth_func = Function("""
-                void write_depth(float depth_change) {
-                    // No-op: leave gl_FragDepth unmodified for early-Z optimization
-                }
-            """)
-
-        self.shared_program.frag['write_depth'] = write_depth_func
+    def _setup_spherical_funcs(self, spherical):
+        """Set up lighting and depth functions based on spherical mode."""
+        lighting_functions = _SPHERICAL_LIGHTING if spherical else _FLAT_LIGHTING
+        self.shared_program.frag['lighting_functions'] = lighting_functions
 
     def _prepare_edge_width(self, edge_width, edge_width_rel):
         """Validate and return edge width parameters."""
@@ -1001,8 +1006,7 @@ class MarkersVisual(Visual):
     def spherical(self, value):
         self.shared_program['u_spherical'] = value
         self._spherical = value
-        # Update the depth write function to match the new spherical mode
-        self._setup_depth_write_func(value)
+        self._setup_spherical_funcs(value)
         self.update()
 
     @property
