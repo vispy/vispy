@@ -1,5 +1,12 @@
 # Release Notes
 
+## [v0.16.1](https://github.com/vispy/vispy/tree/v0.16.1) (2026-01-07)
+
+**Enhancements:**
+
+- Fixes and optimizations for instanced markers [\#2720](https://github.com/vispy/vispy/pull/2720) ([aganders3](https://github.com/aganders3))
+- Allow local font registration [\#2719](https://github.com/vispy/vispy/pull/2719) ([brisvag](https://github.com/brisvag))
+
 ## [v0.16.0](https://github.com/vispy/vispy/tree/v0.16.0) (2025-12-16)
 
 **Enhancements:**
