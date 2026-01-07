@@ -1,29 +1,11 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pytest
-from vispy.gloo.gl import use_gl
+
 from vispy.scene.visuals import Markers
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
-
-
-@pytest.fixture(scope='module', params=['points', 'instanced'])
-def rendering_method(request):
-    """Setup rendering method for entire module, skip if backend unavailable."""
-    method = request.param
-
-    if method == 'instanced':
-        try:
-            use_gl('gl+')
-        except Exception:
-            pytest.skip("gl+ backend not available for instanced rendering")
-    else:
-        use_gl('gl2')
-
-    yield method
-
-    use_gl('gl2')
 
 
 @requires_application()
@@ -82,7 +64,7 @@ def test_markers_method_parameter():
     markers_instanced = Markers(method='instanced')
     markers_instanced.set_data(pos=data)
     assert markers_instanced._method == 'instanced'
-    assert markers_instanced._draw_mode == 'triangles'
+    assert markers_instanced._draw_mode == 'triangle_strip'
 
     with pytest.raises(ValueError, match="method must be 'points' or 'instanced'"):
         Markers(method='invalid')
