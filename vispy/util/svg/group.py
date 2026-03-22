@@ -26,7 +26,7 @@ class Group(Transformable):
             elif tag == "path":
                 item = Path(element, self)
             else:
-                logger.warn("Unhandled SVG tag (%s)" % tag)
+                logger.warning("Unhandled SVG tag (%s)" % tag)
                 continue
             self._items.append(item)
 
