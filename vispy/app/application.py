@@ -6,7 +6,6 @@
 
 from __future__ import division
 
-import __main__ as main_module
 import builtins
 import os
 import sys
@@ -125,11 +124,9 @@ class Application(object):
         # our _repr_mimebundle_ delegation does not work. So users will have
         # to display ``canvas._backend`` until that is fixed.
         # See https://github.com/manzt/anywidget/issues/792
-        try:
-            main_module.__marimo__
-            return True
-        except AttributeError:
-            pass
+        if "marimo" in sys.modules:
+            if sys.modules["marimo"].running_in_notebook():
+                return True
 
         try:
             # 'get_ipython' is available in globals when running from
