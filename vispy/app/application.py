@@ -6,6 +6,7 @@
 
 from __future__ import division
 
+import __main__ as main_module
 import builtins
 import os
 import sys
@@ -116,7 +117,20 @@ class Application(object):
             return False
 
     def is_notebook(self):
-        """Determine if the user is executing in a Jupyter Notebook"""
+        """Determine if the user is executing in a Jupyter/Marimo Notebook"""
+
+        # Detect Marimo: https://github.com/marimo-team/marimo/discussions/8865
+        #
+        # For now, anywidgets that are wapped don't work in Marimo;
+        # our _repr_mimebundle_ delegation does not work. So users will have
+        # to display ``canvas._backend`` until that is fixed.
+        # See https://github.com/manzt/anywidget/issues/792
+        try:
+            main_module.__marimo__
+            return True
+        except AttributeError:
+            pass
+
         try:
             # 'get_ipython' is available in globals when running from
             # IPython/Jupyter
