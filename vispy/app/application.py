@@ -119,11 +119,6 @@ class Application(object):
         """Determine if the user is executing in a Jupyter/Marimo Notebook"""
 
         # Detect Marimo: https://github.com/marimo-team/marimo/discussions/8865
-        #
-        # For now, anywidgets that are wapped don't work in Marimo;
-        # our _repr_mimebundle_ delegation does not work. So users will have
-        # to display ``canvas._backend`` until that is fixed.
-        # See https://github.com/manzt/anywidget/issues/792
         if "marimo" in sys.modules:
             if sys.modules["marimo"].running_in_notebook():
                 return True
