@@ -45,6 +45,14 @@ class OffscreenContext:
             self.glfw.init()
             self.glfw.window_hint(self.glfw.VISIBLE, 0)
             self._canvas = self.glfw.create_window(1, 1, "dummy window", None, None)
+            self.glfw.make_context_current(self._canvas)
+
+            # Briefly create a new window to trigger something context related.
+            # Not sure why this works, but it's part of the fix for  https://github.com/vispy/jupyter_rfb/issues/151
+            stub_canvas = self.glfw.create_window(1, 1, "temp window", None, None)
+            self.glfw.make_context_current(stub_canvas)
+            self.glfw.destroy_window(stub_canvas)
+            self.glfw.poll_events()
         else:
             try:
                 _app = Application('default')
@@ -76,6 +84,7 @@ class OffscreenContext:
             self._is_closed = True
             if self.glfw:
                 self.glfw.destroy_window(self._canvas)
+                self.glfw.poll_events()
             else:
                 self._canvas.close()
 
