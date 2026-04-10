@@ -78,6 +78,10 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         # Use a context per canvas, because we seem to make assumptions
         # about OpenGL state being local to the canvas.
         self._context = OffscreenContext()  # OffscreenContext.get_global_instance()
+        # Briefly create a new window to trigger something context related.
+        # Not sure why this works, but it's part of the fix for  https://github.com/vispy/jupyter_rfb/issues/151
+        self._context.make_current()
+        OffscreenContext().make_current().close()
         self._helper = FrameBufferHelper()
         self._loop = asyncio.get_event_loop()
         self._logical_size = 1, 1
