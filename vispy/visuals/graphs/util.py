@@ -10,11 +10,11 @@ A module containing several graph utility functions.
 
 import numpy as np
 
-try:
-    from scipy.sparse import issparse
-    from scipy import sparse
-except ImportError:
-    def issparse(*args, **kwargs):
+def issparse(obj):
+    try:
+        from scipy.sparse import issparse as _issparse
+        return _issparse(obj)
+    except ImportError:
         return False
 
 
@@ -36,14 +36,15 @@ def _ndarray_get_edges(adjacency_mat):
 
 
 def _get_directed_edges(adjacency_mat):
-    func = _sparse_get_edges if issparse(adjacency_mat) else _ndarray_get_edges
-
     if issparse(adjacency_mat):
+        from scipy import sparse
         triu = sparse.triu
         tril = sparse.tril
+        func = _sparse_get_edges
     else:
         triu = np.triu
         tril = np.tril
+        func = _ndarray_get_edges
 
     upper = triu(adjacency_mat)
     lower = tril(adjacency_mat)
