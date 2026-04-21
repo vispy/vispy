@@ -14,7 +14,7 @@ def issparse(obj):
     try:
         from scipy.sparse import issparse as _issparse
         return _issparse(obj)
-    except ImportError:
+    except ModuleNotFoundError:
         return False
 
 
