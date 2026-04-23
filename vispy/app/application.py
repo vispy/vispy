@@ -116,7 +116,13 @@ class Application(object):
             return False
 
     def is_notebook(self):
-        """Determine if the user is executing in a Jupyter Notebook"""
+        """Determine if the user is executing in a Jupyter/Marimo Notebook"""
+
+        # Detect Marimo: https://github.com/marimo-team/marimo/discussions/8865
+        if "marimo" in sys.modules:
+            if sys.modules["marimo"].running_in_notebook():
+                return True
+
         try:
             # 'get_ipython' is available in globals when running from
             # IPython/Jupyter
