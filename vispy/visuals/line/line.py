@@ -80,7 +80,7 @@ class LineVisual(CompoundVisual):
     _cap_types = caps
 
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
-                 connect='strip', method='gl', antialias=False):
+                 connect='strip', method='gl', antialias=False, line_caps=('round', 'round')):
         self._line_visual = None
 
         self._changed = {'pos': False, 'color': False, 'connect': False}
@@ -92,6 +92,7 @@ class LineVisual(CompoundVisual):
         self._bounds = None
         self._antialias = None
         self._method = 'none'
+        self._line_caps = ('round', 'round')
 
         CompoundVisual.__init__(self, [])
 
@@ -101,6 +102,7 @@ class LineVisual(CompoundVisual):
                             connect=connect)
         self.antialias = antialias
         self.method = method
+        self.line_caps = line_caps
 
     @property
     def join_types(self):
@@ -143,6 +145,20 @@ class LineVisual(CompoundVisual):
 
         for k in self._changed:
             self._changed[k] = True
+
+    @property
+    def line_caps(self) -> tuple[str, str]:
+        return self._line_caps
+
+    @line_caps.setter
+    def line_caps(self, line_caps) -> None:
+        if not all(c in self.cap_types for c in line_caps):
+            raise ValueError(f'valid line_caps are {set(self.cap_types)}, got {line_caps}')
+        if self.method != 'agg' and any(c != 'round' for c in line_caps):
+            raise ValueError('line caps are only implemented for agg method')
+        self._line_visual._line_caps = tuple(caps[cap] for cap in line_caps)
+        self._line_caps = line_caps
+        self.update()
 
     def set_data(self, pos=None, color=None, width=None, connect=None):
         """Set the data used to draw this visual.
@@ -421,6 +437,15 @@ class _AggLineVisual(Visual):
         # we turn it on the blending of the aa edges produces artifacts.
         self.set_gl_state('translucent', depth_test=False)
         self._draw_mode = 'triangles'
+
+    @property
+    def _line_caps(self):
+        return self._U['linecaps']
+
+    @_line_caps.setter
+    def _line_caps(self, value):
+        self._U['linecaps'] = value
+        self.update()
 
     def _prepare_transforms(self, view):
         data_doc = view.get_transform('visual', 'document')
