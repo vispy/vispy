@@ -310,7 +310,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size, line_height):
                 elif anchor_x == 'center':
                     dx = -width / 2.
                 vertices['a_position'][vi_marker:vi+4] += (dx, dy)
-                vi_marker = vi+4
+                vi_marker = (ii + ii_offset) * 4
                 ii_offset -= 1
                 # Reset variables that affects x-direction positioning
                 x_off = -slop
