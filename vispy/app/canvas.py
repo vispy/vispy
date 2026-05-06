@@ -526,8 +526,7 @@ class Canvas(object):
         if f is not None:
             return f(*args, **kwargs)
         else:
-            # Let Jupyter know this failed - otherwise the standard repr is not shown
-            raise NotImplementedError()
+            return {"text/plain": self.__repr__()}
 
     def _ipython_display_(self):
         """If the backend implements _ipython_display_, we proxy it here.
