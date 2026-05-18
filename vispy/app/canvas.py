@@ -218,7 +218,9 @@ class Canvas(object):
             self.create_native()
 
             # Now we're ready to become current
-            self.set_current()
+            # But not on Jupyter to avoid https://github.com/vispy/jupyter_rfb/issues/151
+            if not self._backend.__class__.__module__.endswith("jupyter_rfb"):
+                self.set_current()
 
         if '--vispy-fps' in sys.argv:
             self.measure_fps()

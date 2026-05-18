@@ -45,6 +45,7 @@ class OffscreenContext:
             self.glfw.init()
             self.glfw.window_hint(self.glfw.VISIBLE, 0)
             self._canvas = self.glfw.create_window(1, 1, "dummy window", None, None)
+
         else:
             try:
                 _app = Application('default')
@@ -66,6 +67,7 @@ class OffscreenContext:
             self.glfw.make_context_current(self._canvas)
         else:
             self._canvas.set_current()
+        return self  # allow method chaining
 
     def close(self):
         """ Close the context. """
@@ -76,6 +78,7 @@ class OffscreenContext:
             self._is_closed = True
             if self.glfw:
                 self.glfw.destroy_window(self._canvas)
+                self.glfw.poll_events()
             else:
                 self._canvas.close()
 
