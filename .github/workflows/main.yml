@@ -126,7 +126,7 @@ jobs:
         auto-activate: false
     - name: Install conda-dependencies
       run: |
-        conda install -y python=3.9 -f ci/requirements/linux_full_deps_conda.txt -c conda-forge
+        conda install -y python=3.9 -f ci/requirements/linux_full_deps_conda.txt
     - name: Install pip dependencies
       run: |
         python -m pip install --upgrade pip
@@ -249,9 +249,9 @@ jobs:
     - name: Install conda-dependencies
       run: |
         if [ "${{ matrix.new_qt }}" == 'true' ]; then
-          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt -c conda-forge
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
         else
-          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
         fi
     - name: Install pip-dependencies
       run: |
@@ -272,7 +272,7 @@ jobs:
           export DISPLAY=:99.0
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/conda/envs/vispy-tests/lib/libOSMesa.so;
+          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
         conda list
@@ -292,7 +292,7 @@ jobs:
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/conda/envs/vispy-tests/lib/libOSMesa.so
+          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi
