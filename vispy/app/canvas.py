@@ -218,7 +218,9 @@ class Canvas(object):
             self.create_native()
 
             # Now we're ready to become current
-            self.set_current()
+            # But not on Jupyter to avoid https://github.com/vispy/jupyter_rfb/issues/151
+            if not self._backend.__class__.__module__.endswith("jupyter_rfb"):
+                self.set_current()
 
         if '--vispy-fps' in sys.argv:
             self.measure_fps()
@@ -526,8 +528,7 @@ class Canvas(object):
         if f is not None:
             return f(*args, **kwargs)
         else:
-            # Let Jupyter know this failed - otherwise the standard repr is not shown
-            raise NotImplementedError()
+            return {"text/plain": self.__repr__()}
 
     def _ipython_display_(self):
         """If the backend implements _ipython_display_, we proxy it here.

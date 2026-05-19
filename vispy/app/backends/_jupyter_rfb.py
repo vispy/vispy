@@ -1,3 +1,4 @@
+import sys
 import asyncio
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -20,7 +21,7 @@ else:
 # -------------------------------------------------------------- capability ---
 
 capability = dict(
-    title=False,
+    title=True,
     size=True,
     position=False,
     show=False,
@@ -72,12 +73,20 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
 
     _double_click_supported = True
 
+    # Set jupyter_rfb bitmask to accept new style events with 'type' 'timestamp' and 'ratio'
+    _event_compatibility = 2
+
     def __init__(self, vispy_canvas, **kwargs):
         BaseCanvasBackend.__init__(self, vispy_canvas)
         RemoteFrameBuffer.__init__(self)
         # Use a context per canvas, because we seem to make assumptions
         # about OpenGL state being local to the canvas.
         self._context = OffscreenContext()  # OffscreenContext.get_global_instance()
+        # Briefly create a new window to trigger something context related.
+        # Not sure why this works, but it's part of the fix for  https://github.com/vispy/jupyter_rfb/issues/151
+        if sys.platform.startswith('win'):
+            self._context.make_current()
+            OffscreenContext().make_current().close()
         self._helper = FrameBufferHelper()
         self._loop = asyncio.get_event_loop()
         self._logical_size = 1, 1
@@ -91,10 +100,17 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         self._vispy_update()
 
     def handle_event(self, ev):
-        type = ev["event_type"]
+        # From jupyter_rfb 1.0 it uses the renderview event spec wich was
+        # changed a tiny bit from the 0.x jupyter event spec.
+        # (event_type -> type, time_stamp -> timestamp, pixel_ratio -> ratio).
+        # We use ev.get() where necessary to make it backwards compatible.
+        # These could be removed when we pin jupyter_rfb to 1.x
+        type = ev.get("type", None) or ev["event_type"]
+        assert type
         if type == "resize":
             # Note that jupyter_rfb already throttles this event
-            w, h, r = ev["width"], ev["height"], ev["pixel_ratio"]
+            w, h = ev["width"], ev["height"],
+            r = ev.get("ratio", None) or ev["pixel_ratio"]
             self._logical_size = w, h
             self._physical_size = int(w * r), int(h * r)
             self._helper.set_physical_size(*self._physical_size)
@@ -216,7 +232,8 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
         pass
 
     def _vispy_set_title(self, title):
-        pass
+        self.title = title
+        self.has_titlebar = bool(title)  # show titlebar when a title is set
 
     def _vispy_set_size(self, w, h):
         self.css_width = f"{w}px"

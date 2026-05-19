@@ -113,12 +113,20 @@ jobs:
         sleep 5
         # export python_version
         echo "python_version=310" >> $GITHUB_OUTPUT
-    - uses: mamba-org/setup-micromamba@v3
+    - name: Setup Conda Environment
+      uses: conda-incubator/setup-miniconda@v3
       with:
+        miniforge-version: latest
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        conda-remove-defaults: true
+        channel-priority: strict
+        activate-environment: vispy-tests
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+        auto-activate: false
     - name: Install conda-dependencies
       run: |
-        micromamba install -y python=3.9 -f ci/requirements/linux_full_deps_conda.txt -c conda-forge
+        conda install -y -f ci/requirements/linux_full_deps_conda.txt
     - name: Install pip dependencies
       run: |
         python -m pip install --upgrade pip
@@ -130,7 +138,7 @@ jobs:
     - name: Version Info
       run: |
         export DISPLAY=:99.0
-        micromamba list
+        conda list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"
     - name: build website
@@ -227,15 +235,23 @@ jobs:
         # export python_version
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
-    - uses: mamba-org/setup-micromamba@v3
+    - name: Setup Conda Environment
+      uses: conda-incubator/setup-miniconda@v3
       with:
+        miniforge-version: latest
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        conda-remove-defaults: true
+        channel-priority: strict
+        activate-environment: vispy-tests
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+        auto-activate: false
     - name: Install conda-dependencies
       run: |
         if [ "${{ matrix.new_qt }}" == 'true' ]; then
-          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt -c conda-forge
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
         else
-          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
         fi
     - name: Install pip-dependencies
       run: |
@@ -256,10 +272,10 @@ jobs:
           export DISPLAY=:99.0
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so;
+          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
-        micromamba list
+        conda list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"
     - name: Run tests
@@ -276,7 +292,7 @@ jobs:
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so
+          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi
