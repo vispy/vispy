@@ -1,5 +1,30 @@
 # Release Notes
 
+## [v0.16.2](https://github.com/vispy/vispy/tree/v0.16.2) (2026-05-20)
+
+**Enhancements:**
+
+- \[maint\] Defer importing scipy.sparse [\#2744](https://github.com/vispy/vispy/pull/2744) ([psobolewskiPhD](https://github.com/psobolewskiPhD))
+- Update for new jupyter\_rfb and add experimental Marimo support [\#2738](https://github.com/vispy/vispy/pull/2738) ([almarklein](https://github.com/almarklein))
+- Expose line caps on AGG lines [\#2734](https://github.com/vispy/vispy/pull/2734) ([brisvag](https://github.com/brisvag))
+- Delay importing networkx to NetworkxCoordinates.\_\_init\_\_ [\#2726](https://github.com/vispy/vispy/pull/2726) ([psobolewskiPhD](https://github.com/psobolewskiPhD))
+
+**Fixed bugs:**
+
+- Set depth buffer for gridlines [\#2748](https://github.com/vispy/vispy/pull/2748) ([brisvag](https://github.com/brisvag))
+- Fix issues with context creation on Jupyter notebooks [\#2742](https://github.com/vispy/vispy/pull/2742) ([almarklein](https://github.com/almarklein))
+- Fix: Account for newline when positioning first text character [\#2728](https://github.com/vispy/vispy/pull/2728) ([TimMonko](https://github.com/TimMonko))
+
+**Merged pull requests:**
+
+- Bump mamba-org/setup-micromamba from 2 to 3 [\#2741](https://github.com/vispy/vispy/pull/2741) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Change `logger.warn` to `logger.warning` to silence deprecation warning [\#2735](https://github.com/vispy/vispy/pull/2735) ([Czaki](https://github.com/Czaki))
+- Bump docker/setup-qemu-action from 3 to 4 [\#2732](https://github.com/vispy/vispy/pull/2732) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 3.3.1 to 3.4.0 [\#2731](https://github.com/vispy/vispy/pull/2731) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/download-artifact from 7 to 8 [\#2730](https://github.com/vispy/vispy/pull/2730) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/upload-artifact from 6 to 7 [\#2729](https://github.com/vispy/vispy/pull/2729) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 3.3.0 to 3.3.1 [\#2722](https://github.com/vispy/vispy/pull/2722) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v0.16.1](https://github.com/vispy/vispy/tree/v0.16.1) (2026-01-07)
 
 **Enhancements:**
