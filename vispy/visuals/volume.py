@@ -272,7 +272,7 @@ void main() {
             {
                 // Get sample color
                 vec4 color = $get_data(loc);
-                float val = color.r;
+                float val = $colorToScalar(color);
                 texture_sampled = true;
 
                 $in_loop
@@ -362,6 +362,7 @@ _RAYCASTING_SETUP_PLANE = """
     frag_depth_point = intersection;
 """
 
+_COLOR_TO_SCALAR = "float colorToScalar(vec4 color) { return color.r; }"
 
 _MIP_SNIPPETS = dict(
     before_loop="""
@@ -751,6 +752,7 @@ class VolumeVisual(Visual):
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['gamma'] = self._gamma
+        self.shared_program.frag['colorToScalar'] = self._color_to_scalar_snippet
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
@@ -1053,6 +1055,10 @@ class VolumeVisual(Visual):
     @property
     def _in_loop_snippet(self):
         return self._rendering_methods[self.method]['in_loop']
+
+    @property
+    def _color_to_scalar_snippet(self):
+        return Function(_COLOR_TO_SCALAR)
 
     @property
     def _after_loop_snippet(self):
