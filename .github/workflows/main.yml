@@ -114,7 +114,7 @@ jobs:
         # export python_version
         echo "python_version=310" >> $GITHUB_OUTPUT
     - name: Setup Conda Environment
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         miniforge-version: latest
         python-version: ${{ matrix.python-version }}
@@ -236,7 +236,7 @@ jobs:
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
     - name: Setup Conda Environment
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         miniforge-version: latest
         python-version: ${{ matrix.python-version }}
