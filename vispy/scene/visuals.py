@@ -236,6 +236,7 @@ def generate_docstring(subclass, clsname):
 Arrow = create_visual_node(visuals.ArrowVisual)
 Axis = create_visual_node(visuals.AxisVisual)
 Box = create_visual_node(visuals.BoxVisual)
+Circle = create_visual_node(visuals.CircleVisual)
 ColorBar = create_visual_node(visuals.ColorBarVisual)
 Compound = create_visual_node(visuals.CompoundVisual)
 Cube = create_visual_node(visuals.CubeVisual)
