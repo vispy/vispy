@@ -10,3 +10,4 @@
  pytest
  pillow
  pyopengl
+ sphinx-autodoc-typehints
