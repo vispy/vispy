@@ -431,7 +431,7 @@ class Program(GLObject):
                     dtype, numel = self._gtypes[type_]
                     data = np.array(data, dtype=dtype)
                     if data.ndim == 0:
-                        data.shape = data.size
+                        data = data.reshape(data.size)
                     if data.size != numel:
                         raise ValueError('Attribute %r needs %i elements, '
                                          'not %i.' % (name, numel, data.size))

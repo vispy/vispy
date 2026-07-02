@@ -149,8 +149,12 @@ def resize(image, shape, kind='linear'):
 
         c_1 = np.minimum(c_1, image.shape[1] - 1)
         r_1 = np.minimum(r_1, image.shape[0] - 1)
-        for arr in (top, bot, lef, rig):
-            arr.shape = arr.shape + (1,) * (image.ndim - 2)
+
+        top = np.reshape(top, (top.shape + (1,) * (image.ndim - 2)))
+        bot = np.reshape(bot, (bot.shape + (1,) * (image.ndim - 2)))
+        lef = np.reshape(lef, (lef.shape + (1,) * (image.ndim - 2)))
+        rig = np.reshape(rig, (rig.shape + (1,) * (image.ndim - 2)))
+
         out = top * rig * image[r_0][:, c_0, ...]
         out += bot * rig * image[r_1][:, c_0, ...]
         out += top * lef * image[r_0][:, c_1, ...]
