@@ -101,6 +101,7 @@ class InstancedMeshVisual(MeshVisual):
             raise ValueError(f'positions must be 3D coordinates, but provided data has shape {pos.shape}')
         self._instance_positions = downcast_to_32bit_if_needed(pos, dtype=np.float32)
         self._instance_positions_vbo = VertexBuffer(self._instance_positions, divisor=1)
+        self._bounds_changed()
         self.mesh_data_changed()
 
     @property
@@ -119,6 +120,7 @@ class InstancedMeshVisual(MeshVisual):
             VertexBuffer(np.ascontiguousarray(self._instance_transforms[..., 1]), divisor=1),
             VertexBuffer(np.ascontiguousarray(self._instance_transforms[..., 2]), divisor=1),
         )
+        self._bounds_changed()
         self.mesh_data_changed()
 
     @property
@@ -147,5 +149,29 @@ class InstancedMeshVisual(MeshVisual):
 
         super()._update_data()
 
-    # TODO: bounds are not reported correctly at the moment! We should
-    #       overload `_compute_bounds` based on the instances
+    def _compute_bounds(self, axis, view):
+        if self._bounds is None or self._instance_positions is None:
+            return None
+        if self._instance_transforms is None:
+            return None
+
+        # Template mesh bounding box corners
+        template_min = np.array([b[0] for b in self._bounds])
+        template_max = np.array([b[1] for b in self._bounds])
+        corners = np.array(np.meshgrid(
+            [template_min[0], template_max[0]],
+            [template_min[1], template_max[1]],
+            [template_min[2], template_max[2]],
+        )).T.reshape(-1, 3)
+
+        # Transform each corner by each instance transform and shift
+        transforms = self._instance_transforms  # (N, 3, 3)
+        positions = self._instance_positions     # (N, 3)
+        # (N, 1, 3, 3) @ (1, 8, 3, 1) -> (N, 8, 3, 1) -> (N, 8, 3)
+        transformed = (transforms[:, np.newaxis] @ corners[np.newaxis, :, :, np.newaxis])[..., 0]
+        transformed += positions[:, np.newaxis, :]
+
+        if axis >= transformed.shape[-1]:
+            return (0, 0)
+        return (float(transformed[..., axis].min()),
+                float(transformed[..., axis].max()))
