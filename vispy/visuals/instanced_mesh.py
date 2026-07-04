@@ -155,7 +155,8 @@ class InstancedMeshVisual(MeshVisual):
         if self._instance_transforms is None:
             return None
 
-        # Template mesh bounding box corners
+        # Compute all axes at once and populate the cache so the
+        # matmul only runs once even though bounds() calls us per-axis.
         template_min = np.array([b[0] for b in self._bounds])
         template_max = np.array([b[1] for b in self._bounds])
         corners = np.array(np.meshgrid(
@@ -164,14 +165,16 @@ class InstancedMeshVisual(MeshVisual):
             [template_min[2], template_max[2]],
         )).T.reshape(-1, 3)
 
-        # Transform each corner by each instance transform and shift
         transforms = self._instance_transforms  # (N, 3, 3)
         positions = self._instance_positions     # (N, 3)
         # (N, 1, 3, 3) @ (1, 8, 3, 1) -> (N, 8, 3, 1) -> (N, 8, 3)
         transformed = (transforms[:, np.newaxis] @ corners[np.newaxis, :, :, np.newaxis])[..., 0]
         transformed += positions[:, np.newaxis, :]
 
+        for ax in range(transformed.shape[-1]):
+            self._vshare.bounds[ax] = (float(transformed[..., ax].min()),
+                                       float(transformed[..., ax].max()))
+
         if axis >= transformed.shape[-1]:
             return (0, 0)
-        return (float(transformed[..., axis].min()),
-                float(transformed[..., axis].max()))
+        return self._vshare.bounds[axis]
