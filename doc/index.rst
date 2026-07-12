@@ -16,7 +16,7 @@
            <a class="home-button home-button--primary" href="classic.html">Use Classic VisPy</a>
            <a class="home-button home-button--secondary" href="https://datoviz.org/">Try Datoviz</a>
          </div>
-         <p class="home-status-note"><strong>Current status</strong><span>Classic VisPy 0.16.2 is stable.</span><span>Datoviz 0.4 RC is the high-performance GPU engine planned for VisPy 2.</span><span>VisPy 2 and GSP are still experimental.</span></p>
+         <p class="home-status-note"><strong>Current status</strong><span>Classic VisPy 0.16.2 is stable.</span><span>Datoviz 0.4 RC is the standalone GPU engine and flagship interactive backend for the developing VisPy 2 architecture.</span><span>VisPy 2 and GSP are still experimental.</span></p>
        </div>
        <p class="home-hero__caption">NASA Blue Marble Earth rendered as a textured mesh with Datoviz 0.4.</p>
      </header>
@@ -26,7 +26,7 @@
          <div class="home-section__heading">
            <p class="home-kicker">Available today</p>
            <h2 id="available-title">Use VisPy today. Explore what comes next.</h2>
-           <p>Choose the stable Classic VisPy API, or start using the future VisPy 2 GPU engine directly through Datoviz.</p>
+           <p>Choose Classic VisPy for its stable higher-level Python API, notebooks, and existing applications. Choose Datoviz for modern GPU rendering, large interactive scenes, native integration, or early access to the VisPy 2 rendering direction.</p>
          </div>
          <div class="home-projects">
            <article class="home-project">
@@ -43,29 +43,14 @@
            <article class="home-project">
              <div><span class="home-badge home-badge--prerelease">Release candidate</span></div>
              <h3>Try Datoviz 0.4 RC today</h3>
-             <p>The usable, lower-level Vulkan-based GPU engine planned for VisPy 2, available directly through native C and Python ctypes APIs.</p>
+             <p>The standalone Vulkan-based GPU engine and flagship interactive backend for VisPy 2, available directly today.</p>
              <ul class="home-project__facts">
-               <li>C and Python APIs</li>
+               <li>Native C and NumPy-aware Python APIs</li>
+               <li>Desktop Vulkan and experimental browser WebGPU</li>
                <li>Extensive documentation and 100+ code examples</li>
-               <li>Ready for coding-agent workflows</li>
              </ul>
              <a class="home-text-link" href="https://datoviz.org/">Documentation and examples <span aria-hidden="true">&#8594;</span></a>
            </article>
-         </div>
-         <div class="home-capabilities">
-           <div class="home-capabilities__heading">
-             <p class="home-kicker">Inside Datoviz 0.4 RC</p>
-             <h3>What Datoviz provides today</h3>
-             <p>Examples of the release-candidate surface; maturity varies by visual and backend.</p>
-           </div>
-           <ul>
-             <li><strong>2D primitives</strong><span>Points, pixels, markers, lines, and paths</span></li>
-             <li><strong>Scientific images</strong><span>Images, text, labels, and colormaps</span></li>
-             <li><strong>3D scenes</strong><span>Meshes, spheres, materials, and lighting</span></li>
-             <li><strong>Volume data</strong><span>Volumes, slices, and transparent overlays</span></li>
-             <li><strong>Rendering quality</strong><span>MSAA, analytic edge smoothing, depth, and blending</span></li>
-             <li><strong>Interaction</strong><span>Controllers, picking, probing, and readback</span></li>
-           </ul>
          </div>
        </section>
 
