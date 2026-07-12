@@ -1,62 +1,13 @@
-:root {
-  --vispy-bg: #0e1117;
-  --vispy-bg-deep: #0a0d12;
-  --vispy-surface: #10161f;
-  --vispy-elevated: #161b22;
-  --vispy-line: #30363d;
-  --vispy-text: #c9d1d9;
-  --vispy-muted: #8b949e;
-  --vispy-strong: #f0f6fc;
-  --vispy-cyan: #4cc9f0;
-  --vispy-mint: #80ffdb;
-  --vispy-amber: #ffb703;
-  --vispy-rose: #ef476f;
-}
-
-/* The homepage uses the full document width; all other pages keep the theme's
-   documentation layout and sidebars. */
+/* The landing page inherits the documentation theme's typography, palette,
+   navigation, and light/dark mode. Only its editorial layout is custom. */
 body:has(.vispy-home) .bd-main,
+body:has(.vispy-home) .bd-container__inner,
 body:has(.vispy-home) .bd-main .bd-content,
 body:has(.vispy-home) .bd-main .bd-content .bd-article-container,
 body:has(.vispy-home) .bd-main .bd-content .bd-article-container .bd-article {
   max-width: none;
   overflow: visible;
   width: 100%;
-}
-
-body:has(.vispy-home) .bd-main .bd-content {
-  background: var(--vispy-bg);
-  display: block;
-}
-
-body:has(.vispy-home) #pst-header,
-body:has(.vispy-home) .prev-next-footer,
-body:has(.vispy-home) .bd-footer-content,
-body:has(.vispy-home) .bd-footer {
-  background: var(--vispy-bg-deep) !important;
-  border-color: var(--vispy-line);
-  color: var(--vispy-text);
-}
-
-body:has(.vispy-home) #pst-header a,
-body:has(.vispy-home) #pst-header button,
-body:has(.vispy-home) .prev-next-footer a,
-body:has(.vispy-home) .prev-next-footer p {
-  color: var(--vispy-text);
-}
-
-body:has(.vispy-home) #pst-header .logo__image {
-  filter: invert(1) saturate(0) brightness(1.4);
-}
-
-body:has(.vispy-home) #pst-header .search-button__button {
-  background: var(--vispy-elevated);
-  border-color: var(--vispy-line);
-}
-
-body:has(.vispy-home) .theme-switch-container,
-body:has(.vispy-home) .search-button__button {
-  display: none;
 }
 
 body:has(.vispy-home) .bd-main .bd-content .bd-article-container,
@@ -68,10 +19,34 @@ body:has(.vispy-home) .bd-sidebar-secondary {
   display: none;
 }
 
+/* Keep the documentation controls beside the primary navigation. The theme
+   allows this container to wrap, which makes the homepage header look like a
+   separate two-row navigation bar when all top-level links are present. */
+@media (min-width: 960px) {
+  body:has(.vispy-home) #pst-header .navbar-header-items {
+    flex-wrap: nowrap;
+  }
+
+  body:has(.vispy-home) #pst-header .search-button-field > :not(svg, i) {
+    display: none;
+  }
+}
+
 .vispy-home {
-  background: var(--vispy-bg);
-  color: var(--vispy-text);
-  color-scheme: dark;
+  --vispy-bg: var(--pst-color-background);
+  --vispy-bg-deep: var(--pst-color-surface);
+  --vispy-surface: var(--pst-color-surface);
+  --vispy-elevated: var(--pst-color-background);
+  --vispy-line: var(--pst-color-border);
+  --vispy-text: var(--pst-color-text-base);
+  --vispy-muted: var(--pst-color-text-muted);
+  --vispy-strong: var(--pst-color-text-base);
+  --vispy-cyan: var(--pst-color-primary);
+  --vispy-mint: var(--pst-color-success);
+  --vispy-amber: var(--pst-color-warning);
+  --vispy-rose: var(--pst-color-danger);
+  background: var(--pst-color-background);
+  color: var(--pst-color-text-base);
   font-size: 1rem;
   margin: 0 0 -3rem;
   width: 100%;
@@ -125,11 +100,20 @@ body:has(.vispy-home) .bd-sidebar-secondary {
 
 .home-hero,
 .home-section {
-  padding-left: max(1.5rem, calc((100vw - 1180px) / 2));
-  padding-right: max(1.5rem, calc((100vw - 1180px) / 2));
+  padding-left: max(1.5rem, calc((100vw - 1100px) / 2));
+  padding-right: max(1.5rem, calc((100vw - 1100px) / 2));
 }
 
 .home-hero {
+  --vispy-bg-deep: #0a0d12;
+  --vispy-elevated: #161b22;
+  --vispy-line: #30363d;
+  --vispy-text: #c9d1d9;
+  --vispy-muted: #8b949e;
+  --vispy-strong: #f0f6fc;
+  --vispy-cyan: #4cc9f0;
+  --vispy-mint: #80ffdb;
+  --vispy-amber: #ffb703;
   align-items: center;
   background-color: var(--vispy-bg-deep);
   color: var(--vispy-strong);
@@ -286,12 +270,12 @@ body:has(.vispy-home) .bd-sidebar-secondary {
   margin: 0;
   padding: 0.25rem 0.45rem;
   position: absolute;
-  right: max(1.5rem, calc((100vw - 1180px) / 2));
+  right: max(1.5rem, calc((100vw - 1100px) / 2));
 }
 
 .home-section {
-  padding-bottom: 6rem;
-  padding-top: 6rem;
+  padding-bottom: 5rem;
+  padding-top: 5rem;
 }
 
 .home-section__heading {
@@ -336,7 +320,7 @@ body:has(.vispy-home) .bd-sidebar-secondary {
 }
 
 .home-capabilities {
-  background: rgba(255, 183, 3, 0.035);
+  background: var(--pst-color-background);
   border: 1px solid var(--vispy-line);
   border-top: 3px solid var(--vispy-amber);
   display: grid;
@@ -416,8 +400,8 @@ body:has(.vispy-home) .bd-sidebar-secondary {
 }
 
 .home-section--dark {
-  background: var(--vispy-bg-deep);
-  color: var(--vispy-strong);
+  background: var(--pst-color-surface);
+  color: var(--pst-color-text-base);
   display: grid;
   gap: 5rem;
   grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
@@ -425,7 +409,7 @@ body:has(.vispy-home) .bd-sidebar-secondary {
 
 .home-section--dark h2,
 .home-section--dark p {
-  color: var(--vispy-strong);
+  color: var(--pst-color-text-base);
 }
 
 .home-section--dark .home-kicker {
@@ -603,8 +587,8 @@ body:has(.vispy-home) .bd-sidebar-secondary {
 }
 
 .home-section--history {
-  background: var(--vispy-bg-deep);
-  color: var(--vispy-strong);
+  background: var(--pst-color-surface);
+  color: var(--pst-color-text-base);
   display: grid;
   gap: 5rem;
   grid-template-columns: minmax(0, 1.15fr) minmax(350px, 0.85fr);
@@ -612,7 +596,7 @@ body:has(.vispy-home) .bd-sidebar-secondary {
 
 .home-section--history h2,
 .home-section--history p {
-  color: var(--vispy-strong);
+  color: var(--pst-color-text-base);
 }
 
 .home-section--history .home-kicker {
