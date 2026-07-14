@@ -13,12 +13,11 @@
          <p class="home-hero__offer">Fast, interactive scientific visualization in Python.</p>
          <p class="home-hero__summary">Create plots, explore large datasets, and build complete scientific applications with open-source tools.</p>
          <div class="home-actions" aria-label="Primary links">
-           <a class="home-button home-button--primary" href="classic.html">Use Classic VisPy</a>
-           <a class="home-button home-button--secondary" href="https://datoviz.org/">Try Datoviz</a>
+           <a class="home-button home-button--primary" href="vispy.html">Read the VisPy docs</a>
          </div>
-         <p class="home-status-note"><strong>Current status</strong><span>Classic VisPy 0.16.2 is stable.</span><span>Datoviz 0.4 RC is the standalone GPU engine and flagship interactive backend for the developing VisPy 2 architecture.</span><span>VisPy 2 and GSP are still experimental.</span></p>
+         <p class="home-status-note"><strong>Current status</strong><span>VisPy is stable.</span><span>Datoviz is the standalone GPU engine and flagship interactive backend for the developing VisPy 2 architecture.</span><span>VisPy 2 and GSP are still experimental.</span></p>
        </div>
-       <p class="home-hero__caption">NASA Blue Marble Earth rendered as a textured mesh with Datoviz 0.4.</p>
+       <p class="home-hero__caption">NASA Blue Marble Earth rendered as a textured mesh with Datoviz.</p>
      </header>
 
      <main>
@@ -26,23 +25,23 @@
          <div class="home-section__heading">
            <p class="home-kicker">Available today</p>
            <h2 id="available-title">Use VisPy today. Explore what comes next.</h2>
-           <p>Choose Classic VisPy for its stable higher-level Python API, notebooks, and existing applications. Choose Datoviz for modern GPU rendering, large interactive scenes, native integration, or early access to the VisPy 2 rendering direction.</p>
+           <p>Choose VisPy for its stable higher-level Python API, notebooks, and existing applications. Choose Datoviz for modern GPU rendering, large interactive scenes, native integration, or early access to the VisPy 2 rendering direction.</p>
          </div>
          <div class="home-projects">
            <article class="home-project">
              <div><span class="home-badge home-badge--stable">Established</span></div>
-             <h3>Classic VisPy 0.16.2</h3>
+             <h3>VisPy</h3>
              <p>The stable, higher-level OpenGL-based Python library for fast, interactive 2D and 3D visualization.</p>
              <ul class="home-project__facts">
                <li>13+ years of open-source development</li>
                <li>Established scientific Python community</li>
                <li>Higher-level APIs across desktop and notebooks</li>
              </ul>
-             <a class="home-text-link" href="classic.html">Documentation and installation <span aria-hidden="true">&#8594;</span></a>
+             <a class="home-text-link" href="vispy.html">Documentation and installation <span aria-hidden="true">&#8594;</span></a>
            </article>
            <article class="home-project">
              <div><span class="home-badge home-badge--prerelease">Release candidate</span></div>
-             <h3>Try Datoviz 0.4 RC today</h3>
+             <h3>Datoviz</h3>
              <p>The standalone Vulkan-based GPU engine and flagship interactive backend for VisPy 2, available directly today.</p>
              <ul class="home-project__facts">
                <li>Native C and NumPy-aware Python APIs</li>
@@ -78,7 +77,7 @@
          <div class="home-section__heading home-section__heading--compact">
            <p class="home-kicker">One scientific graphics stack</p>
            <h2 id="range-title">From scientific plots to interactive 3D worlds.</h2>
-           <p>These examples are rendered by Datoviz 0.4 RC, the GPU engine planned underneath VisPy 2. They show the same foundations at work in precise plotting, geographic data, physical simulation, and volumetric science.</p>
+           <p>These examples are rendered by Datoviz, the GPU engine planned underneath VisPy 2. They show the same foundations at work in precise plotting, geographic data, physical simulation, and volumetric science.</p>
          </div>
          <div class="home-showcase" aria-label="Scientific visualization examples">
            <a class="home-showcase__card" href="https://datoviz.org/examples/gallery/showcases/showcases_scientific_plotting/">
@@ -117,7 +116,7 @@
              <source src="_static/landing/datoviz-protein.mp4" type="video/mp4">
            </video>
            <img src="_static/landing/datoviz-protein.webp" alt="Protein structure rendered by Datoviz">
-           <span>Protein structure rendered with Datoviz 0.4 RC <span aria-hidden="true">&#8594;</span></span>
+           <span>Protein structure rendered with Datoviz <span aria-hidden="true">&#8594;</span></span>
          </a>
        </section>
 
@@ -128,8 +127,8 @@
          </div>
          <div class="home-status-table" role="table" aria-label="VisPy ecosystem project maturity">
            <div class="home-status-table__row home-status-table__head" role="row"><span role="columnheader">Component</span><span role="columnheader">Maturity</span><span role="columnheader">Role</span></div>
-           <div class="home-status-table__row" role="row"><strong role="cell"><a href="classic.html">Classic VisPy 0.16.2</a></strong><span role="cell"><span class="home-badge home-badge--stable">Established</span></span><span role="cell">Current OpenGL visualization library</span></div>
-           <div class="home-status-table__row" role="row"><strong role="cell"><a href="https://datoviz.org/">Datoviz 0.4 RC</a></strong><span role="cell"><span class="home-badge home-badge--prerelease">Release candidate</span></span><span role="cell">High-performance GPU backend</span></div>
+           <div class="home-status-table__row" role="row"><strong role="cell"><a href="vispy.html">VisPy</a></strong><span role="cell"><span class="home-badge home-badge--stable">Established</span></span><span role="cell">Current OpenGL visualization library</span></div>
+           <div class="home-status-table__row" role="row"><strong role="cell"><a href="https://datoviz.org/">Datoviz</a></strong><span role="cell"><span class="home-badge home-badge--prerelease">Release candidate</span></span><span role="cell">High-performance GPU backend</span></div>
            <div class="home-status-table__row" role="row"><strong role="cell"><a href="https://github.com/vispy/GSP_API">GSP</a></strong><span role="cell"><span class="home-badge home-badge--experimental">Experimental</span></span><span role="cell">Renderer-independent protocol</span></div>
            <div class="home-status-table__row" role="row"><strong role="cell"><a href="https://github.com/vispy/GSP_API">VisPy 2</a></strong><span role="cell"><span class="home-badge home-badge--experimental">Experimental</span></span><span role="cell">Successor plotting and application API</span></div>
            <div class="home-status-table__row" role="row"><strong role="cell"><a href="https://datoviz.org/reference/webgpu-subset/">WebGPU</a></strong><span role="cell"><span class="home-badge home-badge--experimental">Experimental</span></span><span role="cell">Browser-based GPU rendering</span></div>
@@ -167,7 +166,7 @@
 .. toctree::
   :hidden:
 
-  Classic VisPy <classic>
+  VisPy documentation <vispy>
   installation
   getting_started/index
   overview
