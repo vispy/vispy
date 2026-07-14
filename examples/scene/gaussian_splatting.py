@@ -5,8 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-3D Gaussian Splatting viewer
-============================
+3D Gaussian Splatting
+=====================
 
 Render a 3D Gaussian Splatting scene with the
 :class:`~vispy.scene.visuals.GaussianSplat` visual.
@@ -15,17 +15,18 @@ This reads a ``.ply`` file in the layout emitted by the INRIA "3D Gaussian
 Splatting for Real-Time Radiance Field Rendering" code and compatible tools
 (x/y/z, f_dc_*, opacity, scale_*, rot_*), builds a 3D covariance per Gaussian
 from the log-space scales and rotation quaternions, and hands the resulting
-arrays to the ``GaussianSplat`` visual. With no argument it fetches a small
-sample scene from the vispy demo-data repository.
+arrays to the ``GaussianSplat`` visual.
 
-Color uses only the spherical-harmonics DC term (``f_dc_*``); view-dependent
-SH (``f_rest_*``) is ignored.
+With no ply file provided this script fetches a sample file of a clusterfly
+from the vispy demo-data repository. This file was orignally created by Dany
+Bittel and retrieved from https://superspl.at/scene/285082b2 (licensed CC-BY).
 
-Requires the ``plyfile`` package (``pip install plyfile``).
+Requires the ``plyfile`` and ``scipy`` packages
+(``pip install plyfile scipy``).
 
 Usage::
 
-    python gaussian_splatting.py                          # fetch sample scene
+    python gaussian_splatting.py
     python gaussian_splatting.py path/to/point_cloud.ply --subsample 4
 """
 import argparse
@@ -39,17 +40,20 @@ from vispy.io import load_data_file
 # Full gl+ context is required for instanced rendering.
 use(gl='gl+')
 
-# Default sample scene, fetched on demand from the vispy demo-data repo.
 DEFAULT_PLY = 'gaussian_splatting/cluster/cluster_fly_S.ply'
 
 
 def load_splats(path, subsample=1):
-    """Read a 3DGS ply and return per-Gaussian arrays, normalized to a unit box.
+    """Read a 3DGS ply and return per-Gaussian arrays compatible with
+    the GaussianSplat visual.
 
     Returns ``(positions, covariances, colors)`` as float32 arrays with shapes
     (N, 3), (N, 3, 3) and (N, 4), where ``colors`` is RGBA (alpha is opacity).
+
+    Positions are normalized to a unit box.
     """
     from plyfile import PlyData
+    from scipy.spatial.transform import Rotation
 
     v = PlyData.read(path).elements[0].data
     if subsample > 1:
@@ -65,38 +69,30 @@ def load_splats(path, subsample=1):
     scale_norm = radius if radius > 0 else 1.0
     xyz /= scale_norm
 
-    # scale_* are log-space std-devs; rot_* is a (w, x, y, z) quaternion.
+    # scale_* are log-space std-devs
     scales = np.exp(np.stack([v[f'scale_{i}'] for i in range(3)], axis=-1))
     scales = scales.astype(np.float64) / scale_norm
-    quats = np.stack([v[f'rot_{i}'] for i in range(4)], axis=-1).astype(np.float64)
-    quats /= np.linalg.norm(quats, axis=1, keepdims=True) + 1e-9
 
-    w, x, y, z = quats[:, 0], quats[:, 1], quats[:, 2], quats[:, 3]
-    R = np.empty((len(quats), 3, 3))
-    R[:, 0, 0] = 1 - 2 * (y * y + z * z)
-    R[:, 0, 1] = 2 * (x * y - w * z)
-    R[:, 0, 2] = 2 * (x * z + w * y)
-    R[:, 1, 0] = 2 * (x * y + w * z)
-    R[:, 1, 1] = 1 - 2 * (x * x + z * z)
-    R[:, 1, 2] = 2 * (y * z - w * x)
-    R[:, 2, 0] = 2 * (x * z - w * y)
-    R[:, 2, 1] = 2 * (y * z + w * x)
-    R[:, 2, 2] = 1 - 2 * (x * x + y * y)
+    # rot_* is a (w, x, y, z) quaternion.
+    quats = np.stack([v[f'rot_{i}'] for i in range(4)], axis=-1)
+    # scipy uses scalar-last (x, y, z, w) order and normalizes internally
+    R = Rotation.from_quat(quats[:, [1, 2, 3, 0]]).as_matrix()
 
     # Sigma = R S S^T R^T, with M = R @ diag(scales) so Sigma = M @ M^T.
     M = R * scales[:, None, :]
-    sigma = np.einsum('nij,nkj->nik', M, M)
+    # batched matmul: for each splat, M @ M.T (swapaxes transposes each 3x3).
+    sigma = M @ M.swapaxes(-1, -2)
 
-    # TODO: use only the SH DC term (f_dc_*) for now; view-dependent color
-    # from the higher-order f_rest_* coefficients is discarded. Evaluating it
-    # requires shader support in GaussianSplatVisual (see its docstring).
-    SH_C0 = 0.28209479177387814  # degree-0 spherical harmonics constant
+    # use only the SH DC term (f_dc_*);
+    # view-dependent color from the higher-order f_rest_* coefficients is
+    # not supported by the GaussianSplat visual at this time
+    SH_C0 = 1 / (2 * np.sqrt(np.pi))  # degree-0 spherical harmonics constant
     rgb = 0.5 + SH_C0 * np.stack(
         [v['f_dc_0'], v['f_dc_1'], v['f_dc_2']], axis=-1
     )
     rgb = np.clip(rgb, 0.0, 1.0)
-    opacity = 1.0 / (1.0 + np.exp(-v['opacity'].astype(np.float64)))
-    rgba = np.concatenate([rgb, opacity[:, None]], axis=-1)
+    alpha = 1.0 / (1.0 + np.exp(-v['opacity'].astype(np.float64)))
+    rgba = np.concatenate([rgb, alpha[:, None]], axis=-1)
 
     f32 = np.float32
     return (
