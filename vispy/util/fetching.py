@@ -42,7 +42,7 @@ def load_data_file(fname, directory=None, force_download=False):
     fname : str
         The path to the file on the local system.
     """
-    _url_root = 'https://raw.githubusercontent.com/vispy/demo-data/main/'
+    _url_root = 'https://raw.githubusercontent.com/aganders3/vispy-demo-data/gaussian-splatting/'
     url = _url_root + fname
     if directory is None:
         directory = config['data_path']
