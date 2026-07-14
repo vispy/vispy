@@ -147,7 +147,7 @@ def _load_glyph(f, char, glyphs_dict):
 
     # reshape bitmap (don't know why it's only alpha on OSX...)
     bitmap = np.array(buffer, np.ubyte)
-    bitmap.shape = (height, width, 4)
+    bitmap = bitmap.reshape(height, width, 4)
     bitmap = bitmap[:, :, 3].copy()
     glyph = dict(char=char, offset=(left, top), bitmap=bitmap,
                  advance=advance, kerning={})
