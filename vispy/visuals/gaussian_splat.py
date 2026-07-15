@@ -125,9 +125,9 @@ class GaussianSplatVisual(Visual):
     vertex shader using a finite-difference Jacobian of the visual->framebuffer
     projection (the vispy equivalent of the model-view-projection). Finite
     differences are used because that projection is nonlinear under a
-    perspective camera, which keeps the visual camera-agnostic. The fragment
-    shader evaluates the resulting 2D Gaussian. Splats are sorted and rendered
-    back-to-front and blended (no depth testing).
+    perspective camera. The fragment shader evaluates the resulting 2D
+    Gaussian. Splats are sorted and rendered back-to-front and blended (no
+    depth testing).
 
     Parameters
     ----------
@@ -138,59 +138,52 @@ class GaussianSplatVisual(Visual):
     colors : (N, 4) array
         RGBA color for each Gaussian, in [0, 1]. The alpha channel is the
         Gaussian's peak opacity.
-    eps : float, optional
-        Finite-difference step (in visual units) used to build the
-        visual->framebuffer Jacobian in the vertex shader. By default (None)
-        it is derived from the extent of ``positions`` (~1% of the bounding-box
-        size), which keeps the Jacobian numerically stable regardless of the
-        data's units -- a fixed step in float32 loses precision (and can even
-        collapse to zero, culling every splat) when coordinates are large.
-        Pass a value to override.
 
     Notes
     -----
     The depth sort re-uploads the instance buffers whenever the camera moves,
     which is fine for up to a few million splats.
 
-    Color is a fixed per-Gaussian RGBA value; view-dependent color is not
-    supported.
+    Color is a fixed per-Gaussian RGBA value; view-dependent color is often
+    included in splat data, but yet not supported here.
     """
 
-    def __init__(self, positions, covariances, colors, eps=None):
+    def __init__(self, positions, covariances, colors):
         Visual.__init__(self, VERTEX_SHADER, FRAGMENT_SHADER)
 
-        # NB: prefix data attributes to avoid clobbering reserved Visual
-        # attributes (e.g. Visual._opacity, reset to a float by the node
-        # wrapper in create_visual_node).
-        self._gs_pos = None
-        self._gs_cov_a = None
-        self._gs_cov_b = None
-        self._gs_rgba = None
-        # None => derive the finite-difference step from the data extent.
-        self._eps = eps
-        # A few probe points to cheaply detect camera changes for re-sorting.
-        self._probes = None
-        self._last_sig = None
+        self._splat_pos = None
+        self._splat_cov_a = None
+        self._splat_cov_b = None
+        self._splat_rgba = None
+        # Cached bounding box, rows (min, max): the single source for
+        # _compute_bounds and for the view-change probes built in _sort.
+        self._bounds = None
+        # Fingerprint of the projected probes at the last sort; while it is
+        # unchanged the camera hasn't moved and the back-to-front order still
+        # holds, so _sort can bail out (see _sort).
+        self._view_fingerprint = None
 
         # Per-vertex quad (corners in [-1, 1]); drawn as a triangle strip.
         quad = np.array([[-1, -1], [1, -1], [-1, 1], [1, 1]], dtype=np.float32)
-        self.shared_program['a_quad'] = gloo.VertexBuffer(quad)
+        self.shared_program["a_quad"] = gloo.VertexBuffer(quad)
 
         # Instanced (divisor=1) per-splat buffers; re-ordered on each sort.
         self._vb_center = gloo.VertexBuffer(divisor=1)
         self._vb_cov_a = gloo.VertexBuffer(divisor=1)
         self._vb_cov_b = gloo.VertexBuffer(divisor=1)
         self._vb_color = gloo.VertexBuffer(divisor=1)
-        self.shared_program['a_center'] = self._vb_center
-        self.shared_program['a_cov_a'] = self._vb_cov_a
-        self.shared_program['a_cov_b'] = self._vb_cov_b
-        self.shared_program['a_color'] = self._vb_color
+        self.shared_program["a_center"] = self._vb_center
+        self.shared_program["a_cov_a"] = self._vb_cov_a
+        self.shared_program["a_cov_b"] = self._vb_cov_b
+        self.shared_program["a_color"] = self._vb_color
 
-        self._draw_mode = 'triangle_strip'
+        self._draw_mode = "triangle_strip"
         # Premultiplied "over", no depth test/write (we sort on the CPU).
         self.set_gl_state(
-            depth_test=False, cull_face=False, blend=True,
-            blend_func=('one', 'one_minus_src_alpha'),
+            depth_test=False,
+            cull_face=False,
+            blend=True,
+            blend_func=("one", "one_minus_src_alpha"),
         )
 
         self.set_data(positions, covariances, colors)
@@ -198,12 +191,12 @@ class GaussianSplatVisual(Visual):
     @property
     def positions(self):
         """The (N, 3) array of Gaussian centers."""
-        return self._gs_pos
+        return self._splat_pos
 
     @property
     def covariances(self):
         """The (N, 3, 3) array of per-Gaussian 3D covariance matrices."""
-        a, b = self._gs_cov_a, self._gs_cov_b
+        a, b = self._splat_cov_a, self._splat_cov_b
         sigma = np.zeros((len(a), 3, 3), dtype=np.float32)
         # cov_a = (S00, S01, S02), cov_b = (S11, S12, S22).
         sigma[:, 0, 0], sigma[:, 0, 1], sigma[:, 0, 2] = a[:, 0], a[:, 1], a[:, 2]
@@ -215,7 +208,7 @@ class GaussianSplatVisual(Visual):
     @property
     def colors(self):
         """The (N, 4) array of per-Gaussian RGBA colors."""
-        return self._gs_rgba
+        return self._splat_rgba
 
     def set_data(self, positions=None, covariances=None, colors=None):
         """Update any subset of the per-Gaussian data arrays.
@@ -226,72 +219,75 @@ class GaussianSplatVisual(Visual):
         if positions is not None:
             pos = np.ascontiguousarray(positions, dtype=np.float32)
             if pos.ndim != 2 or pos.shape[1] != 3:
-                raise ValueError('positions must have shape (N, 3), got '
-                                 f'{pos.shape}')
-            self._gs_pos = pos
+                raise ValueError(f"positions must have shape (N, 3), got {pos.shape}")
+            self._splat_pos = pos
             lo, hi = pos.min(0), pos.max(0)
-            self._probes = np.array([
-                lo, hi, [lo[0], hi[1], lo[2]], [hi[0], lo[1], hi[2]],
-            ], dtype=np.float32)
+            self._bounds = np.array([lo, hi], dtype=np.float32)
             # Finite-difference step: ~1% of the largest bounding-box side, so
             # it stays numerically well-conditioned whatever the data's units.
-            if self._eps is None:
-                extent = float((hi - lo).max())
-                self.shared_program['u_eps'] = 1e-2 * extent if extent > 0 else 1e-2
-            else:
-                self.shared_program['u_eps'] = float(self._eps)
+            extent = float((hi - lo).max())
+            self.shared_program["u_eps"] = 1e-2 * extent if extent > 0 else 1e-2
         if covariances is not None:
             cov = np.asarray(covariances, dtype=np.float32)
             if cov.ndim != 3 or cov.shape[1:] != (3, 3):
-                raise ValueError('covariances must have shape (N, 3, 3), got '
-                                 f'{cov.shape}')
+                raise ValueError(
+                    f"covariances must have shape (N, 3, 3), got {cov.shape}"
+                )
             # Pack the symmetric 3x3 as cov_a=(S00,S01,S02), cov_b=(S11,S12,S22).
-            self._gs_cov_a = np.ascontiguousarray(cov[:, 0, :])
-            self._gs_cov_b = np.ascontiguousarray(
-                np.stack([cov[:, 1, 1], cov[:, 1, 2], cov[:, 2, 2]], axis=-1))
+            self._splat_cov_a = np.ascontiguousarray(cov[:, 0, :])
+            self._splat_cov_b = np.ascontiguousarray(
+                np.stack([cov[:, 1, 1], cov[:, 1, 2], cov[:, 2, 2]], axis=-1)
+            )
         if colors is not None:
             rgba = np.ascontiguousarray(colors, dtype=np.float32)
             if rgba.ndim != 2 or rgba.shape[1] != 4:
-                raise ValueError('colors must have shape (N, 4) RGBA, got '
-                                 f'{rgba.shape}')
-            self._gs_rgba = rgba
+                raise ValueError(
+                    f"colors must have shape (N, 4) RGBA, got {rgba.shape}"
+                )
+            self._splat_rgba = rgba
 
         # Force a re-sort/upload on the next draw.
-        self._last_sig = None
+        self._view_fingerprint = None
         self.update()
 
     def _sort(self, view):
         """Re-sort back-to-front and re-upload instance buffers if the camera
         moved. Returns without work when the view transform is unchanged."""
-        tr = view.get_transform('visual', 'framebuffer')
-        sig = tr.map(self._probes).ravel()
-        if self._last_sig is not None and np.allclose(sig, self._last_sig):
+        tr = view.get_transform("visual", "framebuffer")
+        # fingerprint the view by projecting the data bounding-box corners
+        lo, hi = self._bounds
+        probes = np.array(
+            [lo, hi, [lo[0], hi[1], lo[2]], [hi[0], lo[1], hi[2]]],
+            dtype=np.float32,
+        )
+        fingerprint = tr.map(probes).ravel()
+        if self._view_fingerprint is not None and np.allclose(
+            fingerprint, self._view_fingerprint
+        ):
             return
-        self._last_sig = sig
+        self._view_fingerprint = fingerprint
 
-        fb = tr.map(self._gs_pos)
+        fb = tr.map(self._splat_pos)
         depth = fb[:, 2] / fb[:, 3]
         order = np.argsort(depth)[::-1]  # draw back to front
 
-        self._vb_center.set_data(np.ascontiguousarray(self._gs_pos[order]))
-        self._vb_cov_a.set_data(np.ascontiguousarray(self._gs_cov_a[order]))
-        self._vb_cov_b.set_data(np.ascontiguousarray(self._gs_cov_b[order]))
-        self._vb_color.set_data(np.ascontiguousarray(self._gs_rgba[order]))
+        self._vb_center.set_data(np.ascontiguousarray(self._splat_pos[order]))
+        self._vb_cov_a.set_data(np.ascontiguousarray(self._splat_cov_a[order]))
+        self._vb_cov_b.set_data(np.ascontiguousarray(self._splat_cov_b[order]))
+        self._vb_color.set_data(np.ascontiguousarray(self._splat_rgba[order]))
 
     def _prepare_draw(self, view):
-        if self._gs_pos is None or len(self._gs_pos) == 0:
+        if self._splat_pos is None or len(self._splat_pos) == 0:
             return False
         self._sort(view)
         return True
 
     def _prepare_transforms(self, view):
         prog = view.view_program
-        prog.vert['visual_to_framebuffer'] = \
-            view.get_transform('visual', 'framebuffer')
-        prog.vert['framebuffer_to_render'] = \
-            view.get_transform('framebuffer', 'render')
+        prog.vert["visual_to_framebuffer"] = view.get_transform("visual", "framebuffer")
+        prog.vert["framebuffer_to_render"] = view.get_transform("framebuffer", "render")
 
     def _compute_bounds(self, axis, view):
-        if self._gs_pos is None or len(self._gs_pos) == 0:
+        if self._bounds is None:
             return None
-        return self._gs_pos[:, axis].min(), self._gs_pos[:, axis].max()
+        return self._bounds[0, axis], self._bounds[1, axis]

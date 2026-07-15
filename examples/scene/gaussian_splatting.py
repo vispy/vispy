@@ -27,7 +27,7 @@ Requires the ``plyfile`` and ``scipy`` packages
 Usage::
 
     python gaussian_splatting.py
-    python gaussian_splatting.py path/to/point_cloud.ply --subsample 4
+    python gaussian_splatting.py path/to/point_cloud.ply
 """
 import argparse
 import sys
@@ -43,7 +43,7 @@ use(gl='gl+')
 DEFAULT_PLY = 'gaussian_splatting/cluster/cluster_fly_S.ply'
 
 
-def load_splats(path, subsample=1):
+def load_splats(path):
     """Read a 3DGS ply and return per-Gaussian arrays compatible with
     the GaussianSplat visual.
 
@@ -54,8 +54,6 @@ def load_splats(path, subsample=1):
     from scipy.spatial.transform import Rotation
 
     v = PlyData.read(path).elements[0].data
-    if subsample > 1:
-        v = v[::subsample]
 
     xyz = np.stack([v['x'], v['y'], v['z']], axis=-1).astype(np.float64)
 
@@ -101,8 +99,6 @@ def main():
     parser.add_argument('ply', nargs='?', default=None,
                         help='path to a 3DGS point_cloud.ply '
                              '(default fetches a sample)')
-    parser.add_argument('--subsample', type=int, default=1,
-                        help='keep every Nth splat (default 1 = all)')
     parser.add_argument('--up', default='+z',
                         choices=['+x', '-x', '+y', '-y', '+z', '-z'],
                         help="scene up-axis. If the scene is upside down use "
@@ -117,7 +113,7 @@ def main():
         path = load_data_file(DEFAULT_PLY)
         up = "-y"
 
-    positions, covariances, colors = load_splats(path, args.subsample)
+    positions, covariances, colors = load_splats(path)
     print(f'loaded {len(positions):,} gaussians')
 
     canvas = scene.SceneCanvas(keys='interactive', show=True, bgcolor='black')
@@ -126,8 +122,6 @@ def main():
 
     scene.visuals.GaussianSplat(positions, covariances, colors,
                                 parent=view.scene)
-
-    # Frame the splats regardless of their source units/position.
     view.camera.set_range()
 
     canvas.show()
