@@ -49,8 +49,6 @@ def load_splats(path, subsample=1):
 
     Returns ``(positions, covariances, colors)`` as float32 arrays with shapes
     (N, 3), (N, 3, 3) and (N, 4), where ``colors`` is RGBA (alpha is opacity).
-
-    Positions are normalized to a unit box.
     """
     from plyfile import PlyData
     from scipy.spatial.transform import Rotation
@@ -61,29 +59,23 @@ def load_splats(path, subsample=1):
 
     xyz = np.stack([v['x'], v['y'], v['z']], axis=-1).astype(np.float64)
 
-    # Normalize to a unit-ish box: keeps the shader's finite-difference step
-    # scale-stable and frames the default camera regardless of source units.
-    center = np.median(xyz, axis=0)
-    xyz -= center
-    radius = np.percentile(np.linalg.norm(xyz, axis=1), 95.0)
-    scale_norm = radius if radius > 0 else 1.0
-    xyz /= scale_norm
-
     # scale_* are log-space std-devs
     scales = np.exp(np.stack([v[f'scale_{i}'] for i in range(3)], axis=-1))
-    scales = scales.astype(np.float64) / scale_norm
+    scales = scales.astype(np.float64)
 
-    # rot_* is a (w, x, y, z) quaternion.
+    # rot_* is a (w, x, y, z) quaternion
     quats = np.stack([v[f'rot_{i}'] for i in range(4)], axis=-1)
     # scipy uses scalar-last (x, y, z, w) order and normalizes internally
     R = Rotation.from_quat(quats[:, [1, 2, 3, 0]]).as_matrix()
 
-    # Sigma = R S S^T R^T, with M = R @ diag(scales) so Sigma = M @ M^T.
+    # Sigma = R S S^T R^T
+    # M = R @ diag(scales), so
+    # Sigma = M @ M^T
     M = R * scales[:, None, :]
-    # batched matmul: for each splat, M @ M.T (swapaxes transposes each 3x3).
+    # for each splat (row), do M @ M.T
     sigma = M @ M.swapaxes(-1, -2)
 
-    # use only the SH DC term (f_dc_*);
+    # use only the DC term (f_dc_*) of the spherical harmonic colors
     # view-dependent color from the higher-order f_rest_* coefficients is
     # not supported by the GaussianSplat visual at this time
     SH_C0 = 1 / (2 * np.sqrt(np.pi))  # degree-0 spherical harmonics constant
@@ -130,11 +122,13 @@ def main():
 
     canvas = scene.SceneCanvas(keys='interactive', show=True, bgcolor='black')
     view = canvas.central_widget.add_view()
-    view.camera = scene.cameras.TurntableCamera(
-        fov=45.0, distance=3.0, up=up)
+    view.camera = scene.cameras.TurntableCamera(fov=45.0, up=up)
 
     scene.visuals.GaussianSplat(positions, covariances, colors,
                                 parent=view.scene)
+
+    # Frame the splats regardless of their source units/position.
+    view.camera.set_range()
 
     canvas.show()
     if sys.flags.interactive != 1:

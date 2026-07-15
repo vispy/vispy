@@ -140,8 +140,12 @@ class GaussianSplatVisual(Visual):
         Gaussian's peak opacity.
     eps : float, optional
         Finite-difference step (in visual units) used to build the
-        visual->framebuffer Jacobian in the vertex shader. The default suits
-        data normalized to roughly a unit box; increase it for larger scenes.
+        visual->framebuffer Jacobian in the vertex shader. By default (None)
+        it is derived from the extent of ``positions`` (~1% of the bounding-box
+        size), which keeps the Jacobian numerically stable regardless of the
+        data's units -- a fixed step in float32 loses precision (and can even
+        collapse to zero, culling every splat) when coordinates are large.
+        Pass a value to override.
 
     Notes
     -----
@@ -152,7 +156,7 @@ class GaussianSplatVisual(Visual):
     supported.
     """
 
-    def __init__(self, positions, covariances, colors, eps=1e-2):
+    def __init__(self, positions, covariances, colors, eps=None):
         Visual.__init__(self, VERTEX_SHADER, FRAGMENT_SHADER)
 
         # NB: prefix data attributes to avoid clobbering reserved Visual
@@ -162,6 +166,8 @@ class GaussianSplatVisual(Visual):
         self._gs_cov_a = None
         self._gs_cov_b = None
         self._gs_rgba = None
+        # None => derive the finite-difference step from the data extent.
+        self._eps = eps
         # A few probe points to cheaply detect camera changes for re-sorting.
         self._probes = None
         self._last_sig = None
@@ -169,7 +175,6 @@ class GaussianSplatVisual(Visual):
         # Per-vertex quad (corners in [-1, 1]); drawn as a triangle strip.
         quad = np.array([[-1, -1], [1, -1], [-1, 1], [1, 1]], dtype=np.float32)
         self.shared_program['a_quad'] = gloo.VertexBuffer(quad)
-        self.shared_program['u_eps'] = float(eps)
 
         # Instanced (divisor=1) per-splat buffers; re-ordered on each sort.
         self._vb_center = gloo.VertexBuffer(divisor=1)
@@ -228,6 +233,13 @@ class GaussianSplatVisual(Visual):
             self._probes = np.array([
                 lo, hi, [lo[0], hi[1], lo[2]], [hi[0], lo[1], hi[2]],
             ], dtype=np.float32)
+            # Finite-difference step: ~1% of the largest bounding-box side, so
+            # it stays numerically well-conditioned whatever the data's units.
+            if self._eps is None:
+                extent = float((hi - lo).max())
+                self.shared_program['u_eps'] = 1e-2 * extent if extent > 0 else 1e-2
+            else:
+                self.shared_program['u_eps'] = float(self._eps)
         if covariances is not None:
             cov = np.asarray(covariances, dtype=np.float32)
             if cov.ndim != 3 or cov.shape[1:] != (3, 3):
