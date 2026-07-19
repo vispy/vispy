@@ -15,7 +15,7 @@
          <div class="home-actions" aria-label="Primary links">
            <a class="home-button home-button--primary" href="vispy.html">Read the VisPy docs</a>
          </div>
-         <p class="home-status-note"><strong>Current status</strong><span>VisPy is stable.</span><span>Datoviz is the standalone GPU engine and flagship interactive backend for the developing VisPy 2 architecture.</span><span>VisPy 2 and GSP are still experimental.</span></p>
+         <p class="home-status-note"><strong>Current status</strong><span>VisPy is stable.</span><span>Datoviz 0.4 RC1 is ready for public testing as the standalone GPU engine and flagship interactive backend for the developing VisPy 2 architecture.</span><span>VisPy 2 and GSP are still experimental.</span></p>
        </div>
        <p class="home-hero__caption">NASA Blue Marble Earth rendered as a textured mesh with Datoviz.</p>
      </header>
@@ -42,13 +42,16 @@
            <article class="home-project">
              <div><span class="home-badge home-badge--prerelease">Release candidate</span></div>
              <h3>Datoviz</h3>
-             <p>The standalone Vulkan-based GPU engine and flagship interactive backend for VisPy 2, available directly today.</p>
+             <p>The standalone Vulkan-based GPU engine and flagship interactive backend for VisPy 2, now available as a public release candidate.</p>
              <ul class="home-project__facts">
                <li>Native C and NumPy-aware Python APIs</li>
                <li>Desktop Vulkan and experimental browser WebGPU</li>
                <li>Extensive documentation and 100+ code examples</li>
              </ul>
-             <a class="home-text-link" href="https://datoviz.org/">Documentation and examples <span aria-hidden="true">&#8594;</span></a>
+             <div class="home-inline-links">
+               <a href="https://datoviz.org/">Documentation and examples</a>
+               <a href="https://datoviz.org/releases/v0.4.0rc1/">0.4 RC1 release notes</a>
+             </div>
            </article>
          </div>
        </section>
@@ -58,7 +61,7 @@
            <p class="home-kicker">Renderer-independent by design</p>
            <h2 id="outputs-title">Describe a visualization once. Render it where you need it.</h2>
            <p>Think of the experimental Graphics Server Protocol (GSP) as a common language between scientific Python code and rendering engines. Your code describes points, images, axes, layouts, and interactions. GSP passes that description to Datoviz, Matplotlib, or another backend to draw it.</p>
-           <a class="home-text-link" href="https://github.com/vispy/GSP_API/blob/agentic-gsp-vispy2/whitepaper/gsp-whitepaper.pdf">Read the draft GSP white paper <span aria-hidden="true">&#8594;</span></a>
+           <a class="home-text-link" href="https://github.com/vispy/GSP_API/blob/main/whitepaper/gsp-whitepaper.pdf">Read the draft GSP white paper <span aria-hidden="true">&#8594;</span></a>
          </div>
          <div class="home-flow" aria-label="VisPy renderer-independent flow">
            <div class="home-flow__producer"><span>Describe</span><strong>VisPy 2</strong><small>Plots, views, and applications</small></div>
