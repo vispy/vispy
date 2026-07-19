@@ -15,7 +15,7 @@
          <div class="home-actions" aria-label="Primary links">
            <a class="home-button home-button--primary" href="vispy.html">Read the VisPy docs</a>
          </div>
-         <p class="home-status-note"><strong>Current status</strong><span>VisPy is stable.</span><span>Datoviz 0.4 RC1 is ready for public testing as the standalone GPU engine and flagship interactive backend for the developing VisPy 2 architecture.</span><span>VisPy 2 and GSP are still experimental.</span></p>
+         <p class="home-status-note"><strong>Current status</strong><span>VisPy is stable.</span><span>Datoviz 0.4 is available as a release candidate for public testing as the standalone GPU engine and flagship interactive backend for the developing VisPy 2 architecture.</span><span>VisPy 2 and GSP are still experimental.</span></p>
        </div>
        <p class="home-hero__caption">NASA Blue Marble Earth rendered as a textured mesh with Datoviz.</p>
      </header>
@@ -50,7 +50,7 @@
              </ul>
              <div class="home-inline-links">
                <a href="https://datoviz.org/">Documentation and examples</a>
-               <a href="https://datoviz.org/releases/v0.4.0rc1/">0.4 RC1 release notes</a>
+               <a href="https://datoviz.org/releases/">Release candidate notes</a>
              </div>
            </article>
          </div>
