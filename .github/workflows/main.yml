@@ -50,7 +50,7 @@ jobs:
     name: lint and style checks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python
       uses: actions/setup-python@v7
       with:
@@ -83,7 +83,7 @@ jobs:
       run:
         shell: bash --login -e {0}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
@@ -199,7 +199,7 @@ jobs:
             test: "standard"
             new_qt: true
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
