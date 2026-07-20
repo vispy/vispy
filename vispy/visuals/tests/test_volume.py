@@ -539,4 +539,65 @@ def test_volume_set_data_different_dtype():
         assert np.allclose(render[right], white)
 
 
+@requires_pyopengl()
+def test_volume_rgb():
+    """Test that RGB volume data is accepted."""
+    vol = np.zeros((20, 20, 20, 3), 'float32')
+    vol[8:16, 8:16, :, 0] = 1.0
+    vol[:, 8:16, 8:16, 1] = 0.5
+
+    V = scene.visuals.Volume(vol)
+    assert V.clim is not None
+    assert V.method == 'mip'
+
+    vol_scalar = np.zeros((20, 20, 20), 'float32')
+    V.set_data(vol_scalar)
+
+    V.set_data(vol)
+
+
+@requires_pyopengl()
+@requires_application()
+def test_volume_rgb_draw():
+    """Test that RGB volume renders without errors."""
+    with TestingCanvas(bgcolor='k', size=(100, 100)) as c:
+        v = c.central_widget.add_view()
+        v.camera = 'turntable'
+        v.camera.fov = 70
+        np.random.seed(1234)
+        vol = np.random.uniform(0, 1, (20, 20, 20, 3)).astype(np.float32)
+        scene.visuals.Volume(vol, parent=v.scene)
+        v.camera.set_range()
+        rendered = c.render()
+        assert rendered.sum() > 0
+
+
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('method_name', ['mip', 'translucent', 'additive', 'average'])
+def test_volume_rgb_render_methods(method_name):
+    """Test RGB volume rendering across supported methods."""
+    size = (40, 40)
+    vol = np.zeros((40, 40, 40, 3), dtype=np.float32)
+    vol[:, :, 20:, 0] = 1.0
+    vol[:, 20:, :, 2] = 1.0
+
+    with TestingCanvas(size=size, bgcolor="k") as c:
+        v = c.central_widget.add_view(border_width=0)
+        scene.visuals.Volume(
+            vol,
+            interpolation='nearest',
+            parent=v.scene,
+            method=method_name,
+        )
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.scale_factor = 40.0
+        v.camera.center = (19.5, 19.5, 19.5)
+
+        rendered = c.render()[..., :3]
+        assert rendered.sum() != 0
+        assert rendered.sum() != 255 * rendered.size
+
+
 run_tests_if_main()
