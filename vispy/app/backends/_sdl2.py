@@ -224,6 +224,7 @@ class CanvasBackend(BaseCanvasBackend):
         else:
             self._fullscreen = False
         self._mods = list()
+        self._buttons = []
         if p.position is None:
             position = [sdl2.SDL_WINDOWPOS_UNDEFINED] * 2
         else:
@@ -367,7 +368,7 @@ class CanvasBackend(BaseCanvasBackend):
                 self._vispy_canvas.close()
         elif event.type == sdl2.SDL_MOUSEMOTION:
             x, y = event.motion.x, event.motion.y
-            self._vispy_mouse_move(pos=(x, y), modifiers=self._mods)
+            self._vispy_mouse_move(pos=(x, y), buttons=self._buttons, modifiers=self._mods)
         elif event.type in (sdl2.SDL_MOUSEBUTTONDOWN,
                             sdl2.SDL_MOUSEBUTTONUP):
             x, y = event.button.x, event.button.y
@@ -376,14 +377,18 @@ class CanvasBackend(BaseCanvasBackend):
                 button = BUTTONMAP.get(button, 0)
                 if event.type == sdl2.SDL_MOUSEBUTTONDOWN:
                     func = self._vispy_mouse_press
+                    if button not in self._buttons:
+                        self._buttons.append(button)
                 else:
                     func = self._vispy_mouse_release
-                func(pos=(x, y), button=button, modifiers=self._mods)
+                    if button in self._buttons:
+                        self._buttons.remove(button)
+                func(pos=(x, y), button=button, buttons=self._buttons, modifiers=self._mods)
         elif event.type == sdl2.SDL_MOUSEWHEEL:
             pos = self._get_mouse_position()
             delta = float(event.wheel.x), float(event.wheel.y)
             self._vispy_canvas.events.mouse_wheel(pos=pos, delta=delta,
-                                                  modifiers=self._mods)
+                                                  buttons=self._buttons, modifiers=self._mods)
         elif event.type in (sdl2.SDL_KEYDOWN, sdl2.SDL_KEYUP):
             down = (event.type == sdl2.SDL_KEYDOWN)
             keysym = event.key.keysym

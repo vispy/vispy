@@ -690,7 +690,7 @@ def read_pixels(viewport=None, alpha=True, mode='color', out_type='unsigned_byte
         np_dtype = np.uint8 if type_ == gl.GL_UNSIGNED_BYTE else np.float32
         im = np.frombuffer(im, np_dtype)
 
-    im.shape = shape
+    im = im.reshape(shape)
     im = im[::-1, ...]  # flip the image
     return im
 

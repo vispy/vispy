@@ -5,6 +5,7 @@
 from __future__ import division
 
 import weakref
+from contextlib import contextmanager
 
 from ..util.event import Event, EmitterGroup
 from ..visuals.transforms import (NullTransform, BaseTransform, 
@@ -626,3 +627,18 @@ class Node(object):
         for c in self.children:
             c.picking = p
         self._picking = p
+
+    @contextmanager
+    def set_picking(self, *, picking=True):
+        """Context manager to temporarily set picking for this node and its children.
+
+        Note that this function will not alter the picking mode unless/until
+        the context manager is entered (using the `with` statement). Use
+        :py:attr:`~.picking` for setting the picking mode directly.
+        """
+        old_picking = self.picking
+        try:
+            self.picking = picking
+            yield self.picking
+        finally:
+            self.picking = old_picking

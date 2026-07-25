@@ -74,7 +74,6 @@ class BaseCanvasBackend(object):
 
         # Data used in the construction of new mouse events
         self._vispy_mouse_data = {
-            'buttons': [],
             'press_event': None,
             'last_event': None,
             'last_mouse_press': None,
@@ -185,7 +184,6 @@ class BaseCanvasBackend(object):
         if self._vispy_mouse_data['press_event'] is None:
             self._vispy_mouse_data['press_event'] = ev
 
-        self._vispy_mouse_data['buttons'].append(ev.button)
         self._vispy_mouse_data['last_event'] = ev
 
         if not getattr(self, '_double_click_supported', False):
@@ -226,8 +224,6 @@ class BaseCanvasBackend(object):
                 and self._vispy_mouse_data['press_event'].button == ev.button):
             self._vispy_mouse_data['press_event'] = None
 
-        if ev.button in self._vispy_mouse_data['buttons']:
-            self._vispy_mouse_data['buttons'].remove(ev.button)
         self._vispy_mouse_data['last_event'] = ev
 
         return ev

@@ -83,9 +83,10 @@ A compound visual will automatically handle forwarding transform system changes
 and filter attachments to its internally-wrapped visuals. To the user, this
 will appear to behave as a single visual.
 """
-
 from __future__ import division
 import weakref
+from contextlib import contextmanager
+
 import numpy as np
 
 from .. import gloo
@@ -337,6 +338,7 @@ class Visual(BaseVisual):
                     raise ValueError("Cannot specify both program and "
                                      "vcode/fcode arguments.")
 
+        self._prev_gl_state = []
         self._program = self._vshare.program.add_program()
         self._prepare_transforms(self)
         self._filters = []
@@ -347,6 +349,11 @@ class Visual(BaseVisual):
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
+        This can also be used as a context manager that will revert the
+        gl_state on exit. When used as a context manager, this function is
+        designed to be constructed directly in the header of the `with`
+        statement to avoid confusion about what state will be restored on exit.
+
         Parameters
         ----------
         preset : str
@@ -354,13 +361,20 @@ class Visual(BaseVisual):
         **kwargs : dict
             Keyword arguments.
         """
+        prev_gl_state = self._vshare.gl_state.copy()
+
         self._vshare.gl_state = kwargs
         self._vshare.gl_state['preset'] = preset
+
+        return _revert_gl_state([(self, prev_gl_state)])
 
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This can also be used as a context manager that will revert the
+        gl_state on exit.
 
         Parameters
         ----------
@@ -369,11 +383,60 @@ class Visual(BaseVisual):
         **kwargs : dict
             Keyword arguments.
         """
+        prev_gl_state = self._vshare.gl_state.copy()
+
         if len(args) == 1:
             self._vshare.gl_state['preset'] = args[0]
         elif len(args) != 0:
             raise TypeError("Only one positional argument allowed.")
         self._vshare.gl_state.update(kwargs)
+
+        return _revert_gl_state([(self, prev_gl_state)])
+
+    def push_gl_state(self, *args, **kwargs):
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.set_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        self._prev_gl_state.append(self._vshare.gl_state.copy())
+        self.set_gl_state(*args, **kwargs)
+
+    def push_gl_state_update(self, *args, **kwargs):
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.update_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        self._prev_gl_state.append(self._vshare.gl_state.copy())
+        self.update_gl_state(*args, **kwargs)
+
+    def pop_gl_state(self):
+        """Restore a previous set of GL state parameters if available.
+
+        If no previous GL state is available (see :py:meth:`.push_gl_state`),
+        this has no effect.
+        """
+        if self._prev_gl_state:
+            self.set_gl_state(**self._prev_gl_state.pop())
 
     def _compute_bounds(self, axis, view):
         """Return the (min, max) bounding values of this visual along *axis*
@@ -616,6 +679,9 @@ class CompoundVisual(BaseVisual):
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
 
+        This can also be used as a context manager that will revert the
+        gl_state on exit.
+
         Parameters
         ----------
         preset : str
@@ -623,13 +689,42 @@ class CompoundVisual(BaseVisual):
         **kwargs : dict
             Keyword arguments.
         """
+        prev_gl_state = []
         for v in self._subvisuals:
+            prev_gl_state.append((v, v._vshare.gl_state))
             v.set_gl_state(preset=preset, **kwargs)
+
+        return _revert_gl_state(prev_gl_state)
 
     def update_gl_state(self, *args, **kwargs):
         """Modify the set of GL state parameters to use when drawing.
 
         The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This can also be used as a context manager that will revert the
+        gl_state on exit.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        prev_gl_state = []
+        for v in self._subvisuals:
+            prev_gl_state.append((v, v._vshare.gl_state))
+            v.update_gl_state(*args, **kwargs)
+
+        return _revert_gl_state(prev_gl_state)
+
+    def push_gl_state(self, *args, **kwargs):
+        """Define the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.set_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
 
         Parameters
         ----------
@@ -639,7 +734,34 @@ class CompoundVisual(BaseVisual):
             Keyword arguments.
         """
         for v in self._subvisuals:
-            v.update_gl_state(*args, **kwargs)
+            v.push_gl_state(*args, **kwargs)
+
+    def push_gl_state_update(self, *args, **kwargs):
+        """Modify the set of GL state parameters to use when drawing.
+
+        The arguments are forwarded to :func:`vispy.gloo.wrappers.set_state`.
+
+        This differs from :py:meth:`.update_gl_state` in that it stashes the
+        current state. See :py:meth:`.pop_gl_state` for restoring the state.
+
+        Parameters
+        ----------
+        *args : tuple
+            Arguments.
+        **kwargs : dict
+            Keyword arguments.
+        """
+        for v in self._subvisuals:
+            v.push_gl_state_update(*args, **kwargs)
+
+    def pop_gl_state(self):
+        """Restore a previous set of GL state parameters if available.
+
+        If no previous GL state is available (see :py:meth:`.push_gl_state`),
+        this has no effect.
+        """
+        for v in self._subvisuals:
+            v.pop_gl_state()
 
     def attach(self, filt, view=None):
         """Attach a Filter to this visual
@@ -679,6 +801,25 @@ class CompoundVisual(BaseVisual):
                 elif vb is not None:
                     bounds = [min(bounds[0], vb[0]), max(bounds[1], vb[1])]
         return bounds
+
+
+@contextmanager
+def _revert_gl_state(prev_gl_state):
+    """Context manager to store and revert GL state for a list of visuals.
+
+    Parameters
+    ----------
+    prev_gl_state : list
+        A list of (Visual, gl_state) tuples, where gl_state is a dictionary of
+        `gl_state` params as would be passed to :py:func:`set_gl_state`.
+    """
+    for v, state in prev_gl_state:
+        v._prev_gl_state.append(state)
+    try:
+        yield
+    finally:
+        for v, _ in prev_gl_state:
+            v.pop_gl_state()
 
 
 class CompoundVisualView(BaseVisualView, CompoundVisual):

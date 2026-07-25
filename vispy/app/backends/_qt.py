@@ -386,9 +386,9 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         # must set physical size before setting visible or fullscreen
         # operations may make the size invalid
-        if hasattr(self, 'devicePixelRatio'):
+        if hasattr(self, 'devicePixelRatioF'):
             # handle high DPI displays in PyQt5
-            ratio = self.devicePixelRatio()
+            ratio = self.devicePixelRatioF()
         else:
             ratio = 1
         self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
@@ -421,7 +421,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
         If display resolutions are the same this is essentially a no-op except for the redraw.
         If the display resolutions differ (HiDPI versus regular displays) the canvas needs to
-        be redrawn to reset the physical size based on the current `devicePixelRatio()` and
+        be redrawn to reset the physical size based on the current `devicePixelRatioF()` and
         redrawn with that new size.
 
         """
@@ -490,44 +490,96 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def sizeHint(self):
         return self.size()
 
+    def _buttonmap_to_list(self, buttons) -> list[int]:
+        if buttons == QtCore.Qt.MouseButton.NoButton:
+            return []
+
+        mouse_buttons = []
+
+        if PYQT6_API or PYSIDE6_API:
+            if QtCore.Qt.MouseButton.LeftButton in buttons:
+                mouse_buttons.append(1)
+            if QtCore.Qt.MouseButton.RightButton in buttons:
+                mouse_buttons.append(2)
+            if QtCore.Qt.MouseButton.MiddleButton in buttons:
+                mouse_buttons.append(3)
+            if QtCore.Qt.MouseButton.BackButton in buttons:
+                mouse_buttons.append(4)
+            if QtCore.Qt.MouseButton.ForwardButton in buttons:
+                mouse_buttons.append(5)
+        else:
+            if buttons & QtCore.Qt.MouseButton.LeftButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(1)
+            if buttons & QtCore.Qt.MouseButton.RightButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(2)
+            if buttons & QtCore.Qt.MouseButton.MiddleButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(3)
+            if buttons & QtCore.Qt.MouseButton.BackButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(4)
+            if buttons & QtCore.Qt.MouseButton.ForwardButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(5)
+
+        return mouse_buttons
+
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_press(
+
+        vispy_event = self._vispy_mouse_press(
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        if not vispy_event.handled:
+            ev.ignore()
 
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_release(
+        vispy_event = self._vispy_mouse_release(
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP[ev.button()],
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        if not vispy_event.handled:
+            ev.ignore()
 
     def mouseDoubleClickEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_double_click(
+        vispy_event = self._vispy_mouse_double_click(
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        if not vispy_event.handled:
+            ev.ignore()
 
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_move(
+        # NB ignores events, returns None for events in quick succession
+        vispy_event = self._vispy_mouse_move(
             native=ev,
             pos=_get_event_xy(ev),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        # Note that the handler can return None, this is equivalent to not handling the event
+        if vispy_event is None or not vispy_event.handled:
+            # Theoretically, a parent widget might want to listen to all of
+            # the mouse move events, including those that VisPy ignores
+            ev.ignore()
 
     def wheelEvent(self, ev):
         if self._vispy_canvas is None:
@@ -544,12 +596,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             delta = ev.angleDelta()
             deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
         # Emit event
-        self._vispy_canvas.events.mouse_wheel(
+        vispy_event = self._vispy_canvas.events.mouse_wheel(
             native=ev,
             delta=(deltax, deltay),
             pos=_get_event_xy(ev),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        if not vispy_event.handled:
+            ev.ignore()
 
     def keyPressEvent(self, ev):
         self._keyEvent(self._vispy_canvas.events.key_press, ev)
@@ -571,17 +627,20 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             pos = self.mapFromGlobal(ev.globalPos())
         pos = pos.x(), pos.y()
 
+        vispy_event = None
         if t == QtCore.Qt.NativeGestureType.BeginNativeGesture:
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type='gesture_begin',
                 pos=_get_event_xy(ev),
+                modifiers=self._modifiers(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.EndNativeGesture:
             self._native_touch_total_rotation = []
             self._native_touch_total_scale = []
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type='gesture_end',
                 pos=_get_event_xy(ev),
+                modifiers=self._modifiers(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.RotateNativeGesture:
             angle = ev.value()
@@ -592,12 +651,13 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             )
             self._native_gesture_rotation_values.append(angle)
             total_rotation_angle = math.fsum(self._native_gesture_rotation_values)
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type="gesture_rotate",
                 pos=pos,
                 rotation=angle,
                 last_rotation=last_angle,
                 total_rotation_angle=total_rotation_angle,
+                modifiers=self._modifiers(ev),
             )
         elif t == QtCore.Qt.NativeGestureType.ZoomNativeGesture:
             scale = ev.value()
@@ -608,12 +668,13 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             )
             self._native_gesture_scale_values.append(scale)
             total_scale_factor = math.fsum(self._native_gesture_scale_values)
-            self._vispy_canvas.events.touch(
+            vispy_event = self._vispy_canvas.events.touch(
                 type="gesture_zoom",
                 pos=pos,
                 last_scale=last_scale,
                 scale=scale,
                 total_scale_factor=total_scale_factor,
+                modifiers=self._modifiers(ev),
             )
         # QtCore.Qt.NativeGestureType.PanNativeGesture
         # Qt6 docs seem to imply this is only supported on Wayland but I have
@@ -621,6 +682,11 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         # Two finger pan events are anyway converted to scroll/wheel events.
         # On macOS, more fingers are usually swallowed by the OS (by spaces,
         # mission control, etc.).
+
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        # Note that some handlers return None, this is equivalent to not handling the event
+        if vispy_event is None or not vispy_event.handled:
+            ev.ignore()
 
     def event(self, ev):
         out = super(QtBaseCanvasBackend, self).event(ev)
@@ -644,7 +710,10 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         else:
             key = None
         mod = self._modifiers(ev)
-        func(native=ev, key=key, text=str(ev.text()), modifiers=mod)
+        vispy_event = func(native=ev, key=key, text=str(ev.text()), modifiers=mod)
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        if not vispy_event.handled:
+            ev.ignore()
 
     def _modifiers(self, event):
         # Convert the QT modifier state into a tuple of active modifier keys.
@@ -771,7 +840,10 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
 
     def resizeEvent(self, event):
         w, h = event.size().width(), event.size().height()
-        self._vispy_canvas.events.resize(size=(w, h))
+        vispy_event = self._vispy_canvas.events.resize(size=(w, h))
+        # If vispy did not handle the event, clear the accept parameter of the qt event
+        if not vispy_event.handled:
+            event.ignore()
 
     def paintEvent(self, event):
         self._vispy_canvas.events.draw(region=None)
@@ -909,11 +981,11 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        if hasattr(self, 'devicePixelRatio'):
-            # We take into account devicePixelRatio, which is non-unity on
+        if hasattr(self, 'devicePixelRatioF'):
+            # We take into account devicePixelRatioF, which is non-unity on
             # e.g HiDPI displays.
-            # self.devicePixelRatio() is a float and should have been in Qt5 according to the documentation
-            ratio = self.devicePixelRatio()
+            # self.devicePixelRatioF() is a float and should have been in Qt5 according to the documentation
+            ratio = self.devicePixelRatioF()
             w = int(w * ratio)
             h = int(h * ratio)
         self._vispy_set_physical_size(w, h)

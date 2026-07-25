@@ -199,7 +199,7 @@ class Function(ShaderObject):
         if isinstance(key, Variable):
             if key.vtype == 'varying':
                 if self.name != 'main':
-                    raise Exception("Varying assignment only alowed in 'main' "
+                    raise Exception("Varying assignment only allowed in 'main' "
                                     "function.")
                 storage = self._assignments
             else:

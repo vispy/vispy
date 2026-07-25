@@ -66,11 +66,11 @@ Structure of VisPy
 Currently, the main subpackages are:
 
 -  **app**: integrates an event system and offers a unified interface on
-   top of many window backends (Qt4, wx, glfw, jupyter notebook,
+   top of many window backends (Qt4, wx, glfw, Jupyter Notebook,
    and others). Relatively stable API.
 -  **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively
    stable API.
--  **scene**: this is the system underlying our upcoming high level
+-  **scene**: this is the system underlying our upcoming high-level
    visualization interfaces. Under heavy development and still
    experimental, it contains several modules.
 
@@ -137,7 +137,7 @@ External links
 -  `Chat room <https://gitter.im/vispy/vispy>`__
 -  `Developer chat room <https://gitter.im/vispy/vispy-dev>`__
 -  `Wiki <http://github.com/vispy/vispy/wiki>`__
--  `Gallery <http://vispy.org/gallery.html>`__
+-  `Gallery <http://vispy.org/gallery/index.html>`__
 -  `Documentation <http://vispy.readthedocs.org>`__
 
 .. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg

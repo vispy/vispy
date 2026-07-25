@@ -6,7 +6,7 @@ freetype-py
 glfw!=3.3.1
 imageio
 jupyter
-matplotlib
+matplotlib-base
 meshio
 networkx
 numpy

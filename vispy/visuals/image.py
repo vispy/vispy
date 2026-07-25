@@ -16,6 +16,7 @@ from .transforms import NullTransform
 from .visual import Visual
 from ..io import load_spatial_filters
 from ._scalable_textures import CPUScaledTexture2D, GPUScaledTexture2D
+from ..util import np_copy_if_needed
 
 
 _VERTEX_SHADER = """
@@ -90,11 +91,9 @@ _TEXTURE_LOOKUP = """
 
 _APPLY_CLIM_FLOAT = """
     float apply_clim(float data) {
-        // If data is NaN, don't draw it at all
-        // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
-        if (!(data <= 0.0 || 0.0 <= data)) {
-            discard;
-        }
+        // pass through NaN values to get handled by the colormap
+        if (!(data <= 0.0 || 0.0 <= data)) return data;
+
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
         return data;
@@ -102,7 +101,7 @@ _APPLY_CLIM_FLOAT = """
 
 _APPLY_CLIM = """
     vec4 apply_clim(vec4 color) {
-        // Handle NaN values
+        // Handle NaN values (clamp them to the minimum value)
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
         color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim.x, $clim.y) : color.r;
         color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim.x, $clim.y) : color.g;
@@ -116,6 +115,9 @@ _APPLY_CLIM = """
 
 _APPLY_GAMMA_FLOAT = """
     float apply_gamma(float data) {
+        // pass through NaN values to get handled by the colormap
+        if (!(data <= 0.0 || 0.0 <= data)) return data;
+
         return pow(data, $gamma);
     }"""
 
@@ -128,7 +130,7 @@ _APPLY_GAMMA = """
 
 _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 
-_C2L_RED = 'float cmap(vec4 color) { return color.r; }'
+_C2L_RED = 'float color_to_luminance(vec4 color) { return color.r; }'
 
 _CUSTOM_FILTER = """
 vec4 texture_lookup(vec2 texcoord) {
@@ -380,7 +382,7 @@ class ImageVisual(Visual):
         texture_format : str or None
 
         """
-        data = np.array(image, copy=copy)
+        data = np.array(image, copy=copy or np_copy_if_needed)
         if np.iscomplexobj(data):
             raise TypeError(
                 "Complex data types not supported. Please use 'ComplexImage' instead"
@@ -392,6 +394,8 @@ class ImageVisual(Visual):
             self._need_vertex_update = True
         self._data = data
         self._need_texture_upload = True
+
+        self.update()
 
     def view(self):
         """Get the :class:`vispy.visuals.visual.VisualView` for this visual."""
@@ -453,6 +457,17 @@ class ImageVisual(Visual):
         # shortcut so we don't have to rebuild the color transform
         if not self._need_colortransform_update:
             self.shared_program.frag['color_transform'][2]['gamma'] = self._gamma
+        self.update()
+
+    @property
+    def bad_color(self):
+        """Color used to render NaN values."""
+        return self._cmap.get_bad_color()
+
+    @bad_color.setter
+    def bad_color(self, color):
+        self._cmap.set_bad_color(color)
+        self._need_colortransform_update = True
         self.update()
 
     @property

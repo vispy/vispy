@@ -245,7 +245,7 @@ class Program(GLObject):
         """Parse uniforms, attributes and varyings from the source code."""
         # Get one string of code with comments removed
         code = '\n\n'.join([sh.code for sh in self._shaders])
-        code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
+        code = re.sub(r'(.*)(//.*)', r'\1', code, flags=re.M)
 
         # Parse uniforms, attributes and varyings
         self._code_variables = {}
@@ -362,7 +362,7 @@ class Program(GLObject):
                         data = TextureCube(data)
                     else:
                         # This should not happen
-                        raise RuntimeError('Unknown type %s' % type_)
+                        raise RuntimeError('Unknown type %s for %s' % (type_, name))
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     self.glir.associate(data.glir)
@@ -431,7 +431,7 @@ class Program(GLObject):
                     dtype, numel = self._gtypes[type_]
                     data = np.array(data, dtype=dtype)
                     if data.ndim == 0:
-                        data.shape = data.size
+                        data = data.reshape(data.size)
                     if data.size != numel:
                         raise ValueError('Attribute %r needs %i elements, '
                                          'not %i.' % (name, numel, data.size))
@@ -442,7 +442,7 @@ class Program(GLObject):
                     self._glir.command('ATTRIBUTE', self._id,
                                        name, type_, value, divisor)
             else:
-                raise KeyError('Cannot set data for a %s.' % kind)
+                raise KeyError('Cannot set data for a %s (%s).' % (kind, name))
         else:
             # This variable is not defined in the current source code,
             # so we cannot establish whether this is a uniform or
@@ -532,7 +532,8 @@ class Program(GLObject):
             selection = indices.id, gltypes[indices.dtype], indices.size
             canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
         elif indices is None:
-            selection = 0, attributes[0].size
+            # for selection, use the size of the first *non-instance* attribute
+            selection = 0, attrs[0].size
             logger.debug("Program drawing %r with %r" % (mode, selection))
             canvas.context.glir.command('DRAW', self._id, mode, selection, instances)
         else:

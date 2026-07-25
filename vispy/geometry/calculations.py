@@ -7,8 +7,33 @@
 import numpy as np
 
 
-###############################################################################
-# These fast normal calculation routines are adapted from mne-python
+def _cross_2d(x, y):
+    """Compute the z-component of the cross product of (arrays of) 2D vectors.
+
+    This is meant to replicate the 2D functionality of np.cross(), which is
+    deprecated in numpy 2.0.
+
+    x and y must have broadcastable shapes, with the last dimension being 2.
+
+    Parameters
+    ----------
+    x : array
+        Input array 1, shape (..., 2).
+    y : array
+        Input array 2, shape (..., 2).
+
+    Returns
+    -------
+    z : array
+        z-component of cross products of x and y.
+
+    See: https://github.com/numpy/numpy/issues/26620
+    """
+    if x.shape[-1] != 2 or y.shape[-1] != 2:
+        raise ValueError("Input arrays must have shape (..., 2)")
+
+    return x[..., 0] * y[..., 1] - x[..., 1] * y[..., 0]
+
 
 def _fast_cross_3d(x, y):
     """Compute cross product between list of 3D vectors
@@ -46,6 +71,9 @@ def _fast_cross_3d(x, y):
     else:
         return np.cross(x, y)
 
+
+###############################################################################
+# These fast normal calculation routines are adapted from mne-python
 
 def _calculate_normals(rr, tris):
     """Efficiently compute vertex normals for triangulated surface"""
@@ -121,8 +149,12 @@ def resize(image, shape, kind='linear'):
 
         c_1 = np.minimum(c_1, image.shape[1] - 1)
         r_1 = np.minimum(r_1, image.shape[0] - 1)
-        for arr in (top, bot, lef, rig):
-            arr.shape = arr.shape + (1,) * (image.ndim - 2)
+
+        top = np.reshape(top, (top.shape + (1,) * (image.ndim - 2)))
+        bot = np.reshape(bot, (bot.shape + (1,) * (image.ndim - 2)))
+        lef = np.reshape(lef, (lef.shape + (1,) * (image.ndim - 2)))
+        rig = np.reshape(rig, (rig.shape + (1,) * (image.ndim - 2)))
+
         out = top * rig * image[r_0][:, c_0, ...]
         out += bot * rig * image[r_1][:, c_0, ...]
         out += top * lef * image[r_0][:, c_1, ...]

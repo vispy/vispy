@@ -192,8 +192,10 @@ quad = np.array([[0, 0, 0], [-1, 0, 0], [-1, -1, 0],
 N = quad.shape[0] * 4
 
 # buf3 contains coordinates in device coordinates for four quadrants
-buf3 = np.row_stack([quad + (0, 0, 0), quad + (0, 1, 0),
-                     quad + (1, 1, 0), quad + (1, 0, 0)]).astype(np.float32)
+buf3 = np.vstack([
+    quad + (0, 0, 0), quad + (0, 1, 0),
+    quad + (1, 1, 0), quad + (1, 0, 0),
+]).astype(np.float32)
 
 # buf2 is texture coords. Note that this is a view on buf2
 buf2 = ((buf3+1.0)*0.5)[:, :2]   # not C-contiguous
@@ -546,7 +548,7 @@ def _check_result(assert_result=True):
     x, y, w, h = gl.glGetParameter(gl.GL_VIEWPORT)
     data = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
     im = np.frombuffer(data, np.uint8)
-    im.shape = h, w, 3
+    im = im.reshape(h, w, 3)
 
     # Get center pixel from each quadrant
     pix1 = tuple(im[int(1*h/4), int(1*w/4)])
