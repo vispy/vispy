@@ -542,7 +542,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         vispy_event = self._vispy_mouse_release(
             native=ev,
             pos=_get_event_xy(ev),
-            button=BUTTONMAP[ev.button()],
+            button=BUTTONMAP.get(ev.button(), 0),
             buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
