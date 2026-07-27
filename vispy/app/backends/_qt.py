@@ -193,16 +193,29 @@ KEYMAP = {
     qt_keys.Key_Tab: keys.TAB,
 }
 if PYQT6_API or PYSIDE6_API:
+    # VisPy buttons 1-5 are Left/Right/Middle/Back/Forward.
+    # Qt also exposes ExtraButton1..24 (ExtraButton1/2 alias Back/Forward;
+    # ExtraButton3 is TaskButton). Map ExtraButton3..24 to VisPy 6..27 so
+    # unmapped side/extra buttons stay distinguishable instead of collapsing
+    # to 0 via BUTTONMAP.get(..., 0).
     BUTTONMAP = {
         QtCore.Qt.MouseButton.NoButton: 0,
         QtCore.Qt.MouseButton.LeftButton: 1,
         QtCore.Qt.MouseButton.RightButton: 2,
         QtCore.Qt.MouseButton.MiddleButton: 3,
         QtCore.Qt.MouseButton.BackButton: 4,
-        QtCore.Qt.MouseButton.ForwardButton: 5
+        QtCore.Qt.MouseButton.ForwardButton: 5,
     }
+    for _extra_i in range(3, 25):
+        BUTTONMAP[getattr(QtCore.Qt.MouseButton, f'ExtraButton{_extra_i}')] = (
+            _extra_i + 3
+        )
 else:
+    # Qt5 bit values: No=0, Left=1, Right=2, Mid=4, X1/Back=8, X2/Fwd=16,
+    # then ExtraButton3..24 as 1 << (n + 1) for n=3..24.
     BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
+    for _extra_i in range(3, 25):
+        BUTTONMAP[1 << (_extra_i + 1)] = _extra_i + 3
 
 
 # Properly log Qt messages
@@ -494,30 +507,16 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         if buttons == QtCore.Qt.MouseButton.NoButton:
             return []
 
+        # Preserve BUTTONMAP order (standard 1-5, then ExtraButton3..24 as 6-27).
         mouse_buttons = []
-
         if PYQT6_API or PYSIDE6_API:
-            if QtCore.Qt.MouseButton.LeftButton in buttons:
-                mouse_buttons.append(1)
-            if QtCore.Qt.MouseButton.RightButton in buttons:
-                mouse_buttons.append(2)
-            if QtCore.Qt.MouseButton.MiddleButton in buttons:
-                mouse_buttons.append(3)
-            if QtCore.Qt.MouseButton.BackButton in buttons:
-                mouse_buttons.append(4)
-            if QtCore.Qt.MouseButton.ForwardButton in buttons:
-                mouse_buttons.append(5)
+            for qt_button, vispy_button in BUTTONMAP.items():
+                if vispy_button and qt_button in buttons:
+                    mouse_buttons.append(vispy_button)
         else:
-            if buttons & QtCore.Qt.MouseButton.LeftButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(1)
-            if buttons & QtCore.Qt.MouseButton.RightButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(2)
-            if buttons & QtCore.Qt.MouseButton.MiddleButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(3)
-            if buttons & QtCore.Qt.MouseButton.BackButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(4)
-            if buttons & QtCore.Qt.MouseButton.ForwardButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(5)
+            for qt_button, vispy_button in BUTTONMAP.items():
+                if vispy_button and (buttons & qt_button) != QtCore.Qt.MouseButton.NoButton:
+                    mouse_buttons.append(vispy_button)
 
         return mouse_buttons
 
