@@ -381,6 +381,29 @@ def _get_qpoint_pos(pos):
     return pos.x(), pos.y()
 
 
+def _buttonmap_to_list(buttons) -> list[int]:
+    """Map Qt mouse button flags to VisPy button ids.
+
+    Module-level (no ``self``) so tests can call it without a backend
+    instance. Preserves BUTTONMAP order: standard 1-5, then
+    ExtraButton3..24 as 6-27 when present on this Qt build.
+    """
+    if buttons == QtCore.Qt.MouseButton.NoButton:
+        return []
+
+    mouse_buttons = []
+    if PYQT6_API or PYSIDE6_API:
+        for qt_button, vispy_button in BUTTONMAP.items():
+            if vispy_button and qt_button in buttons:
+                mouse_buttons.append(vispy_button)
+    else:
+        for qt_button, vispy_button in BUTTONMAP.items():
+            if vispy_button and (buttons & qt_button) != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(vispy_button)
+
+    return mouse_buttons
+
+
 class QtBaseCanvasBackend(BaseCanvasBackend):
     """Base functionality of Qt backend. No OpenGL Stuff."""
 
@@ -511,23 +534,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def sizeHint(self):
         return self.size()
 
-    def _buttonmap_to_list(self, buttons) -> list[int]:
-        if buttons == QtCore.Qt.MouseButton.NoButton:
-            return []
-
-        # Preserve BUTTONMAP order (standard 1-5, then ExtraButton3..24 as 6-27).
-        mouse_buttons = []
-        if PYQT6_API or PYSIDE6_API:
-            for qt_button, vispy_button in BUTTONMAP.items():
-                if vispy_button and qt_button in buttons:
-                    mouse_buttons.append(vispy_button)
-        else:
-            for qt_button, vispy_button in BUTTONMAP.items():
-                if vispy_button and (buttons & qt_button) != QtCore.Qt.MouseButton.NoButton:
-                    mouse_buttons.append(vispy_button)
-
-        return mouse_buttons
-
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
@@ -536,7 +542,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -550,7 +556,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -564,7 +570,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -578,7 +584,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         vispy_event = self._vispy_mouse_move(
             native=ev,
             pos=_get_event_xy(ev),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -607,7 +613,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             delta=(deltax, deltay),
             pos=_get_event_xy(ev),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event

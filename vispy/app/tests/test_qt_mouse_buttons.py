@@ -3,26 +3,21 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Functional regression tests for Qt mouse button mapping (#2751)."""
 
+import pytest
+
 from vispy.app import Canvas, use_app
 from vispy.testing import run_tests_if_main, requires_application
 
 
-def _qt_modules():
-    """Return (QtCore, QtGui, backend_module) after loading PyQt6."""
-    use_app('pyqt6')
-    from PyQt6 import QtCore, QtGui
-    import sys
-    qt_backend = sys.modules['vispy.app.backends._qt']
-    return QtCore, QtGui, qt_backend
-
-
-def _make_mouse_event(QtCore, QtGui, event_type, button, buttons=None):
+def _make_mouse_event(event_type_name, button, buttons=None):
     """Build a real Qt mouse event for the given button."""
+    from PyQt6 import QtCore, QtGui
+
     if buttons is None:
         buttons = QtCore.Qt.MouseButton.NoButton
     pos = QtCore.QPointF(12.0, 34.0)
     return QtGui.QMouseEvent(
-        event_type,
+        getattr(QtCore.QEvent.Type, event_type_name),
         pos,
         pos,  # global position
         button,
@@ -34,19 +29,19 @@ def _make_mouse_event(QtCore, QtGui, event_type, button, buttons=None):
 class _UnknownButtonEvent:
     """Minimal stand-in for a Qt mouse event with an unmapped button value."""
 
-    def __init__(self, button_value, QtCore):
+    def __init__(self, button_value):
         self._button_value = button_value
-        self._QtCore = QtCore
         self.ignored = False
 
     def button(self):
         return self._button_value
 
     def buttons(self):
-        return self._QtCore.Qt.MouseButton.NoButton
+        from PyQt6 import QtCore
+
+        return QtCore.Qt.MouseButton.NoButton
 
     def pos(self):
-        # Used by _get_event_xy on some Qt bindings.
         class _P:
             def x(self):
                 return 1
@@ -60,48 +55,74 @@ class _UnknownButtonEvent:
         return self.pos()
 
     def modifiers(self):
-        return self._QtCore.Qt.KeyboardModifier.NoModifier
+        from PyQt6 import QtCore
+
+        return QtCore.Qt.KeyboardModifier.NoModifier
 
     def ignore(self):
         self.ignored = True
 
 
+# (event_name, qt_event_type, qt_button, expected_vispy_button, buttons_flag)
+_EVENT_CASES = [
+    ('release', 'MouseButtonRelease', 'LeftButton', 1, None),
+    ('release', 'MouseButtonRelease', 'RightButton', 2, None),
+    ('release', 'MouseButtonRelease', 'MiddleButton', 3, None),
+    ('release', 'MouseButtonRelease', 'BackButton', 4, None),
+    ('release', 'MouseButtonRelease', 'ForwardButton', 5, None),
+    ('release', 'MouseButtonRelease', 'ExtraButton3', 6, None),
+    ('release', 'MouseButtonRelease', 'ExtraButton4', 7, None),
+    ('release', 'MouseButtonRelease', 'ExtraButton24', 27, None),
+    ('press', 'MouseButtonPress', 'ExtraButton4', 7, 'ExtraButton4'),
+    ('double_click', 'MouseButtonDblClick', 'ExtraButton3', 6, None),
+]
+
+_HANDLER = {
+    'press': 'mousePressEvent',
+    'release': 'mouseReleaseEvent',
+    'double_click': 'mouseDoubleClickEvent',
+}
+
+_VISPY_EVENT = {
+    'press': 'mouse_press',
+    'release': 'mouse_release',
+    'double_click': 'mouse_double_click',
+}
+
+
 @requires_application('pyqt6')
-def test_standard_and_extra_button_release_events():
-    """Release of standard and Extra buttons must emit the mapped VisPy id."""
-    QtCore, QtGui, qt_backend = _qt_modules()
-    mb = QtCore.Qt.MouseButton
-    buttonmap = qt_backend.BUTTONMAP
-
-    cases = [
-        (mb.LeftButton, 1),
-        (mb.RightButton, 2),
-        (mb.MiddleButton, 3),
-        (mb.BackButton, 4),
-        (mb.ForwardButton, 5),
-        (mb.ExtraButton3, 6),   # TaskButton
-        (mb.ExtraButton4, 7),
-        (mb.ExtraButton24, 27),
-    ]
-    # Sanity: mapping table matches expectations.
-    for qt_button, vispy_button in cases:
-        assert buttonmap[qt_button] == vispy_button
-
+@pytest.mark.parametrize(
+    'event_name, event_type, qt_button, vispy_button, buttons_flag',
+    _EVENT_CASES,
+    ids=[
+        f'{name}-{vispy}'
+        for name, _, _, vispy, _ in _EVENT_CASES
+    ],
+)
+def test_mapped_button_events(event_name, event_type, qt_button, vispy_button,
+                              buttons_flag):
+    """Press / release / double-click must emit the mapped VisPy button id."""
     app = use_app('pyqt6')
+    from PyQt6 import QtCore
+    from vispy.app.backends import _qt as qt_backend
+
+    qt_button = getattr(QtCore.Qt.MouseButton, qt_button)
+    if buttons_flag is not None:
+        buttons_flag = getattr(QtCore.Qt.MouseButton, buttons_flag)
+    assert qt_backend.BUTTONMAP[qt_button] == vispy_button
+
     canvas = Canvas(app=app, size=(80, 80), show=False, create_native=True)
     try:
-        backend = canvas._backend
-        for qt_button, vispy_button in cases:
-            seen = []
-            canvas.events.mouse_release.connect(lambda e, s=seen: s.append(e))
-            ev = _make_mouse_event(
-                QtCore, QtGui, QtCore.QEvent.Type.MouseButtonRelease, qt_button
-            )
-            backend.mouseReleaseEvent(ev)
-            assert len(seen) == 1, (qt_button, vispy_button)
-            assert seen[0].button == vispy_button
+        seen = []
+        canvas.events[_VISPY_EVENT[event_name]].connect(lambda e: seen.append(e))
+        ev = _make_mouse_event(event_type, qt_button, buttons=buttons_flag)
+        getattr(canvas._backend, _HANDLER[event_name])(ev)
+        assert len(seen) == 1
+        assert seen[0].button == vispy_button
+        if event_name == 'release':
             assert tuple(seen[0].pos) == (12.0, 34.0)
-            canvas.events.mouse_release.disconnect()
+        if buttons_flag is not None:
+            assert vispy_button in seen[0].buttons
     finally:
         canvas.close()
 
@@ -109,17 +130,17 @@ def test_standard_and_extra_button_release_events():
 @requires_application('pyqt6')
 def test_unmapped_button_release_does_not_raise():
     """#2751: unknown Qt button on release must not KeyError; VisPy gets 0."""
-    QtCore, QtGui, qt_backend = _qt_modules()
     app = use_app('pyqt6')
+    from vispy.app.backends import _qt as qt_backend
+
     canvas = Canvas(app=app, size=(80, 80), show=False, create_native=True)
     try:
         seen = []
         canvas.events.mouse_release.connect(lambda e: seen.append(e))
-        # Choose a value that is not a MouseButton flag in BUTTONMAP.
         unknown = object()
         assert unknown not in qt_backend.BUTTONMAP
-        fake = _UnknownButtonEvent(unknown, QtCore)
-        # Must not raise KeyError (the original bug).
+        fake = _UnknownButtonEvent(unknown)
+        # Must not raise KeyError (the original bug in GH #2751).
         canvas._backend.mouseReleaseEvent(fake)
         assert len(seen) == 1
         assert seen[0].button == 0
@@ -128,52 +149,15 @@ def test_unmapped_button_release_does_not_raise():
 
 
 @requires_application('pyqt6')
-def test_press_and_double_click_extra_buttons():
-    """Press / double-click must use the same mapping as release."""
-    QtCore, QtGui, qt_backend = _qt_modules()
-    mb = QtCore.Qt.MouseButton
-    app = use_app('pyqt6')
-    canvas = Canvas(app=app, size=(80, 80), show=False, create_native=True)
-    try:
-        backend = canvas._backend
-
-        press_seen = []
-        canvas.events.mouse_press.connect(lambda e: press_seen.append(e))
-        press_ev = _make_mouse_event(
-            QtCore, QtGui, QtCore.QEvent.Type.MouseButtonPress, mb.ExtraButton4,
-            buttons=mb.ExtraButton4,
-        )
-        backend.mousePressEvent(press_ev)
-        assert len(press_seen) == 1
-        assert press_seen[0].button == 7
-        assert 7 in press_seen[0].buttons
-
-        dbl_seen = []
-        canvas.events.mouse_double_click.connect(lambda e: dbl_seen.append(e))
-        dbl_ev = _make_mouse_event(
-            QtCore, QtGui,
-            QtCore.QEvent.Type.MouseButtonDblClick,
-            mb.ExtraButton3,
-        )
-        backend.mouseDoubleClickEvent(dbl_ev)
-        assert len(dbl_seen) == 1
-        assert dbl_seen[0].button == 6
-    finally:
-        canvas.close()
-
-
-@requires_application('pyqt6')
 def test_buttonmap_to_list_includes_extra_buttons():
     """Multi-button state must report Extra buttons, not only 1-5."""
-    QtCore, QtGui, qt_backend = _qt_modules()
+    use_app('pyqt6')
+    from PyQt6 import QtCore
+    from vispy.app.backends import _qt as qt_backend
+
     mb = QtCore.Qt.MouseButton
-    helper = qt_backend.QtBaseCanvasBackend._buttonmap_to_list
-
-    class _Dummy:
-        pass
-
     mixed = mb.LeftButton | mb.ForwardButton | mb.ExtraButton4
-    assert helper(_Dummy(), mixed) == [1, 5, 7]
+    assert qt_backend._buttonmap_to_list(mixed) == [1, 5, 7]
 
 
 run_tests_if_main()
