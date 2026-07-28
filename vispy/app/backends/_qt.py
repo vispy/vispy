@@ -194,10 +194,12 @@ KEYMAP = {
 }
 if PYQT6_API or PYSIDE6_API:
     # VisPy buttons 1-5 are Left/Right/Middle/Back/Forward.
-    # Qt also exposes ExtraButton1..24 (ExtraButton1/2 alias Back/Forward;
-    # ExtraButton3 is TaskButton). Map ExtraButton3..24 to VisPy 6..27 so
-    # unmapped side/extra buttons stay distinguishable instead of collapsing
-    # to 0 via BUTTONMAP.get(..., 0).
+    # Qt 5.0+ also exposes ExtraButton1..24 (ExtraButton1/2 alias Back/Forward;
+    # ExtraButton3 is TaskButton). They were not present in Qt 4. Map any
+    # ExtraButton3..24 that exist on this Qt build to VisPy 6..27 so extra
+    # buttons stay distinguishable instead of collapsing to 0.
+    # Docs: https://doc.qt.io/qt-5/qt.html#MouseButton-enum
+    #       https://doc.qt.io/qt-6/qt.html#MouseButton-enum
     BUTTONMAP = {
         QtCore.Qt.MouseButton.NoButton: 0,
         QtCore.Qt.MouseButton.LeftButton: 1,
@@ -207,15 +209,21 @@ if PYQT6_API or PYSIDE6_API:
         QtCore.Qt.MouseButton.ForwardButton: 5,
     }
     for _extra_i in range(3, 25):
-        BUTTONMAP[getattr(QtCore.Qt.MouseButton, f'ExtraButton{_extra_i}')] = (
-            _extra_i + 3
-        )
+        _qt_btn = getattr(QtCore.Qt.MouseButton, f'ExtraButton{_extra_i}', None)
+        if _qt_btn is not None:
+            BUTTONMAP[_qt_btn] = _extra_i + 3
 else:
-    # Qt5 bit values: No=0, Left=1, Right=2, Mid=4, X1/Back=8, X2/Fwd=16,
-    # then ExtraButton3..24 as 1 << (n + 1) for n=3..24.
+    # Qt5 (and older) path uses integer button codes as keys. ExtraButton3..24
+    # exist from Qt 5.0; Qt 4 only had XButton1/2. Add them only when present.
     BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
+    _mouse_button = getattr(QtCore.Qt, 'MouseButton', QtCore.Qt)
     for _extra_i in range(3, 25):
-        BUTTONMAP[1 << (_extra_i + 1)] = _extra_i + 3
+        _qt_btn = getattr(_mouse_button, f'ExtraButton{_extra_i}', None)
+        if _qt_btn is None:
+            _qt_btn = getattr(QtCore.Qt, f'ExtraButton{_extra_i}', None)
+        if _qt_btn is not None:
+            _code = int(getattr(_qt_btn, 'value', _qt_btn))
+            BUTTONMAP[_code] = _extra_i + 3
 
 
 # Properly log Qt messages
