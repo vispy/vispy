@@ -273,7 +273,6 @@ jobs:
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
           export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so;
-          export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
         conda list
         python -c "import vispy; print(vispy.version.version)"
@@ -293,7 +292,6 @@ jobs:
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
           export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so
-          export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi
         COVERAGE_FILE=.vispy-coverage coverage combine

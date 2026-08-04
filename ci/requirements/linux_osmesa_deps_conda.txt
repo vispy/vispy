@@ -1,7 +1,7 @@
 coveralls
 cython
 libglu
-mesalib
+mesalib>=25.0.5,<25.1.0
 meshio
 numpy
 pillow
