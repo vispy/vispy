@@ -172,7 +172,7 @@ cache-keys = [
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
 test-command = "python -c \"import vispy; vispy.test('nobackend')\""
-test-extras = ["test"]
+test-groups = ["test"]
 
 [tool.cibuildwheel.linux]
 before-all = [
