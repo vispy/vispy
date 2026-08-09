@@ -280,10 +280,16 @@ jobs:
           OSMESA_LIBRARY="$(
             find "${CONDA_PREFIX}" \
               -type f \
-              \( -name 'libOSMesa.so' -o -name 'libOSMesa.so.*' \) \
+              \( \
+                -name 'libOSMesa.so' \
+                -o -name 'libOSMesa.so.*' \
+                -o -name 'libOSMesa32.so' \
+                -o -name 'libOSMesa32.so.*' \
+              \) \
               -print \
               -quit
           )"
+
     
           if [ -z "${OSMESA_LIBRARY}" ]; then
             echo "Could not find libOSMesa in ${CONDA_PREFIX}"
@@ -316,10 +322,16 @@ jobs:
           OSMESA_LIBRARY="$(
             find "${CONDA_PREFIX}" \
               -type f \
-              \( -name 'libOSMesa.so' -o -name 'libOSMesa.so.*' \) \
+              \( \
+                -name 'libOSMesa.so' \
+                -o -name 'libOSMesa.so.*' \
+                -o -name 'libOSMesa32.so' \
+                -o -name 'libOSMesa32.so.*' \
+              \) \
               -print \
               -quit
           )"
+
     
           if [ -z "${OSMESA_LIBRARY}" ]; then
             echo "Could not find libOSMesa in ${CONDA_PREFIX}"
