@@ -51,24 +51,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
-    - name: Set up Python
-      uses: actions/setup-python@v7
+    - name: Install UV
+      uses: astral-sh/setup-uv@v9.0.0
       with:
-        python-version: 3.9
+        enable-cache: true
+        python-version: "3.9"
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 numpy cython pytest numpydoc
-    - name: Install vispy
-      run: |
-        pip install -e .
+      run: uv sync --group lint
     - name: Check line endings
-      run: |
-        python make test lineendings
+      run: uv run python make test lineendings
     - name: Lint with flake8
       run: |
         # FIXME: deliberately ignore linting errors for now
-        python make test flake || true
+        uv run python make test flake || true
 # FIXME: Re-enable this when all docstrings are fixed
 #    - name: Test docstring parameters
 #      run: |
@@ -127,14 +122,14 @@ jobs:
     - name: Install conda-dependencies
       run: |
         conda install -y -f ci/requirements/linux_full_deps_conda.txt
-    - name: Install pip dependencies
+    - name: Install uv pip dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r ci/requirements/linux_full_deps_pip.txt
-        pip install -r ci/requirements/linux_website_deps_pip.txt
+        uv pip install -r ci/requirements/linux_full_deps_pip.txt
+        uv pip install -r ci/requirements/linux_website_deps_pip.txt
     - name: Install vispy
       run: |
-        pip install -e .[doc]
+        uv pip install -e .
+        uv pip install --group docs
     - name: Version Info
       run: |
         export DISPLAY=:99.0
@@ -202,6 +197,10 @@ jobs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
+    - name: Install uv
+      uses: astral-sh/setup-uv@v9.0.0
+      with:
+        enable-cache: true
     - name: Cache VisPy Demo and Test Data
       uses: actions/cache@v6
       env:
@@ -257,15 +256,16 @@ jobs:
       run: |
         if [ "${{ matrix.deps }}" == 'full' ]; then
           if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
+            uv pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
           else
-            pip install -r ci/requirements/linux_full_deps_pip.txt
+            uv pip install -r ci/requirements/linux_full_deps_pip.txt
           fi
           rm -rf vispy/ext/_bundled
         fi
     - name: Install vispy
       run: |
-        pip install -e .
+        uv pip install -e .
+        uv pip install --group test
     - name: Version Info
       run: |
         if [ "${{ matrix.test }}" != 'osmesa' ]; then
