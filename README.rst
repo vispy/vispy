@@ -138,7 +138,7 @@ External links
 -  `Developer chat room <https://gitter.im/vispy/vispy-dev>`__
 -  `Wiki <http://github.com/vispy/vispy/wiki>`__
 -  `Gallery <http://vispy.org/gallery/index.html>`__
--  `Documentation <http://vispy.readthedocs.org>`__
+-  `Documentation <http://vispy.org>`__
 
 .. |Build Status| image:: https://github.com/vispy/vispy/workflows/CI/badge.svg
    :target: https://github.com/vispy/vispy/actions
