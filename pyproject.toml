@@ -7,18 +7,15 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "vispy"
 description = "Interactive visualization in Python"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 requires-python = ">=3.9"
 license = { text = "BSD-3-Clause" }
-
 authors = [
     { name = "Vispy contributors", email = "vispy@googlegroups.com" },
 ]
-
 keywords = [
     "visualization",
     "OpenGL",
@@ -33,7 +30,6 @@ keywords = [
     "jupyter",
     "widgets",
 ]
-
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -51,9 +47,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Framework :: IPython",
 ]
-
 dynamic = ["version"]
-
 dependencies = [
     "numpy",
     "freetype-py",
@@ -63,65 +57,56 @@ dependencies = [
     "importlib-resources; python_version < '3.9'",
 ]
 
-
 [project.urls]
 Homepage = "https://vispy.org"
 Repository = "https://github.com/vispy/vispy"
 Download = "https://pypi.org/project/vispy/"
 
-
 [project.optional-dependencies]
 ipython-static = [
     "ipython",
 ]
-
 pyglet = [
     "pyglet>=1.2",
 ]
-
 pyqt5 = [
     "pyqt5",
 ]
-
 pyqt6 = [
     "pyqt6",
 ]
-
 pyside = [
     "PySide",
 ]
-
 pyside2 = [
     "PySide2",
 ]
-
 pyside6 = [
     "PySide6",
 ]
-
 glfw = [
     "glfw",
 ]
-
 sdl2 = [
     "PySDL2",
 ]
-
 wx = [
     "wxPython",
 ]
-
 tk = [
     "pyopengltk",
 ]
-
 io = [
     "meshio",
     "Pillow",
 ]
 
-
 [dependency-groups]
+lint = [
+    "flake8",
+    "numpydoc",
+    "pytest",
+]
 test = [
     "pytest",
     "pytest-sugar",
@@ -130,7 +115,6 @@ test = [
     "sphinx-gallery",
     "imageio",
 ]
-
 docs = [
     "cython",
     "pydata-sphinx-theme",
@@ -143,21 +127,17 @@ docs = [
     "pyopengl",
     "pyqt5",
 ]
-
 dev = [
     { include-group = "test" },
     { include-group = "docs" },
     "flake8",
 ]
 
-
 [tool.setuptools]
 include-package-data = true
 
-
 [tool.setuptools.packages.find]
 exclude = ["make"]
-
 
 [tool.setuptools.package-data]
 vispy = [
@@ -178,33 +158,26 @@ vispy = [
 "vispy.glsl.misc" = ["*.vert", "*.frag", "*.glsl"]
 "vispy.glsl.transforms" = ["*.vert", "*.frag", "*.glsl"]
 
-
 [tool.setuptools_scm]
 write_to = "vispy/version.py"
 local_scheme = "dirty-tag"
 
-
 [tool.uv]
-# setuptools_scm means the project output can change when the Git revision/tag
-# changes, so include Git information when considering cache freshness.
 cache-keys = [
     { file = "pyproject.toml" },
     { git = { commit = true, tags = true } },
     { file = "vispy/visuals/text/_sdf_cpu.pyx" },
 ]
 
-
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
 test-command = "python -c \"import vispy; vispy.test('nobackend')\""
 test-extras = ["test"]
 
-
 [tool.cibuildwheel.linux]
 before-all = [
     "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev",
 ]
-
 
 [tool.cibuildwheel.windows]
 environment = { FREETYPEPY_BUNDLE_FT = "1" }
