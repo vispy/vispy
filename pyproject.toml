@@ -99,13 +99,6 @@ io = [
     "meshio",
     "Pillow",
 ]
-
-[dependency-groups]
-lint = [
-    "flake8",
-    "numpydoc",
-    "pytest",
-]
 test = [
     "pytest",
     "pytest-sugar",
@@ -113,8 +106,9 @@ test = [
     "pillow",
     "sphinx-gallery",
     "imageio",
+    "pyqt5",
 ]
-docs = [
+doc = [
     "cython",
     "pydata-sphinx-theme",
     "numpydoc",
@@ -126,10 +120,12 @@ docs = [
     "pyopengl",
     "pyqt5",
 ]
-dev = [
-    { include-group = "test" },
-    { include-group = "docs" },
+
+[dependency-groups]
+lint = [
     "flake8",
+    "numpydoc",
+    "pytest",
 ]
 
 [tool.setuptools]
@@ -171,7 +167,7 @@ cache-keys = [
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
 test-command = "python -c \"import vispy; vispy.test('nobackend')\""
-test-groups = ["test"]
+test-extras = ["test"]
 
 [tool.cibuildwheel.linux]
 before-all = [

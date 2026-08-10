@@ -132,8 +132,7 @@ jobs:
         uv pip install -r ci/requirements/linux_website_deps_pip.txt
     - name: Install vispy
       run: |
-        uv pip install -e .
-        uv pip install --group docs
+        uv pip install -e ".[docs]"
     - name: Version Info
       run: |
         export DISPLAY=:99.0
@@ -268,8 +267,7 @@ jobs:
         fi
     - name: Install vispy
       run: |
-        uv pip install -e .
-        uv pip install --group test
+        uv pip install -e ".[test]"
     - name: Version Info
       run: |
         if [ "${{ matrix.test }}" != "osmesa" ]; then
