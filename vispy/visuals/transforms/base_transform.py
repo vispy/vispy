@@ -18,6 +18,7 @@ API Issues to work out:
 
 from __future__ import division
 
+from ._util import InverseKind
 from ..shaders import Function
 from ...util.event import EventEmitter
 
@@ -63,6 +64,9 @@ class BaseTransform(object):
 
     # Scale factors are applied equally to all axes.
     Isometric = None
+
+    # For linear transforms, exact by default, but for non-linear transforms can be different.
+    inverse_kind = InverseKind.EXACT
 
     def __init__(self):
         self._inverse = None
