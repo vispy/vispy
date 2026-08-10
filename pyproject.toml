@@ -54,7 +54,6 @@ dependencies = [
     "hsluv",
     "kiwisolver",
     "packaging",
-    "importlib-resources; python_version < '3.9'",
 ]
 
 [project.urls]
