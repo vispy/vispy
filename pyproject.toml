@@ -54,7 +54,6 @@ dependencies = [
     "hsluv",
     "kiwisolver",
     "packaging",
-    "importlib-resources; python_version < '3.9'",
 ]
 
 [project.urls]
@@ -100,13 +99,6 @@ io = [
     "meshio",
     "Pillow",
 ]
-
-[dependency-groups]
-lint = [
-    "flake8",
-    "numpydoc",
-    "pytest",
-]
 test = [
     "pytest",
     "pytest-sugar",
@@ -115,7 +107,7 @@ test = [
     "sphinx-gallery",
     "imageio",
 ]
-docs = [
+doc = [
     "cython",
     "pydata-sphinx-theme",
     "numpydoc",
@@ -125,12 +117,13 @@ docs = [
     "pillow",
     "pytest",
     "pyopengl",
-    "pyqt5",
 ]
-dev = [
-    { include-group = "test" },
-    { include-group = "docs" },
+
+[dependency-groups]
+lint = [
     "flake8",
+    "numpydoc",
+    "pytest",
 ]
 
 [tool.setuptools]
@@ -172,7 +165,7 @@ cache-keys = [
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
 test-command = "python -c \"import vispy; vispy.test('nobackend')\""
-test-groups = ["test"]
+test-extras = ["test"]
 
 [tool.cibuildwheel.linux]
 before-all = [
