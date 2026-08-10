@@ -106,7 +106,6 @@ test = [
     "pillow",
     "sphinx-gallery",
     "imageio",
-    "pyqt5",
 ]
 doc = [
     "cython",
@@ -118,7 +117,6 @@ doc = [
     "pillow",
     "pytest",
     "pyopengl",
-    "pyqt5",
 ]
 
 [dependency-groups]
