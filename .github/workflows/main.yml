@@ -280,8 +280,13 @@ jobs:
         uv pip install -e ".[test]"
     - name: Graphics package diagnostics
       run: |
+        export DISPLAY=:99.0
+
         echo "Python:"
         python --version
+
+        echo
+        echo "DISPLAY=${DISPLAY}"
 
         echo
         echo "Mesa / EGL / GL:"
@@ -298,7 +303,14 @@ jobs:
           -print || true
 
         echo
+        echo "GLX renderer:"
         glxinfo -B || true
+
+        echo
+        echo "Full GLX info:"
+        glxinfo | grep -E \
+          'OpenGL vendor|OpenGL renderer|OpenGL core profile version|OpenGL version' \
+          || true
     - name: Version Info
       run: |
         if [ "${{ matrix.test }}" != "osmesa" ]; then
