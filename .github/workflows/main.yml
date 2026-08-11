@@ -238,11 +238,9 @@ jobs:
         # opengl system libraries
         if [ "${{ matrix.deps }}" == 'full' ]; then
           sudo apt-get update
-          if [ "${{ matrix.newer_qt_apt }}" == 'true' ]; then
-            cat ci/requirements/linux_full_newqtdeps_py312plus_apt.txt \
-              | xargs sudo apt-get -y install
-          elif [ "${{ matrix.new_qt }}" == 'true' ]; then
-            cat ci/requirements/linux_full_newqtdeps_apt.txt \
+    
+          if [ "${{ matrix.new_qt }}" == 'true' ]; then
+            cat "ci/requirements/${{ matrix.apt_deps }}" \
               | xargs sudo apt-get -y install
           else
             cat ci/requirements/linux_full_deps_apt.txt \
