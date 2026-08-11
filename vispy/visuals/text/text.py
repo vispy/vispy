@@ -161,9 +161,9 @@ _VERTEX_SHADER = """
         mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
                         sin(a_rotation), cos(a_rotation), 0, 0,
                         0, 0, 1, 0, 0, 0, 0, 1);
-        vec4 pos = $transform(vec4(a_pos, 1.0)) +
-                   vec4($text_scale(rot * vec4(a_position, 0.0, 1.0)).xyz, 0.0);
-        gl_Position = pos;
+        vec4 pos = $transform(vec4(a_pos, 1.0));
+        vec4 offset = $text_scale(rot * vec4(a_position, 0.0, 1.0));
+        gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
         v_texcoord = a_texcoord;
         v_color = $color;
     }
