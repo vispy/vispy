@@ -7,6 +7,7 @@ from numpy.testing import assert_allclose
 import pytest
 
 import vispy.visuals.transforms as tr
+from vispy.visuals.transforms._util import InverseKind
 from vispy.geometry import Rect
 from vispy.testing import run_tests_if_main
 
@@ -238,6 +239,53 @@ def test_inverse(trn):
     # abs_pos = np.abs(pos)
     # tr = LT(base=(2, 4.5, 0))
     # assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
+
+def test_transform_without_inverse():
+    class ForwardOnlyTransform(tr.BaseTransform):
+        inverse_kind = InverseKind.NONE
+
+        glsl_map = """
+            vec4 forward_only_transform(vec4 pos) {
+                pos.x += 1.0;
+                return pos;
+            }
+        """
+
+        def map(self, coords):
+            coords = np.asarray(coords)
+            result = coords.copy()
+            result[..., 0] += 1.0
+            return result
+
+    # Can pass without defining imap etc.
+    transform = ForwardOnlyTransform()
+
+    points = np.array([
+        [0.0, 1.0],
+        [2.0, 3.0],
+    ])
+
+    expected = np.array([
+        [1.0, 1.0],
+        [3.0, 3.0],
+    ])
+
+    # Check whether transform works on CPU
+    assert_allclose(
+        transform.map(points)[:, :2],
+        expected,
+    )
+
+    assert transform.shader_map() is not None
+
+    with pytest.raises(NotImplementedError, match="ForwardOnlyTransform does not"):
+        transform.imap([[1.0, 2.0]])
+
+    with pytest.raises(NotImplementedError, match="does not provide an inverse"):
+        transform.shader_imap()
+
+    with pytest.raises(NotImplementedError, match="does not provide an inverse"):
+        transform.inverse()
 
 
 run_tests_if_main()
