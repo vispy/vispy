@@ -196,16 +196,19 @@ jobs:
             deps: "full"
             test: "standard"
             new_qt: true
+            pip_dep: "linux_full_newqtdeps_pip.txt"
           - test_number: 5
             python_version: "3.12"
             deps: "full"
             test: "standard"
             new_qt: true
+            pip_dep: "linux_full_newqtdeps_pip_312_314.txt"
           - test_number: 6
             python_version: "3.14"
             deps: "full"
             test: "standard"
             new_qt: true
+            pip_dep: "linux_full_newqtdeps_pip_312_314.txt"
     steps:
     - uses: actions/checkout@v6
       with:
@@ -269,7 +272,7 @@ jobs:
       run: |
         if [ "${{ matrix.deps }}" == 'full' ]; then
           if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            uv pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
+            uv pip install -r "ci/requirements/${{ matrix.pip_dep }}"
           else
             uv pip install -r ci/requirements/linux_full_deps_pip.txt
           fi
