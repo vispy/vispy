@@ -322,6 +322,15 @@ jobs:
         conda list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"
+    - name: Run failing pyqt6 test
+      if: matrix.python_version == '3.12' || matrix.python_version == '3.14'
+      run: |
+        export DISPLAY=:99.0
+        export _VISPY_TESTING_APP=pyqt6
+
+        python -X faulthandler -m pytest \
+          vispy/app/tests/test_app.py::test_run \
+          -vv -s
     - name: Run tests
       run: |
         if [ "${{ matrix.test }}" == 'standard' ]; then
