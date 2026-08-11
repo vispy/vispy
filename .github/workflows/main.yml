@@ -258,6 +258,11 @@ jobs:
         # export python_version
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
+    - name: Check libcursor0
+      if: matrix.python_version == '3.12' || matrix.python_version == '3.14'
+      run: |
+        dpkg -l | grep libxcb-cursor0 || true
+        ldconfig -p | grep xcb-cursor || true
     - name: Setup Conda Environment
       uses: conda-incubator/setup-miniconda@v4
       with:
