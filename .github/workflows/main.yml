@@ -197,18 +197,21 @@ jobs:
             test: "standard"
             new_qt: true
             pip_dep: "linux_full_newqtdeps_pip.txt"
+            apt_deps: "linux_full_newqtdeps_apt.txt"
           - test_number: 5
             python_version: "3.12"
             deps: "full"
             test: "standard"
             new_qt: true
             pip_dep: "linux_full_newqtdeps_pip_312_314.txt"
+            apt_deps: "linux_full_newqtdeps_312_314_apt.txt"
           - test_number: 6
             python_version: "3.14"
             deps: "full"
             test: "standard"
             new_qt: true
             pip_dep: "linux_full_newqtdeps_pip_312_314.txt"
+            apt_deps: "linux_full_newqtdeps_312_314_apt.txt"
     steps:
     - uses: actions/checkout@v6
       with:
@@ -234,11 +237,16 @@ jobs:
       run: |
         # opengl system libraries
         if [ "${{ matrix.deps }}" == 'full' ]; then
-          sudo apt-get update;
-          if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            cat ci/requirements/linux_full_newqtdeps_apt.txt | xargs sudo apt-get -y install
+          sudo apt-get update
+          if [ "${{ matrix.newer_qt_apt }}" == 'true' ]; then
+            cat ci/requirements/linux_full_newqtdeps_py312plus_apt.txt \
+              | xargs sudo apt-get -y install
+          elif [ "${{ matrix.new_qt }}" == 'true' ]; then
+            cat ci/requirements/linux_full_newqtdeps_apt.txt \
+              | xargs sudo apt-get -y install
           else
-            cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
+            cat ci/requirements/linux_full_deps_apt.txt \
+              | xargs sudo apt-get -y install
           fi
         else
           sudo apt-get -y install x11-utils
