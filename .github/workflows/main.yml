@@ -265,7 +265,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v4
       with:
         miniforge-version: latest
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
         channels: conda-forge
         conda-remove-defaults: true
         channel-priority: strict
