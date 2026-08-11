@@ -256,11 +256,6 @@ jobs:
         # export python_version
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
-    - name: Check libcursor0
-      if: matrix.python_version == '3.12' || matrix.python_version == '3.14'
-      run: |
-        dpkg -l | grep libxcb-cursor0 || true
-        ldconfig -p | grep xcb-cursor || true
     - name: Setup Conda Environment
       uses: conda-incubator/setup-miniconda@v4
       with:
@@ -292,39 +287,6 @@ jobs:
     - name: Install vispy
       run: |
         uv pip install -e ".[test]"
-    - name: Graphics package diagnostics
-      run: |
-        export DISPLAY=:99.0
-
-        echo "Python:"
-        python --version
-
-        echo
-        echo "DISPLAY=${DISPLAY}"
-
-        echo
-        echo "Mesa / EGL / GL:"
-        conda list | grep -Ei 'mesa|egl|glx|libgl|qt' || true
-
-        echo
-        echo "Libraries:"
-        find "${CONDA_PREFIX}/lib" \
-          \( \
-            -name 'libEGL.so*' \
-            -o -name 'libGL.so*' \
-            -o -name 'libGLX.so*' \
-          \) \
-          -print || true
-
-        echo
-        echo "GLX renderer:"
-        glxinfo -B || true
-
-        echo
-        echo "Full GLX info:"
-        glxinfo | grep -E \
-          'OpenGL vendor|OpenGL renderer|OpenGL core profile version|OpenGL version' \
-          || true
     - name: Version Info
       run: |
         if [ "${{ matrix.test }}" != "osmesa" ]; then
