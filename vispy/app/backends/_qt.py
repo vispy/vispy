@@ -703,8 +703,19 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             ):
                 print("surface about to be destroyed", flush=True)
                 self._surface_destroying = True
+        print(
+            "before super event:",
+            ev.type(),
+            type(ev).__name__,
+            flush=True,
+        )
         out = super(QtBaseCanvasBackend, self).event(ev)
-
+        print(
+            "after super event:",
+            ev.type(),
+            type(ev).__name__,
+            flush=True,
+        )
         # QNativeGestureEvent is Qt 5+
         if (
             (QT5_NEW_API or PYSIDE6_API or PYQT6_API)
