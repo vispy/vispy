@@ -264,18 +264,33 @@ jobs:
         channels: conda-forge
         conda-remove-defaults: true
         channel-priority: strict
-        activate-environment: vispy-tests
-        environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
-        auto-activate: false
-    - name: Install conda-dependencies
+        #activate-environment: vispy-tests
+        # environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+        auto-activate-base: false
+    - name: Create Conda Environment
       run: |
         if [ "${{ matrix.new_qt }}" == 'true' ]; then
-          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
+          REQUIREMENTS_FILE="ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt"
         else
-          conda install --solver libmamba -vv --update-deps -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
+          REQUIREMENTS_FILE="ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt"
         fi
+
+        conda create \
+          --solver libmamba \
+          -y \
+          -n vispy-tests \
+          "python=${{ matrix.python_version }}" \
+          -f "${REQUIREMENTS_FILE}"
+#    - name: Install conda-dependencies
+#      run: |
+#        if [ "${{ matrix.new_qt }}" == 'true' ]; then
+#          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
+#        else
+#          conda install --solver libmamba -vv --update-deps -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
+#        fi
     - name: Install pip-dependencies
       run: |
+        conda activate vispy-tests
         if [ "${{ matrix.deps }}" == 'full' ]; then
           if [ "${{ matrix.new_qt }}" == 'true' ]; then
             uv pip install -r "ci/requirements/${{ matrix.pip_dep }}"
@@ -286,9 +301,11 @@ jobs:
         fi
     - name: Install vispy
       run: |
+        conda activate vispy-tests
         uv pip install -e ".[test]"
     - name: Version Info
       run: |
+        conda activate vispy-tests
         if [ "${{ matrix.test }}" != "osmesa" ]; then
           export DISPLAY=:99.0
         fi
@@ -324,6 +341,7 @@ jobs:
         python -c "import vispy; print(vispy.sys_info())"
     - name: Run tests
       run: |
+        conda activate vispy-tests
         if [ "${{ matrix.test }}" == 'standard' ]; then
           export DISPLAY=:99.0
           # this is a workaround for pyopengl 3.1.7+ that changed library resolution order
