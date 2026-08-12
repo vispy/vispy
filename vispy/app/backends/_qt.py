@@ -365,6 +365,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
     def __init__(self, vispy_canvas, **kwargs):
         BaseCanvasBackend.__init__(self, vispy_canvas)
+        self._surface_destroying = False
         # Maybe to ensure that exactly all arguments are passed?
         p = self._process_backend_kwargs(kwargs)
         self._initialized = False
@@ -476,6 +477,12 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def _vispy_update(self):
         if self._vispy_canvas is None:
             return
+
+        if self._surface_destroying:
+            print("SKIPPING UPDATE DURING SURFACE TEARDOWN", flush=True)
+            return
+
+        self.update()
         # Invoke a redraw
         self.update()
 
@@ -690,25 +697,14 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
 
     def event(self, ev):
         if isinstance(ev, QtGui.QPlatformSurfaceEvent):
-            print(
-                "PlatformSurface:",
-                ev.surfaceEventType(),
-                flush=True,
-            )
-
-        print(
-            "before super event:",
-            ev.type(),
-            type(ev).__name__,
-            flush=True,
-        )
+            if (
+                    ev.surfaceEventType()
+                    == QtGui.QPlatformSurfaceEvent.SurfaceEventType.SurfaceAboutToBeDestroyed
+            ):
+                print("surface about to be destroyed", flush=True)
+                self._surface_destroying = True
         out = super(QtBaseCanvasBackend, self).event(ev)
-        print(
-            "after super event:",
-            ev.type(),
-            type(ev).__name__,
-            flush=True,
-        )
+
         # QNativeGestureEvent is Qt 5+
         if (
             (QT5_NEW_API or PYSIDE6_API or PYQT6_API)
