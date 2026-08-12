@@ -6,10 +6,10 @@ freetype-py
 glfw!=3.3.1
 imageio
 jupyter
-matplotlib-base
+matplotlib-base=3.9.4
 meshio
 networkx
-numpy
+numpy=2.0.2
 pillow
 pyqt=5
 pysdl2
@@ -17,8 +17,8 @@ pytest
 pytest-cov
 pytest-sugar
 pyopengl
-scikit-image
-scipy
+scikit-image=0.24.0
+scipy=1.13.1
 networkx
 hsluv
 kiwisolver
