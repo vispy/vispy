@@ -482,7 +482,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             print("SKIPPING UPDATE DURING SURFACE TEARDOWN", flush=True)
             return
 
-        self.update()
         # Invoke a redraw
         self.update()
 

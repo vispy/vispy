@@ -155,7 +155,8 @@ def test_run():
             @c.events.draw.connect
             def draw(event):
                 print(event)  # test event __repr__
-                c.app.quit()
+                from PyQt6.QtCore import QTimer
+                QTimer.singleShot(0, c.app.quit)
             c.update()
             c.app.run()
         c.app.quit()  # make sure it doesn't break if a user quits twice
