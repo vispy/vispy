@@ -10,9 +10,9 @@ matplotlib-base=3.9.4
 meshio
 networkx=3.2.1
 numpy=2.0.2
-#pillow
+pillow
 #pyqt=5
-#pysdl2
+pysdl2
 pytest
 pytest-cov
 pytest-sugar
