@@ -7,8 +7,8 @@ glfw!=3.3.1
 imageio
 jupyter
 matplotlib-base=3.9.4
-#meshio
-#networkx
+meshio
+networkx
 numpy=2.0.2
 #pillow
 #pyqt=5
