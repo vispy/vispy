@@ -152,11 +152,19 @@ def test_run():
     """Test app running"""
     for _ in range(2):
         with Canvas(size=(100, 100), show=True, title='run') as c:
+            quit_timer = None
+            
             @c.events.draw.connect
             def draw(event):
+                nonlocal quit_timer
                 print(event)  # test event __repr__
-                from PyQt6.QtCore import QTimer
-                QTimer.singleShot(0, c.app.quit)
+                quit_timer = Timer(
+                    interval=0,
+                    iterations=1,
+                    connect=lambda ev: c.app.quit(),
+                    start=True,
+                    app=c.app,
+                )
             c.update()
             c.app.run()
         c.app.quit()  # make sure it doesn't break if a user quits twice
