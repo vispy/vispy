@@ -8,7 +8,7 @@ imageio
 jupyter
 matplotlib-base=3.9.4
 meshio
-networkx
+networkx=3.2.1
 numpy=2.0.2
 #pillow
 #pyqt=5
