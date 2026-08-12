@@ -272,7 +272,7 @@ jobs:
         if [ "${{ matrix.new_qt }}" == 'true' ]; then
           conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
         else
-          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
+          conda install --solver libmamba -vv -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
         fi
     - name: Install pip-dependencies
       run: |
