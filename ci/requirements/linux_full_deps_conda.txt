@@ -8,7 +8,7 @@ imageio
 matplotlib-base
 meshio
 networkx
-#numpy
+numpy
 pillow
 #pyqt=5
 #pysdl2
