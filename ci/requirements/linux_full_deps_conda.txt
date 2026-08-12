@@ -1,9 +1,9 @@
-#cmake
-#cython
-#coveralls
-#decorator
-#freetype-py
-#glfw!=3.3.1
+cmake
+cython
+coveralls
+decorator
+freetype-py
+glfw!=3.3.1
 #imageio
 #jupyter
 matplotlib-base=3.9.4
