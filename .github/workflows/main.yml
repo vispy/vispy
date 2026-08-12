@@ -277,7 +277,7 @@ jobs:
 
         conda create \
           --solver libmamba \
-          --vv
+          --vv \
           -y \
           -n vispy-tests \
           "python=${{ matrix.python_version }}" \
