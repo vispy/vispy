@@ -689,6 +689,13 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             ev.ignore()
 
     def event(self, ev):
+        if isinstance(ev, QtGui.QPlatformSurfaceEvent):
+            print(
+                "PlatformSurface:",
+                ev.surfaceEventType(),
+                flush=True,
+            )
+
         print(
             "before super event:",
             ev.type(),
