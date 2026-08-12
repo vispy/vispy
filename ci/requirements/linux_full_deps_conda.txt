@@ -5,10 +5,10 @@ decorator
 freetype-py
 glfw!=3.3.1
 imageio
-matplotlib-base=3.9.4
+matplotlib-base
 meshio
 networkx
-numpy=2.0.2
+numpy
 pillow
 pyqt=5
 pysdl2
@@ -16,8 +16,8 @@ pytest
 pytest-cov
 pytest-sugar
 pyopengl
-scikit-image=0.24.0
-scipy=1.13.1
+scikit-image
+scipy
 hsluv
 kiwisolver
 sphinx-gallery
