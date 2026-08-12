@@ -5,7 +5,7 @@ decorator
 freetype-py
 glfw!=3.3.1
 imageio
-#matplotlib-base
+matplotlib-base
 meshio
 networkx
 #numpy
