@@ -157,7 +157,6 @@ def test_run():
             @c.events.draw.connect
             def draw(event):
                 nonlocal quit_timer
-                print(event)  # test event __repr__
                 if c.app.backend_name.lower() == "pyqt6":
                     from vispy.app.backends._qt import QtCore
                     QtCore.QTimer.singleShot(0, c.app.quit)
