@@ -280,6 +280,7 @@ jobs:
           -y \
           -n vispy-tests \
           "python=${{ matrix.python_version }}" \
+          python-gil \
           -f "${REQUIREMENTS_FILE}"
 #    - name: Install conda-dependencies
 #      run: |
