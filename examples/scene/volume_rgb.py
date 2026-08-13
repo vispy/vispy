@@ -64,7 +64,8 @@ cam2 = scene.cameras.ArcballCamera(parent=view.scene, fov=60,
                                    name='Arcball')
 view.camera = cam1
 
-methods = cycle(['mip', 'translucent', 'additive', 'average'])
+methods = cycle(['mip', 'attenuated_mip', 'translucent', 'additive',
+                 'average', 'iso'])
 
 
 @canvas.events.key_press.connect
