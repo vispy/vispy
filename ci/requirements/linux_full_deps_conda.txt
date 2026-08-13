@@ -11,7 +11,7 @@ meshio
 networkx=3.2.1
 numpy=2.0.2
 pillow
-#pyqt=5
+pyqt=5
 pysdl2
 pytest
 pytest-cov
