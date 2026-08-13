@@ -271,10 +271,32 @@ jobs:
         if [ "${{ matrix.test }}" != 'osmesa' ]; then
           export DISPLAY=:99.0
         fi
-        if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so;
-          export VISPY_GL_LIB=$OSMESA_LIBRARY
+        
+        if [ "${{ matrix.test }}" == "osmesa" ]; then
+          OSMESA_LIBRARY="$(
+            find "${CONDA_PREFIX}" \
+              -type f \
+              \( \
+                -name 'libOSMesa.so' \
+                -o -name 'libOSMesa.so.*' \
+                -o -name 'libOSMesa32.so' \
+                -o -name 'libOSMesa32.so.*' \
+              \) \
+              -print \
+              -quit
+          )"
+
+          if [ -z "${OSMESA_LIBRARY}" ]; then
+            echo "Could not find libOSMesa in ${CONDA_PREFIX}"
+            conda list | grep -Ei 'mesa|osmesa' || true
+            find "${CONDA_PREFIX}" -iname '*osmesa*' -print || true
+            exit 1
+          fi
+    
+          export OSMESA_LIBRARY
+          echo "Using OSMesa library: ${OSMESA_LIBRARY}"
         fi
+        
         conda list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"
@@ -291,9 +313,29 @@ jobs:
           export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGL.so.1
           python make test unit --tb=short
         fi
-        if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so
-          export VISPY_GL_LIB=$OSMESA_LIBRARY
+        if [ "${{ matrix.test }}" == "osmesa" ]; then
+          OSMESA_LIBRARY="$(
+            find "${CONDA_PREFIX}" \
+              -type f \
+              \( \
+                -name 'libOSMesa.so' \
+                -o -name 'libOSMesa.so.*' \
+                -o -name 'libOSMesa32.so' \
+                -o -name 'libOSMesa32.so.*' \
+              \) \
+              -print \
+              -quit
+          )"
+
+          if [ -z "${OSMESA_LIBRARY}" ]; then
+            echo "Could not find libOSMesa in ${CONDA_PREFIX}"
+            conda list | grep -Ei 'mesa|osmesa' || true
+            find "${CONDA_PREFIX}" -iname '*osmesa*' -print || true
+            exit 1
+          fi
+    
+          export OSMESA_LIBRARY
+          echo "Using OSMesa library: ${OSMESA_LIBRARY}"
           make osmesa
         fi
         COVERAGE_FILE=.vispy-coverage coverage combine
