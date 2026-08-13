@@ -17,8 +17,8 @@ pytest
 pytest-cov
 pytest-sugar
 pyopengl
-scikit-image
-scipy
+#scikit-image
+#scipy
 #hsluv
 #kiwisolver
 #sphinx-gallery
