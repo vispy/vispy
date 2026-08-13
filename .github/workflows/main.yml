@@ -291,6 +291,17 @@ jobs:
     - name: Install pip-dependencies
       run: |
         conda activate vispy-tests
+        
+        # This was added because on python 3.14, uv would otherwise use the free-threaded version
+        python - <<'PY'
+        import sys
+        import sysconfig
+        print("executable:", sys.executable)
+        print("abiflags:", repr(sys.abiflags))
+        print("SOABI:", sysconfig.get_config_var("SOABI"))
+        print("Py_GIL_DISABLED:", sysconfig.get_config_var("Py_GIL_DISABLED"))
+        PY
+        
         if [ "${{ matrix.deps }}" == 'full' ]; then
           if [ "${{ matrix.new_qt }}" == 'true' ]; then
             uv pip install -r "ci/requirements/${{ matrix.pip_dep }}"
