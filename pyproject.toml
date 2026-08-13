@@ -1,27 +1,176 @@
 [build-system]
 requires = [
     "setuptools>=69.4.0",
-    # see https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-0-specific-advice
-    "numpy>=2.0.0",
     "setuptools_scm[toml]>=8.1",
-    "Cython>=3.0.0"
+    "numpy>=2.0.0",
+    "Cython>=3.0.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vispy"
+description = "Interactive visualization in Python"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+requires-python = ">=3.9"
+license = { text = "BSD-3-Clause" }
+authors = [
+    { name = "Vispy contributors", email = "vispy@googlegroups.com" },
+]
+keywords = [
+    "visualization",
+    "OpenGL",
+    "ES",
+    "medical",
+    "imaging",
+    "3D",
+    "plotting",
+    "numpy",
+    "bigdata",
+    "ipython",
+    "jupyter",
+    "widgets",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: IPython",
+]
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+    "freetype-py",
+    "hsluv",
+    "kiwisolver",
+    "packaging",
 ]
 
-[tools.setuptools_scm]
+[project.urls]
+Homepage = "https://vispy.org"
+Repository = "https://github.com/vispy/vispy"
+Download = "https://pypi.org/project/vispy/"
+
+[project.optional-dependencies]
+ipython-static = [
+    "ipython",
+]
+pyglet = [
+    "pyglet>=1.2",
+]
+pyqt5 = [
+    "pyqt5",
+]
+pyqt6 = [
+    "pyqt6",
+]
+pyside = [
+    "PySide",
+]
+pyside2 = [
+    "PySide2",
+]
+pyside6 = [
+    "PySide6",
+]
+glfw = [
+    "glfw",
+]
+sdl2 = [
+    "PySDL2",
+]
+wx = [
+    "wxPython",
+]
+tk = [
+    "pyopengltk",
+]
+io = [
+    "meshio",
+    "Pillow",
+]
+test = [
+    "pytest",
+    "pytest-sugar",
+    "meshio",
+    "pillow",
+    "sphinx-gallery",
+    "imageio",
+]
+doc = [
+    "cython",
+    "pydata-sphinx-theme",
+    "numpydoc",
+    "sphinxcontrib-apidoc",
+    "sphinx-gallery",
+    "myst-parser",
+    "pillow",
+    "pytest",
+    "pyopengl",
+]
+
+[dependency-groups]
+lint = [
+    "flake8",
+    "numpydoc",
+    "pytest",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["make"]
+
+[tool.setuptools.package-data]
+vispy = [
+    "io/_data/*",
+    "app/tests/qt-designer.ui",
+    "util/fonts/data/*.ttf",
+]
+
+"vispy.glsl" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.antialias" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.arrowheads" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.arrows" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.collections" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.colormaps" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.lines" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.markers" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.math" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.misc" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.transforms" = ["*.vert", "*.frag", "*.glsl"]
+
+[tool.setuptools_scm]
 write_to = "vispy/version.py"
 local_scheme = "dirty-tag"
 
+[tool.uv]
+cache-keys = [
+    { file = "pyproject.toml" },
+    { git = { commit = true, tags = true } },
+    { file = "vispy/visuals/text/_sdf_cpu.pyx" },
+]
 
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
 test-command = "python -c \"import vispy; vispy.test('nobackend')\""
 test-extras = ["test"]
 
-
 [tool.cibuildwheel.linux]
 before-all = [
-    "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev; pip install freetype-py",
+    "yum install -y fontconfig || apk add fontconfig-dev jpeg-dev",
 ]
 
 [tool.cibuildwheel.windows]
-environment = {FREETYPEPY_BUNDLE_FT=1}
+environment = { FREETYPEPY_BUNDLE_FT = "1" }

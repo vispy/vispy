@@ -5,6 +5,7 @@
 from __future__ import division
 
 import functools
+from enum import Enum
 
 import numpy as np
 from ...util import logger
@@ -189,3 +190,9 @@ class TransformCache(object):
         for key in rem:
             logger.debug("TransformCache remove: %s", key)
             del self._cache[key]
+
+
+class InverseKind(Enum):
+    NONE = "none"
+    APPROXIMATE = "approximate"
+    EXACT = "exact"

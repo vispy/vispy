@@ -18,28 +18,30 @@ API Issues to work out:
 
 from __future__ import division
 
+from ._util import InverseKind
 from ..shaders import Function
 from ...util.event import EventEmitter
 
 
 class BaseTransform(object):
     """
+    A transform may therefore support forward mapping without supporting
+    inverse mapping, or may support an inverse on the CPU without providing
+    a GLSL implementation.
+
     BaseTransform is a base class that defines a pair of complementary
     coordinate mapping functions in both python and GLSL.
 
-    All BaseTransform subclasses define map() and imap() methods that map
-    an object through the forward or inverse transformation, respectively.
+    All BaseTransform subclasses provide a forward coordinate mapping via
+    map() and may provide an inverse mapping via imap().
 
-    The two class variables glsl_map and glsl_imap are instances of
-    shaders.Function that define the forward- and inverse-mapping GLSL
-    function code.
+    glsl_map defines the forward GLSL mapping when GPU mapping is
+    supported. glsl_imap optionally defines the inverse GLSL mapping.
+    Both are instances of shaders.Function.
 
     Optionally, an inverse() method returns a new transform performing the
-    inverse mapping.
-
-    Note that although all classes should define both map() and imap(), it
-    is not necessarily the case that imap(map(x)) == x; there may be instances
-    where the inverse mapping is ambiguous or otherwise meaningless.
+    inverse mapping. The inverse_kind attribute indicates whether an inverse
+    mapping is exact, approximate, or unavailable.
     """
 
     glsl_map = None  # Must be GLSL code
@@ -64,14 +66,24 @@ class BaseTransform(object):
     # Scale factors are applied equally to all axes.
     Isometric = None
 
+    # For linear transforms, exact by default, but for non-linear transforms can be different.
+    inverse_kind = InverseKind.EXACT
+
     def __init__(self):
         self._inverse = None
         self._dynamic = False
         self.changed = EventEmitter(source=self, type='transform_changed')
-        if self.glsl_map is not None:
-            self._shader_map = Function(self.glsl_map)
-        if self.glsl_imap is not None:
-            self._shader_imap = Function(self.glsl_imap)
+        self._shader_map = (
+            Function(self.glsl_map)
+            if self.glsl_map is not None
+            else None
+        )
+
+        self._shader_imap = (
+            Function(self.glsl_imap)
+            if self.glsl_imap is not None
+            else None
+        )
 
     def map(self, obj):
         """
@@ -93,11 +105,19 @@ class BaseTransform(object):
             obj : tuple (x,y) or (x,y,z)
                   array with shape (..., 2) or (..., 3)
         """
+        if self.inverse_kind is InverseKind.NONE:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not implement imap()"
+            )
         raise NotImplementedError()
 
     @property
     def inverse(self):
         """The inverse of this transform."""
+        if self.inverse_kind is InverseKind.NONE:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not provide an inverse transform"
+            )
         if self._inverse is None:
             self._inverse = InverseTransform(self)
         return self._inverse
@@ -128,6 +148,10 @@ class BaseTransform(object):
 
     def shader_imap(self):
         """See shader_map."""
+        if self.inverse_kind is InverseKind.NONE:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not provide an inverse transform"
+            )
         return self._shader_imap
 
     def _shader_object(self):
