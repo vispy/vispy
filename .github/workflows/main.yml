@@ -275,7 +275,7 @@ jobs:
           REQUIREMENTS_FILE="ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt"
         fi
 
-        conda create \
+        time conda create \
           --solver libmamba \
           --dry-run \
           -vvv \
