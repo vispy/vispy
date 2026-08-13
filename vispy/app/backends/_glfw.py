@@ -293,6 +293,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._initialized = True
         self._next_key_events = []
         self._next_key_text = {}
+        self._buttons = []
         self._vispy_canvas.set_current()
         self._vispy_canvas.events.initialize()
         self._on_resize(self._id, size[0], size[1])
@@ -414,11 +415,15 @@ class CanvasBackend(BaseCanvasBackend):
             button = BUTTONMAP.get(button, 0)
             if action == glfw.PRESS:
                 fun = self._vispy_mouse_press
+                if button not in self._buttons:
+                    self._buttons.append(button)
             elif action == glfw.RELEASE:
                 fun = self._vispy_mouse_release
+                if button in self._buttons:
+                    self._buttons.remove(button)
             else:
                 return
-            fun(pos=pos, button=button, modifiers=self._mod)
+            fun(pos=pos, button=button, buttons=self._buttons, modifiers=self._mod)
 
     def _on_mouse_scroll(self, _id, x_off, y_off):
         if self._vispy_canvas is None and self._id is not None:
@@ -426,12 +431,12 @@ class CanvasBackend(BaseCanvasBackend):
         pos = glfw.get_cursor_pos(self._id)
         delta = (float(x_off), float(y_off))
         self._vispy_canvas.events.mouse_wheel(pos=pos, delta=delta,
-                                              modifiers=self._mod)
+                                              buttons=self._buttons, modifiers=self._mod)
 
     def _on_mouse_motion(self, _id, x, y):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_move(pos=(x, y), modifiers=self._mod)
+        self._vispy_mouse_move(pos=(x, y), buttons=self._buttons, modifiers=self._mod)
 
     def _on_key_press(self, _id, key, scancode, action, mod):
         if self._vispy_canvas is None:

@@ -490,13 +490,46 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def sizeHint(self):
         return self.size()
 
+    def _buttonmap_to_list(self, buttons) -> list[int]:
+        if buttons == QtCore.Qt.MouseButton.NoButton:
+            return []
+
+        mouse_buttons = []
+
+        if PYQT6_API or PYSIDE6_API:
+            if QtCore.Qt.MouseButton.LeftButton in buttons:
+                mouse_buttons.append(1)
+            if QtCore.Qt.MouseButton.RightButton in buttons:
+                mouse_buttons.append(2)
+            if QtCore.Qt.MouseButton.MiddleButton in buttons:
+                mouse_buttons.append(3)
+            if QtCore.Qt.MouseButton.BackButton in buttons:
+                mouse_buttons.append(4)
+            if QtCore.Qt.MouseButton.ForwardButton in buttons:
+                mouse_buttons.append(5)
+        else:
+            if buttons & QtCore.Qt.MouseButton.LeftButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(1)
+            if buttons & QtCore.Qt.MouseButton.RightButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(2)
+            if buttons & QtCore.Qt.MouseButton.MiddleButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(3)
+            if buttons & QtCore.Qt.MouseButton.BackButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(4)
+            if buttons & QtCore.Qt.MouseButton.ForwardButton != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(5)
+
+        return mouse_buttons
+
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
+
         vispy_event = self._vispy_mouse_press(
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -510,6 +543,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP[ev.button()],
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -523,6 +557,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -536,6 +571,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         vispy_event = self._vispy_mouse_move(
             native=ev,
             pos=_get_event_xy(ev),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -564,6 +600,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             delta=(deltax, deltay),
             pos=_get_event_xy(ev),
+            buttons=self._buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event

@@ -50,9 +50,9 @@ jobs:
     name: lint and style checks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -83,11 +83,11 @@ jobs:
       run:
         shell: bash --login -e {0}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       env:
         cache-name: cache-vispy-data-website
         test-version: 1
@@ -113,12 +113,20 @@ jobs:
         sleep 5
         # export python_version
         echo "python_version=310" >> $GITHUB_OUTPUT
-    - uses: mamba-org/setup-micromamba@v2
+    - name: Setup Conda Environment
+      uses: conda-incubator/setup-miniconda@v4
       with:
+        miniforge-version: latest
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        conda-remove-defaults: true
+        channel-priority: strict
+        activate-environment: vispy-tests
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+        auto-activate: false
     - name: Install conda-dependencies
       run: |
-        micromamba install -y python=3.9 -f ci/requirements/linux_full_deps_conda.txt -c conda-forge
+        conda install -y -f ci/requirements/linux_full_deps_conda.txt
     - name: Install pip dependencies
       run: |
         python -m pip install --upgrade pip
@@ -130,7 +138,7 @@ jobs:
     - name: Version Info
       run: |
         export DISPLAY=:99.0
-        micromamba list
+        conda list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"
     - name: build website
@@ -139,7 +147,7 @@ jobs:
         export XDG_RUNTIME_DIR=/tmp/runtime-runner
         source ./ci/build_website.sh
     - name: Upload website HTML artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: Sphinx Website
         path: |
@@ -191,11 +199,11 @@ jobs:
             test: "standard"
             new_qt: true
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Cache VisPy Demo and Test Data
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       env:
         cache-name: cache-vispy-data-${{ matrix.test }}
         test-version: 2
@@ -227,15 +235,23 @@ jobs:
         # export python_version
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
-    - uses: mamba-org/setup-micromamba@v2
+    - name: Setup Conda Environment
+      uses: conda-incubator/setup-miniconda@v4
       with:
+        miniforge-version: latest
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        conda-remove-defaults: true
+        channel-priority: strict
+        activate-environment: vispy-tests
         environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
+        auto-activate: false
     - name: Install conda-dependencies
       run: |
         if [ "${{ matrix.new_qt }}" == 'true' ]; then
-          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt -c conda-forge
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
         else
-          micromamba install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt -c conda-forge
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
         fi
     - name: Install pip-dependencies
       run: |
@@ -256,20 +272,27 @@ jobs:
           export DISPLAY=:99.0
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so;
+          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so;
           export VISPY_GL_LIB=$OSMESA_LIBRARY
         fi
-        micromamba list
+        conda list
         python -c "import vispy; print(vispy.version.version)"
         python -c "import vispy; print(vispy.sys_info())"
     - name: Run tests
       run: |
         if [ "${{ matrix.test }}" == 'standard' ]; then
           export DISPLAY=:99.0
+          # this is a workaround for pyopengl 3.1.7+ that changed library resolution order
+          # the new version breaks vispy SDL2 tests in CI, but has not been reproduced locally
+          # see previous discussions in:
+          # * https://github.com/vispy/vispy/pull/2636
+          # * https://github.com/vispy/vispy/pull/2668
+          # * https://github.com/vispy/vispy/pull/2673
+          export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGL.so.1
           python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/micromamba/envs/vispy-tests/lib/libOSMesa.so
+          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so
           export VISPY_GL_LIB=$OSMESA_LIBRARY
           make osmesa
         fi

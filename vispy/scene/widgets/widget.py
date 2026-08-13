@@ -313,6 +313,17 @@ class Widget(Compound):
         self.update()
 
     @property
+    def border_width(self):
+        """The width of the border."""
+        return self._border_width
+
+    @border_width.setter
+    def border_width(self, b):
+        self._border_width = float(b)
+        self._update_line()
+        self.update()
+
+    @property
     def bgcolor(self):
         """The background color of the Widget."""
         return self._bgcolor

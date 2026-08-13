@@ -55,7 +55,7 @@ context. This can be done using any one of the following.
      - Experimental
      - pyopengltk
 
-You can also use a Jupyter notebook with visualizations appearing inline with the ``jupyter_rfb`` backend (requires ``jupyter_rfb`` package).
+You can also use a notebook (Jupyter/VSCode/Colab) with visualizations appearing inline with the ``jupyter_rfb`` backend (requires ``jupyter_rfb`` package).
 
 .. warning::
 
@@ -180,12 +180,17 @@ You can install these versions of the package by doing:
 Jupyter Notebook and Lab
 ------------------------
 
-If you would like to use VisPy in a Jupyter Notebook and have the
+If you would like to use VisPy in a notebook and have the
 visualizations appear inline, we recommend using the "jupyter_rfb" backend.
 This backend depends on
 `jupyter_rfb library <https://jupyter-rfb.readthedocs.io/en/latest/>`_ which
 must be installed before your jupyter notebook or jupyter lab session is
 started.
+
+This backend supports anything that ``anywidget`` supports, e.g. Jupyter, VSCode, Google Colab, and Marimo.
+Marimo support is suboptimal: Vispy canvases *wrap* the native widget,
+and this does not work with Marimo. You can work around this limitation
+by using ``canvas._backend`` when displaying the widget.
 
 Note that the 'jupyter_rfb' library uses the "remote" jupyter kernel
 (the server) to do the drawing of your visualization and then sends the

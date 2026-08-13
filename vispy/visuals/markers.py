@@ -18,6 +18,8 @@ uniform float u_antialias;
 uniform float u_px_scale;
 uniform bool u_scaling;
 uniform bool u_spherical;
+uniform float u_canvas_size_min;
+uniform float u_canvas_size_max;
 
 attribute vec3 a_position;
 attribute vec4 a_fg_color;
@@ -29,6 +31,7 @@ attribute float a_symbol;
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
+varying float v_total_size;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
@@ -41,11 +44,13 @@ void main (void) {
     // fluctuations can mess "fake integers" up, so we do +0.5 and floor to make sure it's right
     v_symbol = a_symbol + 0.5;
 
+    // Set up v_texcoord (hook may do nothing for points mode)
+    $setup_texcoord();
+
     vec4 pos = vec4(a_position, 1);
     vec4 fb_pos = $visual_to_framebuffer(pos);
     vec4 x;
     vec4 size_vec;
-    gl_Position = $framebuffer_to_render(fb_pos);
 
     // NOTE: gl_stuff uses framebuffer coords!
     if (u_scaling) {
@@ -68,8 +73,33 @@ void main (void) {
         v_edgewidth = a_edgewidth * u_px_scale;
     }
 
-    // gl_PointSize is the diameter
-    gl_PointSize = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
+    // Optional canvas size clamping
+    float original_size = $v_size;
+    if (u_canvas_size_min >= 0.0) {
+        $v_size = max($v_size, u_canvas_size_min);
+    }
+    if (u_canvas_size_max >= 0.0) {
+        $v_size = min($v_size, u_canvas_size_max);
+    }
+    // Update edge width proportionally if size was clamped
+    if ($v_size != original_size) {
+        v_edgewidth = v_edgewidth * ($v_size / original_size);
+        // Floor: ensure edge is visible even when markers are clamped at max size
+        if (u_canvas_size_min >= 0.0) {
+            v_edgewidth = max(v_edgewidth, u_canvas_size_min * 0.5);
+        }
+        // Cap: prevent edge from exploding or dominating the marker when clamped at min size
+        v_edgewidth = min(v_edgewidth, $v_size * 0.5);
+    }
+
+    // Total size including edge and antialiasing
+    float total_size = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
+    v_total_size = total_size;
+
+    // Apply offset and set position (hook handles differences between modes)
+    vec4 final_fb_pos = $apply_offset(fb_pos, total_size);
+    gl_Position = $framebuffer_to_render(final_fb_pos);
+    gl_PointSize = total_size;  // Used for GL_POINTS, ignored for triangles
 
     if (u_spherical == true) {
         // similar as above for scaling, but in towards the screen direction
@@ -81,7 +111,7 @@ void main (void) {
         vec4 depth_z_vec = $scene_or_visual_to_framebuffer(pos + normalize(z) * a_size / 2);
         v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
         // size ratio between aliased and non-aliased, needed for correct depth
-        v_alias_ratio = gl_PointSize / $v_size;
+        v_alias_ratio = total_size / $v_size;
     }
 }
 """
@@ -98,14 +128,29 @@ uniform bool u_spherical;
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_edgewidth;
+varying float v_total_size;
 varying float v_depth_middle;
 varying float v_alias_ratio;
 varying float v_symbol;
 
+
+bool isnan(float val) {
+  return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
+}
+
+bool isinf(float val) {
+    return (val != 0.0 && val * 2.0 == val) ? true : false;
+}
+
+// provides `apply_lighting` and `write_depth` functions
+$lighting_functions
+
 void main()
 {
-    // Discard plotting marker body and edge if zero-size
-    if ($v_size <= 0.)
+    // Discard plotting marker body and edge if zero-size or nan/inf.
+    // Sometimes edgewidth becomes nan/inf even if size is not exactly zero here due to float
+    // imprecision. We really are checking for `a_size == 0`, but this is the fragment shader proxy
+    if ($v_size <= 0. || isnan($v_size) || isinf($v_size) || isnan(v_edgewidth) || isinf(v_edgewidth))
         discard;
 
     float edgealphafactor = min(v_edgewidth, 1.0);
@@ -114,7 +159,8 @@ void main()
     // factor 6 for acute edge angles that need room as for star marker
 
     // The marker function needs to be linked with this shader
-    float r = $marker(gl_PointCoord, size, int(v_symbol));
+    vec2 pointcoord = $pointcoord;
+    float r = $marker(pointcoord, v_total_size, int(v_symbol));
 
     // it takes into account an antialising layer
     // of size u_antialias inside the edge
@@ -133,43 +179,8 @@ void main()
         discard;
     }
 
-    vec4 facecolor = v_bg_color;
-    vec4 edgecolor = vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a);
-    float depth_change = 0;
-
-    // change color and depth if spherical mode is active
-    if (u_spherical == true) {
-        // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
-        // and the aliasing ring has the same coordinates as the point just inside,
-        // which is important for lighting
-        vec2 texcoord = (gl_PointCoord * 2 - 1) * v_alias_ratio;
-        float x = clamp(texcoord.x, -1, 1);
-        float y = clamp(texcoord.y, -1, 1);
-        float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
-        vec3 normal = vec3(x, y, z);
-
-        // Diffuse color
-        float diffuse = dot(u_light_position, normal);
-        // clamp, because 0 < theta < pi/2
-        diffuse = clamp(diffuse, 0, 1);
-        vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
-
-        // Specular color
-        //   reflect light wrt normal for the reflected ray, then
-        //   find the angle made with the eye
-        vec3 eye = vec3(0, 0, -1);
-        float specular = dot(reflect(u_light_position, normal), eye);
-        specular = clamp(specular, 0, 1);
-        // raise to the material's shininess, multiply with a
-        // small factor for spread
-        specular = pow(specular, 80);
-        vec3 specular_color = u_light_color * specular;
-
-        facecolor = vec4(facecolor.rgb * diffuse_color + specular_color, facecolor.a * u_alpha);
-        edgecolor = vec4(edgecolor.rgb * diffuse_color + specular_color, edgecolor.a * u_alpha);
-        // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
-        depth_change = -0.5 * z * v_depth_middle;
-    }
+    vec4 facecolor = apply_lighting(pointcoord, v_bg_color);
+    vec4 edgecolor = apply_lighting(pointcoord, vec4(v_fg_color.rgb, edgealphafactor*v_fg_color.a));
 
     if (d < 0.0)
     {
@@ -205,7 +216,62 @@ void main()
             gl_FragColor = mix(facecolor, edgecolor, alpha);
         }
     }
+
+    // Apply depth change if spherical mode is active
+    write_depth(pointcoord);
+}
+"""
+
+_SPHERICAL_LIGHTING = """
+vec4 apply_lighting(vec2 pointcoord, vec4 color) {
+    // multiply by alias_ratio and then clamp, so we're back to non-alias coordinates
+    // and the aliasing ring has the same coordinates as the point just inside,
+    // which is important for lighting
+    vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
+    float x = clamp(texcoord.x, -1, 1);
+    float y = clamp(texcoord.y, -1, 1);
+    float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
+    vec3 normal = vec3(x, y, z);
+
+    // Diffuse color
+    float diffuse = dot(u_light_position, normal);
+    // clamp, because 0 < theta < pi/2
+    diffuse = clamp(diffuse, 0, 1);
+    vec3 diffuse_color = u_light_ambient + u_light_color * diffuse;
+
+    // Specular color
+    //   reflect light wrt normal for the reflected ray, then
+    //   find the angle made with the eye
+    vec3 eye = vec3(0, 0, -1);
+    float specular = dot(reflect(u_light_position, normal), eye);
+    specular = clamp(specular, 0, 1);
+    // raise to the material's shininess, multiply with a
+    // small factor for spread
+    specular = pow(specular, 80);
+    vec3 specular_color = u_light_color * specular;
+
+    return vec4(color.rgb * diffuse_color + specular_color, color.a * u_alpha);
+}
+
+void write_depth(vec2 pointcoord) {
+    // Compute depth change and write modified depth for spherical lighting
+    vec2 texcoord = (pointcoord * 2 - 1) * v_alias_ratio;
+    float x = clamp(texcoord.x, -1, 1);
+    float y = clamp(texcoord.y, -1, 1);
+    float z = sqrt(clamp(1 - x*x - y*y, 0, 1));
+    // TODO: figure out why this 0.5 is needed, despite already having the radius, not diameter
+    float depth_change = -0.5 * z * v_depth_middle;
     gl_FragDepth = gl_FragCoord.z + depth_change;
+}
+"""
+
+_FLAT_LIGHTING = """
+vec4 apply_lighting(vec2 pointcoord, vec4 color) {
+    return color;
+}
+
+void write_depth(vec2 pointcoord) {
+    // No-op: leave gl_FragDepth unmodified for early-Z optimization
 }
 """
 
@@ -533,6 +599,13 @@ class MarkersVisual(Visual):
         The coordinates of the light used to create the spherical effect.
     light_ambient : float
         The amount of ambient light used to create the spherical effect.
+    method : str
+        Rendering method for markers. Options are:
+
+        * 'points' (default): Use GL_POINTS primitive. Fast but may have
+          platform-specific size limitations.
+        * 'instanced': Use instanced rendering of quads. Works around point
+          size limitations on some platforms.
 
     Notes
     -----
@@ -549,10 +622,33 @@ class MarkersVisual(Visual):
     _symbol_shader = symbol_func
 
     def __init__(self, scaling="fixed", alpha=1, antialias=1, spherical=False,
-                 light_color='white', light_position=(1, -1, 1), light_ambient=0.3, **kwargs):
+                 light_color='white', light_position=(1, -1, 1), light_ambient=0.3,
+                 method='points', **kwargs):
         self._vbo = VertexBuffer()
+        self._quad_vbo = None
         self._data = None
         self._scaling = "fixed"
+        self._canvas_size_limits = None
+
+        if method not in ('points', 'instanced'):
+            raise ValueError(f"method must be 'points' or 'instanced', got {method!r}")
+
+        self._method = method
+
+        # Set up quad vertices for instanced rendering
+        if method == 'instanced':
+            # instancing draws a small quad for each marker
+            # Use 4 vertices with TRIANGLE_STRIP (no index buffer needed!)
+            # TRIANGLE_STRIP automatically forms 2 triangles from 4 vertices
+            # Order: bottom-left, bottom-right, top-left, top-right
+            # Forms triangles: (0,1,2) and (2,1,3) with auto-reversed winding
+            quad_vertices = np.array([
+                [-0.5, -0.5],  # 0: bottom-left
+                [0.5, -0.5],   # 1: bottom-right
+                [-0.5, 0.5],   # 2: top-left
+                [0.5, 0.5],    # 3: top-right
+            ], dtype=np.float32)
+            self._quad_vbo = VertexBuffer(quad_vertices)
 
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         self._symbol_func = Function(self._symbol_shader)
@@ -561,10 +657,51 @@ class MarkersVisual(Visual):
         self.shared_program.vert['v_size'] = self._v_size_var
         self.shared_program.frag['v_size'] = self._v_size_var
         self._symbol_func['v_size'] = self._v_size_var
+        self.shared_program['u_canvas_size_min'] = -1.0
+        self.shared_program['u_canvas_size_max'] = -1.0
+
+        if method == 'instanced':
+            self._draw_mode = 'triangle_strip'
+
+            # instanced mode, use v_texcoord instead of gl_PointCoord
+            setup_texcoord_func = Function("""
+                void setup_texcoord() {
+                    vec2 coord = $a_quad_pos + 0.5;
+                    coord.y = 1.0 - coord.y;
+                    $v_texcoord = coord;
+                }
+            """)
+
+            # offset the framebuffer position to match gl_PointSize behavior (but without aliasing)
+            apply_offset_func = Function("""
+                vec4 apply_offset(vec4 fb_pos, float total_size) {
+                    vec2 offset = $a_quad_pos * total_size;
+                    return fb_pos + vec4(offset, 0, 0);
+                }
+            """)
+
+            v_texcoord_var = Variable('varying vec2 v_texcoord')
+            setup_texcoord_func['v_texcoord'] = v_texcoord_var
+            frag_pointcoord = v_texcoord_var
+
+            setup_texcoord_func['a_quad_pos'] = self._quad_vbo
+            apply_offset_func['a_quad_pos'] = self._quad_vbo
+        else:
+            self._draw_mode = 'points'
+            # GL_POINTS mode: noop setup, no offset, use gl_PointCoord for pointcoord
+            setup_texcoord_func = Function("void setup_texcoord() {}")
+            apply_offset_func = Function("vec4 apply_offset(vec4 fb_pos, float total_size) { return fb_pos; }")
+
+            frag_pointcoord = "gl_PointCoord"
+
+        self.shared_program.vert['setup_texcoord'] = setup_texcoord_func
+        self.shared_program.vert['apply_offset'] = apply_offset_func
+        self.shared_program.frag['pointcoord'] = frag_pointcoord
+
+        self._setup_lighting_functions(spherical)
 
         self.set_gl_state(depth_test=True, blend=True,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self._draw_mode = 'points'
 
         self.events.add(data_updated=Event)
 
@@ -580,6 +717,119 @@ class MarkersVisual(Visual):
         self.spherical = spherical
 
         self.freeze()
+
+    def _setup_lighting_functions(self, spherical):
+        """Set up lighting and depth functions based on spherical mode."""
+        lighting_functions = _SPHERICAL_LIGHTING if spherical else _FLAT_LIGHTING
+        self.shared_program.frag['lighting_functions'] = lighting_functions
+
+    def _prepare_edge_width(self, edge_width, edge_width_rel):
+        """Validate and return edge width parameters."""
+        if edge_width is not None and edge_width_rel is not None:
+            raise ValueError("either edge_width or edge_width_rel "
+                             "should be provided, not both")
+
+        if edge_width is None and edge_width_rel is None:
+            return np.asarray(1.0), None
+
+        if edge_width is not None:
+            edge_width = np.asarray(edge_width)
+            if np.any(edge_width < 0):
+                raise ValueError('edge_width cannot be negative')
+            return edge_width, None
+        else:
+            edge_width_rel = np.asarray(edge_width_rel)
+            if np.any(edge_width_rel < 0):
+                raise ValueError('edge_width_rel cannot be negative')
+            return None, edge_width_rel
+
+    def _prepare_colors(self, edge_color, face_color):
+        """Prepare and normalize color arrays."""
+        edge_color = ColorArray(edge_color).rgba
+        if len(edge_color) == 1:
+            edge_color = edge_color[0]
+
+        face_color = ColorArray(face_color).rgba
+        if len(face_color) == 1:
+            face_color = face_color[0]
+
+        return edge_color, face_color
+
+    def _prepare_symbol_values(self, symbol, n):
+        """Convert symbol names to numeric values and broadcast."""
+        if symbol is None:
+            return np.zeros(n, dtype=np.float32)
+
+        if isinstance(symbol, str):
+            symbol = [symbol]
+
+        try:
+            symbol_values = np.array([self._symbol_shader_values[x] for x in symbol], dtype=np.float32)
+            if len(symbol_values) == 1:
+                symbol_values = np.full(n, symbol_values[0], dtype=np.float32)
+            return symbol_values
+        except KeyError:
+            raise ValueError(f'symbols must one of {self.symbols}')
+
+    def _prepare_data_dict(self, pos, size, edge_width, edge_width_rel,
+                           edge_color, face_color, symbol):
+        """Prepare attribute data as a dictionary."""
+        assert (isinstance(pos, np.ndarray) and
+                pos.ndim == 2 and pos.shape[1] in (2, 3))
+
+        n = len(pos)
+
+        position = np.zeros((n, 3), dtype=np.float32)
+        position[:, :pos.shape[1]] = pos
+
+        symbol_values = self._prepare_symbol_values(symbol, n)
+
+        edgewidth = edge_width if edge_width is not None else size * edge_width_rel
+
+        size_array = _broadcast_scalar(size, n)
+        edgewidth_array = _broadcast_scalar(edgewidth, n)
+        edge_color_array = _broadcast_color(edge_color, n)
+        face_color_array = _broadcast_color(face_color, n)
+
+        return {
+            'a_position': position,
+            'a_fg_color': edge_color_array,
+            'a_bg_color': face_color_array,
+            'a_size': size_array,
+            'a_edgewidth': edgewidth_array,
+            'a_symbol': symbol_values,
+        }
+
+    def _upload_data(self, data_dict):
+        """Upload data using interleaved buffer for both points and instanced rendering."""
+        n = len(data_dict['a_position'])
+
+        # Create a single structured array for all attributes (interleaved layout)
+        structured_data = np.zeros(n, dtype=[
+            ('a_position', np.float32, 3),
+            ('a_fg_color', np.float32, 4),
+            ('a_bg_color', np.float32, 4),
+            ('a_size', np.float32),
+            ('a_edgewidth', np.float32),
+            ('a_symbol', np.float32)
+        ])
+
+        # Copy attribute data into structured array
+        for attr_name, attr_data in data_dict.items():
+            structured_data[attr_name] = attr_data
+
+        self._data = structured_data
+
+        # Upload to VBO
+        self._vbo.set_data(structured_data)
+
+        # Create views and assign to program
+        # For instanced rendering, set divisor=1 on each view
+        divisor = 1 if self._method == 'instanced' else None
+        for name in structured_data.dtype.names:
+            view = self._vbo[name]
+            view.divisor = divisor
+            self.shared_program[name] = view
 
     def set_data(self, pos=None, size=10., edge_width=None, edge_width_rel=None,
                  edge_color='black', face_color='white',
@@ -606,62 +856,23 @@ class MarkersVisual(Visual):
         symbol : str or array
             The style of symbol used to draw each marker (see Notes).
         """
-        if edge_width is not None and edge_width_rel is not None:
-            raise ValueError("either edge_width or edge_width_rel "
-                             "should be provided, not both")
-        elif edge_width is None and edge_width_rel is None:
-            edge_width = 1.0
+        edge_width, edge_width_rel = self._prepare_edge_width(edge_width, edge_width_rel)
+        edge_color, face_color = self._prepare_colors(edge_color, face_color)
 
-        if edge_width is not None:
-            edge_width = np.asarray(edge_width)
-            if np.any(edge_width < 0):
-                raise ValueError('edge_width cannot be negative')
+        if pos is not None and len(pos):
+            data_dict = self._prepare_data_dict(
+                pos,
+                size,
+                edge_width,
+                edge_width_rel,
+                edge_color,
+                face_color,
+                symbol,
+            )
+
+            self._upload_data(data_dict)
         else:
-            edge_width_rel = np.asarray(edge_width_rel)
-            if np.any(edge_width_rel < 0):
-                raise ValueError('edge_width_rel cannot be negative')
-
-        edge_color = ColorArray(edge_color).rgba
-        if len(edge_color) == 1:
-            edge_color = edge_color[0]
-
-        face_color = ColorArray(face_color).rgba
-        if len(face_color) == 1:
-            face_color = face_color[0]
-
-        if pos is not None:
-            assert (isinstance(pos, np.ndarray) and
-                    pos.ndim == 2 and pos.shape[1] in (2, 3))
-
-            n = len(pos)
-            data = np.zeros(n, dtype=[('a_position', np.float32, 3),
-                                      ('a_fg_color', np.float32, 4),
-                                      ('a_bg_color', np.float32, 4),
-                                      ('a_size', np.float32),
-                                      ('a_edgewidth', np.float32),
-                                      ('a_symbol', np.float32)])
-            data['a_fg_color'] = edge_color
-            data['a_bg_color'] = face_color
-            if edge_width is not None:
-                data['a_edgewidth'] = edge_width
-            else:
-                data['a_edgewidth'] = size * edge_width_rel
-            data['a_position'][:, :pos.shape[1]] = pos
-            data['a_size'] = size
-
-            if symbol is None:
-                data["a_symbol"] = np.array(None)
-            else:
-                if isinstance(symbol, str):
-                    symbol = [symbol]
-                try:
-                    data['a_symbol'] = np.array([self._symbol_shader_values[x] for x in symbol])
-                except KeyError:
-                    raise ValueError(f'symbols must one of {self.symbols}')
-
-            self._data = data
-            self._vbo.set_data(data)
-            self.shared_program.bind(self._vbo)
+            self._data = None
 
         self.events.data_updated()
         self.update()
@@ -795,6 +1006,48 @@ class MarkersVisual(Visual):
     def spherical(self, value):
         self.shared_program['u_spherical'] = value
         self._spherical = value
+        self._setup_lighting_functions(value)
+        self.update()
+
+    @property
+    def canvas_size_limits(self):
+        """
+        Tuple of (min, max) size limits for markers in canvas pixels.
+
+        If set, marker sizes will be clamped to this range. This is useful
+        for preventing markers from becoming too large or too small when
+        zooming with scene/visual scaling.
+
+        Either min or max can be None to clamp only one side.
+        Set to None to disable clamping entirely (default).
+
+        Returns
+        -------
+        tuple or None
+            (min_size, max_size) or None if clamping is disabled.
+        """
+        return self._canvas_size_limits
+
+    @canvas_size_limits.setter
+    def canvas_size_limits(self, value):
+        if value is not None:
+            if not isinstance(value, (tuple, list)) or len(value) != 2:
+                raise ValueError("canvas_size_limits must be a tuple of (min, max) or None")
+            min_val, max_val = value
+            if min_val is not None and min_val < 0:
+                raise ValueError("canvas_size_limits min must be non-negative or None")
+            if max_val is not None and max_val < 0:
+                raise ValueError("canvas_size_limits max must be non-negative or None")
+            if min_val is not None and max_val is not None and min_val > max_val:
+                raise ValueError("canvas_size_limits min must be <= max")
+        self._canvas_size_limits = value
+        self._update_canvas_size_clamping()
+
+    def _update_canvas_size_clamping(self):
+        """Update the canvas size clamping uniforms."""
+        min_size, max_size = self._canvas_size_limits or (None, None)
+        self.shared_program['u_canvas_size_min'] = float(min_size) if min_size is not None else -1.0
+        self.shared_program['u_canvas_size_max'] = float(max_size) if max_size is not None else -1.0
         self.update()
 
     def _prepare_transforms(self, view):
@@ -817,3 +1070,19 @@ class MarkersVisual(Visual):
             return (pos[:, axis].min(), pos[:, axis].max())
         else:
             return (0, 0)
+
+
+def _broadcast_scalar(value, n, dtype=np.float32):
+    """Broadcast scalar or array to length n."""
+    array = np.asarray(value, dtype=dtype)
+    if array.ndim == 0:
+        return np.full(n, array, dtype=dtype)
+    return array
+
+
+def _broadcast_color(color, n, dtype=np.float32):
+    """Broadcast color (4,) to (n, 4) or return (n, 4) as-is."""
+    array = np.asarray(color, dtype=dtype)
+    if array.ndim == 1:
+        return np.tile(array, (n, 1))
+    return array

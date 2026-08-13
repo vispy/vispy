@@ -60,8 +60,9 @@ class ArcballCamera(Base3DRotationCamera):
         if self._event_value is None:
             self._event_value = p2
         wh = self._viewbox.size
+        p1 = self._event_value[:2]
         self._quaternion = (Quaternion(*_arcball(p2, wh)) *
-                            Quaternion(*_arcball(self._event_value, wh)) *
+                            Quaternion(*_arcball(p1, wh)) *
                             self._quaternion)
         self._event_value = p2
         self.view_changed()

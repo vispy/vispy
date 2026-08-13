@@ -3,11 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.#!/usr/bin/env python3
 from ..util import _straight_line_vertices, issparse
 import numpy as np
-try:
-    import networkx as nx
-except ModuleNotFoundError:
-    nx = None
-
 
 class NetworkxCoordinates:
     def __init__(self, graph=None, layout=None, **kwargs):
@@ -24,7 +19,9 @@ class NetworkxCoordinates:
         kwargs: dict, optional
         when layout is :str: :kwargs: will act as a setting dictionary for the layout function of networkx
         """
-        if nx is None:
+        try:
+            import networkx as nx
+        except ModuleNotFoundError:
             raise ValueError("networkx not found, please install networkx to use its layouts")
         if isinstance(graph, type(None)):
             raise ValueError("Requires networkx input")

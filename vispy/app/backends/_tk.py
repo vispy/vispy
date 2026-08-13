@@ -95,7 +95,7 @@ KEYMAP = {
     65481: keys.F12,
 }
 
-# e.state -> vispy
+# e.state -> vispy keyboard modifiers
 KEY_STATE_MAP = {
     0x0001: keys.SHIFT,
     # 0x0002: CAPSLOCK,
@@ -108,6 +108,13 @@ KEY_STATE_MAP = {
     # 0x0200: ?,  # Mouse button 2.
     # 0x0400: ?,  # Mouse button 3.
     0x20000: keys.ALT  # LEFT_ALT ?
+}
+
+# e.state -> vispy mouse buttons pressed
+MOUSE_STATE_MAP = {
+    0x0100: 1,  # Left mouse
+    0x0200: 3,  # Middle mouse
+    0x0400: 2,  # Right mouse
 }
 
 # e.num -> vispy
@@ -531,7 +538,10 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
             self.bind_all("<MouseWheel>", self._on_mouse_wheel)
 
         self._vispy_mouse_move(
-            pos=(e.x, e.y), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            buttons=self._pressed_mouse_buttons(e.state),
+            modifiers=self._parse_state(e),
+        )
 
     def _on_mouse_leave(self, e):
         """Event callback when the mouse leaves the canvas.
@@ -561,7 +571,7 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if self._vispy_canvas is None:
             return
         self._vispy_mouse_move(
-            pos=(e.x, e.y), modifiers=self._parse_state(e))
+            pos=(e.x, e.y), buttons=self._pressed_mouse_buttons(e.state), modifiers=self._parse_state(e))
 
     def _on_mouse_wheel(self, e):
         """Event callback when the mouse wheel changes within the canvas.
@@ -578,7 +588,14 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
             e.delta = {4: 120, 5: -120}.get(e.num, 0)
         self._vispy_canvas.events.mouse_wheel(
             delta=(0.0, float(e.delta / 120)),
-            pos=(e.x, e.y), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            buttons=self._pressed_mouse_buttons(e.state),
+            modifiers=self._parse_state(e),
+        )
+
+    def _pressed_mouse_buttons(self, state: int) -> list[int]:
+        """Determine which mouse buttons are currently pressed based on the tkinter event state."""
+        return [key for mask, key in MOUSE_STATE_MAP.items() if state & mask]
 
     def _on_mouse_button_press(self, e):
         """Event callback when a mouse button is pressed within the canvas.
@@ -594,7 +611,11 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if _tk_on_linux and e.num in (4, 5):
             return
         self._vispy_mouse_press(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            button=MOUSE_BUTTON_MAP.get(e.num, e.num),
+            buttons=self._pressed_mouse_buttons(e.state),
+            modifiers=self._parse_state(e),
+        )
 
     def _vispy_detect_double_click(self, e):
         """Override base class function
@@ -616,7 +637,11 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if _tk_on_linux and e.num in (4, 5):
             return
         self._vispy_mouse_double_click(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            button=MOUSE_BUTTON_MAP.get(e.num, e.num),
+            buttons=self._pressed_mouse_buttons(e.state),
+            modifiers=self._parse_state(e),
+        )
 
     def _on_mouse_button_release(self, e):
         """Event callback when a mouse button is released within the canvas.
@@ -632,7 +657,11 @@ class CanvasBackend(BaseCanvasBackend, OpenGLFrame):
         if _tk_on_linux and e.num in (4, 5):
             return
         self._vispy_mouse_release(
-            pos=(e.x, e.y), button=MOUSE_BUTTON_MAP.get(e.num, e.num), modifiers=self._parse_state(e))
+            pos=(e.x, e.y),
+            button=MOUSE_BUTTON_MAP.get(e.num, e.num),
+            buttons=self._pressed_mouse_buttons(e.state),
+            modifiers=self._parse_state(e),
+        )
 
     def _on_key_down(self, e):
         """Event callback when a key is pressed within the canvas or window.

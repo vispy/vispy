@@ -395,6 +395,8 @@ class ImageVisual(Visual):
         self._data = data
         self._need_texture_upload = True
 
+        self.update()
+
     def view(self):
         """Get the :class:`vispy.visuals.visual.VisualView` for this visual."""
         v = Visual.view(self)

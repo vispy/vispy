@@ -11,7 +11,7 @@ organization (designated below), you represent that you have the authority to bi
 
 | **NAME**        | **Organization** |
 |-----------------|------------------|
-| Lorenzo Gaisfas | N/A              |
+| Lorenzo Gaifas  | N/A              |
 | David Hoese     | N/A              |
 | Almar Klein     | N/A              |
 | Kai Mühlbauer   | N/A              |

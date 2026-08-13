@@ -13,13 +13,7 @@ reach a state which requires the minimum energy.
 
 import numpy as np
 
-try:
-    from scipy.sparse import issparse
-except ImportError:
-    def issparse(*args, **kwargs):
-        return False
-
-from ..util import _straight_line_vertices, _rescale_layout
+from ..util import _straight_line_vertices, _rescale_layout, issparse
 
 
 class fruchterman_reingold(object):

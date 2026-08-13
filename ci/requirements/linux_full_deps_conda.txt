@@ -16,7 +16,7 @@ pysdl2
 pytest
 pytest-cov
 pytest-sugar
-pyopengl!=3.1.7,!=3.1.8,!=3.1.9
+pyopengl
 scikit-image
 scipy
 networkx

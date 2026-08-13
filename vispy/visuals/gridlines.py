@@ -18,6 +18,7 @@ uniform float u_border_width;
 vec4 grid_color(vec2 pos) {
     vec4 px_pos = $map_to_doc(vec4(pos, 0, 1));
     px_pos /= px_pos.w;
+    gl_FragDepth = px_pos.z * 0.5 + 0.5;
 
     // Compute vectors representing width, height of pixel in local coords
     vec4 local_pos = $map_doc_to_local(px_pos);

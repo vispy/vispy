@@ -2,7 +2,7 @@ name: cibuildwheel
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
 # https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
+  group: wheel-${{ github.ref }}-${{ github.event.type }}
   cancel-in-progress: true
 
 on: [push, pull_request]
@@ -14,20 +14,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2019, macOS-latest, macos-13, ubuntu-24.04-arm]
+        os: [ubuntu-latest, windows-2025, macos-15, macos-15-intel, ubuntu-24.04-arm]
         arch: [auto]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Set up QEMU
       if: ${{ matrix.arch == 'aarch64' }}
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.23.3
+      uses: pypa/cibuildwheel@v4.1.0
       env:
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: wheels-${{ matrix.os }}-${{ matrix.arch }}
         path: ./wheelhouse/*.whl
@@ -36,10 +36,10 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       name: Install Python
       with:
         python-version: '3.9'
@@ -48,7 +48,7 @@ jobs:
         python -m pip install --upgrade pip setuptools build wheel
         python -m pip install numpy Cython
         python -m build -s -o dist/
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: sdist
         path: dist/*.tar.gz
@@ -57,11 +57,11 @@ jobs:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: sdist
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: wheels-*
           merge-multiple: true
@@ -78,7 +78,12 @@ jobs:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
+        with:
+          name: sdist
+          path: dist
+
+      - uses: actions/download-artifact@v8
         with:
           pattern: wheels-*
           merge-multiple: true
