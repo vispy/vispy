@@ -574,7 +574,8 @@ def test_volume_rgb_draw():
 
 @requires_pyopengl()
 @requires_application()
-@pytest.mark.parametrize('method_name', ['mip', 'translucent', 'additive', 'average'])
+@pytest.mark.parametrize('method_name', ['mip', 'minip', 'attenuated_mip',
+                                         'translucent', 'additive', 'average'])
 def test_volume_rgb_render_methods(method_name):
     """Test RGB volume rendering across supported methods."""
     size = (40, 40)

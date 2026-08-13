@@ -125,22 +125,23 @@ float rand(vec2 co)
 float colorToVal(vec4 color1)
 {
     if (u_rgb_mode == 1)
+        // perceptual luminance, a good approach to transform rgb into a single
+        // value for things like gradient calculations in isosurface
         return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
     return color1.r;
 }
 
 vec4 applyColormap(vec4 color) {
+    // clim and gamma are applied identically in both modes: per channel for rgb
+    // data, and to the single (red) channel for scalar data.
+    color.rgb = clamp(color.rgb, min(clim.x, clim.y), max(clim.x, clim.y));
+    color.rgb = (color.rgb - clim.x) / (clim.y - clim.x);
+    color.rgb = pow(color.rgb, vec3(gamma));
     if (u_rgb_mode == 1) {
-        color.rgb = clamp(color.rgb, min(clim.x, clim.y), max(clim.x, clim.y));
-        color.rgb = (color.rgb - clim.x) / (clim.y - clim.x);
-        color.rgb = pow(color.rgb, vec3(gamma));
-        color.a = 1.0;
-        return color;
+        // no colormapping, the rgb values are used directly
+        return vec4(color.rgb, 1.0);
     }
-    float data = color.r;
-    data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
-    data = (data - clim.x) / (clim.y - clim.x);
-    return $cmap(pow(data, gamma));
+    return $cmap(color.r);
 }
 
 
@@ -399,6 +400,9 @@ _MIP_SNIPPETS = dict(
             vec3 max_loc_tex = start_loc_refine;
 
             vec3 small_step = step * 0.1;
+            // the coarse pass only kept the max *value*, so re-sample its
+            // location to get the color it belongs to; the refinement below
+            // replaces it only if it finds something brighter
             vec4 maxcolor = $get_data(start_loc + step * float(maxi));
             for (int i=0; i<10; i++) {
                 vec4 scolor = $get_data(loc);
@@ -425,6 +429,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         float scale = 0.0; // The cumulative attenuation
         int maxi = -1;  // Where the maximum value was encountered
         vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
+        vec4 maxcolor = vec4(0.0);  // The attenuated color at that location
         """,
     in_loop="""
         // Scale and clamp accumulation in `sumval` by contrast limits so that:
@@ -437,6 +442,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
             iter = nsteps;
         } else if( val * scale > maxval ) {
             maxval = val * scale;
+            maxcolor = color * scale;
             maxi = iter;
             max_loc_tex = loc;
         }
@@ -444,7 +450,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     after_loop="""
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap($get_data(max_loc_tex));
+            gl_FragColor = applyColormap(maxcolor);
         }
         else {
             discard;
@@ -478,6 +484,8 @@ _MINIP_SNIPPETS = dict(
             vec3 min_loc_tex = start_loc_refine;
 
             vec3 small_step = step * 0.1;
+            // see the MIP snippet: re-sample the coarse pass' min location to
+            // recover its color
             vec4 mincolor = $get_data(start_loc + step * float(mini));
             for (int i=0; i<10; i++) {
                 vec4 scolor = $get_data(loc);
