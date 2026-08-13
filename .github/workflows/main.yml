@@ -277,8 +277,6 @@ jobs:
 
         time conda create \
           --solver libmamba \
-          --dry-run \
-          -vvv \
           -y \
           -n vispy-tests \
           "python=${{ matrix.python_version }}" \
