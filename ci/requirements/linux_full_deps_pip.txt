@@ -1,2 +1,2 @@
 pyopengltk
-scikit-image=0.24.0
+scikit-image==0.24.0
