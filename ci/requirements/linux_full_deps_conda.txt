@@ -19,5 +19,4 @@ pytest-sugar
 pyopengl
 hsluv
 kiwisolver
-sphinx-gallery
 jupyter-rfb
