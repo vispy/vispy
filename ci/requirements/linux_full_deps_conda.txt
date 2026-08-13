@@ -20,4 +20,4 @@ pyopengl
 hsluv
 kiwisolver
 #sphinx-gallery
-#jupyter-rfb
+jupyter-rfb
