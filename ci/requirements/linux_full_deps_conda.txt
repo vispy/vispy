@@ -12,6 +12,8 @@ networkx=3.2.1
 numpy=2.0.2
 pillow
 pysdl2
+pyqt=5.15.11
+qt-main=5.15.15
 pytest
 pytest-cov
 pytest-sugar
