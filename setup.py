@@ -23,7 +23,6 @@ Announcing:
 """
 
 import os
-import sys
 from os import path as op
 from setuptools import setup, find_packages
 
