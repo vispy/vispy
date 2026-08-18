@@ -61,8 +61,6 @@ extensions = [Extension('vispy.visuals.text._sdf_cpu',
               ]
 
 install_requires = ['numpy', 'freetype-py', 'hsluv', 'kiwisolver', 'packaging']
-if sys.version_info < (3, 9):
-    install_requires.append("importlib-resources")
 
 readme = open('README.rst', 'r').read()
 setup(
@@ -96,7 +94,7 @@ setup(
     long_description_content_type='text/x-rst',
     platforms='any',
     provides=['vispy'],
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     install_requires=install_requires,
     extras_require={
         'ipython-static': ['ipython'],
