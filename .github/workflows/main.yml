@@ -210,12 +210,12 @@ jobs:
             deps: "full"
             test: "standard"
             new_qt: true
-          - test_number: 6
+          - test_number: 7
             python_version: "3.14"
             deps: "full"
             test: "standard"
             new_qt: false
-          - test_number: 7
+          - test_number: 8
             python_version: "3.14"
             deps: "full"
             test: "standard"
