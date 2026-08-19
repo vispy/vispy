@@ -210,6 +210,16 @@ jobs:
             deps: "full"
             test: "standard"
             new_qt: true
+          - test_number: 6
+            python_version: "3.14"
+            deps: "full"
+            test: "standard"
+            new_qt: false
+          - test_number: 7
+            python_version: "3.14"
+            deps: "full"
+            test: "standard"
+            new_qt: true
     steps:
     - uses: actions/checkout@v6
       with:
