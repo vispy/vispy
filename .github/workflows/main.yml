@@ -100,6 +100,8 @@ jobs:
           ${{ runner.os }}-data-${{ env.cache-name }}-
     - name: Prepare System Environment
       id: vars
+      # This is added because lately it happened more than once that ubuntu mirrors are slow and run for more than 2h
+      timeout-minutes: 2
       run: |
         # opengl system libraries
         sudo apt-get update;
@@ -226,6 +228,8 @@ jobs:
           ${{ runner.os }}-data-${{ env.cache-name }}-
     - name: Prepare System Environment
       id: vars
+      # This is added because lately it happened more than once that ubuntu mirrors are slow and run for more than 2h
+      timeout-minutes: 2
       run: |
         # opengl system libraries
         if [ "${{ matrix.deps }}" == 'full' ]; then
