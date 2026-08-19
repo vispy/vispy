@@ -56,7 +56,7 @@ def _load_glyph(f, char, glyphs_dict):
     height = face.glyph.bitmap.rows
     bitmap = np.array(bitmap.buffer)
     w0 = bitmap.size // height if bitmap.size > 0 else 0
-    bitmap.shape = (height, w0)
+    bitmap = bitmap.reshape(height, w0)
     bitmap = bitmap[:, :width].astype(np.ubyte)
 
     left = face.glyph.bitmap_left

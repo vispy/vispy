@@ -52,9 +52,9 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
-        python-version: 3.9
+        python-version: 3.12
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -100,6 +100,8 @@ jobs:
           ${{ runner.os }}-data-${{ env.cache-name }}-
     - name: Prepare System Environment
       id: vars
+      # This is added because lately it happened more than once that ubuntu mirrors are slow and run for more than 2h
+      timeout-minutes: 10
       run: |
         # opengl system libraries
         sudo apt-get update;
@@ -117,7 +119,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v4
       with:
         miniforge-version: latest
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
         channels: conda-forge
         conda-remove-defaults: true
         channel-priority: strict
@@ -179,22 +181,32 @@ jobs:
       matrix:
         include:
           - test_number: 1
-            python_version: "3.9"
+            python_version: "3.10"
             deps: "min"
             test: "standard"
             new_qt: false
           - test_number: 2
-            python_version: "3.9"
+            python_version: "3.10"
             deps: "full"
             test: "standard"
             new_qt: false
           - test_number: 3
-            python_version: "3.9"
+            python_version: "3.10"
+            deps: "full"
+            test: "standard"
+            new_qt: true
+          - test_number: 4
+            python_version: "3.10"
             deps: "osmesa"
             test: "osmesa"
             new_qt: false
-          - test_number: 4
-            python_version: "3.10"
+          - test_number: 5
+            python_version: "3.12"
+            deps: "full"
+            test: "standard"
+            new_qt: false
+          - test_number: 6
+            python_version: "3.12"
             deps: "full"
             test: "standard"
             new_qt: true
@@ -216,6 +228,8 @@ jobs:
           ${{ runner.os }}-data-${{ env.cache-name }}-
     - name: Prepare System Environment
       id: vars
+      # This is added because lately it happened more than once that ubuntu mirrors are slow and run for more than 2h
+      timeout-minutes: 2
       run: |
         # opengl system libraries
         if [ "${{ matrix.deps }}" == 'full' ]; then
