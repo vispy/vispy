@@ -101,7 +101,7 @@ jobs:
     - name: Prepare System Environment
       id: vars
       # This is added because lately it happened more than once that ubuntu mirrors are slow and run for more than 2h
-      timeout-minutes: 2
+      timeout-minutes: 10
       run: |
         # opengl system libraries
         sudo apt-get update;
