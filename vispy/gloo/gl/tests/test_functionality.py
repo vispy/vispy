@@ -548,7 +548,7 @@ def _check_result(assert_result=True):
     x, y, w, h = gl.glGetParameter(gl.GL_VIEWPORT)
     data = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
     im = np.frombuffer(data, np.uint8)
-    im.shape = h, w, 3
+    im = im.reshape(h, w, 3)
 
     # Get center pixel from each quadrant
     pix1 = tuple(im[int(1*h/4), int(1*w/4)])
