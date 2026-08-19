@@ -155,7 +155,18 @@ def test_run():
             @c.events.draw.connect
             def draw(event):
                 print(event)  # test event __repr__
-                c.app.quit()
+                if c.app.backend_name.lower() in (
+                        "pyqt4",
+                        "pyqt5",
+                        "pyqt6",
+                        "pyside",
+                        "pyside2",
+                        "pyside6",
+                ):
+                    from vispy.app.backends._qt import QtCore
+                    QtCore.QTimer.singleShot(0, c.app.quit)
+                else:
+                    c.app.quit()
             c.update()
             c.app.run()
         c.app.quit()  # make sure it doesn't break if a user quits twice
