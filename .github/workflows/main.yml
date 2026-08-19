@@ -188,7 +188,7 @@ jobs:
             deps: "full"
             test: "standard"
             new_qt: false
-          - test_number: 2
+          - test_number: 3
             python_version: "3.10"
             deps: "full"
             test: "standard"
@@ -198,6 +198,16 @@ jobs:
             deps: "osmesa"
             test: "osmesa"
             new_qt: false
+          - test_number: 4
+            python_version: "3.12"
+            deps: "full"
+            test: "standard"
+            new_qt: false
+          - test_number: 5
+            python_version: "3.12"
+            deps: "full"
+            test: "standard"
+            new_qt: true
     steps:
     - uses: actions/checkout@v6
       with:
