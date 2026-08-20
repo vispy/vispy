@@ -446,7 +446,6 @@ class TextVisual(Visual):
         self.rotation = rotation
         self.scaling = scaling
         self._text_scale = STTransform()
-        self._scaling_reference_scale = None
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -488,7 +487,6 @@ class TextVisual(Visual):
     @font_size.setter
     def font_size(self, size):
         self._font_size = max(0.0, float(size))
-        self._scaling_reference_scale = None
         self.update()
 
     @property
@@ -554,13 +552,14 @@ class TextVisual(Visual):
         if coord.shape[0] == 2:
             coord = np.array([coord[0], coord[1], 0.0])
         p = coord
-        # jacobian by finite differences: step 1 unit in each axis direction, then
+        # jacobian by finite differences: step a small amount unit in each axis direction, then
         # apply the transform which gives us the clip coordinates
+        e = 1e-6
         pts = np.array([
             [p[0],     p[1],     p[2],     1],
-            [p[0] + 1, p[1],     p[2],     1],
-            [p[0],     p[1] + 1, p[2],     1],
-            [p[0],     p[1],     p[2] + 1, 1],
+            [p[0] + e, p[1],     p[2],     1],
+            [p[0],     p[1] + e, p[2],     1],
+            [p[0],     p[1],     p[2] + e, 1],
         ])
         clip = tr.map(pts)
         w = clip[:, 3]
@@ -568,7 +567,7 @@ class TextVisual(Visual):
         # non-positive clip.w means the anchor is on/behind the camera's
         # focal plane; there is no well-defined on-screen size, so report 0.
         if np.any(w <= 0):
-            return 0.0
+            return 0
 
         # ndc coordinates to account for FOV
         ndc = clip[:, :2] / w[:, None]
@@ -576,7 +575,7 @@ class TextVisual(Visual):
         # which gives us the full "stretch" of the unit in this position
         disp = ndc[1:] - ndc[0]
         s = np.linalg.norm(disp, axis=1)
-        return float(np.sqrt(np.sum(s * s)))
+        return float(np.sqrt(np.sum(s**2)))
 
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
@@ -671,7 +670,6 @@ class TextVisual(Visual):
                 if camera is not None:
                     break
                 node = getattr(node, 'parent', None)
-
             ref_point = getattr(camera, 'center', None)
             if ref_point is None:
                 ref_point = anchor_point
@@ -684,9 +682,11 @@ class TextVisual(Visual):
             view_scale = self._world_scale(tr_full, anchor_point)
             ref_scale = self._world_scale(tr_full, ref_point)
 
-            self._scaling_reference_scale = self._scaling_reference_scale or ref_scale
-            if self._scaling_reference_scale and view_scale:
-                scale = scale * (view_scale / self._scaling_reference_scale)
+            if ref_scale and view_scale:
+                scale = scale * (view_scale / ref_scale)
+            else:
+                # we're behind the camera, just drop it
+                scale = 0
         self._text_scale.scale = scale
         self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
@@ -743,7 +743,6 @@ class TextVisual(Visual):
     @scaling.setter
     def scaling(self, value):
         self._scaling = bool(value)
-        self._scaling_reference_scale = None
         self.update()
 
 
