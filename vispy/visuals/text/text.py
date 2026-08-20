@@ -545,22 +545,22 @@ class TextVisual(Visual):
 
         tr is the full visual->render transform (the camera projection plus
         the canvas mapping).
-
+ 
         Returns the scale for how much the text grows/shrinks with the scene.
         """
         coord = np.asarray(coord, dtype=np.float64)
         if coord.shape[0] == 2:
             coord = np.array([coord[0], coord[1], 0.0])
         p = coord
-        # jacobian by finite differences: step a small amount unit in each axis direction, then
-        # apply the transform which gives us the clip coordinates
+        # jacobian by finite differences along the world x and y axes (the
+        # screen plane); e is a small step
         e = 1e-6
         pts = np.array([
-            [p[0],     p[1],     p[2],     1],
-            [p[0] + e, p[1],     p[2],     1],
-            [p[0],     p[1] + e, p[2],     1],
-            [p[0],     p[1],     p[2] + e, 1],
+            [p[0],     p[1], p[2], 1],
+            [p[0] + e, p[1], p[2], 1],
+            [p[0],     p[1] + e, p[2], 1],
         ])
+        # map from screen coords to world coords
         clip = tr.map(pts)
         w = clip[:, 3]
 
@@ -569,13 +569,15 @@ class TextVisual(Visual):
         if np.any(w <= 0):
             return 0
 
-        # ndc coordinates to account for FOV
+        # ndc coordinates to account for zoom and FOV
         ndc = clip[:, :2] / w[:, None]
         # subtracting the original points gives us the displacement in each axis direction,
         # which gives us the full "stretch" of the unit in this position
-        disp = ndc[1:] - ndc[0]
-        s = np.linalg.norm(disp, axis=1)
-        return float(np.sqrt(np.sum(s**2)))
+        disp_x = (ndc[1] - ndc[0]) / e
+        disp_y = (ndc[2] - ndc[0]) / e
+        # good ol' pythagoras
+        return float(np.sqrt(np.linalg.norm(disp_x) ** 2 +
+                             np.linalg.norm(disp_y) ** 2))
 
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
@@ -662,28 +664,11 @@ class TextVisual(Visual):
             if anchor_point.shape[0] == 2:
                 anchor_point = np.array([anchor_point[0], anchor_point[1], 0.0])
 
-            # camera is not reachable from view; walk up the scene graph
-            # TODO: can I get the center in a less dumb way?
-            node = view
-            while node is not None:
-                camera = getattr(node, 'camera', None)
-                if camera is not None:
-                    break
-                node = getattr(node, 'parent', None)
-            ref_point = getattr(camera, 'center', None)
-            if ref_point is None:
-                ref_point = anchor_point
-            else:
-                ref_point = np.asarray(ref_point, dtype=np.float64)
-                if ref_point.shape[0] == 2:
-                    ref_point = np.array([ref_point[0], ref_point[1], 0.0])
-
             tr_full = transforms.get_transform('visual', 'render')
             view_scale = self._world_scale(tr_full, anchor_point)
-            ref_scale = self._world_scale(tr_full, ref_point)
 
-            if ref_scale and view_scale:
-                scale = scale * (view_scale / ref_scale)
+            if view_scale:
+                scale = scale * view_scale
             else:
                 # we're behind the camera, just drop it
                 scale = 0
