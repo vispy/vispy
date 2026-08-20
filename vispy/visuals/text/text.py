@@ -657,6 +657,8 @@ class TextVisual(Visual):
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
         scale = px_scale * n_pix
         if self._scaling:
+            # we need to rescale text based on camera zoom and fov;
+            # we do everything relative to the anchor point
             anchor = self.pos
             anchor_point = (anchor.mean(axis=0) if anchor.shape[0] > 1
                             else anchor[0])
@@ -667,10 +669,14 @@ class TextVisual(Visual):
             tr_full = transforms.get_transform('visual', 'render')
             view_scale = self._world_scale(tr_full, anchor_point)
 
-            if view_scale:
-                scale = scale * view_scale
+            # normalize the jacobian by the px scale (since at neutral framing
+            # they are equal); necessary to get the font size to have absolute
+            # meaning in screen pixels.
+            px_scale_mag = np.linalg.norm(px_scale)
+            if view_scale and px_scale_mag:
+                scale = scale * (view_scale / px_scale_mag)
             else:
-                # we're behind the camera, just drop it
+                # we're behind the camera or some other degenerate case, just drop it
                 scale = 0
         self._text_scale.scale = scale
         self.shared_program.vert['text_scale'] = self._text_scale
