@@ -552,13 +552,13 @@ class TextVisual(Visual):
         if coord.shape[0] == 2:
             coord = np.array([coord[0], coord[1], 0.0])
         p = coord
-        # jacobian by finite differences along the world x and y axes (the
-        # screen plane); e is a small step
+        # jacobian by finite differences along the world x, y and z axes
         e = 1e-6
         pts = np.array([
-            [p[0],     p[1], p[2], 1],
-            [p[0] + e, p[1], p[2], 1],
-            [p[0],     p[1] + e, p[2], 1],
+            [p[0],     p[1],     p[2],     1],
+            [p[0] + e, p[1],     p[2],     1],
+            [p[0],     p[1] + e, p[2],     1],
+            [p[0],     p[1],     p[2] + e, 1],
         ])
         # map from screen coords to world coords
         clip = tr.map(pts)
@@ -571,13 +571,11 @@ class TextVisual(Visual):
 
         # ndc coordinates to account for zoom and FOV
         ndc = clip[:, :2] / w[:, None]
-        # subtracting the original points gives us the displacement in each axis direction,
-        # which gives us the full "stretch" of the unit in this position
-        disp_x = (ndc[1] - ndc[0]) / e
-        disp_y = (ndc[2] - ndc[0]) / e
+        # subtracting the original points gives us the displacement in each axis
+        # direction, which gives us the full "stretch" of the unit in this position
+        disp = (ndc[1:] - ndc[0]) / e
         # good ol' pythagoras
-        return float(np.sqrt(np.linalg.norm(disp_x) ** 2 +
-                             np.linalg.norm(disp_y) ** 2))
+        return float(np.sqrt(np.sum(np.linalg.norm(disp) ** 2)))
 
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
