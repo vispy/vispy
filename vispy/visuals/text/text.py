@@ -447,12 +447,13 @@ class TextVisual(Visual):
         self.line_height = line_height
         self.pos = pos
         self.rotation = rotation
-        self.scaling = True
+        self.scaling = scaling
         self._text_scale = STTransform()
         # Reference scale (visual -> document) captured when the font size or
         # scaling mode changes. The glyph offset is stored in world units
-        # relative to this reference so that it scales with zoom/FOV instead
-        # of staying a fixed number of pixels.
+        # relative to this reference so that it scales with zoom (and is
+        # independent of FOV and camera rotation) instead of staying a fixed
+        # number of pixels.
         self._scaling_reference_scale = None
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
@@ -552,40 +553,49 @@ class TextVisual(Visual):
     def _world_scale(self, tr, point, fov=None):
         """On-screen scale (NDC per world unit) at *point*, for billboarded text.
 
-        The returned scalar drives how much the text grows/shrinks with the
-        scene. It is chosen so that the billboarded text:
+        ``tr`` is the full visual->render transform (the camera projection plus
+        the canvas mapping). The returned scalar drives how much the text grows /
+        shrinks with the scene.
 
-        * keeps a *constant* size while the camera is rotated (the value is
-          evaluated at the camera orbit center and is rotation-invariant), and
-        * resizes with zoom, but is *independent of the camera field of view*.
+        The scale is the size (in NDC) of one world unit, computed *after* the
+        perspective divide: for a unit world step along each axis we take
+        ``clip.xy / clip.w`` at the anchor and at the anchor-plus-step and measure
+        the NDC displacement. Because this uses the camera's *actual* projection
+        (which becomes orthographic as the FOV tends to 0), the measure:
 
-        For a perspective camera (``fov`` given) the projection divides by the
-        camera distance, so the raw NDC-per-world scale is proportional to the
-        focal length (``1/tan(fov/2)``) and to ``1/distance``. We remove the
-        focal-length term and keep only ``1/distance`` (the true camera
-        distance, ``|w| * tan(fov/2)``), which makes the text follow zoom but
-        ignore FOV changes.
+        * is *anchor based* -- a nearer text (smaller ``clip.w``) maps to a larger
+          on-screen size than a farther one, so text follows its position;
+        * is *bounded* for any on-screen point (``clip.w > 0``) and never blows up
+          at edge-on views -- a point on/behind the focal plane (``clip.w <= 0``)
+          is off-screen and reported as 0;
+        * is *continuous as the FOV tends to 0* (it reduces smoothly to the
+          orthographic size, so there is no "pop" when leaving FOV 0); and
+        * *resizes with zoom* (orbiting / zooming changes ``clip.w``).
 
-        For an orthographic camera (no ``fov``) the on-screen scale is simply
-        the Frobenius norm of the world->NDC Jacobian, which is already
-        zoom-responsive and FOV-independent.
+        ``fov`` is accepted for interface compatibility but is not needed: the
+        post-divide NDC displacement already handles both orthographic and
+        perspective cameras.
         """
         point = np.asarray(point, dtype=np.float64)
         if point.shape[0] == 2:
             point = np.array([point[0], point[1], 0.0])
-        o = tr.map(np.array([[point[0], point[1], point[2], 1.0]]))[0]
-        if fov and fov > 1e-2:
-            w = float(abs(o[3]))
-            if w == 0:
-                return 0.0
-            return 1.0 / (w * math.tan(math.radians(fov) / 2.0))
-        ex = tr.map(np.array([[point[0] + 1.0, point[1], point[2], 1.0]]))[0]
-        ey = tr.map(np.array([[point[0], point[1] + 1.0, point[2], 1.0]]))[0]
-        ez = tr.map(np.array([[point[0], point[1], point[2] + 1.0, 1.0]]))[0]
-        sx = float(np.linalg.norm(ex[:2] - o[:2]))
-        sy = float(np.linalg.norm(ey[:2] - o[:2]))
-        sz = float(np.linalg.norm(ez[:2] - o[:2]))
-        return math.sqrt(sx * sx + sy * sy + sz * sz)
+        p = point
+        pts = np.array([
+            [p[0], p[1], p[2], 1.0],
+            [p[0] + 1.0, p[1], p[2], 1.0],
+            [p[0], p[1] + 1.0, p[2], 1.0],
+            [p[0], p[1], p[2] + 1.0, 1.0],
+        ])
+        c = tr.map(pts)
+        w = c[:, 3]
+        # A zero (or negative) clip-w means the anchor is on/behind the camera's
+        # focal plane; there is no well-defined on-screen size, so report 0.
+        if np.any(w <= 0):
+            return 0.0
+        ndc = c[:, :2] / w[:, None]
+        disp = ndc[1:] - ndc[0]
+        s = np.linalg.norm(disp, axis=1)
+        return float(np.sqrt(float((s * s).sum())))
 
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
@@ -666,19 +676,16 @@ class TextVisual(Visual):
         scale = px_scale * n_pix
         if self._scaling:
             # Resize the text with the scene while keeping it a billboard. The
-            # on-screen size of one world unit (an isotropic, rotation-invariant
-            # scalar) is scaled by the ratio of the current value to a reference
-            # captured when the font size or scaling mode last changed. Because
-            # the scale is rotation-invariant, the text stays a constant size
-            # while the camera is rotated, while still growing/shrinking with
-            # zoom and FOV.
+            # on-screen size of one world unit (an isotropic scalar) is scaled by
+            # the ratio of the current value to a reference captured when the font
+            # size or scaling mode last changed. The scale is evaluated at the
+            # text's own *anchor* (see ``_world_scale``) against a reference at the
+            # camera orbit center, so:
             #
-            # The scale is evaluated at the camera's orbit center rather than at
-            # the text anchor: the orbit center stays at a constant distance
-            # from the camera, so it does not change under rotation, whereas an
-            # off-center anchor would otherwise drift in depth as it orbits.
-            tr_full = transforms.get_transform('visual', 'render')
-            ref_point = None
+            # * a nearer text is larger and a farther one smaller (its size follows
+            #   its position in the scene),
+            # * it is bounded -- no blow-up at edge-on views, and
+            # * it is independent of the camera field of view and resizes with zoom.
             fov = None
             # The camera is not reachable from ``view`` (which is the visual
             # itself); walk up the scene graph to the ViewBox that owns it.
@@ -689,18 +696,39 @@ class TextVisual(Visual):
                     break
                 node = getattr(node, 'parent', None)
             if camera is not None:
-                center = getattr(camera, 'center', None)
-                if center is not None:
-                    ref_point = np.asarray(center, dtype=np.float64)
                 fov = getattr(camera, 'fov', None)
+            # The actual visual->render transform (camera projection + canvas). Its
+            # post-divide NDC displacement already encodes both orthographic and
+            # perspective sizing and is continuous as the FOV tends to 0, so it is
+            # the right quantity to drive the billboard size.
+            tr_full = transforms.get_transform('visual', 'render')
+            anchor = self._pos
+            anchor_point = (anchor.mean(axis=0) if anchor.shape[0] > 1
+                            else anchor[0])
+            anchor_point = np.asarray(anchor_point, dtype=np.float64)
+            if anchor_point.shape[0] == 2:
+                anchor_point = np.array([anchor_point[0], anchor_point[1], 0.0])
+            # Scale at the text's own anchor so a nearer text is larger and a
+            # farther one smaller (its size follows its position in the scene).
+            # The reference is a *shared* point at the camera orbit center,
+            # captured when the font size / scaling mode last changed. Dividing by
+            # a per-anchor reference would cancel the anchor's own depth (every text
+            # the same size), so the center is used instead. Because the reference
+            # is fixed at enable time, ordinary *zoom* (which moves the camera, not
+            # the reference) resizes the text, while changing the FOV keeps the
+            # framing and therefore leaves the size unchanged (no "pop" at FOV 0).
+            view_scale = self._world_scale(tr_full, anchor_point, fov)
+            ref_point = getattr(camera, 'center', None)
             if ref_point is None:
-                anchor = self._pos
-                ref_point = (anchor.mean(axis=0) if anchor.shape[0] > 1
-                             else anchor[0])
-            view_scale = self._world_scale(tr_full, ref_point, fov)
+                ref_point = anchor_point
+            else:
+                ref_point = np.asarray(ref_point, dtype=np.float64)
+                if ref_point.shape[0] == 2:
+                    ref_point = np.array([ref_point[0], ref_point[1], 0.0])
+            ref_scale = self._world_scale(tr_full, ref_point, fov)
             if self._scaling_reference_scale is None or \
                     self._scaling_reference_scale == 0:
-                self._scaling_reference_scale = view_scale
+                self._scaling_reference_scale = ref_scale
             if self._scaling_reference_scale != 0 and view_scale != 0:
                 scale = scale * (view_scale / self._scaling_reference_scale)
         self._text_scale.scale = scale
