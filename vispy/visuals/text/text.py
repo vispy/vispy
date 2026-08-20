@@ -149,6 +149,7 @@ class FontManager(object):
 # The visual
 
 _VERTEX_SHADER = """
+    uniform bool u_scaling;
     attribute float a_rotation;  // rotation in rad
     attribute vec2 a_position; // in point units
     attribute vec2 a_texcoord;
@@ -163,7 +164,11 @@ _VERTEX_SHADER = """
                         0, 0, 1, 0, 0, 0, 0, 1);
         vec4 pos = $transform(vec4(a_pos, 1.0));
         vec4 offset = $text_scale(rot * vec4(a_position, 0.0, 1.0));
-        gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
+        if (u_scaling) {
+            gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
+        } else {
+            gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
+        }
         v_texcoord = a_texcoord;
         v_color = $color;
     }
@@ -403,6 +408,9 @@ class TextVisual(Visual):
         Whether to apply depth testing. Default False. If False, the text
         behaves like an overlay that does not get hidden behind other
         visuals in the scene.
+    scaling : bool
+        Whether the text size scales with zoom and FOV (True, default) or
+        stays fixed in canvas pixels.
     """
 
     _shaders = {
@@ -413,7 +421,7 @@ class TextVisual(Visual):
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, line_height=1.1, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 method='cpu', font_manager=None, depth_test=False):
+                 method='cpu', font_manager=None, depth_test=False, scaling=True):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         # Check input
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
@@ -438,6 +446,7 @@ class TextVisual(Visual):
         self.line_height = line_height
         self.pos = pos
         self.rotation = rotation
+        self.scaling = True
         self._text_scale = STTransform()
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
@@ -610,6 +619,7 @@ class TextVisual(Visual):
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
         self._text_scale.scale = px_scale * n_pix
         self.shared_program.vert['text_scale'] = self._text_scale
+        self.shared_program['u_scaling'] = self._scaling
         self.shared_program['u_npix'] = n_pix
         self.shared_program['u_kernel'] = self._font._kernel
         self.shared_program['u_color'] = self._color.rgba
@@ -655,6 +665,15 @@ class TextVisual(Visual):
 
     def _update_font(self):
         self._font = self._font_manager.get_font(self._face, self._bold, self._italic)
+        self.update()
+
+    @property
+    def scaling(self):
+        return self._scaling
+
+    @scaling.setter
+    def scaling(self, value):
+        self._scaling = bool(value)
         self.update()
 
 
