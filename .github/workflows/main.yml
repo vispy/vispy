@@ -272,10 +272,8 @@ jobs:
         auto-activate: false
     - name: Install conda-dependencies
       run: |
-        PY_ABI="${{ matrix.python_version }}"
-        PY_ABI="${PY_ABI//./}"
         if [ "${{ matrix.new_qt }}" == 'true' ]; then
-          conda install -y python=${{ matrix.python_version }}v-f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
         else
           conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
         fi
