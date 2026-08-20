@@ -13,6 +13,7 @@ from __future__ import division
 import numpy as np
 from copy import deepcopy
 import sys
+import math
 
 from ._sdf_gpu import SDFRendererGPU
 from ._sdf_cpu import _calc_distance_field
@@ -149,7 +150,6 @@ class FontManager(object):
 # The visual
 
 _VERTEX_SHADER = """
-    uniform bool u_scaling;
     attribute float a_rotation;  // rotation in rad
     attribute vec2 a_position; // in point units
     attribute vec2 a_texcoord;
@@ -162,13 +162,14 @@ _VERTEX_SHADER = """
         mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
                         sin(a_rotation), cos(a_rotation), 0, 0,
                         0, 0, 1, 0, 0, 0, 0, 1);
+        // The glyph offset is always expressed in normalized device
+        // coordinates (added after the perspective divide via *pos.w), so the
+        // text stays a screen-aligned billboard regardless of the camera.
+        // When scaling is enabled, $text_scale is enlarged/reduced on the CPU
+        // so that the text resizes with zoom and FOV while staying billboarded.
         vec4 pos = $transform(vec4(a_pos, 1.0));
         vec4 offset = $text_scale(rot * vec4(a_position, 0.0, 1.0));
-        if (u_scaling) {
-            gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
-        } else {
-            gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
-        }
+        gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
         v_texcoord = a_texcoord;
         v_color = $color;
     }
@@ -448,6 +449,11 @@ class TextVisual(Visual):
         self.rotation = rotation
         self.scaling = True
         self._text_scale = STTransform()
+        # Reference scale (visual -> document) captured when the font size or
+        # scaling mode changes. The glyph offset is stored in world units
+        # relative to this reference so that it scales with zoom/FOV instead
+        # of staying a fixed number of pixels.
+        self._scaling_reference_scale = None
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -489,6 +495,7 @@ class TextVisual(Visual):
     @font_size.setter
     def font_size(self, size):
         self._font_size = max(0.0, float(size))
+        self._scaling_reference_scale = None
         self.update()
 
     @property
@@ -541,6 +548,44 @@ class TextVisual(Visual):
         self._pos = pos
         self._pos_changed = True
         self.update()
+
+    def _world_scale(self, tr, point, fov=None):
+        """On-screen scale (NDC per world unit) at *point*, for billboarded text.
+
+        The returned scalar drives how much the text grows/shrinks with the
+        scene. It is chosen so that the billboarded text:
+
+        * keeps a *constant* size while the camera is rotated (the value is
+          evaluated at the camera orbit center and is rotation-invariant), and
+        * resizes with zoom, but is *independent of the camera field of view*.
+
+        For a perspective camera (``fov`` given) the projection divides by the
+        camera distance, so the raw NDC-per-world scale is proportional to the
+        focal length (``1/tan(fov/2)``) and to ``1/distance``. We remove the
+        focal-length term and keep only ``1/distance`` (the true camera
+        distance, ``|w| * tan(fov/2)``), which makes the text follow zoom but
+        ignore FOV changes.
+
+        For an orthographic camera (no ``fov``) the on-screen scale is simply
+        the Frobenius norm of the world->NDC Jacobian, which is already
+        zoom-responsive and FOV-independent.
+        """
+        point = np.asarray(point, dtype=np.float64)
+        if point.shape[0] == 2:
+            point = np.array([point[0], point[1], 0.0])
+        o = tr.map(np.array([[point[0], point[1], point[2], 1.0]]))[0]
+        if fov and fov > 1e-2:
+            w = float(abs(o[3]))
+            if w == 0:
+                return 0.0
+            return 1.0 / (w * math.tan(math.radians(fov) / 2.0))
+        ex = tr.map(np.array([[point[0] + 1.0, point[1], point[2], 1.0]]))[0]
+        ey = tr.map(np.array([[point[0], point[1] + 1.0, point[2], 1.0]]))[0]
+        ez = tr.map(np.array([[point[0], point[1], point[2] + 1.0, 1.0]]))[0]
+        sx = float(np.linalg.norm(ex[:2] - o[:2]))
+        sy = float(np.linalg.norm(ey[:2] - o[:2]))
+        sz = float(np.linalg.norm(ez[:2] - o[:2]))
+        return math.sqrt(sx * sx + sy * sy + sz * sz)
 
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
@@ -615,11 +660,51 @@ class TextVisual(Visual):
 
         transforms = self.transforms
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
+        # Base (billboarded) scale: a fixed number of screen pixels.
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
-        self._text_scale.scale = px_scale * n_pix
+        scale = px_scale * n_pix
+        if self._scaling:
+            # Resize the text with the scene while keeping it a billboard. The
+            # on-screen size of one world unit (an isotropic, rotation-invariant
+            # scalar) is scaled by the ratio of the current value to a reference
+            # captured when the font size or scaling mode last changed. Because
+            # the scale is rotation-invariant, the text stays a constant size
+            # while the camera is rotated, while still growing/shrinking with
+            # zoom and FOV.
+            #
+            # The scale is evaluated at the camera's orbit center rather than at
+            # the text anchor: the orbit center stays at a constant distance
+            # from the camera, so it does not change under rotation, whereas an
+            # off-center anchor would otherwise drift in depth as it orbits.
+            tr_full = transforms.get_transform('visual', 'render')
+            ref_point = None
+            fov = None
+            # The camera is not reachable from ``view`` (which is the visual
+            # itself); walk up the scene graph to the ViewBox that owns it.
+            node = view
+            while node is not None:
+                camera = getattr(node, 'camera', None)
+                if camera is not None:
+                    break
+                node = getattr(node, 'parent', None)
+            if camera is not None:
+                center = getattr(camera, 'center', None)
+                if center is not None:
+                    ref_point = np.asarray(center, dtype=np.float64)
+                fov = getattr(camera, 'fov', None)
+            if ref_point is None:
+                anchor = self._pos
+                ref_point = (anchor.mean(axis=0) if anchor.shape[0] > 1
+                             else anchor[0])
+            view_scale = self._world_scale(tr_full, ref_point, fov)
+            if self._scaling_reference_scale is None or \
+                    self._scaling_reference_scale == 0:
+                self._scaling_reference_scale = view_scale
+            if self._scaling_reference_scale != 0 and view_scale != 0:
+                scale = scale * (view_scale / self._scaling_reference_scale)
+        self._text_scale.scale = scale
         self.shared_program.vert['text_scale'] = self._text_scale
-        self.shared_program['u_scaling'] = self._scaling
         self.shared_program['u_npix'] = n_pix
         self.shared_program['u_kernel'] = self._font._kernel
         self.shared_program['u_color'] = self._color.rgba
@@ -674,6 +759,7 @@ class TextVisual(Visual):
     @scaling.setter
     def scaling(self, value):
         self._scaling = bool(value)
+        self._scaling_reference_scale = None
         self.update()
 
 
