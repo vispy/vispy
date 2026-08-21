@@ -193,16 +193,37 @@ KEYMAP = {
     qt_keys.Key_Tab: keys.TAB,
 }
 if PYQT6_API or PYSIDE6_API:
+    # VisPy buttons 1-5 are Left/Right/Middle/Back/Forward.
+    # Qt 5.0+ also exposes ExtraButton1..24 (ExtraButton1/2 alias Back/Forward;
+    # ExtraButton3 is TaskButton). They were not present in Qt 4. Map any
+    # ExtraButton3..24 that exist on this Qt build to VisPy 6..27 so extra
+    # buttons stay distinguishable instead of collapsing to 0.
+    # Docs: https://doc.qt.io/qt-5/qt.html#MouseButton-enum
+    #       https://doc.qt.io/qt-6/qt.html#MouseButton-enum
     BUTTONMAP = {
         QtCore.Qt.MouseButton.NoButton: 0,
         QtCore.Qt.MouseButton.LeftButton: 1,
         QtCore.Qt.MouseButton.RightButton: 2,
         QtCore.Qt.MouseButton.MiddleButton: 3,
         QtCore.Qt.MouseButton.BackButton: 4,
-        QtCore.Qt.MouseButton.ForwardButton: 5
+        QtCore.Qt.MouseButton.ForwardButton: 5,
     }
+    for _extra_i in range(3, 25):
+        _qt_btn = getattr(QtCore.Qt.MouseButton, f'ExtraButton{_extra_i}', None)
+        if _qt_btn is not None:
+            BUTTONMAP[_qt_btn] = _extra_i + 3
 else:
+    # Qt5 (and older) path uses integer button codes as keys. ExtraButton3..24
+    # exist from Qt 5.0; Qt 4 only had XButton1/2. Add them only when present.
     BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
+    _mouse_button = getattr(QtCore.Qt, 'MouseButton', QtCore.Qt)
+    for _extra_i in range(3, 25):
+        _qt_btn = getattr(_mouse_button, f'ExtraButton{_extra_i}', None)
+        if _qt_btn is None:
+            _qt_btn = getattr(QtCore.Qt, f'ExtraButton{_extra_i}', None)
+        if _qt_btn is not None:
+            _code = int(getattr(_qt_btn, 'value', _qt_btn))
+            BUTTONMAP[_code] = _extra_i + 3
 
 
 # Properly log Qt messages
@@ -360,6 +381,29 @@ def _get_qpoint_pos(pos):
     return pos.x(), pos.y()
 
 
+def _buttonmap_to_list(buttons) -> list[int]:
+    """Map Qt mouse button flags to VisPy button ids.
+
+    Module-level (no ``self``) so tests can call it without a backend
+    instance. Preserves BUTTONMAP order: standard 1-5, then
+    ExtraButton3..24 as 6-27 when present on this Qt build.
+    """
+    if buttons == QtCore.Qt.MouseButton.NoButton:
+        return []
+
+    mouse_buttons = []
+    if PYQT6_API or PYSIDE6_API:
+        for qt_button, vispy_button in BUTTONMAP.items():
+            if vispy_button and qt_button in buttons:
+                mouse_buttons.append(vispy_button)
+    else:
+        for qt_button, vispy_button in BUTTONMAP.items():
+            if vispy_button and (buttons & qt_button) != QtCore.Qt.MouseButton.NoButton:
+                mouse_buttons.append(vispy_button)
+
+    return mouse_buttons
+
+
 class QtBaseCanvasBackend(BaseCanvasBackend):
     """Base functionality of Qt backend. No OpenGL Stuff."""
 
@@ -490,37 +534,6 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
     def sizeHint(self):
         return self.size()
 
-    def _buttonmap_to_list(self, buttons) -> list[int]:
-        if buttons == QtCore.Qt.MouseButton.NoButton:
-            return []
-
-        mouse_buttons = []
-
-        if PYQT6_API or PYSIDE6_API:
-            if QtCore.Qt.MouseButton.LeftButton in buttons:
-                mouse_buttons.append(1)
-            if QtCore.Qt.MouseButton.RightButton in buttons:
-                mouse_buttons.append(2)
-            if QtCore.Qt.MouseButton.MiddleButton in buttons:
-                mouse_buttons.append(3)
-            if QtCore.Qt.MouseButton.BackButton in buttons:
-                mouse_buttons.append(4)
-            if QtCore.Qt.MouseButton.ForwardButton in buttons:
-                mouse_buttons.append(5)
-        else:
-            if buttons & QtCore.Qt.MouseButton.LeftButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(1)
-            if buttons & QtCore.Qt.MouseButton.RightButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(2)
-            if buttons & QtCore.Qt.MouseButton.MiddleButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(3)
-            if buttons & QtCore.Qt.MouseButton.BackButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(4)
-            if buttons & QtCore.Qt.MouseButton.ForwardButton != QtCore.Qt.MouseButton.NoButton:
-                mouse_buttons.append(5)
-
-        return mouse_buttons
-
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
@@ -529,7 +542,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -542,8 +555,8 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         vispy_event = self._vispy_mouse_release(
             native=ev,
             pos=_get_event_xy(ev),
-            button=BUTTONMAP[ev.button()],
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            button=BUTTONMAP.get(ev.button(), 0),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -557,7 +570,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             pos=_get_event_xy(ev),
             button=BUTTONMAP.get(ev.button(), 0),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -571,7 +584,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
         vispy_event = self._vispy_mouse_move(
             native=ev,
             pos=_get_event_xy(ev),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
@@ -600,7 +613,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             native=ev,
             delta=(deltax, deltay),
             pos=_get_event_xy(ev),
-            buttons=self._buttonmap_to_list(ev.buttons()),
+            buttons=_buttonmap_to_list(ev.buttons()),
             modifiers=self._modifiers(ev),
         )
         # If vispy did not handle the event, clear the accept parameter of the qt event
