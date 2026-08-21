@@ -51,24 +51,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
-    - name: Set up Python
-      uses: actions/setup-python@v7
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0
       with:
-        python-version: 3.12
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 numpy cython pytest numpydoc
-    - name: Install vispy
-      run: |
-        pip install -e .
+        environments: lint
+        cache: true
     - name: Check line endings
-      run: |
-        python make test lineendings
+      run: pixi run -e lint lineendings
     - name: Lint with flake8
       run: |
         # FIXME: deliberately ignore linting errors for now
-        python make test flake || true
+        pixi run -e lint flake || true
 # FIXME: Re-enable this when all docstrings are fixed
 #    - name: Test docstring parameters
 #      run: |
@@ -114,40 +107,24 @@ jobs:
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
         sleep 5
         # export python_version
-        echo "python_version=310" >> $GITHUB_OUTPUT
-    - name: Setup Conda Environment
-      uses: conda-incubator/setup-miniconda@v4
+        echo "python_version=312" >> $GITHUB_OUTPUT
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0
       with:
-        miniforge-version: latest
-        python-version: ${{ matrix.python_version }}
-        channels: conda-forge
-        conda-remove-defaults: true
-        channel-priority: strict
-        activate-environment: vispy-tests
-        environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
-        auto-activate: false
-    - name: Install conda-dependencies
-      run: |
-        conda install -y -f ci/requirements/linux_full_deps_conda.txt
-    - name: Install pip dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r ci/requirements/linux_full_deps_pip.txt
-        pip install -r ci/requirements/linux_website_deps_pip.txt
-    - name: Install vispy
-      run: |
-        pip install -e .[doc]
+        environments: website
+        cache: true
     - name: Version Info
       run: |
         export DISPLAY=:99.0
-        conda list
-        python -c "import vispy; print(vispy.version.version)"
-        python -c "import vispy; print(vispy.sys_info())"
+        pixi list -e website
+        pixi run -e website python -c "import vispy; print(vispy.version.version)"
+        pixi run -e website python -c "import vispy; print(vispy.sys_info())"
     - name: build website
-      run: |
-        export DISPLAY=:99.0
-        export XDG_RUNTIME_DIR=/tmp/runtime-runner
-        source ./ci/build_website.sh
+      env:
+        DISPLAY: ":99.0"
+        XDG_RUNTIME_DIR: /tmp/runtime-runner
+        TRAVIS_TAG: main
+      run: pixi run -e website build-website
     - name: Upload website HTML artifact
       uses: actions/upload-artifact@v7
       with:
@@ -181,45 +158,29 @@ jobs:
       matrix:
         include:
           - test_number: 1
-            python_version: "3.10"
-            deps: "min"
-            test: "standard"
-            new_qt: false
+            environment: py310-min
+            test: standard
           - test_number: 2
-            python_version: "3.10"
-            deps: "full"
-            test: "standard"
-            new_qt: false
+            environment: py310-full
+            test: standard
           - test_number: 3
-            python_version: "3.10"
-            deps: "full"
-            test: "standard"
-            new_qt: true
+            environment: py310-newqt
+            test: standard
           - test_number: 4
-            python_version: "3.10"
-            deps: "osmesa"
-            test: "osmesa"
-            new_qt: false
+            environment: py310-osmesa
+            test: osmesa
           - test_number: 5
-            python_version: "3.12"
-            deps: "full"
-            test: "standard"
-            new_qt: false
+            environment: py312-full
+            test: standard
           - test_number: 6
-            python_version: "3.12"
-            deps: "full"
-            test: "standard"
-            new_qt: true
+            environment: py312-newqt
+            test: standard
           - test_number: 7
-            python_version: "3.14"
-            deps: "full"
-            test: "standard"
-            new_qt: false
+            environment: py314-full
+            test: standard
           - test_number: 8
-            python_version: "3.14"
-            deps: "full"
-            test: "standard"
-            new_qt: true
+            environment: py314-newqt
+            test: standard
     steps:
     - uses: actions/checkout@v6
       with:
@@ -242,13 +203,12 @@ jobs:
       timeout-minutes: 2
       run: |
         # opengl system libraries
-        if [ "${{ matrix.deps }}" == 'full' ]; then
-          sudo apt-get update;
-          if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            cat ci/requirements/linux_full_newqtdeps_apt.txt | xargs sudo apt-get -y install
-          else
-            cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
-          fi
+        if [[ "${{ matrix.environment }}" == *"-newqt" ]]; then
+          sudo apt-get update
+          cat ci/requirements/linux_full_newqtdeps_apt.txt | xargs sudo apt-get -y install
+        elif [[ "${{ matrix.environment }}" == *"-full" ]]; then
+          sudo apt-get update
+          cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
         else
           sudo apt-get -y install x11-utils
         fi
@@ -259,50 +219,42 @@ jobs:
         # export python_version
         PY_VER=${{ matrix.python_version }}
         echo "python_version=${PY_VER//.}" >> $GITHUB_OUTPUT
-    - name: Setup Conda Environment
-      uses: conda-incubator/setup-miniconda@v4
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.10.0
       with:
-        miniforge-version: latest
-        python-version: ${{ matrix.python_version }}
-        channels: conda-forge
-        conda-remove-defaults: true
-        channel-priority: strict
-        activate-environment: vispy-tests
-        environment-file: ./ci/requirements/py${{ steps.vars.outputs.python_version }}.yml
-        auto-activate: false
-    - name: Install conda-dependencies
-      run: |
-        if [ "${{ matrix.new_qt }}" == 'true' ]; then
-          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
-        else
-          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
-        fi
-    - name: Install pip-dependencies
-      run: |
-        if [ "${{ matrix.deps }}" == 'full' ]; then
-          if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            pip install -r ci/requirements/linux_${{ matrix.deps }}_newqtdeps_pip.txt
-          else
-            pip install -r ci/requirements/linux_${{ matrix.deps }}_deps_pip.txt
-          fi
-          
-          rm -rf vispy/ext/_bundled
-        fi
-    - name: Install vispy
-      run: |
-        pip install -e .
+        environments: ${{ matrix.environment }}
+        cache: true
     - name: Version Info
       run: |
-        if [ "${{ matrix.test }}" != 'osmesa' ]; then
+        if [ "${{ matrix.test }}" != "osmesa" ]; then
           export DISPLAY=:99.0
         fi
-        if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so;
-          export VISPY_GL_LIB=$OSMESA_LIBRARY
+
+        if [ "${{ matrix.test }}" == "osmesa" ]; then
+          OSMESA_LIBRARY="$(
+            find .pixi/envs/${{ matrix.environment }} \
+              -type f \
+              \( \
+                -name 'libOSMesa.so' \
+                -o -name 'libOSMesa.so.*' \
+              \) \
+              -print \
+              -quit
+          )"
+
+          if [ -z "${OSMESA_LIBRARY}" ]; then
+            echo "Could not find libOSMesa"
+            exit 1
+          fi
+
+          export OSMESA_LIBRARY
+          export VISPY_GL_LIB="${OSMESA_LIBRARY}"
+          echo "Using OSMesa library: ${OSMESA_LIBRARY}"
         fi
-        conda list
-        python -c "import vispy; print(vispy.version.version)"
-        python -c "import vispy; print(vispy.sys_info())"
+        
+        pixi list -e ${{ matrix.environment }}
+        pixi run -e ${{ matrix.environment }} python -c "import vispy; print(vispy.version.version)"
+        pixi run -e ${{ matrix.environment }} python -c "import vispy; print(vispy.sys_info())"
     - name: Run tests
       run: |
         if [ "${{ matrix.test }}" == 'standard' ]; then
@@ -314,14 +266,26 @@ jobs:
           # * https://github.com/vispy/vispy/pull/2668
           # * https://github.com/vispy/vispy/pull/2673
           export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGL.so.1
-          python make test unit --tb=short
+          pixi run -e ${{ matrix.environment }} python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
-          export OSMESA_LIBRARY=~/miniconda3/envs/vispy-tests/lib/libOSMesa.so
-          export VISPY_GL_LIB=$OSMESA_LIBRARY
-          make osmesa
+          OSMESA_LIBRARY="$(
+            find .pixi/envs/${{ matrix.environment }} \
+              -type f \
+              \( \
+                -name 'libOSMesa.so' \
+                -o -name 'libOSMesa.so.*' \
+              \) \
+              -print \
+              -quit
+          )"
+
+          export OSMESA_LIBRARY
+          export VISPY_GL_LIB="${OSMESA_LIBRARY}"
+
+          pixi run -e ${{ matrix.environment }} osmesa
         fi
-        COVERAGE_FILE=.vispy-coverage coverage combine
+        COVERAGE_FILE=.vispy-coverage pixi run -e ${{ matrix.environment }} coverage combine
         mv .vispy-coverage .coverage
     - name: Coveralls Parallel
       uses: AndreMiras/coveralls-python-action@develop

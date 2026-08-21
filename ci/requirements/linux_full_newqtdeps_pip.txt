@@ -1,3 +1,0 @@
-pyopengltk
-pyqt6
-pyqt6-qt6

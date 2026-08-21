@@ -1,22 +1,166 @@
 [build-system]
 requires = [
-    "setuptools>=69.4.0",
+    "setuptools>=74.1.0",
     # see https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-0-specific-advice
     "numpy>=2.0.0",
     "setuptools_scm[toml]>=8.1",
     "Cython>=3.0.0"
 ]
+build-backend = "setuptools.build_meta"
 
-[tools.setuptools_scm]
+[project]
+name = "vispy"
+dynamic = ["version"]
+description = "Interactive visualization in Python"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
+authors = [
+    { name = "Vispy contributors", email = "vispy@googlegroups.com" },
+]
+keywords = [
+    "visualization",
+    "OpenGl",
+    "ES",
+    "medical",
+    "imaging",
+    "3D",
+    "plotting",
+    "numpy",
+    "bigdata",
+    "ipython",
+    "jupyter",
+    "widgets",
+]
+dependencies = [
+    "numpy",
+    "freetype-py",
+    "hsluv",
+    "kiwisolver",
+    "packaging",
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: IPython",
+]
+
+[project.urls]
+Homepage = "http://vispy.org"
+Download = "https://pypi.python.org/pypi/vispy"
+
+[project.optional-dependencies]
+ipython-static = [
+    "ipython",
+]
+pyglet = [
+    "pyglet>=1.2",
+]
+pyqt5 = [
+    "pyqt5",
+]
+pyqt6 = [
+    "pyqt6",
+]
+pyside = [
+    "PySide",
+]
+pyside2 = [
+    "PySide2",
+]
+pyside6 = [
+    "PySide6",
+]
+glfw = [
+    "glfw",
+]
+sdl2 = [
+    "PySDL2",
+]
+wx = [
+    "wxPython",
+]
+tk = [
+    "pyopengltk",
+]
+doc = [
+    "pydata-sphinx-theme",
+    "numpydoc",
+    "sphinxcontrib-apidoc",
+    "sphinx-gallery",
+    "myst-parser",
+    "pillow",
+    "pytest",
+    "pyopengl",
+]
+io = [
+    "meshio",
+    "Pillow",
+]
+test = [
+    "pytest",
+    "pytest-sugar",
+    "meshio",
+    "pillow",
+    "sphinx_gallery",
+    "imageio",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[[tool.setuptools.ext-modules]]
+name = "vispy.visuals.text._sdf_cpu"
+sources = ["vispy/visuals/text/_sdf_cpu.pyx"]
+define-macros = [
+    ["NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION"],
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["make"]
+
+[tool.setuptools.package-data]
+vispy = [
+    "io/_data/*",
+    "app/tests/qt-designer.ui",
+    "util/fonts/data/*.ttf",
+]
+
+"vispy.glsl" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.antialias" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.arrowheads" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.arrows" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.collections" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.colormaps" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.lines" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.markers" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.math" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.misc" = ["*.vert", "*.frag", "*.glsl"]
+"vispy.glsl.transforms" = ["*.vert", "*.frag", "*.glsl"]
+
+[tool.setuptools_scm]
 write_to = "vispy/version.py"
 local_scheme = "dirty-tag"
-
 
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
 test-command = "python -c \"import vispy; vispy.test('nobackend')\""
 test-extras = ["test"]
-
 
 [tool.cibuildwheel.linux]
 before-all = [
@@ -25,3 +169,163 @@ before-all = [
 
 [tool.cibuildwheel.windows]
 environment = {FREETYPEPY_BUNDLE_FT=1}
+
+[tool.pixi.workspace]
+name = "vispy"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[tool.pixi.dependencies]
+numpy = "*"
+freetype-py = "*"
+hsluv = "*"
+kiwisolver = "*"
+packaging = "*"
+
+[tool.pixi.pypi-dependencies]
+vispy = { path = ".", editable = true }
+
+[tool.pixi.feature.test.dependencies]
+coveralls = "*"
+cython = "*"
+pytest = "*"
+pytest-sugar = "*"
+pytest-cov = "*"
+meshio = "*"
+pillow = "*"
+imageio = "*"
+sphinx-gallery = "*"
+scipy = "*"
+networkx = "*"
+
+[tool.pixi.feature.min.dependencies]
+numpydoc = "*"
+
+[tool.pixi.feature.lint.dependencies]
+cython = "*"
+flake8 = "*"
+pytest = "*"
+
+[tool.pixi.feature.osmesa]
+platforms = ["linux-64"]
+
+[tool.pixi.feature.osmesa.dependencies]
+libglu = "*"
+mesalib = ">=25.0.5,<25.1.0"
+
+[tool.pixi.feature.full.dependencies]
+cmake = "*"
+decorator = "*"
+glfw = "!=3.3.1"
+jupyter = "*"
+jupyter-rfb = "*"
+matplotlib-base = "*"
+pyopengl = "*"
+scikit-image = "*"
+
+[tool.pixi.feature.docs.pypi-dependencies]
+numpydoc = "*"
+sphinx = "*"
+sphinx-bootstrap-theme = "*"
+sphinxcontrib-apidoc = "*"
+myst-parser = "*"
+pydata-sphinx-theme = "!=0.10.*"
+
+# Vispy backends
+[tool.pixi.feature.qt5.dependencies]
+pyqt = "5.*"
+[tool.pixi.feature.qt6.dependencies]
+pyqt6 = "*"
+[tool.pixi.feature.sdl2.pypi-dependencies]
+pysdl2 = "*"
+
+# Python versions
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+[tool.pixi.feature.py314.dependencies]
+python = "3.14.*"
+python-gil = "*"
+
+[tool.pixi.environments]
+website = ["py312", "test", "full", "docs", "qt5"]
+py310-min = ["py310", "min", "test"]
+py310-osmesa = ["py310", "osmesa", "test"]
+py310-full = ["py310", "test", "full", "qt5", "sdl2"]
+py310-newqt = ["py310", "test", "full", "qt6"]
+py312-full = ["py312", "test", "full", "qt5", "sdl2"]
+py312-newqt = ["py312", "test", "full", "qt6"]
+py314-full = ["py314", "test", "full", "qt5", "sdl2"]
+py314-newqt = ["py314", "test", "full", "qt6"]
+lint = ["py312", "lint", "min"]
+
+[tool.pytest.ini_options]
+norecursedirs = [
+    ".*",
+    "build",
+    "dist",
+    "CVS",
+    "_darcs",
+    "arch",
+    "*.egg",
+    "venv",
+    "js",
+]
+
+[tool.pixi.target.linux-64.tasks]
+clean-pyc = "find . -name '*.pyc' -delete"
+clean-so = "find . -name '*.so' -delete && find . -name '*.pyd' -delete"
+clean-build = "rm -rf build"
+clean-ctags = "rm -f tags"
+clean-cache = "find . -name '__pycache__' -type d -prune -exec rm -rf {} +"
+
+clean = { depends-on = [
+    "clean-build",
+    "clean-pyc",
+    "clean-so",
+    "clean-ctags",
+    "clean-cache",
+] }
+
+clean-test = { depends-on = [
+    "clean-build",
+    "clean-pyc",
+    "clean-ctags",
+    "clean-cache",
+] }
+
+unit = { cmd = "python make test unit", depends-on = ["clean-test"] }
+examples = { cmd = "python make test examples", depends-on = ["clean-test"] }
+test = { cmd = "python make test full", depends-on = ["clean-test"] }
+flake = { cmd = "python make test flake", depends-on = ["clean-test"] }
+docs = { cmd = "python make test docs", depends-on = ["clean-test"] }
+lineendings = { cmd = "python make test lineendings", depends-on = ["clean-test"] }
+extra = { cmd = "python make test extra", depends-on = ["clean-test"] }
+nobackend = { cmd = "python make test nobackend", depends-on = ["clean-test"] }
+
+pyqt4 = { cmd = "python make test pyqt4", depends-on = ["clean-test"] }
+pyqt5 = { cmd = "python make test pyqt5", depends-on = ["clean-test"] }
+pyqt6 = { cmd = "python make test pyqt6", depends-on = ["clean-test"] }
+
+pyside = { cmd = "python make test pyside", depends-on = ["clean-test"] }
+pyside2 = { cmd = "python make test pyside2", depends-on = ["clean-test"] }
+pyside6 = { cmd = "python make test pyside6", depends-on = ["clean-test"] }
+
+pyglet = { cmd = "python make test pyglet", depends-on = ["clean-test"] }
+glfw = { cmd = "python make test glfw", depends-on = ["clean-test"] }
+sdl2 = { cmd = "python make test sdl2", depends-on = ["clean-test"] }
+wx = { cmd = "python make test wx", depends-on = ["clean-test"] }
+egl = { cmd = "python make test egl", depends-on = ["clean-test"] }
+osmesa = { cmd = "python make test osmesa", depends-on = ["clean-test"] }
+ipynb-vnc = { cmd = "python make test ipynb_vnc", depends-on = ["clean-test"] }
+
+build-website = """
+rm -rf doc/_build &&
+sphinx-build -M html doc doc/_build -W --keep-going &&
+touch doc/_build/html/.nojekyll
+"""
+
+coverage-html = "python make coverage_html"
+gallery = "python make images gallery"
+check-manifest = "check-manifest"
