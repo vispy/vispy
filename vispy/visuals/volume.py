@@ -92,6 +92,7 @@ uniform float u_attenuation;
 uniform float u_relative_step_size;
 uniform float u_mip_cutoff;
 uniform float u_minip_cutoff;
+uniform int u_rgb_mode;
 
 //varyings
 varying vec3 v_position;
@@ -121,16 +122,26 @@ float rand(vec2 co)
     return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-float colorToVal(vec4 color1)
+float $colorToScalar(vec4 color1)
 {
-    return color1.r; // todo: why did I have this abstraction in visvis?
+    if (u_rgb_mode == 1)
+        // perceptual luminance, a good approach to transform rgb into a single
+        // value for things like gradient calculations in isosurface
+        return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
+    return color1.r;
 }
 
-vec4 applyColormap(float data) {
-    data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
-    data = (data - clim.x) / (clim.y - clim.x);
-    vec4 color = $cmap(pow(data, gamma));
-    return color;
+vec4 applyColormap(vec4 color) {
+    // clim and gamma are applied identically in both modes: per channel for rgb
+    // data, and to the single (red) channel for scalar data.
+    color.rgb = clamp(color.rgb, min(clim.x, clim.y), max(clim.x, clim.y));
+    color.rgb = (color.rgb - clim.x) / (clim.y - clim.x);
+    color.rgb = pow(color.rgb, vec3(gamma));
+    if (u_rgb_mode == 1) {
+        // no colormapping, the rgb values are used directly
+        return vec4(color.rgb, 1.0);
+    }
+    return $cmap(color.r);
 }
 
 
@@ -147,15 +158,15 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     vec3 N; // normal
     color1 = $get_data(loc+vec3(-step[0],0.0,0.0) );
     color2 = $get_data(loc+vec3(step[0],0.0,0.0) );
-    N[0] = colorToVal(color1) - colorToVal(color2);
+    N[0] = $colorToScalar(color1) - $colorToScalar(color2);
     betterColor = max(max(color1, color2),betterColor);
     color1 = $get_data(loc+vec3(0.0,-step[1],0.0) );
     color2 = $get_data(loc+vec3(0.0,step[1],0.0) );
-    N[1] = colorToVal(color1) - colorToVal(color2);
+    N[1] = $colorToScalar(color1) - $colorToScalar(color2);
     betterColor = max(max(color1, color2),betterColor);
     color1 = $get_data(loc+vec3(0.0,0.0,-step[2]) );
     color2 = $get_data(loc+vec3(0.0,0.0,step[2]) );
-    N[2] = colorToVal(color1) - colorToVal(color2);
+    N[2] = $colorToScalar(color1) - $colorToScalar(color2);
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
     N = normalize(N);
@@ -390,16 +401,22 @@ _MIP_SNIPPETS = dict(
             vec3 max_loc_tex = start_loc_refine;
 
             vec3 small_step = step * 0.1;
+            // the coarse pass only kept the max *value*, so re-sample its
+            // location to get the color it belongs to; the refinement below
+            // replaces it only if it finds something brighter
+            vec4 maxcolor = $get_data(start_loc + step * float(maxi));
             for (int i=0; i<10; i++) {
-                float val = $get_data(loc).r;
+                vec4 scolor = $get_data(loc);
+                float val = $colorToScalar(scolor);
                 if ( val > maxval) {
                     maxval = val;
+                    maxcolor = scolor;
                     max_loc_tex = start_loc_refine + (small_step * i);
                 }
                 loc += small_step;
             }
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            gl_FragColor = applyColormap(maxcolor);
         } else {
             discard;
         }
@@ -413,6 +430,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         float scale = 0.0; // The cumulative attenuation
         int maxi = -1;  // Where the maximum value was encountered
         vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
+        vec4 maxcolor = vec4(0.0);  // The attenuated color at that location
         """,
     in_loop="""
         // Scale and clamp accumulation in `sumval` by contrast limits so that:
@@ -425,6 +443,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
             iter = nsteps;
         } else if( val * scale > maxval ) {
             maxval = val * scale;
+            maxcolor = color * scale;
             maxi = iter;
             max_loc_tex = loc;
         }
@@ -432,7 +451,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
     after_loop="""
         if ( maxi > -1 ) {
             frag_depth_point = max_loc_tex * u_shape;
-            gl_FragColor = applyColormap(maxval);
+            gl_FragColor = applyColormap(maxcolor);
         }
         else {
             discard;
@@ -466,16 +485,21 @@ _MINIP_SNIPPETS = dict(
             vec3 min_loc_tex = start_loc_refine;
 
             vec3 small_step = step * 0.1;
+            // see the MIP snippet: re-sample the coarse pass' min location to
+            // recover its color
+            vec4 mincolor = $get_data(start_loc + step * float(mini));
             for (int i=0; i<10; i++) {
-                float val = $get_data(loc).r;
+                vec4 scolor = $get_data(loc);
+                float val = $colorToScalar(scolor);
                 if ( val < minval) {
                     minval = val;
+                    mincolor = scolor;
                     min_loc_tex = start_loc_refine + (small_step * i);
                 }
                 loc += small_step;
             }
             frag_depth_point = min_loc_tex * u_shape;
-            gl_FragColor = applyColormap(minval);
+            gl_FragColor = applyColormap(mincolor);
         } else {
             discard;
         }
@@ -487,7 +511,7 @@ _TRANSLUCENT_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyColormap(color);
         float a1 = integrated_color.a;
         float a2 = color.a * (1 - a1);
         float alpha = max(a1 + a2, 0.001);
@@ -516,7 +540,7 @@ _ADDITIVE_SNIPPETS = dict(
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
-        color = applyColormap(val);
+        color = applyColormap(color);
 
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
@@ -538,9 +562,9 @@ _ISO_SNIPPETS = dict(
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $get_data(iloc);
-                if (color.r > u_threshold) {
+                if ($colorToScalar(color) > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
-                    gl_FragColor = applyColormap(color.r);
+                    gl_FragColor = applyColormap(color);
 
                     // set the variables for the depth buffer
                     frag_depth_point = iloc * u_shape;
@@ -563,18 +587,17 @@ _ISO_SNIPPETS = dict(
 _AVG_SNIPPETS = dict(
     before_loop="""
         float n = 0; // Counter for encountered values
-        float meanval = 0.0; // The mean of encountered values
-        float prev_mean = 0.0; // Variable to store the previous incremental mean
+        vec4 meancolor = vec4(0.0); // The mean color
+        vec4 prev_meancolor = vec4(0.0); // Previous mean color
         """,
     in_loop="""
-        // Incremental mean value used for numerical stability
-        n += 1; // Increment the counter
-        prev_mean = meanval; // Update the mean for previous iteration
-        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
+        // Incremental mean used for numerical stability
+        n += 1;
+        prev_meancolor = meancolor;
+        meancolor = prev_meancolor + (color - prev_meancolor) / n;
         """,
     after_loop="""
-        // Apply colormap on mean value
-        gl_FragColor = applyColormap(meanval);
+        gl_FragColor = applyColormap(meancolor);
         """,
 )
 
@@ -598,8 +621,9 @@ class VolumeVisual(Visual):
     Parameters
     ----------
     vol : ndarray
-        The volume to display. Must be ndim==3. Array is assumed to be stored
-        as ``(z, y, x)``.
+        The volume to display. Must be ndim==3 ``(z, y, x)`` for luminance
+        data or ndim==4 ``(z, y, x, 3)`` for RGB data. For RGB data the
+        colormap is bypassed and the RGB values are used directly.
     clim : str | tuple
         Limits to use for the colormap. I.e. the values that map to black and white
         in a gray colormap. Can be 'auto' to auto-set bounds to
@@ -653,9 +677,7 @@ class VolumeVisual(Visual):
         When this is specified (not ``None``) data is scaled on the
         GPU which allows for faster color limit changes. Additionally, when
         32-bit float data is provided it won't be copied before being
-        transferred to the GPU. Note this visual is limited to "luminance"
-        formatted data (single band). This is equivalent to `GL_RED` format
-        in OpenGL 4.0.
+        transferred to the GPU.
     raycasting_mode : {'volume', 'plane'}
         Whether to cast a ray through the whole volume or perpendicular to a
         plane through the volume defined.
@@ -775,7 +797,7 @@ class VolumeVisual(Visual):
 
         # Set plane params
         if plane_position is None:
-            self.plane_position = [x / 2 for x in vol.shape]
+            self.plane_position = [x / 2 for x in vol.shape[:3]]
         else:
             self.plane_position = plane_position
         if plane_normal is None:
@@ -824,7 +846,6 @@ class VolumeVisual(Visual):
         # creates a placeholder texture that will be resized later on.
         return tex_cls(data, interpolation=texture_interpolation,
                        internalformat=texture_format,
-                       format='luminance',
                        wrapping='clamp_to_edge')
 
     def set_data(self, vol, clim=None, copy=True):
@@ -850,8 +871,11 @@ class VolumeVisual(Visual):
         # Check volume
         if not isinstance(vol, np.ndarray):
             raise ValueError('Volume visual needs a numpy array.')
-        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] > 1)):
-            raise ValueError('Volume visual needs a 3D array.')
+        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] in (1, 3, 4))):
+            raise ValueError(
+                'Volume visual needs a 3D array or a 4D array with '
+                '1, 3, or 4 channels in the last dimension.'
+            )
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
 
@@ -865,6 +889,8 @@ class VolumeVisual(Visual):
         self.shared_program['clim'] = self._texture.clim_normalized
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
+        is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
+        self.shared_program['u_rgb_mode'] = 1 if is_rgb else 0
 
         shape = vol.shape[:3]
         if self._vol_shape != shape:
@@ -1098,9 +1124,11 @@ class VolumeVisual(Visual):
                              (known_methods, method))
         self._method = method
 
-        # $get_data needs to be unset and re-set, since it's present inside the snippets.
+        # $get_data and $colorToScalar need to be unset and re-set, since
+        # they are present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['get_data'] = None
+        self.shared_program.frag['colorToScalar'] = None
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.shared_program.frag['before_loop'] = self._before_loop_snippet
         self.shared_program.frag['in_loop'] = self._in_loop_snippet
