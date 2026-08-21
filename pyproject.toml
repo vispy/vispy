@@ -42,6 +42,8 @@ packaging = "*"
 vispy = { path = ".", editable = true }
 
 [tool.pixi.feature.test.dependencies]
+coveralls = "*"
+cython = "*"
 pytest = "*"
 pytest-sugar = "*"
 pytest-cov = "*"
@@ -49,20 +51,36 @@ meshio = "*"
 pillow = "*"
 imageio = "*"
 sphinx-gallery = "*"
+scipy = "*"
+networkx = "*"
+
+[tool.pixi.feature.min.dependencies]
+numpydoc = "*"
+
+[tool.pixi.feature.osmesa]
+platforms = ["linux-64"]
+
+[tool.pixi.feature.osmesa.dependencies]
+libglu = "*"
+mesalib = ">=25.0.5,<25.1.0"
 
 [tool.pixi.feature.full.dependencies]
 cmake = "*"
-cython = "*"
-coveralls = "*"
 decorator = "*"
 glfw = "!=3.3.1"
 jupyter = "*"
 jupyter-rfb = "*"
 matplotlib-base = "*"
-networkx = "*"
 pyopengl = "*"
 scikit-image = "*"
-scipy = "*"
+
+[tool.pixi.feature.docs.dependencies]
+numpydoc = "*"
+sphinx = "*"
+sphinx-bootstrap-theme = "*"
+sphinxcontrib-apidoc = "*"
+myst-parser = "*"
+pydata-sphinx-theme = "!=0.10.*"
 
 # Vispy backends
 [tool.pixi.feature.qt5.dependencies]
@@ -82,6 +100,9 @@ python = "3.14.*"
 python-gil = "*"
 
 [tool.pixi.environments]
+website = ["py310", "test", "full", "docs"]
+py310-min = ["py310", "min", "test"]
+py310-osmesa = ["py310", "osmesa", "test"]
 py310-full = ["py310", "test", "full", "qt5", "sdl2"]
 py310-newqt = ["py310", "test", "full", "qt6", "sdl2"]
 py312-full = ["py312", "test", "full", "qt5", "sdl2"]
