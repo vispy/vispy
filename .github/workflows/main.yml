@@ -265,7 +265,7 @@ jobs:
           # * https://github.com/vispy/vispy/pull/2668
           # * https://github.com/vispy/vispy/pull/2673
           export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGL.so.1
-          pixi run -e ${{ matrix.environment }} unit
+          pixi run -e ${{ matrix.environment }} python make test unit --tb=short
         fi
         if [ "${{ matrix.test }}" == 'osmesa' ]; then
           OSMESA_LIBRARY="$(
