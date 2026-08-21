@@ -25,3 +25,63 @@ before-all = [
 
 [tool.cibuildwheel.windows]
 environment = {FREETYPEPY_BUNDLE_FT=1}
+
+[tool.pixi.workspace]
+name = "vispy"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[tool.pixi.dependencies]
+numpy = "*"
+freetype-py = "*"
+hsluv = "*"
+kiwisolver = "*"
+packaging = "*"
+
+[tool.pixi.feature.test.dependencies]
+pytest = "*"
+pytest-sugar = "*"
+pytest-cov = "*"
+meshio = "*"
+pillow = "*"
+imageio = "*"
+sphinx-gallery = "*"
+
+[tool.pixi.feature.full.dependencies]
+cmake = "*"
+cython = "*"
+coveralls = "*"
+decorator = "*"
+glfw = "!=3.3.1"
+jupyter = "*"
+jupyter-rfb = "*"
+matplotlib-base = "*"
+networkx = "*"
+pyopengl = "*"
+scikit-image = "*"
+scipy = "*"
+
+# Vispy backends
+[tool.pixi.feature.qt5.dependencies]
+pyqt = "5.*"
+[tool.pixi.feature.qt6.dependencies]
+pyqt6 = "*"
+[tool.pixi.feature.sdl2.pypi-dependencies]
+pysdl2 = "*"
+
+# Python versions
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+[tool.pixi.feature.py314.dependencies]
+python = "3.14.*"
+python-gil = "*"
+
+[tool.pixi.environments]
+py310-full = ["py310", "test", "full", "qt5", "sdl2"]
+py310-newqt = ["py310", "test", "full", "qt6", "sdl2"]
+py312-full = ["py312", "test", "full", "qt5", "sdl2"]
+py312-newqt = ["py312", "test", "full", "qt6", "sdl2"]
+py314-full = ["py314", "test", "full", "qt5", "sdl2"]
+py314-newqt = ["py314", "test", "full", "qt6", "sdl2"]

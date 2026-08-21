@@ -32,3 +32,4 @@ vispy/version.py
 vispy/visuals/text/_sdf_cpu*.pyd
 .spyproject
 wheelhouse
+pixi.lock
