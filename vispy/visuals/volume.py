@@ -122,15 +122,6 @@ float rand(vec2 co)
     return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-float $colorToScalar(vec4 color1)
-{
-    if (u_rgb_mode == 1)
-        // perceptual luminance, a good approach to transform rgb into a single
-        // value for things like gradient calculations in isosurface
-        return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
-    return color1.r;
-}
-
 vec4 applyColormap(vec4 color) {
     // clim and gamma are applied identically in both modes: per channel for rgb
     // data, and to the single (red) channel for scalar data.
@@ -373,7 +364,21 @@ _RAYCASTING_SETUP_PLANE = """
     frag_depth_point = intersection;
 """
 
-_COLOR_TO_SCALAR = "float colorToScalar(vec4 color) { return color.r; }"
+_COLOR_TO_SCALAR = """
+float colorToScalar(vec4 color1)
+{
+    return color1.r;
+}
+"""
+
+_COLOR_TO_SCALAR_RGB = """
+float colorToScalar(vec4 color1)
+{
+    // perceptual luminance, a good approach to transform rgb into a single
+    // value for things like gradient calculations in isosurface
+    return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
+}
+"""
 
 _MIP_SNIPPETS = dict(
     before_loop="""
@@ -774,7 +779,6 @@ class VolumeVisual(Visual):
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['gamma'] = self._gamma
-        self.shared_program.frag['colorToScalar'] = self._color_to_scalar_snippet
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
 
@@ -889,8 +893,8 @@ class VolumeVisual(Visual):
         self.shared_program['clim'] = self._texture.clim_normalized
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
-        is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
-        self.shared_program['u_rgb_mode'] = 1 if is_rgb else 0
+        self._is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
+        self.shared_program['u_rgb_mode'] = 1 if self._is_rgb else 0
 
         shape = vol.shape[:3]
         if self._vol_shape != shape:
@@ -1084,7 +1088,7 @@ class VolumeVisual(Visual):
 
     @property
     def _color_to_scalar_snippet(self):
-        return Function(_COLOR_TO_SCALAR)
+        return Function(_COLOR_TO_SCALAR_RGB) if self._is_rgb else Function(_COLOR_TO_SCALAR)
 
     @property
     def _after_loop_snippet(self):
@@ -1398,3 +1402,4 @@ class VolumeVisual(Visual):
 
         if self._need_interpolation_update:
             self._build_interpolation()
+            self.shared_program.frag['colorToScalar'] = self._color_to_scalar_snippet

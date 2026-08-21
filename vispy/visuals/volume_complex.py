@@ -67,7 +67,6 @@ class ComplexVolumeVisual(VolumeVisual):
             data = data.view(dtype=np.float32).reshape((data.shape + (2,)))
         else:
             self._texture._format = None
-        self.shared_program.frag['colorToScalar'] = self._color_to_scalar_snippet
         return super().set_data(data, clim=clim, copy=copy)
 
     @property
@@ -92,7 +91,6 @@ class ComplexVolumeVisual(VolumeVisual):
             return Function(COMPLEX_TRANSFORMS[self.complex_mode])
         else:
             return super()._color_to_scalar_snippet
-
 
     @property
     def clim(self):
