@@ -1,12 +1,24 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30
 # -----------------------------------------------------------------------------
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+# vispy: gallery 2
+
 """
-Simple use of SceneCanvas to display an Image.
+Complex Volume Rendering
+========================
+
+Demonstrates rendering a volume with complex data, where the color is computed
+from the raw data based on various complex modes.
+
+Controls:
+
+* 1  - toggle between volume rendering methods
+* 2  - toggle between complex modes.
 """
+
+from itertools import cycle
 import sys
 
 import numpy as np
@@ -22,21 +34,35 @@ def complex_ramp(size=256):
     return (mag_ramp * np.exp(1j * phase_ramp) * z_ramp).astype(np.complex64)
 
 
-canvas = scene.SceneCanvas(keys="interactive", size=(512, 512), show=True)
+vol = complex_ramp()
 
-# Set up a viewbox to display the image with interactive pan/zoom
+canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
+canvas.measure_fps()
+
 view = canvas.central_widget.add_view()
+volume = scene.visuals.ComplexVolume(vol, parent=view.scene, method='mip')
 
-cam = scene.cameras.TurntableCamera(parent=view.scene, fov=60, name="Turntable")
-# cam = scene.cameras.ArcballCamera(parent=view.scene, fov=60, name='Arcball')
+cam = scene.cameras.ArcballCamera(parent=view.scene, fov=60,
+                                   name='Arcball')
 view.camera = cam
 
-# Create the image
-img_data = complex_ramp()
+methods = cycle(['mip', 'attenuated_mip', 'translucent', 'additive',
+                 'average', 'iso'])
 
-image = scene.visuals.ComplexVolume(
-    img_data.real, parent=view.scene, complex_mode="magnitude"
-)
+complex_modes = cycle(scene.visuals.ComplexVolume.COMPLEX_MODES)
 
-if __name__ == "__main__" and sys.flags.interactive == 0:
+@canvas.events.key_press.connect
+def on_key_press(event):
+    if event.text == '1':
+        method = next(methods)
+        volume.method = method
+        print("Render method: %s" % method)
+    elif event.text == '2':
+        mode = next(complex_modes)
+        volume.complex_mode = mode
+        print("Render complex mode: %s" % mode)
+
+
+if __name__ == '__main__':
+    print(__doc__)
     app.run()
