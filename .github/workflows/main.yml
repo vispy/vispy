@@ -202,13 +202,12 @@ jobs:
       timeout-minutes: 2
       run: |
         # opengl system libraries
-        if [ "${{ matrix.deps }}" == 'full' ]; then
-          sudo apt-get update;
-          if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            cat ci/requirements/linux_full_newqtdeps_apt.txt | xargs sudo apt-get -y install
-          else
-            cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
-          fi
+        if [[ "${{ matrix.environment }}" == *"-newqt" ]]; then
+          sudo apt-get update
+          cat ci/requirements/linux_full_newqtdeps_apt.txt | xargs sudo apt-get -y install
+        elif [[ "${{ matrix.environment }}" == *"-full" ]]; then
+          sudo apt-get update
+          cat ci/requirements/linux_full_deps_apt.txt | xargs sudo apt-get -y install
         else
           sudo apt-get -y install x11-utils
         fi
