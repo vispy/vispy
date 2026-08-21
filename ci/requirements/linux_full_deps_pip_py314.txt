@@ -1,2 +1,2 @@
 pyopengltk
-pydsl2
+pysdl2
