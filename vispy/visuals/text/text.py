@@ -13,6 +13,7 @@ from __future__ import division
 import numpy as np
 from copy import deepcopy
 import sys
+import math
 
 from ._sdf_gpu import SDFRendererGPU
 from ._sdf_cpu import _calc_distance_field
@@ -161,9 +162,11 @@ _VERTEX_SHADER = """
         mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
                         sin(a_rotation), cos(a_rotation), 0, 0,
                         0, 0, 1, 0, 0, 0, 0, 1);
-        vec4 pos = $transform(vec4(a_pos, 1.0)) +
-                   vec4($text_scale(rot * vec4(a_position, 0.0, 1.0)).xyz, 0.0);
-        gl_Position = pos;
+        // when scaling is enabled, text_scale is enlarged/reduced per-instance on
+        // the CPU so the text resizes with zoom and FOV while staying billboarded.
+        vec4 pos = $transform(vec4(a_pos, 1.0));
+        vec4 offset = $text_scale(rot * vec4(a_position, 0.0, 1.0));
+        gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
         v_texcoord = a_texcoord;
         v_color = $color;
     }
@@ -403,6 +406,9 @@ class TextVisual(Visual):
         Whether to apply depth testing. Default False. If False, the text
         behaves like an overlay that does not get hidden behind other
         visuals in the scene.
+    scaling : bool
+        Whether the text size scales with zoom and FOV (True, default) or
+        stays fixed in canvas pixels.
     """
 
     _shaders = {
@@ -413,7 +419,7 @@ class TextVisual(Visual):
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, line_height=1.1, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 method='cpu', font_manager=None, depth_test=False):
+                 method='cpu', font_manager=None, depth_test=False, scaling=True):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         # Check input
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
@@ -438,6 +444,7 @@ class TextVisual(Visual):
         self.line_height = line_height
         self.pos = pos
         self.rotation = rotation
+        self.scaling = scaling
         self._text_scale = STTransform()
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
@@ -533,6 +540,43 @@ class TextVisual(Visual):
         self._pos_changed = True
         self.update()
 
+    def _world_scale(self, tr, coord):
+        """Screen-pixel scale at coord (for billboarded test).
+
+        tr is the full visual->render transform (the camera projection plus
+        the canvas mapping).
+ 
+        Returns the scale for how much the text grows/shrinks with the scene.
+        """
+        coord = np.asarray(coord, dtype=np.float64)
+        if coord.shape[0] == 2:
+            coord = np.array([coord[0], coord[1], 0.0])
+        p = coord
+        # jacobian by finite differences along the world x, y and z axes
+        e = 1e-6
+        pts = np.array([
+            [p[0],     p[1],     p[2],     1],
+            [p[0] + e, p[1],     p[2],     1],
+            [p[0],     p[1] + e, p[2],     1],
+            [p[0],     p[1],     p[2] + e, 1],
+        ])
+        # map from screen coords to world coords
+        clip = tr.map(pts)
+        w = clip[:, 3]
+
+        # non-positive clip.w means the anchor is on/behind the camera's
+        # focal plane; there is no well-defined on-screen size, so report 0.
+        if np.any(w <= 0):
+            return 0
+
+        # ndc coordinates to account for zoom and FOV
+        ndc = clip[:, :2] / w[:, None]
+        # subtracting the original points gives us the displacement in each axis
+        # direction, which gives us the full "stretch" of the unit in this position
+        disp = (ndc[1:] - ndc[0]) / e
+        # good ol' pythagoras
+        return float(np.sqrt(np.sum(np.linalg.norm(disp) ** 2)))
+
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
@@ -606,9 +650,33 @@ class TextVisual(Visual):
 
         transforms = self.transforms
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
+        # Base (billboarded) scale: a fixed number of screen pixels.
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
-        self._text_scale.scale = px_scale * n_pix
+        scale = px_scale * n_pix
+        if self._scaling:
+            # we need to rescale text based on camera zoom and fov;
+            # we do everything relative to the anchor point
+            anchor = self.pos
+            anchor_point = (anchor.mean(axis=0) if anchor.shape[0] > 1
+                            else anchor[0])
+            anchor_point = np.asarray(anchor_point, dtype=np.float64)
+            if anchor_point.shape[0] == 2:
+                anchor_point = np.array([anchor_point[0], anchor_point[1], 0.0])
+
+            tr_full = transforms.get_transform('visual', 'render')
+            view_scale = self._world_scale(tr_full, anchor_point)
+
+            # normalize the jacobian by the px scale (since at neutral framing
+            # they are equal); necessary to get the font size to have absolute
+            # meaning in screen pixels.
+            px_scale_mag = np.linalg.norm(px_scale)
+            if view_scale and px_scale_mag:
+                scale = scale * (view_scale / px_scale_mag)
+            else:
+                # we're behind the camera or some other degenerate case, just drop it
+                scale = 0
+        self._text_scale.scale = scale
         self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
         self.shared_program['u_kernel'] = self._font._kernel
@@ -655,6 +723,15 @@ class TextVisual(Visual):
 
     def _update_font(self):
         self._font = self._font_manager.get_font(self._face, self._bold, self._italic)
+        self.update()
+
+    @property
+    def scaling(self):
+        return self._scaling
+
+    @scaling.setter
+    def scaling(self, value):
+        self._scaling = bool(value)
         self.update()
 
 
