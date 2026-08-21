@@ -675,7 +675,7 @@ class MarkersVisual(Visual):
             # offset the framebuffer position to match gl_PointSize behavior (but without aliasing)
             apply_offset_func = Function("""
                 vec4 apply_offset(vec4 fb_pos, float total_size) {
-                    vec2 offset = $a_quad_pos * total_size;
+                    vec2 offset = $a_quad_pos * total_size * fb_pos.w;
                     return fb_pos + vec4(offset, 0, 0);
                 }
             """)
