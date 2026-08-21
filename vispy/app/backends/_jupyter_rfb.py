@@ -88,7 +88,14 @@ class CanvasBackend(BaseCanvasBackend, RemoteFrameBuffer):
             self._context.make_current()
             OffscreenContext().make_current().close()
         self._helper = FrameBufferHelper()
-        self._loop = asyncio.get_event_loop()
+
+        # With python 3.14 get_event_loop does not create one anymore, but raises runtimeerror,
+        # see: https://github.com/livekit/agents/issues/4755
+        try:
+            self._loop = asyncio.get_event_loop()
+        except RuntimeError:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
         self._logical_size = 1, 1
         self._physical_size = 1, 1
         self._lifecycle = 0  # 0: not initialized, 1: initialized, 2: closed
