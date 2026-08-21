@@ -22,13 +22,9 @@ recursive-include examples *.glsl
 include README.rst
 include LICENSE.txt
 include pyproject.toml
-include pytest.ini
 include .coveragerc
 
 recursive-exclude codegen *
-exclude Makefile
-exclude rtd_requirements.txt
-exclude stdeb.cfg
 exclude .spyderproject
 recursive-exclude vispy *.c
 recursive-exclude make *
