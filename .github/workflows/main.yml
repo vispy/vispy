@@ -274,18 +274,14 @@ jobs:
       run: |
         if [ "${{ matrix.new_qt }}" == 'true' ]; then
           conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_newqtdeps_conda.txt
-        elif [ "${{ matrix.python_version }}" == '3.14' ] && [ "${{ matrix.deps }}" == 'full' ]; then
-          conda install -y "python=${{ matrix.python_version }}" -f ci/requirements/linux_${{ matrix.deps }}_deps_conda_py314.txt
         else
-          conda install -y "python=${{ matrix.python_version }}" -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
+          conda install -y python=${{ matrix.python_version }} -f ci/requirements/linux_${{ matrix.deps }}_deps_conda.txt
         fi
     - name: Install pip-dependencies
       run: |
         if [ "${{ matrix.deps }}" == 'full' ]; then
           if [ "${{ matrix.new_qt }}" == 'true' ]; then
             pip install -r ci/requirements/linux_${{ matrix.deps }}_newqtdeps_pip.txt
-          elif [ "${{ matrix.python_version }}" == '3.14' ]; then
-            pip install -r ci/requirements/linux_${{ matrix.deps }}_deps_pip_py314.txt
           else
             pip install -r ci/requirements/linux_${{ matrix.deps }}_deps_pip.txt
           fi
