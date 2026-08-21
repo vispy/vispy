@@ -120,10 +120,11 @@ jobs:
         pixi run -e website python -c "import vispy; print(vispy.version.version)"
         pixi run -e website python -c "import vispy; print(vispy.sys_info())"
     - name: build website
-      run: |
-        export DISPLAY=:99.0
-        export XDG_RUNTIME_DIR=/tmp/runtime-runner
-        pixi run -e website bash ./ci/build_website.sh
+      env:
+        DISPLAY: ":99.0"
+        XDG_RUNTIME_DIR: /tmp/runtime-runner
+        TRAVIS_TAG: main
+      run: pixi run -e website build-website
     - name: Upload website HTML artifact
       uses: actions/upload-artifact@v7
       with:
