@@ -13,7 +13,7 @@ import numpy as np
 from vispy import app, scene
 
 
-def complex_ramp(size=512):
+def complex_ramp(size=256):
     """Returns a complex array where X ramps phase and Y ramps magnitude."""
     phase_ramp = np.linspace(-np.pi, np.pi - 1 / size, size)
     mag_ramp = np.linspace(10, 0 + 1 / size, size)
@@ -37,12 +37,6 @@ img_data = complex_ramp()
 image = scene.visuals.ComplexVolume(
     img_data.real, parent=view.scene, complex_mode="magnitude"
 )
-
-# Set 2D camera (the camera will scale to the contents in the scene)
-view.camera = scene.PanZoomCamera(aspect=1)
-view.camera.set_range()
-view.camera.zoom(1)
-
 
 if __name__ == "__main__" and sys.flags.interactive == 0:
     app.run()
