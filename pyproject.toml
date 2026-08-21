@@ -7,7 +7,7 @@ requires = [
     "Cython>=3.0.0"
 ]
 
-[tools.setuptools_scm]
+[tool.setuptools_scm]
 write_to = "vispy/version.py"
 local_scheme = "dirty-tag"
 
