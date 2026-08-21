@@ -283,10 +283,13 @@ jobs:
       run: |
         if [ "${{ matrix.deps }}" == 'full' ]; then
           if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
+            pip install -r ci/requirements/linux_${{ matrix.deps }}_newqtdeps_pip.txt
+          elif [ "${{ matrix.python_version }}" == '3.14' ]; then
+            pip install -r ci/requirements/linux_${{ matrix.deps }}_deps_pip_py314.txt
           else
-            pip install -r ci/requirements/linux_full_deps_pip.txt
+            pip install -r ci/requirements/linux_${{ matrix.deps }}_deps_pip.txt
           fi
+          
           rm -rf vispy/ext/_bundled
         fi
     - name: Install vispy
