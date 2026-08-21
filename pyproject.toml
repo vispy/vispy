@@ -132,7 +132,7 @@ norecursedirs = [
     "js",
 ]
 
-[target.linux-64.tasks]
+[tool.pixi.target.linux-64.tasks]
 clean-pyc = "find . -name '*.pyc' -delete"
 clean-so = "find . -name '*.so' -delete && find . -name '*.pyd' -delete"
 clean-build = "rm -rf build"
