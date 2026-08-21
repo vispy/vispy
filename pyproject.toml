@@ -38,6 +38,9 @@ hsluv = "*"
 kiwisolver = "*"
 packaging = "*"
 
+[tool.pixi.pypi-dependencies]
+vispy = { path = ".", editable = true }
+
 [tool.pixi.feature.test.dependencies]
 pytest = "*"
 pytest-sugar = "*"
