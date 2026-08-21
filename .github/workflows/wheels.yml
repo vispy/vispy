@@ -42,7 +42,7 @@ jobs:
     - uses: actions/setup-python@v7
       name: Install Python
       with:
-        python-version: '3.9'
+        python-version: '3.12'
     - name: Build sdist
       run: |
         python -m pip install --upgrade pip setuptools build wheel

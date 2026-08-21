@@ -210,6 +210,16 @@ jobs:
             deps: "full"
             test: "standard"
             new_qt: true
+          - test_number: 7
+            python_version: "3.14"
+            deps: "full"
+            test: "standard"
+            new_qt: false
+          - test_number: 8
+            python_version: "3.14"
+            deps: "full"
+            test: "standard"
+            new_qt: true
     steps:
     - uses: actions/checkout@v6
       with:
@@ -253,7 +263,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v4
       with:
         miniforge-version: latest
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
         channels: conda-forge
         conda-remove-defaults: true
         channel-priority: strict
@@ -271,10 +281,11 @@ jobs:
       run: |
         if [ "${{ matrix.deps }}" == 'full' ]; then
           if [ "${{ matrix.new_qt }}" == 'true' ]; then
-            pip install -r ci/requirements/linux_full_newqtdeps_pip.txt
+            pip install -r ci/requirements/linux_${{ matrix.deps }}_newqtdeps_pip.txt
           else
-            pip install -r ci/requirements/linux_full_deps_pip.txt
+            pip install -r ci/requirements/linux_${{ matrix.deps }}_deps_pip.txt
           fi
+          
           rm -rf vispy/ext/_bundled
         fi
     - name: Install vispy
