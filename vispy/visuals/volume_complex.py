@@ -46,32 +46,45 @@ class ComplexVolumeVisual(VolumeVisual):
                 f'complex_mode must be one of {", ".join(self.COMPLEX_MODES)}'
             )
 
-        self._data_is_complex = np.iscomplexobj(vol)
+        if not np.iscomplexobj(vol):
+            raise ValueError('Data must be complex. Use VolumeVisual instead.')
         self._complex_mode = complex_mode
 
-        if kwargs.get("clim", "auto") == "auto" and self._data_is_complex:
+        if kwargs.get("clim", "auto") == "auto":
             kwargs["clim"] = self._calc_complex_clim(vol)
 
-        kwargs["texture_format"] = "auto"
+        kwargs["texture_format"] = "rg32f"
+        self._in_init = True
+        vol = self._convert_complex_to_float_view(vol)
         super().__init__(vol, **kwargs)
 
     def set_data(self, vol, clim=None, copy=True):
-        data = np.asarray(vol)
-        self._data_is_complex = np.iscomplexobj(data)
-        if self._data_is_complex:
-            #  Turn the texture into an rg32f texture
-            # where r = 'real' and g = 'imag'
-            self._texture._format = "rg"
-            # turn complex128 into complex64 if needed
-            data = data.astype(np.complex64, copy=False)
-            data = data.view(dtype=np.float32).reshape((data.shape + (2,)))
-        else:
-            self._texture._format = None
-        return super().set_data(data, clim=clim, copy=copy)
+        vol = np.asarray(vol)
+        if not self._in_init:
+            vol = self._convert_complex_to_float_view(vol)
+
+        if clim is not None and clim != self._texture.clim:
+            self._texture.set_clim(clim)
+
+        # Apply to texture
+        self._texture.check_data_format(vol)
+        self._last_data = vol
+        self._texture.scale_and_set_data(vol, copy=copy)
+        self.shared_program['clim'] = self._texture.clim_normalized
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
+                                          vol.shape[0])
+        self._is_rgb = False
+        self.shared_program['u_rgb_mode'] = False
+
+        shape = vol.shape[:3]
+        if self._vol_shape != shape:
+            self._vol_shape = shape
+            self._need_vertex_update = True
+        self._vol_shape = shape
 
     @property
     def complex_mode(self):
-        return self._data_is_complex and self._complex_mode
+        return self._complex_mode
 
     @complex_mode.setter
     def complex_mode(self, value):
@@ -87,10 +100,14 @@ class ComplexVolumeVisual(VolumeVisual):
 
     @property
     def _color_to_scalar_snippet(self):
-        if self._data_is_complex:
-            return Function(COMPLEX_TRANSFORMS[self.complex_mode])
-        else:
-            return super()._color_to_scalar_snippet
+        return Function(COMPLEX_TRANSFORMS[self.complex_mode])
+
+    @staticmethod
+    def _convert_complex_to_float_view(complex_arr):
+        # turn complex128 into complex64 if needed
+        complex64_arr = complex_arr.astype(np.complex64, copy=False)
+        float_view_arr = complex64_arr.view(dtype=np.float32).reshape((complex64_arr.shape + (2, )))
+        return float_view_arr
 
     @property
     def clim(self):

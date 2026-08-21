@@ -878,7 +878,7 @@ class VolumeVisual(Visual):
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] in (1, 3, 4))):
             raise ValueError(
                 'Volume visual needs a 3D array or a 4D array with '
-                '1, 3, or 4 channels in the last dimension.'
+                f'1, 3, or 4 channels in the last dimension. Got {vol.shape}.'
             )
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
