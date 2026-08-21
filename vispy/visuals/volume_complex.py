@@ -8,7 +8,7 @@ from .shaders import Function, FunctionChain
 COMPLEX_TRANSFORMS = {
     "real": "float cplx2float(vec4 data) { return data.r; }",
     "imaginary": "float cplx2float(vec4 data) { return data.g; }",
-    "magnitude": "float cplx2float(vec4 data) { return length(vec2(data)); }",
+    "magnitude": "float cplx2float(vec4 data) { return length(data.rg); }",
     "phase": "float cplx2float(vec4 data) { return atan(data.g, data.r); }",
 }
 CPU_COMPLEX_TRANSFORMS = {
