@@ -122,15 +122,6 @@ float rand(vec2 co)
     return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-float colorToVal(vec4 color1)
-{
-    if (u_rgb_mode == 1)
-        // perceptual luminance, a good approach to transform rgb into a single
-        // value for things like gradient calculations in isosurface
-        return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
-    return color1.r;
-}
-
 vec4 applyColormap(vec4 color) {
     // clim and gamma are applied identically in both modes: per channel for rgb
     // data, and to the single (red) channel for scalar data.
@@ -158,15 +149,15 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     vec3 N; // normal
     color1 = $get_data(loc+vec3(-step[0],0.0,0.0) );
     color2 = $get_data(loc+vec3(step[0],0.0,0.0) );
-    N[0] = colorToVal(color1) - colorToVal(color2);
+    N[0] = $colorToScalar(color1) - $colorToScalar(color2);
     betterColor = max(max(color1, color2),betterColor);
     color1 = $get_data(loc+vec3(0.0,-step[1],0.0) );
     color2 = $get_data(loc+vec3(0.0,step[1],0.0) );
-    N[1] = colorToVal(color1) - colorToVal(color2);
+    N[1] = $colorToScalar(color1) - $colorToScalar(color2);
     betterColor = max(max(color1, color2),betterColor);
     color1 = $get_data(loc+vec3(0.0,0.0,-step[2]) );
     color2 = $get_data(loc+vec3(0.0,0.0,step[2]) );
-    N[2] = colorToVal(color1) - colorToVal(color2);
+    N[2] = $colorToScalar(color1) - $colorToScalar(color2);
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
     N = normalize(N);
@@ -283,7 +274,7 @@ void main() {
             {
                 // Get sample color
                 vec4 color = $get_data(loc);
-                float val = colorToVal(color);
+                float val = $colorToScalar(color);
                 texture_sampled = true;
 
                 $in_loop
@@ -373,6 +364,21 @@ _RAYCASTING_SETUP_PLANE = """
     frag_depth_point = intersection;
 """
 
+_COLOR_TO_SCALAR = """
+float colorToScalar(vec4 color1)
+{
+    return color1.r;
+}
+"""
+
+_COLOR_TO_SCALAR_RGB = """
+float colorToScalar(vec4 color1)
+{
+    // perceptual luminance, a good approach to transform rgb into a single
+    // value for things like gradient calculations in isosurface
+    return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
+}
+"""
 
 _MIP_SNIPPETS = dict(
     before_loop="""
@@ -406,7 +412,7 @@ _MIP_SNIPPETS = dict(
             vec4 maxcolor = $get_data(start_loc + step * float(maxi));
             for (int i=0; i<10; i++) {
                 vec4 scolor = $get_data(loc);
-                float val = colorToVal(scolor);
+                float val = $colorToScalar(scolor);
                 if ( val > maxval) {
                     maxval = val;
                     maxcolor = scolor;
@@ -489,7 +495,7 @@ _MINIP_SNIPPETS = dict(
             vec4 mincolor = $get_data(start_loc + step * float(mini));
             for (int i=0; i<10; i++) {
                 vec4 scolor = $get_data(loc);
-                float val = colorToVal(scolor);
+                float val = $colorToScalar(scolor);
                 if ( val < minval) {
                     minval = val;
                     mincolor = scolor;
@@ -561,7 +567,7 @@ _ISO_SNIPPETS = dict(
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $get_data(iloc);
-                if (colorToVal(color) > u_threshold) {
+                if ($colorToScalar(color) > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color);
 
@@ -872,7 +878,7 @@ class VolumeVisual(Visual):
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] in (1, 3, 4))):
             raise ValueError(
                 'Volume visual needs a 3D array or a 4D array with '
-                '1, 3, or 4 channels in the last dimension.'
+                f'1, 3, or 4 channels in the last dimension. Got {vol.shape}.'
             )
         if isinstance(self._texture, GPUScaledTextured3D):
             copy = False
@@ -887,8 +893,8 @@ class VolumeVisual(Visual):
         self.shared_program['clim'] = self._texture.clim_normalized
         self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                           vol.shape[0])
-        is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
-        self.shared_program['u_rgb_mode'] = 1 if is_rgb else 0
+        self._is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
+        self.shared_program['u_rgb_mode'] = 1 if self._is_rgb else 0
 
         shape = vol.shape[:3]
         if self._vol_shape != shape:
@@ -1081,6 +1087,10 @@ class VolumeVisual(Visual):
         return self._rendering_methods[self.method]['in_loop']
 
     @property
+    def _color_to_scalar_snippet(self):
+        return Function(_COLOR_TO_SCALAR_RGB) if self._is_rgb else Function(_COLOR_TO_SCALAR)
+
+    @property
     def _after_loop_snippet(self):
         return self._rendering_methods[self.method]['after_loop']
 
@@ -1118,9 +1128,11 @@ class VolumeVisual(Visual):
                              (known_methods, method))
         self._method = method
 
-        # $get_data needs to be unset and re-set, since it's present inside the snippets.
+        # $get_data and $colorToScalar need to be unset and re-set, since
+        # they are present inside the snippets.
         #       Program should probably be able to do this automatically
         self.shared_program.frag['get_data'] = None
+        self.shared_program.frag['colorToScalar'] = None
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.shared_program.frag['before_loop'] = self._before_loop_snippet
         self.shared_program.frag['in_loop'] = self._in_loop_snippet
@@ -1390,3 +1402,4 @@ class VolumeVisual(Visual):
 
         if self._need_interpolation_update:
             self._build_interpolation()
+            self.shared_program.frag['colorToScalar'] = self._color_to_scalar_snippet
