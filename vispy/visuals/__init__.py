@@ -15,6 +15,7 @@ from .axis import AxisVisual  # noqa
 from .box import BoxVisual  # noqa
 from .cube import CubeVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
+from .gaussian_splat import GaussianSplatVisual  # noqa
 from .gridlines import GridLinesVisual  # noqa
 from .image import ImageVisual  # noqa
 from .image_complex import ComplexImageVisual  # noqa
