@@ -22,39 +22,23 @@ Announcing:
 
 """
 
-import os
-from os import path as op
-from setuptools import setup, find_packages
-
 import numpy as np
+
 from Cython.Build import cythonize
-from Cython.Distutils import Extension
-
-name = 'vispy'
-description = 'Interactive visualization in Python'
-
-# Special commands for building jupyter notebook extension
-here = os.path.dirname(os.path.abspath(__file__))
-node_root = os.path.join(here, 'js')
-is_repo = os.path.exists(os.path.join(here, '.git'))
-
-npm_path = os.pathsep.join([
-    os.path.join(node_root, 'node_modules', '.bin'),
-    os.environ.get('PATH', os.defpath),
-])
+from setuptools import Extension, setup
 
 
-def set_builtin(name, value):
-    if isinstance(__builtins__, dict):
-        __builtins__[name] = value
-    else:
-        setattr(__builtins__, name, value)
+extensions = [
+    Extension(
+        "vispy.visuals.text._sdf_cpu",
+        sources=["vispy/visuals/text/_sdf_cpu.pyx"],
+        include_dirs=[np.get_include()],
+        define_macros=[
+            ("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION"),
+        ],
+    )
+]
 
-
-extensions = [Extension('vispy.visuals.text._sdf_cpu',
-                        sources=[op.join('vispy', 'visuals', 'text', '_sdf_cpu.pyx')],
-                        include_dirs=[np.get_include()],
-                        cython_directives={"language_level": "3"},
-                        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
-                        ),
-              ]
+setup(
+    ext_modules=cythonize(extensions),
+)

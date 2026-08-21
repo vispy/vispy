@@ -1,11 +1,12 @@
 [build-system]
 requires = [
-    "setuptools>=69.4.0",
+    "setuptools>=74.1.0",
     # see https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-0-specific-advice
     "numpy>=2.0.0",
     "setuptools_scm[toml]>=8.1",
     "Cython>=3.0.0"
 ]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "vispy"
@@ -45,7 +46,6 @@ classifiers = [
     "Intended Audience :: Education",
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering :: Visualization",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
@@ -122,6 +122,13 @@ test = [
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
+
+[[tool.setuptools.ext-modules]]
+name = "vispy.visuals.text._sdf_cpu"
+sources = ["vispy/visuals/text/_sdf_cpu.pyx"]
+define-macros = [
+    ["NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION"],
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
