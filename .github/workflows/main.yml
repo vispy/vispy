@@ -56,6 +56,7 @@ jobs:
       with:
         environments: lint
         cache: true
+        locked: false
     - name: Check line endings
       run: pixi run -e lint lineendings
     - name: Lint with flake8
@@ -113,6 +114,7 @@ jobs:
       with:
         environments: website
         cache: true
+        locked: false
     - name: Version Info
       run: |
         export DISPLAY=:99.0
@@ -224,6 +226,7 @@ jobs:
       with:
         environments: ${{ matrix.environment }}
         cache: true
+        locked: false
     - name: Version Info
       run: |
         if [ "${{ matrix.test }}" != "osmesa" ]; then
