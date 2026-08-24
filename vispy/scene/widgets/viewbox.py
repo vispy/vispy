@@ -56,6 +56,11 @@ class ViewBox(Widget):
         self._scene.clip_children = True
         self.transforms.changed.connect(self._update_scene_clipper)
 
+        # we also want to clip direct children of viewbox (not just its scene),
+        # such as screen-space overlays
+        self.clip_children = True
+        self._update_clipper()
+
         # Camera is a helper object that handles scene transformation
         # and user interaction.
         if camera is None:
