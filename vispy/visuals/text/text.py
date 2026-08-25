@@ -21,7 +21,6 @@ from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
 from ...gloo import context
 from ...gloo.wrappers import _check_valid
 from ...util.fonts import _load_glyph
-from ..transforms import STTransform
 from ...color import ColorArray
 from ..visual import Visual
 from ...io import load_spatial_filters
@@ -150,6 +149,9 @@ class FontManager(object):
 # The visual
 
 _VERTEX_SHADER = """
+    uniform bool u_scaling;
+    uniform vec2 u_px_scale;
+    uniform float u_npix;
     attribute float a_rotation;  // rotation in rad
     attribute vec2 a_position; // in point units
     attribute vec2 a_texcoord;
@@ -162,10 +164,38 @@ _VERTEX_SHADER = """
         mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
                         sin(a_rotation), cos(a_rotation), 0, 0,
                         0, 0, 1, 0, 0, 0, 0, 1);
-        // when scaling is enabled, text_scale is enlarged/reduced per-instance on
-        // the CPU so the text resizes with zoom and FOV while staying billboarded.
-        vec4 pos = $transform(vec4(a_pos, 1.0));
-        vec4 offset = $text_scale(rot * vec4(a_position, 0.0, 1.0));
+        vec4 pos = $transform(vec4(a_pos, 1));
+        vec2 vertex = (rot * vec4(a_position, 0, 1)).xy;
+        vec2 px_direction = normalize(u_px_scale);
+
+        float scale;
+
+        if ( u_scaling ) {
+            // small step along each axis for jacobian by finite-differences
+            vec2 ndc_anchor = pos.xy / pos.w;
+            float e = 1e-3;
+            vec4 cx = $transform(vec4(a_pos + vec3(e, 0, 0), 1));
+            vec4 cy = $transform(vec4(a_pos + vec3(0, e, 0), 1));
+            vec4 cz = $transform(vec4(a_pos + vec3(0, 0, e), 1));
+            vec2 dx = cx.xy / cx.w - ndc_anchor;
+            vec2 dy = cy.xy / cy.w - ndc_anchor;
+            vec2 dz = cz.xy / cz.w - ndc_anchor;
+
+            float world_mag = sqrt(dot(dx, dx) + dot(dy, dy) + dot(dz, dz)) / e;
+            // non-positive clip.w means the anchor (or a step) is behind the camera
+            if (pos.w <= 0 || cx.w <= 0 || cy.w <= 0 || cz.w <= 0) {
+                world_mag = 0;
+            }
+
+            scale = u_npix * world_mag;
+        } else {
+            scale = u_npix * length(u_px_scale);
+        }
+
+        float scale_x = scale * px_direction.x * vertex.x;
+        float scale_y = scale * px_direction.y * vertex.y;
+        vec4 offset = vec4(scale_x, scale_y, 0, 1);
+
         gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
         v_texcoord = a_texcoord;
         v_color = $color;
@@ -445,7 +475,6 @@ class TextVisual(Visual):
         self.pos = pos
         self.rotation = rotation
         self.scaling = scaling
-        self._text_scale = STTransform()
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -540,43 +569,6 @@ class TextVisual(Visual):
         self._pos_changed = True
         self.update()
 
-    def _world_scale(self, tr, coord):
-        """Screen-pixel scale at coord (for billboarded test).
-
-        tr is the full visual->render transform (the camera projection plus
-        the canvas mapping).
- 
-        Returns the scale for how much the text grows/shrinks with the scene.
-        """
-        coord = np.asarray(coord, dtype=np.float64)
-        if coord.shape[0] == 2:
-            coord = np.array([coord[0], coord[1], 0.0])
-        p = coord
-        # jacobian by finite differences along the world x, y and z axes
-        e = 1e-6
-        pts = np.array([
-            [p[0],     p[1],     p[2],     1],
-            [p[0] + e, p[1],     p[2],     1],
-            [p[0],     p[1] + e, p[2],     1],
-            [p[0],     p[1],     p[2] + e, 1],
-        ])
-        # map from screen coords to world coords
-        clip = tr.map(pts)
-        w = clip[:, 3]
-
-        # non-positive clip.w means the anchor is on/behind the camera's
-        # focal plane; there is no well-defined on-screen size, so report 0.
-        if np.any(w <= 0):
-            return 0
-
-        # ndc coordinates to account for zoom and FOV
-        ndc = clip[:, :2] / w[:, None]
-        # subtracting the original points gives us the displacement in each axis
-        # direction, which gives us the full "stretch" of the unit in this position
-        disp = (ndc[1:] - ndc[0]) / e
-        # good ol' pythagoras
-        return float(np.sqrt(np.sum(np.linalg.norm(disp) ** 2)))
-
     def _prepare_draw(self, view):
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
@@ -650,35 +642,11 @@ class TextVisual(Visual):
 
         transforms = self.transforms
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
-        # Base (billboarded) scale: a fixed number of screen pixels.
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
-        scale = px_scale * n_pix
-        if self._scaling:
-            # we need to rescale text based on camera zoom and fov;
-            # we do everything relative to the anchor point
-            anchor = self.pos
-            anchor_point = (anchor.mean(axis=0) if anchor.shape[0] > 1
-                            else anchor[0])
-            anchor_point = np.asarray(anchor_point, dtype=np.float64)
-            if anchor_point.shape[0] == 2:
-                anchor_point = np.array([anchor_point[0], anchor_point[1], 0.0])
-
-            tr_full = transforms.get_transform('visual', 'render')
-            view_scale = self._world_scale(tr_full, anchor_point)
-
-            # normalize the jacobian by the px scale (since at neutral framing
-            # they are equal); necessary to get the font size to have absolute
-            # meaning in screen pixels.
-            px_scale_mag = np.linalg.norm(px_scale)
-            if view_scale and px_scale_mag:
-                scale = scale * (view_scale / px_scale_mag)
-            else:
-                # we're behind the camera or some other degenerate case, just drop it
-                scale = 0
-        self._text_scale.scale = scale
-        self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
+        self.shared_program['u_px_scale'] = px_scale
+        self.shared_program['u_scaling'] = self._scaling
         self.shared_program['u_kernel'] = self._font._kernel
         self.shared_program['u_color'] = self._color.rgba
         self.shared_program['u_font_atlas'] = self._font._atlas
