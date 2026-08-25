@@ -449,7 +449,7 @@ class TextVisual(Visual):
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, line_height=1.1, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 method='cpu', font_manager=None, depth_test=False, scaling=True):
+                 method='cpu', font_manager=None, depth_test=False, scaling=False):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         # Check input
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
