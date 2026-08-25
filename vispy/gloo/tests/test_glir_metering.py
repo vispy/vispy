@@ -468,11 +468,9 @@ def test_uninstall_flushes_deferred_deletes(monkeypatch):
 def test_glir_flush_never_exceeds_frame_budget(monkeypatch):
     """No single flush uploads more than one frame budget of texture data.
 
-    This is the mechanism bound behind "one draw can't stall for seconds
-    on a giant upload": however much DATA accumulates between draws (a
-    level switch stages a whole tile at once), each flush lands at most
-    ``frame_budget_bytes`` (plus at most one indivisible slab) and
-    carries the rest — for 3D volumes and large 2D image tiles alike.
+    However much DATA accumulates between draws, each flush executes at most
+    ``frame_budget_bytes`` (plus at most one indivisible slab) and carries the
+    rest. This applies to both 3D volumes and large 2D textures.
     """
     monkeypatch.setattr(
         'vispy.gloo.context.get_current_canvas',
@@ -524,11 +522,10 @@ class _DrainSpy:
 def test_metered_upload_within_budget_still_notifies_drain(monkeypatch):
     """A clean flush that landed metered uploads notifies, carry or not.
 
-    Uploads small enough to fit one frame budget are never carried, but
-    a present (texture swap) may still be gated on them; if the drain
-    notification only fired when a carry emptied, that present would
-    wait for the next interaction — the "stops loading tiles until I
-    touch the viewer" stall.
+    Uploads small enough to fit one frame budget are never carried, but a
+    consumer may still wait for notification that their DATA commands reached
+    the parser. Notification must therefore not depend on a carry queue having
+    existed.
     """
     monkeypatch.setattr(
         'vispy.gloo.context.get_current_canvas',

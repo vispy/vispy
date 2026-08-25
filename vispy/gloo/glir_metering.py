@@ -3,20 +3,20 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Per-frame metering of vispy GLIR texture uploads.
 
-vispy drains its entire GLIR command queue inside whichever draw happens
-next — including interaction frames. With progressive loading, dozens of
-megabytes of ``glTexSubImage3D`` traffic can accumulate between draws and
-the drain then blocks the main thread for hundreds of milliseconds to
-seconds (macOS GL-over-Metal is the worst case: ~125 MB/s effective with
-multi-second outliers for large single uploads).
+VisPy normally drains its entire GLIR command queue during the next draw.
+Applications that update large textures incrementally can therefore queue
+many megabytes of ``glTexSubImage2D`` or ``glTexSubImage3D`` work between
+draws. Executing it all at once blocks the thread performing the draw and
+can make input handling visibly stall. This is especially costly on macOS
+when OpenGL calls are translated to Metal.
 
 When enabled, VisPy's GLIR queue dispatches through this module so that
 
 - a single large texture ``DATA`` command is split into small slab
   sub-uploads (contiguous views along the leading axes, no copies), and
-- each frame spends at most ``frame_budget_bytes`` on texture uploads;
-  the remainder is carried to the *next* frame and a redraw is scheduled
-  so the carry keeps draining even without interaction.
+- each canvas draw spends at most ``frame_budget_bytes`` on texture uploads;
+  the unexecuted commands are retained in a per-context carry queue and a
+  redraw is requested until that queue is empty.
 
 GLIR ordering semantics are preserved per object: once a command for a
 texture is deferred, every later command for that same texture id is
@@ -24,7 +24,13 @@ deferred behind it. ``SIZE`` (re-specification) and ``DELETE`` commands
 cancel any earlier carried uploads for their id, mirroring vispy's own
 queue filtering.
 
-Metering is opt-in through :func:`install`; the default GLIR behavior is
+The byte budget is shared by canvases that share a GLIR parser, matching the
+shared OpenGL context that receives the uploads. The budget resets at the
+start of each canvas draw. Offscreen users without draw events receive a
+time-based reset so a carry queue cannot remain stalled indefinitely.
+
+Metering is process-wide and opt-in through :func:`install`. It applies only
+to local OpenGL parsers; remote GLIR parsers and the default disabled path are
 unchanged.
 
 Examples
@@ -72,9 +78,9 @@ _FACTORY_FRAME_BUDGET_BYTES = 4 * 2**20
 _FACTORY_SLAB_BYTES = 1 * 2**20
 DEFAULT_FRAME_BUDGET_BYTES = _FACTORY_FRAME_BUDGET_BYTES
 DEFAULT_SLAB_BYTES = _FACTORY_SLAB_BYTES
-#: Deferred GL object deletions executed per quiet flush. Deletion can
-#: sync the GPU pipeline, so the backlog drains a few per frame instead
-#: of all at once.
+#: Deferred GL object deletions executed per quiet flush (a flush with no
+#: texture uploads and no active upload hold). Deletion can synchronize the
+#: GPU pipeline, so only a small batch executes in each such flush.
 DELETE_DRAIN_PER_FLUSH = 4
 #: 2D texture DATA at or above this size is metered like 3D uploads.
 #: Small 2D textures (colormap LUTs, interpolation kernels) MUST stay
@@ -131,43 +137,63 @@ _IDEMPOTENT_FUNCS = frozenset(
 
 _enabled = False
 _hooked_canvases: weakref.WeakSet = weakref.WeakSet()
-# while time.monotonic() < this, defer ALL metered texture uploads
-# (interaction hold: see ProgressiveLoader._on_interaction)
+# Absolute ``time.monotonic`` deadline before which metered DATA commands are
+# carried without execution. Non-upload commands continue to execute.
 _upload_hold_until = 0.0
 
-# GLIR ids whose uploads are never metered. Double-buffered textures
-# register here: their writes always target an unbound texture and the
-# swap that makes them visible is atomic — deferring those uploads
-# would present a partially written texture (a black flash), the exact
-# artifact the buffering exists to prevent.
+# GLIR texture ids whose DATA commands bypass the byte budget. This is useful
+# when an application writes a complete staging texture before atomically
+# making it visible: splitting that write across draws could expose partially
+# initialized texture contents if the application switches textures too soon.
 _unmetered_ids: set = set()
 
 
 def add_unmetered_texture(glir_id) -> None:
-    """Exempt a texture's GLIR id from upload metering."""
+    """Make DATA commands for one GLIR texture bypass the byte budget.
+
+    Parameters
+    ----------
+    glir_id : int
+        The texture object's GLIR identifier.
+    """
     _unmetered_ids.add(glir_id)
 
 
 def discard_unmetered_texture(glir_id) -> None:
-    """Remove a previously registered exemption (id may be absent)."""
+    """Remove a texture exemption if it is present.
+
+    Parameters
+    ----------
+    glir_id : int
+        The texture object's GLIR identifier.
+    """
     _unmetered_ids.discard(glir_id)
 
 
-# weak callbacks invoked (on the GL/main thread) when a parser's upload
-# carry fully drains; used to restore interactive render LOD without a
-# polling timer
+# Weakly referenced bound methods invoked on the drawing thread after a flush
+# executes metered DATA commands and leaves no deferred upload commands. A
+# consumer can use this notification instead of polling pending_upload_bytes().
 _drain_callbacks: list = []
 
 
 def add_drain_callback(method) -> None:
-    """Register a bound method to call when an upload carry drains."""
+    """Register a bound method to call after metered uploads drain.
+
+    The callback is weakly referenced, so registration does not extend the
+    lifetime of its object.
+
+    Parameters
+    ----------
+    method : bound method
+        A no-argument method. It runs on the thread performing the GLIR flush.
+    """
     ref = weakref.WeakMethod(method)
     if all(ref != existing for existing in _drain_callbacks):
         _drain_callbacks.append(ref)
 
 
 def remove_drain_callback(method) -> None:
-    """Remove a previously registered drain callback."""
+    """Remove a previously registered bound method if it is present."""
     _drain_callbacks[:] = [
         ref
         for ref in _drain_callbacks
@@ -190,12 +216,7 @@ def _notify_drained() -> None:
 
 
 def pending_upload_bytes() -> int:
-    """Total bytes of carried (not yet executed) texture uploads.
-
-    Lets callers couple behavior to the upload backlog — e.g. keep the
-    interactive render LOD degraded until a level switch's full-tile
-    upload has fully drained into the GPU.
-    """
+    """Return bytes in deferred texture DATA commands across all contexts."""
     return sum(
         sum(c[3].nbytes for c in state.carry if c[0] == 'DATA')
         for state in _states.values()
@@ -205,9 +226,15 @@ def pending_upload_bytes() -> int:
 def hold_uploads_until(deadline: float) -> None:
     """Defer all metered texture uploads until ``time.monotonic()`` >= deadline.
 
-    Called on every interaction event; the deadline only ever extends.
-    Carried uploads keep scheduling redraws, so draining resumes by
-    itself once the hold expires.
+    Non-upload GLIR commands continue to execute during the hold. Calling this
+    function with an earlier deadline does not shorten an existing hold.
+    Deferred uploads request redraws, so they resume without another external
+    event after the deadline passes.
+
+    Parameters
+    ----------
+    deadline : float
+        Absolute deadline in the clock domain used by ``time.monotonic()``.
     """
     global _upload_hold_until
     _upload_hold_until = max(_upload_hold_until, float(deadline))
@@ -227,7 +254,7 @@ class _ParserState:
         self.gl_state: dict = {}
         # DELETE commands held until a quiet flush: each delete
         # synchronizes with pending GPU work (~25ms profiled), so they
-        # run only in flushes with no uploads and no interaction hold.
+        # run only in flushes that execute no uploads and have no active hold.
         # Safe to defer arbitrarily: GLIR ids are never reused.
         self.deferred_deletes: list[tuple] = []
         # ids whose deferred DELETE has executed. Deferral reorders
@@ -263,11 +290,11 @@ def _state_for(parser) -> _ParserState:
 def _is_metered_texture(ob, data=None) -> bool:
     """Whether uploads to this GLIR object count against the budget.
 
-    All 3D textures are metered (the pathological path on macOS). 2D
+    All 3D textures are metered (the highest-volume path on macOS). 2D
     textures are metered only for payloads of at least
-    ``TEX2D_MIN_METERED_BYTES`` — image tiles, not colormap LUTs or
-    interpolation kernels, which must upload synchronously so shaders
-    never sample an unwritten texture.
+    ``TEX2D_MIN_METERED_BYTES``. Smaller payloads commonly initialize lookup
+    tables or interpolation kernels; they execute synchronously so a draw does
+    not sample those textures before initialization is complete.
     """
     from vispy.gloo import glir
 
@@ -326,7 +353,8 @@ def _metered_parse(parser, commands, state, force_defer=False):
     """Execute commands under the upload budget; return the leftovers.
 
     With ``force_defer`` every metered texture upload is deferred
-    regardless of budget (interaction hold); other commands still run.
+    regardless of budget; other commands still run. This implements the
+    deadline configured by :func:`hold_uploads_until`.
     """
     # mirror GlirParser.parse's deferred deletion bookkeeping, which we
     # bypass by calling _parse directly
@@ -481,9 +509,9 @@ def _flush(queue, parser):
             canvas.update()
     elif (had_carry or state.executed_metered) and not state.carry:
         # notify on any flush that landed metered uploads and ended
-        # clean — not only when a carry drained: uploads small enough
-        # to fit one frame budget are never carried, but a present
-        # (texture swap) may still be waiting on them
+        # clean. This includes an upload that fit entirely within one budget
+        # and therefore never entered the carry queue; consumers may still
+        # need notification that the DATA command has reached the parser.
         _notify_drained()
 
     if (
@@ -492,12 +520,13 @@ def _flush(queue, parser):
         and not state.carry
         and state.budget_left >= state.frame_budget
     ):
-        # a quiet flush (no uploads this frame, no interaction): run
+        # A quiet flush executes no uploads and has no active hold. Run
         # held GL object deletions now, off the busy periods. PACED:
         # each delete can sync the GPU pipeline (~10-25ms on busy macOS
         # GL-over-Metal), so draining hundreds in one flush is itself a
-        # multi-second stall — exactly at pass end, when the queue is
-        # deepest. The remainder drains over subsequent redraws.
+        # multi-second stall after a burst of object creation, when the
+        # deletion queue is deepest. The remainder drains over subsequent
+        # redraws.
         n = DELETE_DRAIN_PER_FLUSH
         deletes = state.deferred_deletes[:n]
         state.deferred_deletes = state.deferred_deletes[n:]
@@ -513,9 +542,23 @@ def install(
     frame_budget_bytes: int | None = None,
     slab_bytes: int | None = None,
 ) -> bool:
-    """Enable GLIR texture-upload metering (idempotent).
+    """Enable GLIR texture-upload metering for local OpenGL parsers.
 
-    Returns True if metering is active after the call.
+    Parameters
+    ----------
+    frame_budget_bytes : int | None
+        Maximum texture DATA bytes executed per canvas draw. ``None`` uses the
+        current module default.
+    slab_bytes : int | None
+        Maximum target size of each sub-upload. A texel row or slice that
+        cannot be divided further may exceed this value. ``None`` uses the
+        current module default.
+
+    Returns
+    -------
+    enabled : bool
+        ``True`` after successful configuration. Repeated calls are safe and
+        update both existing parser states and defaults for future parsers.
     """
     global _enabled, DEFAULT_FRAME_BUDGET_BYTES, DEFAULT_SLAB_BYTES
 
@@ -549,7 +592,10 @@ def install(
 
 
 def uninstall():
-    """Disable metering and synchronously flush deferred commands."""
+    """Disable metering and synchronously execute all deferred commands.
+
+    This restores factory byte defaults and clears per-parser metering state.
+    """
     global _enabled, DEFAULT_FRAME_BUDGET_BYTES, DEFAULT_SLAB_BYTES
     DEFAULT_FRAME_BUDGET_BYTES = _FACTORY_FRAME_BUDGET_BYTES
     DEFAULT_SLAB_BYTES = _FACTORY_SLAB_BYTES
@@ -568,6 +614,7 @@ def uninstall():
 
 
 def is_installed() -> bool:
+    """Return whether local GLIR parsers currently use upload metering."""
     return _enabled
 
 
