@@ -500,6 +500,14 @@ class _GlirQueueShare(object):
 
     def flush(self, parser):
         """Flush all current commands to the GLIR interpreter."""
+        from . import glir_metering
+
+        if (
+            glir_metering.is_installed()
+            and getattr(parser, 'supports_texture_upload_metering', False)
+        ):
+            glir_metering._flush(self, parser)
+            return
         if self._verbose:
             show = self._verbose if isinstance(self._verbose, str) else None
             self.show(show)
@@ -671,6 +679,8 @@ def as_es2_command(command):
 class BaseGlirParser(object):
     """Base class for GLIR parsers that can be attached to a GLIR queue."""
 
+    supports_texture_upload_metering = False
+
     def __init__(self):
         self.capabilities = dict(
             gl_version='Unknown',
@@ -703,6 +713,8 @@ class GlirParser(BaseGlirParser):
     dictionary so that commands like ACTIVATE and DATA can easily
     be executed on the corresponding objects.
     """
+
+    supports_texture_upload_metering = True
 
     def __init__(self):
         super(GlirParser, self).__init__()
