@@ -99,6 +99,7 @@ class ComplexVolumeVisual(VolumeVisual):
             )
         if self._complex_mode != value:
             self._complex_mode = value
+            self._need_interpolation_update = True
             self.update()
 
     @property
