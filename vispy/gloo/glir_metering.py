@@ -40,6 +40,10 @@ Metering is process-wide and opt-in through :func:`install`. It applies only
 to local OpenGL parsers; remote GLIR parsers and the default disabled path are
 unchanged.
 
+Automatic canvas draws apply the configured byte budget. Explicit
+``gloo.flush()`` and ``gloo.finish()`` calls preserve their usual synchronous
+queue semantics by executing all currently executable deferred uploads.
+
 Examples
 --------
 Enable a 4 MiB per-frame budget with 1 MiB upload slabs::
@@ -301,6 +305,13 @@ def _state_for(parser) -> _ParserState:
     return state
 
 
+def _on_parser_current(parser) -> None:
+    """Invalidate cached applied state when *parser* changes GL context."""
+    state = _states.get(parser)
+    if state is not None:
+        state.gl_state.clear()
+
+
 def _is_metered_texture(ob, data=None) -> bool:
     """Whether uploads to this GLIR object count against the budget.
 
@@ -363,12 +374,21 @@ def _drop_deleted_carry(carry, new_commands):
     return [c for c in carry if c[1] not in deleted]
 
 
-def _metered_parse(parser, commands, state, force_defer=False):
+def _metered_parse(
+    parser,
+    commands,
+    state,
+    force_defer=False,
+    force_uploads=False,
+    defer_deletes=True,
+):
     """Execute commands under the upload budget; return the leftovers.
 
     With ``force_defer`` every metered texture upload is deferred
     regardless of budget; other commands still run. This implements the
-    deadline configured by :func:`hold_uploads_until`.
+    deadline configured by :func:`hold_uploads_until`. ``force_uploads``
+    bypasses both that deadline and the byte budget. ``defer_deletes``
+    controls whether DELETE commands are paced or executed inline.
     """
     # mirror GlirParser.parse's deferred deletion bookkeeping, which we
     # bypass by calling _parse directly
@@ -405,7 +425,7 @@ def _metered_parse(parser, commands, state, force_defer=False):
         elif cmd == 'CURRENT':
             # context switch: cached GL state is no longer trustworthy
             gl_state.clear()
-        elif cmd == 'DELETE':
+        elif cmd == 'DELETE' and defer_deletes:
             # run deletes only in quiet flushes (see _ParserState):
             # ordering is safe because anything queued for this id
             # earlier either already executed or was dropped with it
@@ -428,11 +448,14 @@ def _metered_parse(parser, commands, state, force_defer=False):
                     # least one slab even if it alone exceeds the budget
                     fresh = state.budget_left >= state.frame_budget
                     if (
-                        force_defer
-                        or state.budget_left <= 0
-                        or (
-                            sub.nbytes > state.budget_left
-                            and not (fresh and not executed_any)
+                        not force_uploads
+                        and (
+                            force_defer
+                            or state.budget_left <= 0
+                            or (
+                                sub.nbytes > state.budget_left
+                                and not (fresh and not executed_any)
+                            )
                         )
                     ):
                         deferred_ids.add(id_)
@@ -490,7 +513,16 @@ def _attach_reset_hook(canvas):
     _hooked_canvases.add(canvas)
 
 
-def _flush(queue, parser):
+def _drain_deletes(parser, state, limit=None):
+    """Execute up to *limit* previously deferred DELETE commands."""
+    deletes = state.deferred_deletes[:limit]
+    del state.deferred_deletes[:len(deletes)]
+    for command in deletes:
+        parser._parse(command)
+        state.dead_ids.add(command[1])
+
+
+def _flush(queue, parser, force=False):
     """Flush a GLIR queue with per-frame upload metering."""
     from vispy.gloo.context import get_current_canvas
 
@@ -501,6 +533,10 @@ def _flush(queue, parser):
     state = _state_for(parser)
     canvas = get_current_canvas()
     _attach_reset_hook(canvas)
+    if force:
+        # These commands predate the new queue contents, including the
+        # glFlush/glFinish command that requested this forced drain.
+        _drain_deletes(parser, state)
     # fallback when no canvas draw hook fires (offscreen / bare gloo):
     # never let the carry starve for more than 0.25 s
     if (
@@ -513,10 +549,21 @@ def _flush(queue, parser):
     new_commands = queue.clear()
     carry = _drop_deleted_carry(carry, new_commands)
     commands = queue._filter(carry + new_commands, parser)
-    holding = time.monotonic() < _upload_hold_until
+    holding = not force and time.monotonic() < _upload_hold_until
     had_carry = bool(carry)
     state.executed_metered = False
-    state.carry = _metered_parse(parser, commands, state, force_defer=holding)
+    state.carry = _metered_parse(
+        parser,
+        commands,
+        state,
+        force_defer=holding,
+        force_uploads=force,
+        defer_deletes=not force,
+    )
+    if force:
+        # A forced drain is outside the per-draw allowance. Start the next
+        # automatic draw with a fresh budget rather than a negative balance.
+        state.reset_budget()
 
     if state.carry and canvas is not None:
         with contextlib.suppress(RuntimeError):
@@ -529,7 +576,8 @@ def _flush(queue, parser):
         _notify_drained()
 
     if (
-        state.deferred_deletes
+        not force
+        and state.deferred_deletes
         and not holding
         and not state.carry
         and state.budget_left >= state.frame_budget
@@ -541,12 +589,7 @@ def _flush(queue, parser):
         # multi-second stall after a burst of object creation, when the
         # deletion queue is deepest. The remainder drains over subsequent
         # redraws.
-        n = DELETE_DRAIN_PER_FLUSH
-        deletes = state.deferred_deletes[:n]
-        state.deferred_deletes = state.deferred_deletes[n:]
-        for command in deletes:
-            parser._parse(command)
-            state.dead_ids.add(command[1])
+        _drain_deletes(parser, state, DELETE_DRAIN_PER_FLUSH)
         if state.deferred_deletes and canvas is not None:
             with contextlib.suppress(RuntimeError):
                 canvas.update()

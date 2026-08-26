@@ -13,6 +13,7 @@ import pytest
 from vispy.gloo import glir
 
 from vispy.gloo import glir_metering as gm
+from vispy.gloo.wrappers import BaseGlooFunctions
 
 
 class FakeParser:
@@ -355,6 +356,20 @@ def test_redundant_gl_state_calls_skipped(parser):
     assert len(parser.executed) == 8
 
 
+def test_current_invalidates_applied_gl_state_cache(monkeypatch):
+    parser = glir.GlirParser()
+    state = gm._state_for(parser)
+    state.gl_state[('fn', 'glBlendFunc')] = ('one', 'one')
+    monkeypatch.setattr(parser, '_gl_initialize', lambda: None)
+    monkeypatch.setattr(glir.gl, 'glBindFramebuffer', lambda *args: None)
+
+    try:
+        parser._parse(('CURRENT', 0, 0))
+        assert state.gl_state == {}
+    finally:
+        gm._states.pop(parser, None)
+
+
 def test_viewport_and_clearcolor_deduped(parser):
     state = make_state(budget=2**20, slab=2**20)
     commands = [
@@ -373,6 +388,68 @@ def test_viewport_and_clearcolor_deduped(parser):
         (0, 0, 800, 600),
     ]
     assert len([c for c in parser.executed if c[1] == 'glClearColor']) == 1
+
+
+def test_forced_flush_drains_uploads_and_deletes(monkeypatch):
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
+    parser = FakeParser()
+    parser.add_texture3d(1)
+    try:
+        assert gm.install(
+            frame_budget_bytes=256 * 2**10,
+            slab_bytes=128 * 2**10,
+        )
+        queue = glir.GlirQueue()
+        data = np.zeros((16, 256, 256), dtype=np.uint8)  # 1 MiB
+        queue.command('DATA', 1, (0, 0, 0), data)
+        queue.command('DELETE', 7)
+        queue.flush(parser)
+
+        state = gm._states[parser]
+        assert state.carry
+        assert state.deferred_deletes == [('DELETE', 7)]
+
+        queue.command('FUNC', 'glFlush')
+        queue.flush(parser, force=True)
+
+        assert data_bytes(parser.executed) == data.nbytes
+        assert state.carry == []
+        assert state.deferred_deletes == []
+        assert state.budget_left == state.frame_budget
+        assert parser.executed[-1] == ('FUNC', 'glFlush')
+        assert parser.executed.index(('DELETE', 7)) < len(parser.executed) - 1
+    finally:
+        gm.uninstall()
+
+
+def test_explicit_flush_and_finish_request_forced_drain():
+    class Queue:
+        def __init__(self):
+            self.commands = []
+
+        def command(self, *command):
+            self.commands.append(command)
+
+    class Context:
+        def __init__(self):
+            self.glir = Queue()
+            self.force_args = []
+
+        def flush_commands(self, *, force=False):
+            self.force_args.append(force)
+
+    context = Context()
+    BaseGlooFunctions.flush(context)
+    BaseGlooFunctions.finish(context)
+
+    assert context.glir.commands == [
+        ('FUNC', 'glFlush'),
+        ('FUNC', 'glFinish'),
+    ]
+    assert context.force_args == [True, True]
 
 
 def test_deletes_deferred_to_quiet_flush(monkeypatch):

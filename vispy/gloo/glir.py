@@ -498,15 +498,19 @@ class _GlirQueueShare(object):
         self._commands = []
         return commands
 
-    def flush(self, parser):
-        """Flush all current commands to the GLIR interpreter."""
+    def flush(self, parser, force=False):
+        """Flush all current commands to the GLIR interpreter.
+
+        When *force* is true, optional command scheduling must execute all
+        currently executable work instead of applying a per-draw budget.
+        """
         from . import glir_metering
 
         if (
             glir_metering.is_installed()
             and getattr(parser, 'supports_texture_upload_metering', False)
         ):
-            glir_metering._flush(self, parser)
+            glir_metering._flush(self, parser, force=force)
             return
         if self._verbose:
             show = self._verbose if isinstance(self._verbose, str) else None
@@ -587,9 +591,9 @@ class GlirQueue(object):
             self._shared._associations[ch] = None
         queue._shared = self._shared
 
-    def flush(self, parser):
+    def flush(self, parser, force=False):
         """Flush all current commands to the GLIR interpreter."""
-        self._shared.flush(parser)
+        self._shared.flush(parser, force=force)
 
 
 def _convert_es2_shader(shader):
@@ -758,6 +762,9 @@ class GlirParser(BaseGlirParser):
 
         if cmd == 'CURRENT':
             # This context is made current
+            from . import glir_metering
+
+            glir_metering._on_parser_current(self)
             self.env.clear()
             self._gl_initialize()
             self.env['fbo'] = args[0]
