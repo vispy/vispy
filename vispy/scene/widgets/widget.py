@@ -297,7 +297,7 @@ class Widget(Compound):
 
         if self._clipper is None:
             return
-        self._clipper.rect = self.inner_rect
+        self._clipper.bounds = self.inner_rect
         self._clipper.transform = self.get_transform('framebuffer', 'visual')
 
     @property
