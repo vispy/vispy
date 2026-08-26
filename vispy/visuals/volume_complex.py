@@ -11,6 +11,20 @@ COMPLEX_TRANSFORMS = {
     "magnitude": "float cplx2float(vec4 data) { return length(data.rg); }",
     "phase": "float cplx2float(vec4 data) { return atan(data.g, data.r); }",
 }
+COMPLEX_GRADIENTS = {
+    "real": "float colorsToGradient(vec4 c1, vec4 c2) { return c1.r - c2.r; }",
+    "imaginary": "float colorsToGradient(vec4 c1, vec4 c2) { return c1.g - c2.g; }",
+    "magnitude": "float colorsToGradient(vec4 c1, vec4 c2) { return length(c1.rg) - length(c2.rg); }",
+    # the whole gradient machinery is for this: the phase wraps around, so to avoid artifacts
+    # at the -pi/+pi edges, we need a gradient calculation that wraps around smoothly
+    "phase": (
+        "float colorsToGradient(vec4 c1, vec4 c2) {"
+        "  float p1 = atan(c1.g, c1.r);"
+        "  float p2 = atan(c2.g, c2.r);"
+        "  return atan(sin(p1 - p2), cos(p1 - p2));"
+        "}"
+    ),
+}
 CPU_COMPLEX_TRANSFORMS = {
     "magnitude": np.abs,
     "phase": np.angle,
@@ -104,7 +118,11 @@ class ComplexVolumeVisual(VolumeVisual):
 
     @property
     def _color_to_scalar_snippet(self):
-        return Function(COMPLEX_TRANSFORMS[self.complex_mode])
+        return Function(COMPLEX_TRANSFORMS[self.complex_mode]) if self._data_is_complex else super()._color_to_scalar_snippet
+
+    @property
+    def _colors_to_gradient_snippet(self):
+        return Function(COMPLEX_GRADIENTS[self.complex_mode]) if self._data_is_complex else super()._colors_to_gradient_snippet
 
     @VolumeVisual.clim.setter
     def clim(self, clim):

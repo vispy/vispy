@@ -123,16 +123,20 @@ float rand(vec2 co)
 }
 
 vec4 applyColormap(vec4 color) {
-    // clim and gamma are applied identically in both modes: per channel for rgb
-    // data, and to the single (red) channel for scalar data.
-    color.rgb = clamp(color.rgb, min(clim.x, clim.y), max(clim.x, clim.y));
-    color.rgb = (color.rgb - clim.x) / (clim.y - clim.x);
-    color.rgb = pow(color.rgb, vec3(gamma));
     if (u_rgb_mode == 1) {
-        // no colormapping, the rgb values are used directly
+        // clim and gamma are applied per channel for rgb data
+        color.rgb = clamp(color.rgb, min(clim.x, clim.y), max(clim.x, clim.y));
+        color.rgb = (color.rgb - clim.x) / (clim.y - clim.x);
+        color.rgb = pow(color.rgb, vec3(gamma));
         return vec4(color.rgb, 1.0);
     }
-    return $cmap(color.r);
+    // for scalar and complex data, we first use $colorToScalar to convert
+    // the raw texture value to the appropriate scalar, then apply the colormap
+    float scalar = $colorToScalar(color);
+    scalar = clamp(scalar, min(clim.x, clim.y), max(clim.x, clim.y));
+    scalar = (scalar - clim.x) / (clim.y - clim.x);
+    scalar = pow(scalar, gamma);
+    return $cmap(scalar);
 }
 
 
@@ -149,15 +153,15 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     vec3 N; // normal
     color1 = $get_data(loc+vec3(-step[0],0.0,0.0) );
     color2 = $get_data(loc+vec3(step[0],0.0,0.0) );
-    N[0] = $colorToScalar(color1) - $colorToScalar(color2);
+    N[0] = $colorsToGradient(color1, color2);
     betterColor = max(max(color1, color2),betterColor);
     color1 = $get_data(loc+vec3(0.0,-step[1],0.0) );
     color2 = $get_data(loc+vec3(0.0,step[1],0.0) );
-    N[1] = $colorToScalar(color1) - $colorToScalar(color2);
+    N[1] = $colorsToGradient(color1, color2);
     betterColor = max(max(color1, color2),betterColor);
     color1 = $get_data(loc+vec3(0.0,0.0,-step[2]) );
     color2 = $get_data(loc+vec3(0.0,0.0,step[2]) );
-    N[2] = $colorToScalar(color1) - $colorToScalar(color2);
+    N[2] = $colorsToGradient(color1, color2);
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
     N = normalize(N);
@@ -377,6 +381,21 @@ float colorToScalar(vec4 color1)
     // perceptual luminance, a good approach to transform rgb into a single
     // value for things like gradient calculations in isosurface
     return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
+}
+"""
+
+_COLORS_TO_GRADIENT = """
+float colorsToGradient(vec4 color1, vec4 color2)
+{
+    return color1.r - color2.r;
+}
+"""
+
+_COLORS_TO_GRADIENT_RGB = """
+float colorsToGradient(vec4 color1, vec4 color2)
+{
+    return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722))
+         - dot(color2.rgb, vec3(0.2126, 0.7152, 0.0722));
 }
 """
 
@@ -1097,6 +1116,11 @@ class VolumeVisual(Visual):
         return Function(_COLOR_TO_SCALAR_RGB) if self._is_rgb else Function(_COLOR_TO_SCALAR)
 
     @property
+    def _colors_to_gradient_snippet(self):
+        # for why this needs to exist separately from _color_to_scalar, see the ComplexVolume
+        return Function(_COLORS_TO_GRADIENT_RGB) if self._is_rgb else Function(_COLORS_TO_GRADIENT)
+
+    @property
     def _after_loop_snippet(self):
         return self._rendering_methods[self.method]['after_loop']
 
@@ -1139,6 +1163,7 @@ class VolumeVisual(Visual):
         #       Program should probably be able to do this automatically
         self.shared_program.frag['get_data'] = None
         self.shared_program.frag['colorToScalar'] = None
+        self.shared_program.frag['colorsToGradient'] = None
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.shared_program.frag['before_loop'] = self._before_loop_snippet
         self.shared_program.frag['in_loop'] = self._in_loop_snippet
@@ -1409,3 +1434,4 @@ class VolumeVisual(Visual):
         if self._need_interpolation_update:
             self._build_interpolation()
             self.shared_program.frag['colorToScalar'] = self._color_to_scalar_snippet
+            self.shared_program.frag['colorsToGradient'] = self._colors_to_gradient_snippet
