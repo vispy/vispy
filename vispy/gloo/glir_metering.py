@@ -29,6 +29,13 @@ shared OpenGL context that receives the uploads. The budget resets at the
 start of each canvas draw. Offscreen users without draw events receive a
 time-based reset so a carry queue cannot remain stalled indefinitely.
 
+While metering is enabled, two related sources of GL stalls are also paced.
+Repeated idempotent ``FUNC`` state setters with unchanged arguments are
+skipped; this cache is cleared whenever a ``CURRENT`` command makes the
+context current. ``DELETE`` commands are held until a flush with no upload
+work, then executed in small batches. These behaviors apply only to the local
+parser path selected by :func:`install`.
+
 Metering is process-wide and opt-in through :func:`install`. It applies only
 to local OpenGL parsers; remote GLIR parsers and the default disabled path are
 unchanged.
@@ -98,10 +105,11 @@ _OBJECT_COMMANDS = frozenset(
 # the same arguments is semantically a no-op, but on a busy GPU each
 # call can block on pipeline synchronization (profiled at ~6ms average
 # on macOS GL-over-Metal; 271 calls cost 1.6s in one short session).
-# Consecutive duplicates are skipped. glEnable/glDisable are handled
-# per capability. Deliberately NOT listed: glClear*, glViewport,
-# glScissor, glFinish, glFlush (must always run or are
-# framebuffer-dependent).
+# Repeated duplicates are skipped. glEnable/glDisable are handled per
+# capability. State setters such as glViewport, glScissor, and glClearColor
+# are included because repeating them with identical arguments leaves the
+# context state unchanged. Commands that perform work, including glClear,
+# glFinish, and glFlush, are deliberately excluded and must always run.
 _IDEMPOTENT_FUNCS = frozenset(
     {
         'glBlendFunc',
@@ -141,15 +149,21 @@ _hooked_canvases: weakref.WeakSet = weakref.WeakSet()
 # carried without execution. Non-upload commands continue to execute.
 _upload_hold_until = 0.0
 
-# GLIR texture ids whose DATA commands bypass the byte budget. This is useful
-# when an application writes a complete staging texture before atomically
-# making it visible: splitting that write across draws could expose partially
-# initialized texture contents if the application switches textures too soon.
+# GLIR texture ids whose DATA commands bypass the byte budget. A typical use is
+# double buffering: an application fills a back texture, then makes it the
+# front texture only after the upload completes. The exemption makes the DATA
+# command synchronous; it neither swaps the textures nor coordinates when the
+# application makes the back texture visible.
 _unmetered_ids: set = set()
 
 
 def add_unmetered_texture(glir_id) -> None:
     """Make DATA commands for one GLIR texture bypass the byte budget.
+
+    This is useful for a staging or back texture that must be initialized in
+    one synchronous upload before an application makes it visible. VisPy does
+    not perform or schedule that visibility change; the application remains
+    responsible for it.
 
     Parameters
     ----------
