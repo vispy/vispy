@@ -46,61 +46,39 @@ class ComplexVolumeVisual(VolumeVisual):
                 f'complex_mode must be one of {", ".join(self.COMPLEX_MODES)}'
             )
 
-        if not np.iscomplexobj(vol):
-            raise ValueError('Data must be complex. Use VolumeVisual instead.')
+        self._data_is_complex = np.iscomplexobj(vol)
         self._complex_mode = complex_mode
 
-        if kwargs.get("clim", "auto") == "auto":
+        if kwargs.get("clim", "auto") == "auto" and self._data_is_complex:
             kwargs["clim"] = self._calc_complex_clim(vol)
 
-        kwargs["texture_format"] = "rg32f"
-        self._in_init = True
-        vol = self._convert_complex_to_float_view(vol)
+        if self._data_is_complex:
+            kwargs["texture_format"] = "rg32f"
+            vol = self._convert_complex_to_float_view(vol)
         super().__init__(vol, **kwargs)
+
+    def _init_texture(self, vol, texture_format, **texture_kwargs):
+        texture_kwargs = {}
+        if self._data_is_complex:
+            texture_kwargs["format"] = "rg"
+        return super()._init_texture(vol, texture_format, **texture_kwargs)
 
     def set_data(self, vol, clim=None, copy=True):
         vol = np.asarray(vol)
-        if not self._in_init:
+        if np.iscomplexobj(vol):
+            #  Turn the texture into an rg32f texture
+            # where r = 'real' and g = 'imag'
+            self._data_is_complex = True
+            # FUTURE: Add formal way of defining texture format from set_data
+            self._texture._format = "rg"
             vol = self._convert_complex_to_float_view(vol)
-
-        if clim is not None and clim != self._texture.clim:
-            self._texture.set_clim(clim)
-
-        # Apply to texture
-        self._texture.check_data_format(vol)
-        self._last_data = vol
-        self._texture.scale_and_set_data(vol, copy=copy)
-        self.shared_program['clim'] = self._texture.clim_normalized
-        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
-                                          vol.shape[0])
-        self._is_rgb = False
-        self.shared_program['u_rgb_mode'] = False
-
-        shape = vol.shape[:3]
-        if self._vol_shape != shape:
-            self._vol_shape = shape
-            self._need_vertex_update = True
-        self._vol_shape = shape
-
-    @property
-    def complex_mode(self):
-        return self._complex_mode
-
-    @complex_mode.setter
-    def complex_mode(self, value):
-        if value not in self.COMPLEX_MODES:
-            raise ValueError(
-                f'complex_mode must be one of {", ".join(self.COMPLEX_MODES)}'
-            )
-
-        if self._complex_mode != value:
-            self._complex_mode = value
-            self.shared_program.frag['colorToScalar'] = self._color_to_scalar_snippet
-            self.update()
-
-    @property
-    def _color_to_scalar_snippet(self):
-        return Function(COMPLEX_TRANSFORMS[self.complex_mode])
+        elif vol.ndim == 4 and vol.shape[-1] == 2:
+            # data was complex but was already converted to 32-bit float
+            # should really only occur from __init__
+            self._data_is_complex = True
+        else:
+            self._texture._format = None
+        return super().set_data(vol, clim=clim, copy=copy)
 
     @staticmethod
     def _convert_complex_to_float_view(complex_arr):
@@ -110,29 +88,28 @@ class ComplexVolumeVisual(VolumeVisual):
         return float_view_arr
 
     @property
-    def clim(self):
-        """The contrast limits that were applied to the volume data.
+    def complex_mode(self):
+        return self._data_is_complex and self._complex_mode
 
-        Volume display is mapped from black to white with these values.
-        Settable via set_data() as well as @clim.setter.
-        """
-        return self._texture.clim
+    @complex_mode.setter
+    def complex_mode(self, value):
+        if value not in self.COMPLEX_MODES:
+            raise ValueError(
+                "complex_mode must be one of %s" % ", ".join(self.COMPLEX_MODES)
+            )
+        if self._complex_mode != value:
+            self._complex_mode = value
+            self.update()
 
-    @clim.setter
-    def clim(self, value):
-        """Set contrast limits used when rendering the image.
+    @property
+    def _color_to_scalar_snippet(self):
+        return Function(COMPLEX_TRANSFORMS[self.complex_mode])
 
-        ``value`` should be a 2-tuple of floats (min_clim, max_clim), where each value is
-        within the range set by self.clim. If the new value is outside of the (min, max)
-        range of the clims previously used to normalize the texture data, then data will
-        be renormalized using set_data.
-        """
-        if value == "auto" and self.complex_mode:
-            value = self._calc_complex_clim()
-        if self._texture.set_clim(value):
-            self.set_data(self._last_data, clim=value)
-        self.shared_program['clim'] = self._texture.clim_normalized
-        self.update()
+    @VolumeVisual.clim.setter
+    def clim(self, clim):
+        if clim == "auto" and self.complex_mode:
+            clim = self._calc_complex_clim()
+        super(VolumeVisual, type(self)).clim.fset(self, clim)
 
     def _calc_complex_clim(self, data=None):
         # it would be nice if this could be done in the scalable texture mixin,

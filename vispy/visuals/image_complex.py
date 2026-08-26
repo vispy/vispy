@@ -50,8 +50,8 @@ class ComplexImageVisual(ImageVisual):
         if kwargs.get("clim", "auto") == "auto" and self._data_is_complex:
             kwargs["clim"] = self._calc_complex_clim(data)
 
-        kwargs["texture_format"] = "r32f" if self._data_is_complex else "r32f"
         if self._data_is_complex:
+            kwargs["texture_format"] = "r32f"
             data = self._convert_complex_to_float_view(data)
         super().__init__(data=data, **kwargs)
 

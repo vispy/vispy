@@ -875,7 +875,13 @@ class VolumeVisual(Visual):
         # Check volume
         if not isinstance(vol, np.ndarray):
             raise ValueError('Volume visual needs a numpy array.')
-        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] in (1, 3, 4))):
+        if np.iscomplexobj(vol):
+            raise TypeError(
+                "Complex data types not supported. Please use 'ComplexImage' instead"
+            )
+        # complex volume shape checks are in the relative class and
+        # we can skip them here
+        if not getattr(self, '_data_is_complex', False) and not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] in (1, 3, 4))):
             raise ValueError(
                 'Volume visual needs a 3D array or a 4D array with '
                 f'1, 3, or 4 channels in the last dimension. Got {vol.shape}.'
