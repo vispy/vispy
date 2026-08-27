@@ -852,7 +852,7 @@ class VolumeVisual(Visual):
         interpolation_methods = interpolation_methods + ('bicubic',)
         return interpolation_methods, interpolation_fun
 
-    def _create_texture(self, texture_format, data):
+    def _create_texture(self, texture_format, data, **texture_kwargs):
         if texture_format is not None:
             tex_cls = GPUScaledTextured3D
         else:
@@ -869,7 +869,7 @@ class VolumeVisual(Visual):
         # creates a placeholder texture that will be resized later on.
         return tex_cls(data, interpolation=texture_interpolation,
                        internalformat=texture_format,
-                       wrapping='clamp_to_edge')
+                       wrapping='clamp_to_edge', **texture_kwargs)
 
     def set_data(self, vol, clim=None, copy=True):
         """Set the volume data.

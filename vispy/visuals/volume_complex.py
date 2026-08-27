@@ -71,11 +71,10 @@ class ComplexVolumeVisual(VolumeVisual):
             vol = self._convert_complex_to_float_view(vol)
         super().__init__(vol, **kwargs)
 
-    def _init_texture(self, vol, texture_format, **texture_kwargs):
-        texture_kwargs = {}
+    def _create_texture(self, texture_format, data, **texture_kwargs):
         if self._data_is_complex:
             texture_kwargs["format"] = "rg"
-        return super()._init_texture(vol, texture_format, **texture_kwargs)
+        return super()._create_texture(texture_format, data, **texture_kwargs)
 
     def set_data(self, vol, clim=None, copy=True):
         vol = np.asarray(vol)
