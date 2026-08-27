@@ -19,11 +19,8 @@ Controls:
 """
 
 from itertools import cycle
-import sys
-
 import numpy as np
 from vispy import app, scene
-
 
 def complex_ramp(size=256):
     """Returns a complex array where X ramps phase and Y ramps magnitude."""
@@ -33,34 +30,34 @@ def complex_ramp(size=256):
     phase_ramp, mag_ramp, z_ramp = np.meshgrid(phase_ramp, mag_ramp, z_ramp)
     return (mag_ramp * np.exp(1j * phase_ramp) * z_ramp).astype(np.complex64)
 
-
 vol = complex_ramp()
 
 canvas = scene.SceneCanvas(keys='interactive', size=(800, 600), show=True)
 canvas.measure_fps()
 
 view = canvas.central_widget.add_view()
-volume = scene.visuals.ComplexVolume(vol, parent=view.scene, method='mip')
+volume = scene.visuals.ComplexVolume(vol, parent=view.scene, method='mip', complex_mode='magnitude', cmap='viridis')
 
-cam = scene.cameras.ArcballCamera(parent=view.scene, fov=60,
-                                   name='Arcball')
+cam = scene.cameras.ArcballCamera(parent=view.scene, fov=60)
 view.camera = cam
 
-methods = cycle(['mip', 'attenuated_mip', 'translucent', 'additive',
-                 'average', 'iso'])
+methods = cycle(['attenuated_mip', 'translucent', 'additive', 'average', 'iso', 'mip'])
+complex_modes = cycle(['phase', 'real', 'imaginary', 'magnitude'])
 
-complex_modes = cycle(scene.visuals.ComplexVolume.COMPLEX_MODES)
+
+print("Render method: mip")
+print("Complex mode: magnitude")
 
 @canvas.events.key_press.connect
 def on_key_press(event):
     if event.text == '1':
         method = next(methods)
         volume.method = method
-        print("Render method: %s" % method)
+        print(f"Render method: {method}")
     elif event.text == '2':
         mode = next(complex_modes)
         volume.complex_mode = mode
-        print("Render complex mode: %s" % mode)
+        print(f"Complex mode: {mode}")
 
 
 if __name__ == '__main__':
