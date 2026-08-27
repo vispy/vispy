@@ -62,9 +62,10 @@ class ComplexVolumeVisual(VolumeVisual):
 
         self._data_is_complex = np.iscomplexobj(vol)
         self._complex_mode = complex_mode
+        self._data = np.asarray(vol)
 
         if kwargs.get("clim", "auto") == "auto" and self._data_is_complex:
-            kwargs["clim"] = self._calc_complex_clim(vol)
+            kwargs["clim"] = self._calc_complex_clim(self._data)
 
         if self._data_is_complex:
             kwargs["texture_format"] = "rg32f"
@@ -82,6 +83,7 @@ class ComplexVolumeVisual(VolumeVisual):
             #  Turn the texture into an rg32f texture
             # where r = 'real' and g = 'imag'
             self._data_is_complex = True
+            self._data = vol
             # FUTURE: Add formal way of defining texture format from set_data
             self._texture._format = "rg"
             vol = self._convert_complex_to_float_view(vol)
@@ -112,6 +114,7 @@ class ComplexVolumeVisual(VolumeVisual):
             )
         if self._complex_mode != value:
             self._complex_mode = value
+            self.clim = "auto"
             self._need_interpolation_update = True
             self.update()
 
@@ -127,7 +130,7 @@ class ComplexVolumeVisual(VolumeVisual):
     def clim(self, clim):
         if clim == "auto" and self.complex_mode:
             clim = self._calc_complex_clim()
-        super(VolumeVisual, type(self)).clim.fset(self, clim)
+        VolumeVisual.clim.fset(self, clim)
 
     def _calc_complex_clim(self, data=None):
         # it would be nice if this could be done in the scalable texture mixin,
