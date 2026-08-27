@@ -58,11 +58,11 @@ jobs:
         cache: true
         locked: false
     - name: Check line endings
-      run: pixi run -e lint lineendings
+      run: pixi run lineendings
     - name: Lint with flake8
       run: |
         # FIXME: deliberately ignore linting errors for now
-        pixi run -e lint flake || true
+        pixi run flake || true
 # FIXME: Re-enable this when all docstrings are fixed
 #    - name: Test docstring parameters
 #      run: |
@@ -126,7 +126,7 @@ jobs:
         DISPLAY: ":99.0"
         XDG_RUNTIME_DIR: /tmp/runtime-runner
         TRAVIS_TAG: main
-      run: pixi run -e website build-website
+      run: pixi run build-website
     - name: Upload website HTML artifact
       uses: actions/upload-artifact@v7
       with:
