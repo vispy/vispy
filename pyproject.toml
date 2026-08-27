@@ -282,12 +282,12 @@ norecursedirs = [
     "js",
 ]
 
-[tool.pixi.target.linux-64.tasks]
-clean-pyc = "find . -name '*.pyc' -delete"
-clean-so = "find . -name '*.so' -delete && find . -name '*.pyd' -delete"
-clean-build = "rm -rf build"
-clean-ctags = "rm -f tags"
-clean-cache = "find . -name '__pycache__' -type d -prune -exec rm -rf {} +"
+[tool.pixi.tasks]
+clean-pyc = """python -c "from pathlib import Path; [p.unlink() for p in Path('.').rglob('*.pyc')]" """
+clean-so = """python -c "from pathlib import Path; [p.unlink() for pattern in ('*.so', '*.pyd') for p in Path('.').rglob(pattern)]" """
+clean-build = """python -c "import shutil; shutil.rmtree('build', ignore_errors=True)" """
+clean-ctags = """python -c "from pathlib import Path; Path('tags').unlink(missing_ok=True)" """
+clean-cache = """python -c "import shutil; from pathlib import Path; [shutil.rmtree(p, ignore_errors=True) for p in Path('.').rglob('__pycache__')]" """
 
 clean = { depends-on = [
     "clean-build",
@@ -304,37 +304,41 @@ clean-test = { depends-on = [
     "clean-cache",
 ] }
 
+[tool.pixi.feature.test.tasks]
 unit = { cmd = "python make test unit", depends-on = ["clean-test"] }
 examples = { cmd = "python make test examples", depends-on = ["clean-test"] }
 test = { cmd = "python make test full", depends-on = ["clean-test"] }
-flake = { cmd = "python make test flake", depends-on = ["clean-test"] }
-docs = { cmd = "python make test docs", depends-on = ["clean-test"] }
-lineendings = { cmd = "python make test lineendings", depends-on = ["clean-test"] }
 extra = { cmd = "python make test extra", depends-on = ["clean-test"] }
 nobackend = { cmd = "python make test nobackend", depends-on = ["clean-test"] }
 
-pyqt4 = { cmd = "python make test pyqt4", depends-on = ["clean-test"] }
-pyqt5 = { cmd = "python make test pyqt5", depends-on = ["clean-test"] }
-pyqt6 = { cmd = "python make test pyqt6", depends-on = ["clean-test"] }
-
-pyside = { cmd = "python make test pyside", depends-on = ["clean-test"] }
-pyside2 = { cmd = "python make test pyside2", depends-on = ["clean-test"] }
-pyside6 = { cmd = "python make test pyside6", depends-on = ["clean-test"] }
-
-pyglet = { cmd = "python make test pyglet", depends-on = ["clean-test"] }
-glfw = { cmd = "python make test glfw", depends-on = ["clean-test"] }
-sdl2 = { cmd = "python make test sdl2", depends-on = ["clean-test"] }
-wx = { cmd = "python make test wx", depends-on = ["clean-test"] }
-egl = { cmd = "python make test egl", depends-on = ["clean-test"] }
-osmesa = { cmd = "python make test osmesa", depends-on = ["clean-test"] }
-ipynb-vnc = { cmd = "python make test ipynb_vnc", depends-on = ["clean-test"] }
-
-build-website = """
-rm -rf doc/_build &&
-sphinx-build -M html doc doc/_build -W --keep-going &&
-touch doc/_build/html/.nojekyll
-"""
-
 coverage-html = "python make coverage_html"
 gallery = "python make images gallery"
-check-manifest = "check-manifest"
+
+[tool.pixi.feature.lint.tasks]
+flake = { cmd = "python make test flake", depends-on = ["clean-test"] }
+lineendings = { cmd = "python make test lineendings", depends-on = ["clean-test"] }
+
+[tool.pixi.feature.docs.tasks]
+docs = { cmd = "python make test docs", depends-on = ["clean-test"] }
+build-website = """
+python -c "import shutil; shutil.rmtree('doc/_build', ignore_errors=True)" &&
+sphinx-build -M html doc doc/_build -W --keep-going &&
+python -c "from pathlib import Path; Path('doc/_build/html/.nojekyll').touch()"
+"""
+
+[tool.pixi.feature.qt5.tasks]
+pyqt5 = { cmd = "python make test pyqt5", depends-on = ["clean-test"] }
+
+[tool.pixi.feature.qt6.tasks]
+pyqt6 = { cmd = "python make test pyqt6", depends-on = ["clean-test"] }
+
+[tool.pixi.feature.sdl2.tasks]
+sdl2 = { cmd = "python make test sdl2", depends-on = ["clean-test"] }
+
+[tool.pixi.feature.osmesa.tasks]
+osmesa = { cmd = "python make test osmesa", depends-on = ["clean-test"] }
+
+[tool.pixi.feature.full.tasks]
+glfw = { cmd = "python make test glfw", depends-on = ["clean-test"] }
+egl = { cmd = "python make test egl", depends-on = ["clean-test"] }
+ipynb-vnc = { cmd = "python make test ipynb_vnc", depends-on = ["clean-test"] }
