@@ -36,8 +36,8 @@ t1.font_size = 24
 t1.pos = canvas.size[0] // 2, canvas.size[1] // 3
 
 t2 = Text('Text in viewbox (18 pt)', parent=vb.scene, color='green',
-          rotation=30)
-t2.font_size = 18
+          rotation=30, scaling=True)
+t2.font_size = .2  # scaling True means this size is in scene coordinates
 t2.pos = 0.5, 0.3
 
 # Add a line so you can see translate/scale of camera

@@ -13,6 +13,7 @@ from __future__ import division
 import numpy as np
 from copy import deepcopy
 import sys
+import math
 
 from ._sdf_gpu import SDFRendererGPU
 from ._sdf_cpu import _calc_distance_field
@@ -20,7 +21,6 @@ from ...gloo import (TextureAtlas, IndexBuffer, VertexBuffer)
 from ...gloo import context
 from ...gloo.wrappers import _check_valid
 from ...util.fonts import _load_glyph
-from ..transforms import STTransform
 from ...color import ColorArray
 from ..visual import Visual
 from ...io import load_spatial_filters
@@ -149,6 +149,9 @@ class FontManager(object):
 # The visual
 
 _VERTEX_SHADER = """
+    uniform bool u_scaling;
+    uniform vec2 u_px_scale;
+    uniform float u_npix;
     attribute float a_rotation;  // rotation in rad
     attribute vec2 a_position; // in point units
     attribute vec2 a_texcoord;
@@ -161,9 +164,39 @@ _VERTEX_SHADER = """
         mat4 rot = mat4(cos(a_rotation), -sin(a_rotation), 0, 0,
                         sin(a_rotation), cos(a_rotation), 0, 0,
                         0, 0, 1, 0, 0, 0, 0, 1);
-        vec4 pos = $transform(vec4(a_pos, 1.0)) +
-                   vec4($text_scale(rot * vec4(a_position, 0.0, 1.0)).xyz, 0.0);
-        gl_Position = pos;
+        vec4 pos = $transform(vec4(a_pos, 1));
+        vec2 vertex = (rot * vec4(a_position, 0, 1)).xy;
+        vec2 px_direction = normalize(u_px_scale);
+
+        float scale;
+
+        if ( u_scaling ) {
+            // small step along each axis for jacobian by finite-differences
+            vec2 ndc_anchor = pos.xy / pos.w;
+            float e = 1e-3;
+            vec4 cx = $transform(vec4(a_pos + vec3(e, 0, 0), 1));
+            vec4 cy = $transform(vec4(a_pos + vec3(0, e, 0), 1));
+            vec4 cz = $transform(vec4(a_pos + vec3(0, 0, e), 1));
+            vec2 dx = cx.xy / cx.w - ndc_anchor;
+            vec2 dy = cy.xy / cy.w - ndc_anchor;
+            vec2 dz = cz.xy / cz.w - ndc_anchor;
+
+            float world_mag = sqrt(dot(dx, dx) + dot(dy, dy) + dot(dz, dz)) / e;
+            // non-positive clip.w means the anchor (or a step) is behind the camera
+            if (pos.w <= 0 || cx.w <= 0 || cy.w <= 0 || cz.w <= 0) {
+                world_mag = 0;
+            }
+
+            scale = u_npix * world_mag;
+        } else {
+            scale = u_npix * length(u_px_scale);
+        }
+
+        float scale_x = scale * px_direction.x * vertex.x;
+        float scale_y = scale * px_direction.y * vertex.y;
+        vec4 offset = vec4(scale_x, scale_y, 0, 1);
+
+        gl_Position = vec4(pos.xyz + offset.xyz * pos.w, pos.w);
         v_texcoord = a_texcoord;
         v_color = $color;
     }
@@ -403,6 +436,9 @@ class TextVisual(Visual):
         Whether to apply depth testing. Default False. If False, the text
         behaves like an overlay that does not get hidden behind other
         visuals in the scene.
+    scaling : bool
+        Whether the text size scales with zoom and FOV (True, default) or
+        stays fixed in canvas pixels.
     """
 
     _shaders = {
@@ -413,7 +449,7 @@ class TextVisual(Visual):
     def __init__(self, text=None, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, line_height=1.1, pos=[0, 0, 0],
                  rotation=0., anchor_x='center', anchor_y='center',
-                 method='cpu', font_manager=None, depth_test=False):
+                 method='cpu', font_manager=None, depth_test=False, scaling=False):
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
         # Check input
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
@@ -438,7 +474,7 @@ class TextVisual(Visual):
         self.line_height = line_height
         self.pos = pos
         self.rotation = rotation
-        self._text_scale = STTransform()
+        self.scaling = scaling
         self._draw_mode = 'triangles'
         self.set_gl_state(blend=True, depth_test=depth_test, cull_face=False,
                           blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -608,9 +644,9 @@ class TextVisual(Visual):
         n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
         tr = transforms.get_transform('document', 'render')
         px_scale = (tr.map((1, 0)) - tr.map((0, 1)))[:2]
-        self._text_scale.scale = px_scale * n_pix
-        self.shared_program.vert['text_scale'] = self._text_scale
         self.shared_program['u_npix'] = n_pix
+        self.shared_program['u_px_scale'] = px_scale
+        self.shared_program['u_scaling'] = self._scaling
         self.shared_program['u_kernel'] = self._font._kernel
         self.shared_program['u_color'] = self._color.rgba
         self.shared_program['u_font_atlas'] = self._font._atlas
@@ -655,6 +691,15 @@ class TextVisual(Visual):
 
     def _update_font(self):
         self._font = self._font_manager.get_font(self._face, self._bold, self._italic)
+        self.update()
+
+    @property
+    def scaling(self):
+        return self._scaling
+
+    @scaling.setter
+    def scaling(self, value):
+        self._scaling = bool(value)
         self.update()
 
 
