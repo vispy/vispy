@@ -372,8 +372,6 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         np.float64: 'r32f',
         np.uint8: 'r8',  # uint8 normalized
         np.uint16: 'r16',  # uint16 normalized
-        np.complex64: 'r32f',
-        np.complex128: 'r32f',
         # np.int8: 'r8',  # not supported, there are no signed-integer norm formats
         # np.int16: 'r16',
         # np.uint32: 'r32ui',  # not supported, no normal formats for 32bit ints
@@ -399,8 +397,8 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
             if texture_format not in self._texture_dtype_format:
                 raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
             texture_format = self._texture_dtype_format[texture_format]
-            # adjust internalformat for format of data (RGBA vs L)
-            texture_format = texture_format.replace('r', 'rgba'[:num_channels])
+        # adjust internalformat for format of data (RGBA vs L)
+        texture_format = texture_format.replace('r', 'rgba'[:num_channels])
         return texture_format
 
     def _get_texture_format_for_data(self, data, internalformat):
