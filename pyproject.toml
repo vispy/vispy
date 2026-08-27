@@ -200,6 +200,7 @@ networkx = "*"
 
 [tool.pixi.feature.min.dependencies]
 coveralls = "*"
+numpydoc = "*"
 cython = "*"
 pytest = "*"
 pytest-sugar = "*"
