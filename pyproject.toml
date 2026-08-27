@@ -199,7 +199,16 @@ scipy = "*"
 networkx = "*"
 
 [tool.pixi.feature.min.dependencies]
-numpydoc = "*"
+coveralls = "*"
+cython = "*"
+pytest = "*"
+pytest-sugar = "*"
+pytest-cov = "*"
+meshio = "*"
+pillow = "*"
+sphinx-gallery = "*"
+scipy = "*"
+networkx = "*"
 
 [tool.pixi.feature.lint.dependencies]
 cython = "*"
@@ -250,7 +259,7 @@ python-gil = "*"
 
 [tool.pixi.environments]
 website = ["py312", "test", "full", "docs", "qt5"]
-py310-min = ["py310", "min", "test"]
+py310-min = ["py310", "min"]
 py310-osmesa = ["py310", "osmesa", "test"]
 py310-full = ["py310", "test", "full", "qt5", "sdl2"]
 py310-newqt = ["py310", "test", "full", "qt6"]
