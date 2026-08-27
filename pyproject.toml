@@ -206,7 +206,6 @@ pytest-sugar = "*"
 pytest-cov = "*"
 meshio = "*"
 pillow = "*"
-sphinx-gallery = "*"
 scipy = "*"
 networkx = "*"
 
