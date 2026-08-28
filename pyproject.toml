@@ -1,12 +1,14 @@
 [build-system]
 requires = [
-    "setuptools>=74.1.0",
+    "hatchling",
+    "hatch-vcs",
+    "hatch-cython",
+    "setuptools",
     # see https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-0-specific-advice
     "numpy>=2.0.0",
-    "setuptools_scm[toml]>=8.1",
-    "Cython>=3.0.0"
+    "Cython>=3.0.0",
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
 
 [project]
 name = "vispy"
@@ -119,47 +121,41 @@ test = [
     "imageio",
 ]
 
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
+[tool.hatch.version]
+source = "vcs"
 
-[[tool.setuptools.ext-modules]]
-name = "vispy.visuals.text._sdf_cpu"
-sources = ["vispy/visuals/text/_sdf_cpu.pyx"]
-define-macros = [
+[tool.hatch.version.raw-options]
+local_scheme = "dirty-tag"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "vispy/version.py"
+
+# things like "vispy.glsl" = ["*.vert", "*.frag", "*.glsl"] not needed because hatch includes it
+[tool.hatch.build.targets.wheel]
+packages = ["vispy"]
+
+[tool.hatch.build.targets.wheel.hooks.cython]
+dependencies = ["hatch-cython"]
+
+[tool.hatch.build.targets.wheel.hooks.cython.options]
+include_numpy = true
+compile_py = false
+directives = { language_level = 3 }
+define_macros = [
     ["NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION"],
 ]
 
-[tool.setuptools.packages.find]
-where = ["."]
-exclude = ["make"]
-
-[tool.setuptools.package-data]
-vispy = [
-    "io/_data/*",
-    "app/tests/qt-designer.ui",
-    "util/fonts/data/*.ttf",
+[tool.hatch.build.targets.wheel.hooks.cython.options.files]
+targets = [
+    "vispy/visuals/text/_sdf_cpu.pyx",
 ]
-
-"vispy.glsl" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.antialias" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.arrowheads" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.arrows" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.collections" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.colormaps" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.lines" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.markers" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.math" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.misc" = ["*.vert", "*.frag", "*.glsl"]
-"vispy.glsl.transforms" = ["*.vert", "*.frag", "*.glsl"]
-
-[tool.setuptools_scm]
-write_to = "vispy/version.py"
-local_scheme = "dirty-tag"
 
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
-test-command = "python -c \"import vispy; vispy.test('nobackend')\""
+test-command = [
+    "python -c \"import vispy.visuals.text._sdf_cpu as m; print(m.__file__)\"",
+    "python -c \"import vispy; vispy.test('nobackend')\"",
+]
 test-extras = ["test"]
 
 [tool.cibuildwheel.linux]
