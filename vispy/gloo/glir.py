@@ -501,8 +501,11 @@ class _GlirQueueShare(object):
     def flush(self, parser, force=False):
         """Flush current commands to the GLIR interpreter.
 
-        When *force* is true, optional command scheduling must execute all
-        currently executable work instead of applying a per-draw budget.
+        When ``force=False``, any configured command scheduling policy, such
+        as texture-upload metering, is respected. When ``force=True``, such
+        scheduling limits are bypassed and all currently executable commands
+        are processed. If no scheduling policy is enabled, *force* has no
+        effect and commands are flushed immediately as usual.
         """
         from . import glir_metering
 

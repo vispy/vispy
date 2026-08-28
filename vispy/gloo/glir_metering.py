@@ -15,7 +15,7 @@ When enabled, VisPy's GLIR queue dispatches through this module so that
 - a single large texture ``DATA`` command is split into small slab
   sub-uploads (contiguous views along the leading axes, no copies), and
 - each canvas draw spends at most ``frame_budget_bytes`` on texture uploads;
-  the unexecuted commands are retained in a per-context carry queue and a
+  the unexecuted commands are retained in a per-context deferred queue and a
   redraw is requested until that queue is empty.
 
 GLIR ordering semantics are preserved per object: once a command for a
@@ -27,7 +27,7 @@ queue filtering.
 The byte budget is shared by canvases that share a GLIR parser, matching the
 shared OpenGL context that receives the uploads. The budget resets at the
 start of each canvas draw. Offscreen users without draw events receive a
-time-based reset so a carry queue cannot remain stalled indefinitely.
+time-based reset so a deferred queue cannot remain stalled indefinitely.
 
 While metering is enabled, two related sources of GL stalls are also paced.
 Repeated idempotent ``FUNC`` state setters with unchanged arguments are
@@ -63,6 +63,7 @@ with and without metering.
 from __future__ import annotations
 
 import contextlib
+import enum
 import logging
 import time
 import weakref
@@ -72,8 +73,6 @@ import numpy as np
 LOGGER = logging.getLogger(__name__)
 
 __all__ = [
-    'DEFAULT_FRAME_BUDGET_BYTES',
-    'DEFAULT_SLAB_BYTES',
     'add_drain_callback',
     'add_unmetered_texture',
     'discard_unmetered_texture',
@@ -85,10 +84,10 @@ __all__ = [
     'uninstall',
 ]
 
-_FACTORY_FRAME_BUDGET_BYTES = 4 * 2**20
-_FACTORY_SLAB_BYTES = 1 * 2**20
-DEFAULT_FRAME_BUDGET_BYTES = _FACTORY_FRAME_BUDGET_BYTES
-DEFAULT_SLAB_BYTES = _FACTORY_SLAB_BYTES
+_DEFAULT_FRAME_BUDGET_BYTES = 4 * 2**20
+_DEFAULT_SLAB_BYTES = 1 * 2**20
+_frame_budget_bytes = _DEFAULT_FRAME_BUDGET_BYTES
+_slab_bytes = _DEFAULT_SLAB_BYTES
 #: Deferred GL object deletions executed per quiet flush (a flush with no
 #: texture uploads and no active upload hold). Deletion can synchronize the
 #: GPU pipeline, so only a small batch executes in each such flush.
@@ -96,7 +95,7 @@ DELETE_DRAIN_PER_FLUSH = 4
 #: 2D texture DATA at or above this size is metered like 3D uploads.
 #: Small 2D textures (colormap LUTs, interpolation kernels) MUST stay
 #: synchronous: deferring them leaves a shader sampling an unwritten
-#: texture for however long the carry takes to drain.
+#: texture for however long deferred uploads take to drain.
 TEX2D_MIN_METERED_BYTES = 256 * 1024
 
 # Commands that operate on a specific GLIR object id and therefore must
@@ -236,7 +235,11 @@ def _notify_drained() -> None:
 def pending_upload_bytes() -> int:
     """Return bytes in deferred texture DATA commands across all contexts."""
     return sum(
-        sum(c[3].nbytes for c in state.carry if c[0] == 'DATA')
+        sum(
+            c[3].nbytes
+            for c in state.deferred_commands
+            if c[0] == 'DATA'
+        )
         for state in _states.values()
     )
 
@@ -259,13 +262,13 @@ def hold_uploads_until(deadline: float) -> None:
 
 
 class _ParserState:
-    """Per-GlirParser metering state (carry survives across flushes)."""
+    """Per-GlirParser metering state (deferred work survives flushes)."""
 
     def __init__(self, frame_budget_bytes: int, slab_bytes: int):
         self.frame_budget = int(frame_budget_bytes)
         self.slab_bytes = min(int(slab_bytes), self.frame_budget)
         self.budget_left = self.frame_budget
-        self.carry: list[tuple] = []
+        self.deferred_commands: list[tuple] = []
         self.last_reset = time.perf_counter()
         # last-applied GL state for the redundant-FUNC filter; cleared
         # whenever the context is made current
@@ -299,8 +302,8 @@ _states: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 def _state_for(parser) -> _ParserState:
     state = _states.get(parser)
     if state is None:
-        # read the module globals at call time: install() retunes them
-        state = _ParserState(DEFAULT_FRAME_BUDGET_BYTES, DEFAULT_SLAB_BYTES)
+        # Read the runtime settings at call time: install() retunes them.
+        state = _ParserState(_frame_budget_bytes, _slab_bytes)
         _states[parser] = state
     return state
 
@@ -361,34 +364,37 @@ def _split_slabs(offset, data, slab_bytes):
             yield tuple(sub_offset), sub
 
 
-def _drop_deleted_carry(carry, new_commands):
-    """Drop carried uploads whose texture is deleted in this flush.
+def _drop_deleted_commands(deferred_commands, new_commands):
+    """Drop deferred uploads whose texture is deleted in this flush.
 
-    The carry only ever holds commands for metered textures, so this
+    The deferred queue only ever holds commands for metered textures, so this
     cannot affect other object types (notably shaders, whose DATA must
     survive even though vispy DELETEs them right after LINK).
     """
     deleted = {c[1] for c in new_commands if c[0] == 'DELETE'}
     if not deleted:
-        return carry
-    return [c for c in carry if c[1] not in deleted]
+        return deferred_commands
+    return [c for c in deferred_commands if c[1] not in deleted]
+
+
+class _FlushMode(enum.Enum):
+    SCHEDULED = enum.auto()
+    UPLOAD_HOLD = enum.auto()
+    FORCE_DRAIN = enum.auto()
 
 
 def _metered_parse(
     parser,
     commands,
     state,
-    force_defer=False,
-    force_uploads=False,
-    defer_deletes=True,
+    mode=_FlushMode.SCHEDULED,
 ):
     """Execute commands under the upload budget; return the leftovers.
 
-    With ``force_defer`` every metered texture upload is deferred
-    regardless of budget; other commands still run. This implements the
-    deadline configured by :func:`hold_uploads_until`. ``force_uploads``
-    bypasses both that deadline and the byte budget. ``defer_deletes``
-    controls whether DELETE commands are paced or executed inline.
+    ``UPLOAD_HOLD`` defers every metered upload while allowing other commands
+    to run. ``FORCE_DRAIN`` bypasses both the hold and byte budget and executes
+    DELETE commands inline. ``SCHEDULED`` applies normal upload and deletion
+    pacing.
     """
     # mirror GlirParser.parse's deferred deletion bookkeeping, which we
     # bypass by calling _parse directly
@@ -425,7 +431,7 @@ def _metered_parse(
         elif cmd == 'CURRENT':
             # context switch: cached GL state is no longer trustworthy
             gl_state.clear()
-        elif cmd == 'DELETE' and defer_deletes:
+        elif cmd == 'DELETE' and mode is not _FlushMode.FORCE_DRAIN:
             # run deletes only in quiet flushes (see _ParserState):
             # ordering is safe because anything queued for this id
             # earlier either already executed or was dropped with it
@@ -448,9 +454,9 @@ def _metered_parse(
                     # least one slab even if it alone exceeds the budget
                     fresh = state.budget_left >= state.frame_budget
                     if (
-                        not force_uploads
+                        mode is not _FlushMode.FORCE_DRAIN
                         and (
-                            force_defer
+                            mode is _FlushMode.UPLOAD_HOLD
                             or state.budget_left <= 0
                             or (
                                 sub.nbytes > state.budget_left
@@ -480,7 +486,7 @@ def _metered_parse(
             if id_ in state.dead_ids:
                 continue  # deleted: the command is void, drop it
             # not created yet: keep it (and everything ordered behind
-            # it) in the carry until its CREATE arrives
+            # it) in the deferred queue until its CREATE arrives
             LOGGER.debug('deferring %s for missing object %s', cmd, id_)
             deferred_ids.add(id_)
             leftover.append(command)
@@ -522,6 +528,28 @@ def _drain_deletes(parser, state, limit=None):
         state.dead_ids.add(command[1])
 
 
+def _collect_glir_commands(queue, parser, state):
+    """Merge previously deferred and newly queued GLIR commands."""
+    deferred, state.deferred_commands = state.deferred_commands, []
+    new_commands = queue.clear()
+    deferred = _drop_deleted_commands(deferred, new_commands)
+    commands = queue._filter(deferred + new_commands, parser)
+    return commands, bool(deferred)
+
+
+def _request_redraw_or_notify(canvas, state, had_deferred):
+    """Schedule remaining work or notify consumers that uploads drained."""
+    if state.deferred_commands and canvas is not None:
+        with contextlib.suppress(RuntimeError):
+            canvas.update()
+    elif (
+        had_deferred or state.executed_metered
+    ) and not state.deferred_commands:
+        # Notify even when an upload fit within one budget and was never
+        # deferred; consumers may still need to know it reached the parser.
+        _notify_drained()
+
+
 def _flush(queue, parser, force=False):
     """Flush a GLIR queue with per-frame upload metering."""
     from vispy.gloo.context import get_current_canvas
@@ -538,48 +566,36 @@ def _flush(queue, parser, force=False):
         # glFlush/glFinish command that requested this forced drain.
         _drain_deletes(parser, state)
     # fallback when no canvas draw hook fires (offscreen / bare gloo):
-    # never let the carry starve for more than 0.25 s
+    # Never let deferred work starve for more than 0.25 s.
     if (
-        state.budget_left < state.frame_budget
+        not force
+        and state.budget_left < state.frame_budget
         and time.perf_counter() - state.last_reset > 0.25
     ):
         state.reset_budget()
 
-    carry, state.carry = state.carry, []
-    new_commands = queue.clear()
-    carry = _drop_deleted_carry(carry, new_commands)
-    commands = queue._filter(carry + new_commands, parser)
-    holding = not force and time.monotonic() < _upload_hold_until
-    had_carry = bool(carry)
+    commands, had_deferred = _collect_glir_commands(queue, parser, state)
+    holding = time.monotonic() < _upload_hold_until
+    if force:
+        mode = _FlushMode.FORCE_DRAIN
+    elif holding:
+        mode = _FlushMode.UPLOAD_HOLD
+    else:
+        mode = _FlushMode.SCHEDULED
     state.executed_metered = False
-    state.carry = _metered_parse(
-        parser,
-        commands,
-        state,
-        force_defer=holding,
-        force_uploads=force,
-        defer_deletes=not force,
-    )
+    state.deferred_commands = _metered_parse(parser, commands, state, mode)
     if force:
         # A forced drain is outside the per-draw allowance. Start the next
         # automatic draw with a fresh budget rather than a negative balance.
         state.reset_budget()
 
-    if state.carry and canvas is not None:
-        with contextlib.suppress(RuntimeError):
-            canvas.update()
-    elif (had_carry or state.executed_metered) and not state.carry:
-        # notify on any flush that landed metered uploads and ended
-        # clean. This includes an upload that fit entirely within one budget
-        # and therefore never entered the carry queue; consumers may still
-        # need notification that the DATA command has reached the parser.
-        _notify_drained()
+    _request_redraw_or_notify(canvas, state, had_deferred)
 
     if (
         not force
         and state.deferred_deletes
         and not holding
-        and not state.carry
+        and not state.deferred_commands
         and state.budget_left >= state.frame_budget
     ):
         # A quiet flush executes no uploads and has no active hold. Run
@@ -605,11 +621,11 @@ def install(
     ----------
     frame_budget_bytes : int | None
         Maximum texture DATA bytes executed per canvas draw. ``None`` uses the
-        current module default.
+        current runtime setting.
     slab_bytes : int | None
         Maximum target size of each sub-upload. A texel row or slice that
         cannot be divided further may exceed this value. ``None`` uses the
-        current module default.
+        current runtime setting.
 
     Returns
     -------
@@ -617,22 +633,22 @@ def install(
         ``True`` after successful configuration. Repeated calls are safe and
         update both existing parser states and defaults for future parsers.
     """
-    global _enabled, DEFAULT_FRAME_BUDGET_BYTES, DEFAULT_SLAB_BYTES
+    global _enabled, _frame_budget_bytes, _slab_bytes
 
     frame_budget_bytes = int(
-        DEFAULT_FRAME_BUDGET_BYTES
+        _frame_budget_bytes
         if frame_budget_bytes is None
         else frame_budget_bytes
     )
-    slab_bytes = int(DEFAULT_SLAB_BYTES if slab_bytes is None else slab_bytes)
+    slab_bytes = int(_slab_bytes if slab_bytes is None else slab_bytes)
     if frame_budget_bytes <= 0:
         raise ValueError('frame_budget_bytes must be positive')
     if slab_bytes <= 0:
         raise ValueError('slab_bytes must be positive')
 
     # re-parameterize existing states (and set defaults for new ones)
-    DEFAULT_FRAME_BUDGET_BYTES = frame_budget_bytes
-    DEFAULT_SLAB_BYTES = slab_bytes
+    _frame_budget_bytes = frame_budget_bytes
+    _slab_bytes = slab_bytes
     for state in _states.values():
         state.frame_budget = frame_budget_bytes
         state.slab_bytes = min(slab_bytes, frame_budget_bytes)
@@ -651,18 +667,18 @@ def install(
 def uninstall():
     """Disable metering and synchronously execute all deferred commands.
 
-    This restores factory byte defaults and clears per-parser metering state.
+    This restores the built-in byte defaults and clears per-parser state.
     """
-    global _enabled, DEFAULT_FRAME_BUDGET_BYTES, DEFAULT_SLAB_BYTES
-    DEFAULT_FRAME_BUDGET_BYTES = _FACTORY_FRAME_BUDGET_BYTES
-    DEFAULT_SLAB_BYTES = _FACTORY_SLAB_BYTES
+    global _enabled, _frame_budget_bytes, _slab_bytes
+    _frame_budget_bytes = _DEFAULT_FRAME_BUDGET_BYTES
+    _slab_bytes = _DEFAULT_SLAB_BYTES
     if not _enabled:
         return
     _enabled = False
-    # re-queue carried uploads and held deletions so they are not lost
+    # Re-queue deferred uploads and held deletions so they are not lost.
     for parser, state in list(_states.items()):
-        if state.carry:
-            commands, state.carry = state.carry, []
+        if state.deferred_commands:
+            commands, state.deferred_commands = state.deferred_commands, []
             parser.parse(commands)
         if state.deferred_deletes:
             commands, state.deferred_deletes = state.deferred_deletes, []
@@ -691,9 +707,9 @@ def _benchmark():  # pragma: no cover - manual profiling tool
     parser_.add_argument(
         '--budget',
         type=int,
-        default=DEFAULT_FRAME_BUDGET_BYTES,
+        default=_frame_budget_bytes,
     )
-    parser_.add_argument('--slab', type=int, default=DEFAULT_SLAB_BYTES)
+    parser_.add_argument('--slab', type=int, default=_slab_bytes)
     args = parser_.parse_args()
 
     from vispy import app, scene
@@ -733,12 +749,14 @@ def _benchmark():  # pragma: no cover - manual profiling tool
                 volume._texture.set_data(sub, offset=(z, 0, 0))
                 t_set = time.perf_counter() - t0
                 t_draw = timed_draw()
-                # with metering, drain the carry and count total time.
+                # With metering, drain deferred work and count total time.
                 # canvas.render() bypasses the draw event, so emulate the
                 # per-frame budget reset a real paint event would trigger.
                 t_drain = 0.0
                 if metered:
-                    while _states and any(s.carry for s in _states.values()):
+                    while _states and any(
+                        s.deferred_commands for s in _states.values()
+                    ):
                         for s in _states.values():
                             s.reset_budget()
                         t_drain += timed_draw()

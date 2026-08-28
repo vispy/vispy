@@ -116,7 +116,7 @@ def test_budget_defers_remainder(parser):
     assert data_bytes(parser.executed) == 512 * 2**10
     assert data_bytes(leftover) == 512 * 2**10
     assert state.budget_left == 0
-    # next frame: fresh budget drains the carry
+    # next frame: fresh budget drains the deferred commands
     state.reset_budget()
     leftover2 = gm._metered_parse(parser, leftover, state)
     assert leftover2 == []
@@ -146,7 +146,7 @@ def test_non_texture_commands_run_past_deferred_uploads(parser):
 def test_oversized_single_slab_still_makes_progress(parser):
     parser.add_texture3d(1)
     # a slab that alone exceeds the whole budget: with a fresh budget it
-    # must execute anyway, otherwise the carry never drains
+    # must execute anyway, otherwise the deferred command never drains
     data = np.zeros((1, 64, 64), dtype=np.uint8)
     state = make_state(budget=1024, slab=1024)
     state.slab_bytes = data.nbytes  # force a single indivisible slab
@@ -157,7 +157,7 @@ def test_oversized_single_slab_still_makes_progress(parser):
 
 def test_delete_drops_carried_uploads():
     data = np.zeros((4, 4, 4), dtype=np.uint8)
-    carry = [
+    deferred_commands = [
         ('DATA', 1, (0, 0, 0), data),
         ('DATA', 2, (0, 0, 0), data),
     ]
@@ -168,7 +168,7 @@ def test_delete_drops_carried_uploads():
         ('DATA', 3, 0, 'shader code'),
         ('DELETE', 3),
     ]
-    out = gm._drop_deleted_carry(carry, new_commands)
+    out = gm._drop_deleted_commands(deferred_commands, new_commands)
     assert out == [('DATA', 2, (0, 0, 0), data)]
     assert new_commands == [
         ('DELETE', 1),
@@ -229,6 +229,21 @@ def test_install_uninstall_idempotent():
     gm.uninstall()  # second uninstall is a no-op
 
 
+def test_install_updates_runtime_settings_and_uninstall_restores_defaults():
+    gm.uninstall()
+    try:
+        gm.install(frame_budget_bytes=8 * 2**20, slab_bytes=2 * 2**20)
+        gm.install()
+
+        assert gm._frame_budget_bytes == 8 * 2**20
+        assert gm._slab_bytes == 2 * 2**20
+    finally:
+        gm.uninstall()
+
+    assert gm._frame_budget_bytes == gm._DEFAULT_FRAME_BUDGET_BYTES
+    assert gm._slab_bytes == gm._DEFAULT_SLAB_BYTES
+
+
 def test_install_rejects_nonpositive_limits():
     with pytest.raises(ValueError, match='frame_budget_bytes'):
         gm.install(frame_budget_bytes=0)
@@ -258,6 +273,17 @@ def test_remote_parser_uses_default_flush():
     assert parser.commands[0][0] == 'DATA'
 
 
+def test_force_false_without_metering_uses_default_flush(parser):
+    gm.uninstall()
+    queue = glir.GlirQueue()
+    command = ('FUNC', 'glFlush')
+    queue.command(*command)
+
+    queue.flush(parser, force=False)
+
+    assert parser.executed == [command]
+
+
 def test_metered_flush_carries_and_drains(monkeypatch):
     monkeypatch.setattr(
         'vispy.gloo.context.get_current_canvas',
@@ -276,18 +302,18 @@ def test_metered_flush_carries_and_drains(monkeypatch):
         queue.flush(parser)
         assert data_bytes(parser.executed) == 512 * 2**10
         state = gm._states[parser]
-        assert data_bytes(state.carry) == 512 * 2**10
+        assert data_bytes(state.deferred_commands) == 512 * 2**10
         # next frame: budget reset (simulating the canvas draw hook),
-        # empty queue still drains the carry
+        # empty queue still drains deferred commands
         state.reset_budget()
         queue.flush(parser)
         assert data_bytes(parser.executed) == data.nbytes
-        assert state.carry == []
+        assert state.deferred_commands == []
     finally:
         gm.uninstall()
 
 
-def test_metered_flush_new_size_cancels_carry(monkeypatch):
+def test_metered_flush_new_size_cancels_deferred_commands(monkeypatch):
     monkeypatch.setattr(
         'vispy.gloo.context.get_current_canvas',
         lambda: None,
@@ -304,14 +330,14 @@ def test_metered_flush_new_size_cancels_carry(monkeypatch):
         queue.command('DATA', 1, (0, 0, 0), data)
         queue.flush(parser)
         state = gm._states[parser]
-        assert state.carry
+        assert state.deferred_commands
         # a SIZE re-specification supersedes the carried uploads
         state.reset_budget()
         small = np.zeros((4, 4, 4), dtype=np.uint8)
         queue.command('SIZE', 1, (4, 4, 4), 'luminance', None)
         queue.command('DATA', 1, (0, 0, 0), small)
         queue.flush(parser)
-        assert state.carry == []
+        assert state.deferred_commands == []
         kinds = [c[0] for c in parser.executed]
         assert kinds[-2:] == ['SIZE', 'DATA']
         assert parser.executed[-1][3] is small
@@ -409,14 +435,14 @@ def test_forced_flush_drains_uploads_and_deletes(monkeypatch):
         queue.flush(parser)
 
         state = gm._states[parser]
-        assert state.carry
+        assert state.deferred_commands
         assert state.deferred_deletes == [('DELETE', 7)]
 
         queue.command('FUNC', 'glFlush')
         queue.flush(parser, force=True)
 
         assert data_bytes(parser.executed) == data.nbytes
-        assert state.carry == []
+        assert state.deferred_commands == []
         assert state.deferred_deletes == []
         assert state.budget_left == state.frame_budget
         assert parser.executed[-1] == ('FUNC', 'glFlush')
@@ -466,14 +492,14 @@ def test_deletes_deferred_to_quiet_flush(monkeypatch):
         queue.command('DELETE', 7)  # unrelated object
         queue.flush(parser)
         state = gm._states[parser]
-        # busy flush (uploads executed, carry pending): delete held
-        assert state.carry
+        # busy flush (uploads executed, deferred work pending): delete held
+        assert state.deferred_commands
         assert state.deferred_deletes == [('DELETE', 7)]
         assert all(c[0] != 'DELETE' for c in parser.executed)
-        # drain the carry across quiet-less flushes
+        # drain deferred commands across quiet-less flushes
         state.reset_budget()
         queue.flush(parser)
-        assert not state.carry
+        assert not state.deferred_commands
         # this flush still spent budget on uploads: delete still held
         assert state.deferred_deletes == [('DELETE', 7)]
         # a genuinely quiet flush executes it
@@ -506,8 +532,8 @@ def test_delete_drain_is_paced(monkeypatch):
         queue.flush(parser)  # busy: uploads spent, deletes held
         state = gm._states[parser]
         assert len(state.deferred_deletes) == n_deletes
-        # drain the upload carry
-        while state.carry:
+        # drain deferred uploads
+        while state.deferred_commands:
             state.reset_budget()
             queue.flush(parser)
         executed_deletes = lambda: sum(  # noqa: E731
@@ -577,10 +603,10 @@ def test_glir_flush_never_exceeds_frame_budget(monkeypatch):
                 f'(> budget {budget} + slab {slab})'
             )
             total += flushed
-            if not state.carry:
+            if not state.deferred_commands:
                 break
         # metering bounds each frame but loses nothing overall
-        assert state.carry == []
+        assert state.deferred_commands == []
         assert total == volume.nbytes + image.nbytes
     finally:
         gm.uninstall()
@@ -597,12 +623,12 @@ class _DrainSpy:
 
 
 def test_metered_upload_within_budget_still_notifies_drain(monkeypatch):
-    """A clean flush that landed metered uploads notifies, carry or not.
+    """A clean flush that landed metered uploads notifies after completion.
 
     Uploads small enough to fit one frame budget are never carried, but a
     consumer may still wait for notification that their DATA commands reached
-    the parser. Notification must therefore not depend on a carry queue having
-    existed.
+    the parser. Notification must therefore not depend on commands having
+    been deferred.
     """
     monkeypatch.setattr(
         'vispy.gloo.context.get_current_canvas',
@@ -629,20 +655,20 @@ def test_metered_upload_within_budget_still_notifies_drain(monkeypatch):
         queue.flush(parser)
         assert spy.drains == 1
 
-        # over-budget upload: no notification while the carry drains,
+        # over-budget upload: no notification while deferred work drains,
         # exactly one when the flush that empties it ends clean
         big = np.zeros((32, 512, 512), dtype=np.uint8)  # 8 MiB
         queue.command('DATA', 1, (0, 0, 0), big)
         state.reset_budget()
         queue.flush(parser)
-        assert state.carry
+        assert state.deferred_commands
         assert spy.drains == 1
         for _ in range(8):
             state.reset_budget()
             queue.flush(parser)
-            if not state.carry:
+            if not state.deferred_commands:
                 break
-        assert state.carry == []
+        assert state.deferred_commands == []
         assert spy.drains == 2
     finally:
         gm.remove_drain_callback(spy.on_drain)
@@ -700,7 +726,7 @@ def test_deferred_delete_voids_later_commands(monkeypatch):
         # a late command for the dead object: dropped, no crash
         queue.command('SIZE', 5, 1024)
         queue.flush(parser)
-        assert state.carry == []
+        assert state.deferred_commands == []
         assert all(c[:2] != ('SIZE', 5) for c in parser.executed)
     finally:
         gm.uninstall()
@@ -720,12 +746,12 @@ def test_command_before_create_carried_until_create(monkeypatch):
         queue.command('SIZE', 9, 1024)
         queue.flush(parser)  # would previously raise
         state = gm._states[parser]
-        assert state.carry == [('SIZE', 9, 1024)]
+        assert state.deferred_commands == [('SIZE', 9, 1024)]
         queue.command('CREATE', 9, 'VertexBuffer')
         queue.flush(parser)  # carried SIZE precedes CREATE: retried
         state.reset_budget()
         queue.flush(parser)  # object now exists: the SIZE lands
-        assert state.carry == []
+        assert state.deferred_commands == []
         assert ('SIZE', 9, 1024) in parser.executed
     finally:
         gm.uninstall()
