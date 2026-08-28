@@ -33686,11 +33686,22 @@ packages:
 - pypi: ./
   name: vispy
   requires_dist:
-  - numpy
   - freetype-py
   - hsluv
   - kiwisolver
+  - numpy
   - packaging
+  - myst-parser ; extra == 'doc'
+  - numpydoc ; extra == 'doc'
+  - pillow ; extra == 'doc'
+  - pydata-sphinx-theme ; extra == 'doc'
+  - pyopengl ; extra == 'doc'
+  - pytest ; extra == 'doc'
+  - sphinx-gallery ; extra == 'doc'
+  - sphinxcontrib-apidoc ; extra == 'doc'
+  - glfw ; extra == 'glfw'
+  - meshio ; extra == 'io'
+  - pillow ; extra == 'io'
   - ipython ; extra == 'ipython-static'
   - pyglet>=1.2 ; extra == 'pyglet'
   - pyqt5 ; extra == 'pyqt5'
@@ -33698,26 +33709,15 @@ packages:
   - pyside ; extra == 'pyside'
   - pyside2 ; extra == 'pyside2'
   - pyside6 ; extra == 'pyside6'
-  - glfw ; extra == 'glfw'
   - pysdl2 ; extra == 'sdl2'
-  - wxpython ; extra == 'wx'
-  - pyopengltk ; extra == 'tk'
-  - pydata-sphinx-theme ; extra == 'doc'
-  - numpydoc ; extra == 'doc'
-  - sphinxcontrib-apidoc ; extra == 'doc'
-  - sphinx-gallery ; extra == 'doc'
-  - myst-parser ; extra == 'doc'
-  - pillow ; extra == 'doc'
-  - pytest ; extra == 'doc'
-  - pyopengl ; extra == 'doc'
-  - meshio ; extra == 'io'
-  - pillow ; extra == 'io'
-  - pytest ; extra == 'test'
-  - pytest-sugar ; extra == 'test'
+  - imageio ; extra == 'test'
   - meshio ; extra == 'test'
   - pillow ; extra == 'test'
+  - pytest ; extra == 'test'
+  - pytest-sugar ; extra == 'test'
   - sphinx-gallery ; extra == 'test'
-  - imageio ; extra == 'test'
+  - pyopengltk ; extra == 'tk'
+  - wxpython ; extra == 'wx'
   requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/09/dc/f3dfb7488b770f3f67e6545085bf2abea5172e88f57b8ad25ef860ca704c/myst_parser-5.1.0-py3-none-any.whl
   name: myst-parser

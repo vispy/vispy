@@ -133,6 +133,11 @@ version-file = "vispy/version.py"
 # things like "vispy.glsl" = ["*.vert", "*.frag", "*.glsl"] not needed because hatch includes it
 [tool.hatch.build.targets.wheel]
 packages = ["vispy"]
+artifacts = [
+    "vispy/visuals/text/_sdf_cpu*.so",
+    "vispy/visuals/text/_sdf_cpu*.pyd",
+    "vispy/visuals/text/_sdf_cpu*.pyi",
+]
 
 [tool.hatch.build.targets.wheel.hooks.cython]
 dependencies = ["hatch-cython"]
@@ -147,8 +152,12 @@ define_macros = [
 
 [tool.hatch.build.targets.wheel.hooks.cython.options.files]
 targets = [
-    "vispy/visuals/text/_sdf_cpu.pyx",
+    "./vispy/visuals/text/_sdf_cpu.pyx",
 ]
+
+# Specifically needed because of hatch-cython hook otherwise including make
+[tool.setuptools]
+packages = ["vispy"]
 
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-manylinux_i686 *-musllinux*"
