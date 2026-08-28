@@ -227,13 +227,6 @@ jobs:
         environments: ${{ matrix.environment }}
         cache: true
         locked: false
-    - name: Check Cython extension
-      run: |
-        which gcc
-        gcc --version
-        find vispy -name '_sdf_cpu*.so' -o -name '_sdf_cpu*.pyd'
-        pixi run -e ${{ matrix.environment }} python -c "import vispy; print(vispy.__file__)"
-        pixi run -e ${{ matrix.environment }} python -c "import vispy.visuals.text._sdf_cpu as m; print(m.__file__)"
     - name: Version Info
       run: |
         if [ "${{ matrix.test }}" != "osmesa" ]; then
