@@ -117,13 +117,13 @@ with all required dependencies in the ``lint`` environment:
 
 .. code-block:: bash
 
-  pixi run -e lint flake
+  pixi run flake
 
 You can also check line endings using the corresponding Pixi task:
 
 .. code-block:: bash
 
-  pixi run -e lint lineendings
+  pixi run lineendings
 
 This will inform you of any code style issues in the entire vispy python
 package directory.
@@ -310,7 +310,7 @@ task with all required documentation dependencies:
 
 .. code-block:: bash
 
-    pixi run -e website build-website
+    pixi run build-website
 
 The Pixi task cleans the documentation build directory before generating the
 site, matching the clean build used by CI.
