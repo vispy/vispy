@@ -111,8 +111,7 @@ def test_mapped_button_events(event_name, event_type, qt_button, vispy_button,
         buttons_flag = getattr(QtCore.Qt.MouseButton, buttons_flag)
     assert qt_backend.BUTTONMAP[qt_button] == vispy_button
 
-    canvas = Canvas(app=app, size=(80, 80), show=False, create_native=True)
-    try:
+    with Canvas(app=app, size=(80, 80), create_native=True) as canvas:
         seen = []
         canvas.events[_VISPY_EVENT[event_name]].connect(lambda e: seen.append(e))
         ev = _make_mouse_event(event_type, qt_button, buttons=buttons_flag)
@@ -123,8 +122,6 @@ def test_mapped_button_events(event_name, event_type, qt_button, vispy_button,
             assert tuple(seen[0].pos) == (12.0, 34.0)
         if buttons_flag is not None:
             assert vispy_button in seen[0].buttons
-    finally:
-        canvas.close()
 
 
 @requires_application('pyqt6')
@@ -133,8 +130,7 @@ def test_unmapped_button_release_does_not_raise():
     app = use_app('pyqt6')
     from vispy.app.backends import _qt as qt_backend
 
-    canvas = Canvas(app=app, size=(80, 80), show=False, create_native=True)
-    try:
+    with Canvas(app=app, size=(80, 80), create_native=True) as canvas:
         seen = []
         canvas.events.mouse_release.connect(lambda e: seen.append(e))
         unknown = object()
@@ -144,8 +140,6 @@ def test_unmapped_button_release_does_not_raise():
         canvas._backend.mouseReleaseEvent(fake)
         assert len(seen) == 1
         assert seen[0].button == 0
-    finally:
-        canvas.close()
 
 
 @requires_application('pyqt6')
