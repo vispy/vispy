@@ -55,7 +55,7 @@ jobs:
       uses: prefix-dev/setup-pixi@v0
       with:
         environments: lint
-        cache: false
+        cache: true
         locked: false
     - name: Check line endings
       run: pixi run lineendings
@@ -113,7 +113,7 @@ jobs:
       uses: prefix-dev/setup-pixi@v0
       with:
         environments: website
-        cache: false
+        cache: true
         locked: false
     - name: Version Info
       run: |
@@ -225,7 +225,7 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.10.0
       with:
         environments: ${{ matrix.environment }}
-        cache: false
+        cache: true
         locked: false
     - name: Check Cython extension
       run: |
