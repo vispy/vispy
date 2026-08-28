@@ -499,7 +499,7 @@ class _GlirQueueShare(object):
         return commands
 
     def flush(self, parser, force=False):
-        """Flush all current commands to the GLIR interpreter.
+        """Flush current commands to the GLIR interpreter.
 
         When *force* is true, optional command scheduling must execute all
         currently executable work instead of applying a per-draw budget.
