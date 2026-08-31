@@ -18,6 +18,7 @@ pytest-sugar
 pyopengl
 scikit-image
 scipy
+plyfile
 networkx
 hsluv
 kiwisolver
