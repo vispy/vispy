@@ -155,7 +155,6 @@ targets = [
     "./vispy/visuals/text/_sdf_cpu.pyx",
 ]
 
-# Specifically needed because of hatch-cython hook otherwise including make
 [tool.setuptools]
 packages = ["vispy"]
 
