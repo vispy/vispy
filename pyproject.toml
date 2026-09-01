@@ -155,6 +155,8 @@ targets = [
     "./vispy/visuals/text/_sdf_cpu.pyx",
 ]
 
+# This is required as otherwise when cythonizing _sdf_cpu.pyx, multiple top-level packages are discovered in
+# flat layout (including make and codegen), which prevents setuptools from continueing the build.
 [tool.setuptools]
 packages = ["vispy"]
 
