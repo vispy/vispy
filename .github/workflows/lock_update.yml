@@ -1,0 +1,33 @@
+name: Update Pixi lock
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-pixi-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.10.0
+        with:
+          cache: false
+      - name: Update Pixi lock
+        run: pixi update
+      - name: Create Pixi lock update PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ github.token }}
+          commit-message: "Update pixi.lock"
+          branch: ci/update-pixi-lock
+          delete-branch: true
+          title: "Update pixi.lock"
+          body: |
+            Automated update of pixi lock
+          add-paths: |
+            pixi.lock
