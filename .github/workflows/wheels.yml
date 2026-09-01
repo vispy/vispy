@@ -66,7 +66,7 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
           path: dist
-      - uses: pypa/gh-action-pypi-publish@master
+      - uses: pypa/gh-action-pypi-publish@release/v1
         # upload to Test PyPI for every commit on main branch
         if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
         with:
@@ -88,7 +88,7 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
           path: dist
-      - uses: pypa/gh-action-pypi-publish@master
+      - uses: pypa/gh-action-pypi-publish@release/v1
         # upload to PyPI on every tag starting with 'v'
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
         with:
