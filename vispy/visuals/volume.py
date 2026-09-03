@@ -139,7 +139,7 @@ vec4 applyColormap(vec4 color) {
     color.rgb = pow(color.rgb, vec3(gamma));
     if (u_rgb_mode == 1) {
         // no colormapping, the rgb values are used directly
-        return vec4(color.rgba);
+        return color;
     }
     return $cmap(color.r);
 }
