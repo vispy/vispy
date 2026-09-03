@@ -127,7 +127,7 @@ float colorToVal(vec4 color)
     if (u_rgb_mode == 1)
         // perceptual luminance, a good approach to transform rgb into a single
         // value for things like gradient calculations in isosurface
-        return dot(color.rgb, vec3(0.2126, 0.7152, 0.0722)) * color.rgb;
+        return dot(color.rgb, vec3(0.2126, 0.7152, 0.0722)) * color.a;
     return color.r;
 }
 
@@ -139,7 +139,7 @@ vec4 applyColormap(vec4 color) {
     color.rgb = pow(color.rgb, vec3(gamma));
     if (u_rgb_mode == 1) {
         // no colormapping, the rgb values are used directly
-        return vec4(color.rgb, 1.0);
+        return vec4(color.rgba);
     }
     return $cmap(color.r);
 }
