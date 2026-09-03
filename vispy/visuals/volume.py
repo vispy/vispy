@@ -122,13 +122,13 @@ float rand(vec2 co)
     return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-float colorToVal(vec4 color1)
+float colorToVal(vec4 color)
 {
     if (u_rgb_mode == 1)
         // perceptual luminance, a good approach to transform rgb into a single
         // value for things like gradient calculations in isosurface
-        return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
-    return color1.r;
+        return dot(color.rgb, vec3(0.2126, 0.7152, 0.0722)) * color.rgb;
+    return color.r;
 }
 
 vec4 applyColormap(vec4 color) {
