@@ -13,6 +13,7 @@ defined in vispy.scene.
 
 from .axis import AxisVisual  # noqa
 from .box import BoxVisual  # noqa
+from .circle import CircleVisual  # noqa
 from .cube import CubeVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
 from .gridlines import GridLinesVisual  # noqa
