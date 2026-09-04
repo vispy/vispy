@@ -128,7 +128,7 @@ vec4 applyColormap(vec4 color) {
         color.rgb = clamp(color.rgb, min(clim.x, clim.y), max(clim.x, clim.y));
         color.rgb = (color.rgb - clim.x) / (clim.y - clim.x);
         color.rgb = pow(color.rgb, vec3(gamma));
-        return vec4(color.rgb, 1.0);
+        return color;
     }
     // for scalar and complex data, we first use $colorToScalar to convert
     // the raw texture value to the appropriate scalar, then apply the colormap
@@ -380,7 +380,7 @@ float colorToScalar(vec4 color1)
 {
     // perceptual luminance, a good approach to transform rgb into a single
     // value for things like gradient calculations in isosurface
-    return dot(color1.rgb, vec3(0.2126, 0.7152, 0.0722));
+    return dot(color.rgb, vec3(0.2126, 0.7152, 0.0722)) * color.a;
 }
 """
 

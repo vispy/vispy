@@ -112,6 +112,19 @@ Then run the following from the root of the VisPy directory:
 
   python make test flake
 
+Alternatively, if you use Pixi, the repository provides a ``flake`` task
+with all required dependencies in the ``lint`` environment:
+
+.. code-block:: bash
+
+  pixi run flake
+
+You can also check line endings using the corresponding Pixi task:
+
+.. code-block:: bash
+
+  pixi run lineendings
+
 This will inform you of any code style issues in the entire vispy python
 package directory.
 
@@ -144,7 +157,14 @@ Then run the following from the root of the VisPy directory:
 
     python make test flake
 
-This will check both code style and docstring style.
+This will check both code style and docstring style. If you are using pixi you can do this
+equivalent steps instead:
+
+.. code-block::
+
+    pixi install -e lint  # installs the lint environment
+    pixi run flake
+
 
 Adding Tests
 ------------
@@ -210,27 +230,61 @@ backends:
 
   python make test unit
 
+If you use Pixi, the equivalent task can be run in one of the provided test
+environments, for example:
+
+.. code-block:: bash
+
+  pixi run -e py312-full unit
+
 This runs tests in the same way that tests are run on the CI environments.
 Additional test commands are available including:
 
-.. code-block::
+.. code-block:: bash
 
   python make test nobackend
 
+or, with Pixi:
+
+.. code-block:: bash
+
+  pixi run -e py312-full nobackend
+
 To run tests without any backend selected. Or:
 
-.. code-block::
+.. code-block:: bash
 
   python make test full
+
+or, with Pixi:
+
+.. code-block:: bash
+
+  pixi run -e py312-full test
 
 To run both nobackend and unit tests as well as "extra" tests including
 docstring and flake tests. Lastly:
 
-.. code-block::
+.. code-block:: bash
 
   python make test examples
 
+or, with Pixi:
+
+.. code-block:: bash
+
+  pixi run -e py312-full examples
+
 Which will attempt to run all example scripts.
+
+Pixi also provides environments for testing different Python versions and
+backends. For example:
+
+.. code-block:: bash
+
+  pixi run -e py310-full unit
+  pixi run -e py312-newqt unit
+  pixi run -e py314-full unit
 
 .. note::
 
@@ -251,22 +305,35 @@ documentation run:
     cd doc
     make html
 
+Alternatively, if you use Pixi, the repository provides a ``build-website``
+task with all required documentation dependencies:
+
+.. code-block:: bash
+
+    pixi run build-website
+
+The Pixi task cleans the documentation build directory before generating the
+site, matching the clean build used by CI.
+
 Repeated execution of ``make html`` will reuse information from previous runs
 which may be faster, but may also produce incorrect output in specific cases.
 To make sure, you can clean out the build directory by running ``make clean``.
 
 To view the output you can view the build folder in a browser:
 
-.. code-block::
+.. code-block:: bash
 
     firefox _build/html/index.html
+
+When using the Pixi task from the repository root, the generated documentation
+is located at ``doc/_build/html/index.html``.
 
 As part of the documentation generation, the sphinx-gallery project will run
 all of the examples to generate screenshots for the gallery pages. This can
 take a long time and is unnecessary if you aren't modifying the gallery or
 examples. To build the site without generating the gallery run:
 
-.. code-block::
+.. code-block:: bash
 
     make html SPHINXOPTS="-D plot_gallery=0"
 

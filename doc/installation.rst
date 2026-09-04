@@ -151,6 +151,25 @@ available in the python environment:
     # install the vispy package in editable/development mode
     pip install -e .
 
+Alternatively, if you use Pixi, you can create one of the predefined
+development environments directly from the repository:
+
+.. code-block:: console
+
+    # creates "vispy" folder
+    git clone https://github.com/vispy/vispy.git
+    cd vispy
+    # install specific development environment
+    pixi install -e py312-full
+    # or install all environments
+    pixi install -a
+
+Commands can then be run inside a specific environment like this:
+
+.. code-block:: console
+
+    pixi run -e py312-full <command>
+
 To run the latest development version without cloning the repository, you
 can also use this line:
 
