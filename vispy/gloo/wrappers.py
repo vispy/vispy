@@ -557,7 +557,7 @@ class BaseGlooFunctions(object):
         else:
             context = get_current_canvas().context
         context.glir.command('FUNC', 'glFinish')
-        context.flush_commands()  # Process GLIR commands
+        context.flush_commands(force=True)  # Process all GLIR commands
 
     def flush(self):
         """Flush GL commands
@@ -570,7 +570,7 @@ class BaseGlooFunctions(object):
         else:
             context = get_current_canvas().context
         context.glir.command('FUNC', 'glFlush')
-        context.flush_commands()  # Process GLIR commands
+        context.flush_commands(force=True)  # Process all GLIR commands
 
     def set_hint(self, target, mode):
         """Set OpenGL drawing hint
