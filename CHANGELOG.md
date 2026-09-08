@@ -1,5 +1,31 @@
 # Release Notes
 
+## [v0.17.0](https://github.com/vispy/vispy/tree/v0.17.0) (2026-09-08)
+
+**Enhancements:**
+
+- Use alpha in rgb volume calculations [\#2786](https://github.com/vispy/vispy/pull/2786) ([brisvag](https://github.com/brisvag))
+- Implement \_compute\_bounds for InstancedMeshVisual [\#2759](https://github.com/vispy/vispy/pull/2759) ([kephale](https://github.com/kephale))
+- Add RGB volume rendering support [\#2758](https://github.com/vispy/vispy/pull/2758) ([kephale](https://github.com/kephale))
+
+**Fixed bugs:**
+
+- Fix clipping for direct children of ViewBox [\#2781](https://github.com/vispy/vispy/pull/2781) ([brisvag](https://github.com/brisvag))
+- Fix perspective for text [\#2774](https://github.com/vispy/vispy/pull/2774) ([brisvag](https://github.com/brisvag))
+- Fix instanced markers perspective [\#2773](https://github.com/vispy/vispy/pull/2773) ([brisvag](https://github.com/brisvag))
+- Fix KeyError when releasing extra mouse buttons on Qt backend [\#2765](https://github.com/vispy/vispy/pull/2765) ([Phoenix0531-sudo](https://github.com/Phoenix0531-sudo))
+
+**Merged pull requests:**
+
+- Bump pypa/cibuildwheel from 4.1.0 to 4.2.0 [\#2770](https://github.com/vispy/vispy/pull/2770) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump actions/setup-python from 6 to 7 [\#2762](https://github.com/vispy/vispy/pull/2762) ([dependabot[bot]](https://github.com/apps/dependabot))
+- docs: introduce VisPy ecosystem landing page [\#2760](https://github.com/vispy/vispy/pull/2760) ([rossant](https://github.com/rossant))
+- Use np.reshape instead of setting shape attr [\#2757](https://github.com/vispy/vispy/pull/2757) ([gselzer](https://github.com/gselzer))
+- Bump actions/cache from 5 to 6 [\#2756](https://github.com/vispy/vispy/pull/2756) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 4.0.0 to 4.1.0 [\#2754](https://github.com/vispy/vispy/pull/2754) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump pypa/cibuildwheel from 3.4.0 to 4.0.0 [\#2752](https://github.com/vispy/vispy/pull/2752) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump conda-incubator/setup-miniconda from 3 to 4 [\#2750](https://github.com/vispy/vispy/pull/2750) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v0.16.2](https://github.com/vispy/vispy/tree/v0.16.2) (2026-05-20)
 
 **Enhancements:**
