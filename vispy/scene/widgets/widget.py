@@ -42,7 +42,7 @@ class Widget(Compound):
     """
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color=None,
-                 border_width=1, bgcolor=None, padding=0, margin=0, **kwargs):
+                 border_width=0, bgcolor=None, padding=0, margin=0, **kwargs):
         # For drawing border.
         # A mesh is required because GL lines cannot be drawn with predictable
         # shape across all platforms.
