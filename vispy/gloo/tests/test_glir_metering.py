@@ -416,7 +416,7 @@ def test_viewport_and_clearcolor_deduped(parser):
     assert len([c for c in parser.executed if c[1] == 'glClearColor']) == 1
 
 
-def test_forced_flush_drains_uploads(monkeypatch):
+def test_forced_flush_drains_uploads_and_deletes(monkeypatch):
     monkeypatch.setattr(
         'vispy.gloo.context.get_current_canvas',
         lambda: None,
@@ -431,18 +431,22 @@ def test_forced_flush_drains_uploads(monkeypatch):
         queue = glir.GlirQueue()
         data = np.zeros((16, 256, 256), dtype=np.uint8)  # 1 MiB
         queue.command('DATA', 1, (0, 0, 0), data)
+        queue.command('DELETE', 7)
         queue.flush(parser)
 
         state = gm._states[parser]
         assert state.deferred_commands
+        assert state.deferred_deletes == [('DELETE', 7)]
 
         queue.command('FUNC', 'glFlush')
         queue.flush(parser, force=True)
 
         assert data_bytes(parser.executed) == data.nbytes
         assert state.deferred_commands == []
+        assert state.deferred_deletes == []
         assert state.budget_left == state.frame_budget
         assert parser.executed[-1] == ('FUNC', 'glFlush')
+        assert parser.executed.index(('DELETE', 7)) < len(parser.executed) - 1
     finally:
         gm.uninstall()
 
@@ -474,28 +478,94 @@ def test_explicit_flush_and_finish_request_forced_drain():
     assert context.force_args == [True, True]
 
 
-def test_delete_executes_while_uploads_are_deferred(monkeypatch):
-    monkeypatch.setattr(
-        'vispy.gloo.context.get_current_canvas',
-        lambda: None,
-    )
+def test_deletes_deferred_to_quiet_flush(monkeypatch):
+
     parser = FakeParser()
     parser.add_texture3d(1)
     try:
         assert gm.install(
-            frame_budget_bytes=512 * 2**10,
-            slab_bytes=128 * 2**10,
+            frame_budget_bytes=512 * 2**10, slab_bytes=128 * 2**10
         )
         queue = glir.GlirQueue()
         data = np.zeros((16, 256, 256), dtype=np.uint8)  # 1 MiB
         queue.command('DATA', 1, (0, 0, 0), data)
         queue.command('DELETE', 7)  # unrelated object
         queue.flush(parser)
-
-        assert gm._states[parser].deferred_commands
-        assert ('DELETE', 7) in parser.executed
+        state = gm._states[parser]
+        # busy flush (uploads executed, deferred work pending): delete held
+        assert state.deferred_commands
+        assert state.deferred_deletes == [('DELETE', 7)]
+        assert all(c[0] != 'DELETE' for c in parser.executed)
+        # drain deferred commands across quiet-less flushes
+        state.reset_budget()
+        queue.flush(parser)
+        assert not state.deferred_commands
+        # this flush still spent budget on uploads: delete still held
+        assert state.deferred_deletes == [('DELETE', 7)]
+        # a genuinely quiet flush executes it
+        state.reset_budget()
+        queue.flush(parser)
+        assert state.deferred_deletes == []
+        assert parser.executed[-1] == ('DELETE', 7)
     finally:
         gm.uninstall()
+
+
+def test_delete_drain_is_paced(monkeypatch):
+    """A big delete backlog drains a few per quiet flush, not all at
+    once — each deletion can sync the GPU pipeline, so a bulk drain is
+    itself a multi-second stall at pass end.
+    """
+
+    parser = FakeParser()
+    parser.add_texture3d(1)
+    try:
+        assert gm.install(
+            frame_budget_bytes=512 * 2**10, slab_bytes=128 * 2**10
+        )
+        queue = glir.GlirQueue()
+        data = np.zeros((16, 256, 256), dtype=np.uint8)  # 1 MiB
+        queue.command('DATA', 1, (0, 0, 0), data)
+        n_deletes = gm.DELETE_DRAIN_PER_FLUSH * 2 + 3
+        for i in range(n_deletes):
+            queue.command('DELETE', 100 + i)
+        queue.flush(parser)  # busy: uploads spent, deletes held
+        state = gm._states[parser]
+        assert len(state.deferred_deletes) == n_deletes
+        # drain deferred uploads
+        while state.deferred_commands:
+            state.reset_budget()
+            queue.flush(parser)
+        executed_deletes = lambda: sum(  # noqa: E731
+            c[0] == 'DELETE' for c in parser.executed
+        )
+        before = executed_deletes()
+        state.reset_budget()
+        queue.flush(parser)  # quiet: paced batch only
+        assert executed_deletes() - before == gm.DELETE_DRAIN_PER_FLUSH
+        assert len(state.deferred_deletes) == (
+            n_deletes - gm.DELETE_DRAIN_PER_FLUSH
+        )
+        # subsequent quiet flushes drain the rest
+        for _ in range(3):
+            state.reset_budget()
+            queue.flush(parser)
+        assert not state.deferred_deletes
+        assert executed_deletes() == n_deletes
+    finally:
+        gm.uninstall()
+
+
+def test_uninstall_flushes_deferred_deletes(monkeypatch):
+
+    parser = FakeParser()
+    try:
+        assert gm.install()
+        state = gm._state_for(parser)
+        state.deferred_deletes.append(('DELETE', 3))
+    finally:
+        gm.uninstall()
+    assert parser.executed == [('DELETE', 3)]
 
 
 def test_glir_flush_never_exceeds_frame_budget(monkeypatch):
@@ -602,4 +672,86 @@ def test_metered_upload_within_budget_still_notifies_drain(monkeypatch):
         assert spy.drains == 2
     finally:
         gm.remove_drain_callback(spy.on_drain)
+        gm.uninstall()
+
+
+class StrictParser(FakeParser):
+    """FakeParser that enforces vispy's object-existence invariant.
+
+    Real ``GlirParser._parse`` raises ``RuntimeError(... does not
+    exist)`` for object commands whose id was never created (or was
+    deleted); mimic that so ordering regressions surface.
+    """
+
+    def _parse(self, command):
+        cmd, id_ = command[0], command[1]
+        if cmd == 'CREATE':
+            self._objects[id_] = object()
+        elif cmd == 'DELETE':
+            self._objects.pop(id_, None)
+        elif (
+            cmd in ('SIZE', 'DATA', 'WRAPPING', 'INTERPOLATION')
+            and id_ not in self._objects
+        ):
+            raise RuntimeError(
+                f'Cannot {cmd} object {id_} because it does not exist',
+            )
+        super()._parse(command)
+
+
+def test_deferred_delete_voids_later_commands(monkeypatch):
+    """Commands arriving after a deferred DELETE executed must be
+    dropped, not crash.
+
+    The deferred-DELETE drain reorders deletes past later flushes, so a
+    SIZE/DATA for the dead object (e.g. from another canvas's queue on
+    a shared context) can reach the parser after the object is gone —
+    vanilla vispy would have voided it inline. Regression test for
+    ``RuntimeError: Cannot SIZE object N because it does not exist``.
+    """
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
+    parser = StrictParser()
+    try:
+        assert gm.install(frame_budget_bytes=2**20, slab_bytes=2**20)
+        queue = glir.GlirQueue()
+        queue.command('CREATE', 5, 'VertexBuffer')
+        queue.command('DELETE', 5)
+        queue.flush(parser)  # quiet flush: the deferred delete drains
+        state = gm._states[parser]
+        assert state.deferred_deletes == []
+        assert 5 in state.dead_ids
+        # a late command for the dead object: dropped, no crash
+        queue.command('SIZE', 5, 1024)
+        queue.flush(parser)
+        assert state.deferred_commands == []
+        assert all(c[:2] != ('SIZE', 5) for c in parser.executed)
+    finally:
+        gm.uninstall()
+
+
+def test_command_before_create_carried_until_create(monkeypatch):
+    """A command for a not-yet-created object defers instead of crashing
+    and executes once its CREATE has arrived."""
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
+    parser = StrictParser()
+    try:
+        assert gm.install(frame_budget_bytes=2**20, slab_bytes=2**20)
+        queue = glir.GlirQueue()
+        queue.command('SIZE', 9, 1024)
+        queue.flush(parser)  # would previously raise
+        state = gm._states[parser]
+        assert state.deferred_commands == [('SIZE', 9, 1024)]
+        queue.command('CREATE', 9, 'VertexBuffer')
+        queue.flush(parser)  # carried SIZE precedes CREATE: retried
+        state.reset_budget()
+        queue.flush(parser)  # object now exists: the SIZE lands
+        assert state.deferred_commands == []
+        assert ('SIZE', 9, 1024) in parser.executed
+    finally:
         gm.uninstall()

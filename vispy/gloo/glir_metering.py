@@ -29,9 +29,11 @@ shared OpenGL context that receives the uploads. The budget resets at the
 start of each canvas draw. Offscreen users without draw events receive a
 time-based reset so a deferred queue cannot remain stalled indefinitely.
 
-While metering is enabled, repeated idempotent ``FUNC`` state setters with
-unchanged arguments are skipped; this cache is cleared whenever a ``CURRENT``
-command makes the context current. This behavior applies only to the local
+While metering is enabled, two related sources of GL stalls are also paced.
+Repeated idempotent ``FUNC`` state setters with unchanged arguments are
+skipped; this cache is cleared whenever a ``CURRENT`` command makes the
+context current. ``DELETE`` commands are held until a flush with no upload
+work, then executed in small batches. These behaviors apply only to the local
 parser path selected by :func:`install`.
 
 Metering is process-wide and opt-in through :func:`install`. It applies only
@@ -86,6 +88,10 @@ _DEFAULT_FRAME_BUDGET_BYTES = 4 * 2**20
 _DEFAULT_SLAB_BYTES = 1 * 2**20
 _frame_budget_bytes = _DEFAULT_FRAME_BUDGET_BYTES
 _slab_bytes = _DEFAULT_SLAB_BYTES
+#: Deferred GL object deletions executed per quiet flush (a flush with no
+#: texture uploads and no active upload hold). Deletion can synchronize the
+#: GPU pipeline, so only a small batch executes in each such flush.
+DELETE_DRAIN_PER_FLUSH = 4
 #: 2D texture DATA at or above this size is metered like 3D uploads.
 #: Small 2D textures (colormap LUTs, interpolation kernels) MUST stay
 #: synchronous: deferring them leaves a shader sampling an unwritten
@@ -267,6 +273,18 @@ class _ParserState:
         # last-applied GL state for the redundant-FUNC filter; cleared
         # whenever the context is made current
         self.gl_state: dict = {}
+        # DELETE commands held until a quiet flush: each delete
+        # synchronizes with pending GPU work (~25ms profiled), so they
+        # run only in flushes that execute no uploads and have no active hold.
+        # Safe to defer arbitrarily: GLIR ids are never reused.
+        self.deferred_deletes: list[tuple] = []
+        # ids whose deferred DELETE has executed. Deferral reorders
+        # deletes past later flushes, so commands for these ids can
+        # still arrive (e.g. from another canvas's queue on a shared
+        # context) — they are void and must be dropped, exactly as an
+        # inline delete would have voided them. Ids are never reused,
+        # so membership stays valid for the parser's lifetime.
+        self.dead_ids: set = set()
         # whether the current flush executed any metered DATA command;
         # drives drain notification for uploads small enough to never
         # have been carried
@@ -374,7 +392,9 @@ def _metered_parse(
     """Execute commands under the upload budget; return the leftovers.
 
     ``UPLOAD_HOLD`` defers every metered upload while allowing other commands
-    to run. ``FORCE_DRAIN`` bypasses both the hold and byte budget.
+    to run. ``FORCE_DRAIN`` bypasses both the hold and byte budget and executes
+    DELETE commands inline. ``SCHEDULED`` applies normal upload and deletion
+    pacing.
     """
     # mirror GlirParser.parse's deferred deletion bookkeeping, which we
     # bypass by calling _parse directly
@@ -411,6 +431,12 @@ def _metered_parse(
         elif cmd == 'CURRENT':
             # context switch: cached GL state is no longer trustworthy
             gl_state.clear()
+        elif cmd == 'DELETE' and mode is not _FlushMode.FORCE_DRAIN:
+            # run deletes only in quiet flushes (see _ParserState):
+            # ordering is safe because anything queued for this id
+            # earlier either already executed or was dropped with it
+            state.deferred_deletes.append(command)
+            continue
         if cmd == 'DATA':
             ob = parser._objects.get(id_, None)
             if id_ not in _unmetered_ids and _is_metered_texture(
@@ -448,7 +474,22 @@ def _metered_parse(
                     executed_any = True
                     state.executed_metered = True
                 continue
-        parser._parse(command)
+        try:
+            parser._parse(command)
+        except RuntimeError as exc:
+            if 'does not exist' not in str(exc):
+                raise
+            # the deferred DELETE drain reorders deletes past later
+            # flushes, so a command can arrive for an object that no
+            # longer exists (or does not exist YET, when its CREATE
+            # sits in another queue of a shared context)
+            if id_ in state.dead_ids:
+                continue  # deleted: the command is void, drop it
+            # not created yet: keep it (and everything ordered behind
+            # it) in the deferred queue until its CREATE arrives
+            LOGGER.debug('deferring %s for missing object %s', cmd, id_)
+            deferred_ids.add(id_)
+            leftover.append(command)
     return leftover
 
 
@@ -476,6 +517,15 @@ def _attach_reset_hook(canvas):
     except RuntimeError:
         return
     _hooked_canvases.add(canvas)
+
+
+def _drain_deletes(parser, state, limit=None):
+    """Execute up to *limit* previously deferred DELETE commands."""
+    deletes = state.deferred_deletes[:limit]
+    del state.deferred_deletes[:len(deletes)]
+    for command in deletes:
+        parser._parse(command)
+        state.dead_ids.add(command[1])
 
 
 def _collect_glir_commands(queue, parser, state):
@@ -511,6 +561,10 @@ def _flush(queue, parser, force=False):
     state = _state_for(parser)
     canvas = get_current_canvas()
     _attach_reset_hook(canvas)
+    if force:
+        # These commands predate the new queue contents, including the
+        # glFlush/glFinish command that requested this forced drain.
+        _drain_deletes(parser, state)
     # fallback when no canvas draw hook fires (offscreen / bare gloo):
     # Never let deferred work starve for more than 0.25 s.
     if (
@@ -536,6 +590,25 @@ def _flush(queue, parser, force=False):
         state.reset_budget()
 
     _request_redraw_or_notify(canvas, state, had_deferred)
+
+    if (
+        not force
+        and state.deferred_deletes
+        and not holding
+        and not state.deferred_commands
+        and state.budget_left >= state.frame_budget
+    ):
+        # A quiet flush executes no uploads and has no active hold. Run
+        # held GL object deletions now, off the busy periods. PACED:
+        # each delete can sync the GPU pipeline (~10-25ms on busy macOS
+        # GL-over-Metal), so draining hundreds in one flush is itself a
+        # multi-second stall after a burst of object creation, when the
+        # deletion queue is deepest. The remainder drains over subsequent
+        # redraws.
+        _drain_deletes(parser, state, DELETE_DRAIN_PER_FLUSH)
+        if state.deferred_deletes and canvas is not None:
+            with contextlib.suppress(RuntimeError):
+                canvas.update()
 
 
 def install(
@@ -602,10 +675,13 @@ def uninstall():
     if not _enabled:
         return
     _enabled = False
-    # Re-queue deferred uploads so they are not lost.
+    # Re-queue deferred uploads and held deletions so they are not lost.
     for parser, state in list(_states.items()):
         if state.deferred_commands:
             commands, state.deferred_commands = state.deferred_commands, []
+            parser.parse(commands)
+        if state.deferred_deletes:
+            commands, state.deferred_deletes = state.deferred_deletes, []
             parser.parse(commands)
     _states.clear()
 
