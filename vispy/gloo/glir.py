@@ -417,6 +417,44 @@ _internalformats = dict([(enum.name, enum) for enum in _internalformats])
 JUST_DELETED = 'JUST_DELETED'
 
 
+# FUNC commands that set persistent OpenGL context state. Commands in the same
+# group can supersede one another, so the most recently applied command is
+# tracked per group while filtering one GLIR batch. Commands that perform work
+# (notably glClear, glFlush, and glFinish) are deliberately absent.
+_GL_STATE_FUNC_GROUPS = {
+    'glBlendFunc': 'blend_func',
+    'glBlendFuncSeparate': 'blend_func',
+    'glBlendEquation': 'blend_equation',
+    'glBlendEquationSeparate': 'blend_equation',
+    'glStencilFunc': 'stencil_func',
+    'glStencilFuncSeparate': 'stencil_func',
+    'glStencilMask': 'stencil_mask',
+    'glStencilMaskSeparate': 'stencil_mask',
+    'glStencilOp': 'stencil_op',
+    'glStencilOpSeparate': 'stencil_op',
+}
+_GL_STATE_FUNCS = frozenset(
+    {
+        'glBlendColor',
+        'glClearColor',
+        'glClearDepth',
+        'glClearStencil',
+        'glColorMask',
+        'glCullFace',
+        'glDepthFunc',
+        'glDepthMask',
+        'glDepthRange',
+        'glFrontFace',
+        'glHint',
+        'glLineWidth',
+        'glPolygonOffset',
+        'glSampleCoverage',
+        'glScissor',
+        'glViewport',
+    }
+)
+
+
 def as_enum(enum):
     """Turn a possibly string enum into an integer enum."""
     if isinstance(enum, str):
@@ -506,9 +544,7 @@ class _GlirQueueShare(object):
         parser.parse(self._filter(self.clear(), parser))
 
     def _filter(self, commands, parser):
-        """Filter DATA/SIZE commands that are overridden by a
-        SIZE command.
-        """
+        """Filter commands made redundant by later queue state."""
         resized = set()
         commands2 = []
         for command in reversed(commands):
@@ -518,7 +554,46 @@ class _GlirQueueShare(object):
             elif command[0] == 'SIZE':
                 resized.add(command[1])
             commands2.append(command)
-        return list(reversed(commands2))
+        return self._filter_redundant_state(reversed(commands2))
+
+    @staticmethod
+    def _filter_redundant_state(commands):
+        """Remove repeated GL state setters within one command batch."""
+        state = {}
+        filtered = []
+        for command in commands:
+            if command[0] == 'CURRENT':
+                # A context switch makes all previously observed state stale.
+                state.clear()
+            elif command[0] == 'FUNC' and len(command) >= 2:
+                function = command[1]
+                scalar_args = all(np.isscalar(arg) for arg in command[2:])
+                if (function in ('glEnable', 'glDisable') and
+                        len(command) == 3 and scalar_args):
+                    key = ('capability', command[2])
+                elif function in _GL_STATE_FUNC_GROUPS:
+                    key = ('function', _GL_STATE_FUNC_GROUPS[function])
+                elif function in _GL_STATE_FUNCS:
+                    key = ('function', function)
+                else:
+                    key = None
+
+                if key is not None:
+                    if not scalar_args:
+                        # Gloo's state wrappers emit scalar arguments. Preserve
+                        # commands from other callers when their equality
+                        # semantics are unknown.
+                        state.pop(key, None)
+                    else:
+                        if state.get(key) == command:
+                            continue
+                        state[key] = command
+                elif (function in ('glEnable', 'glDisable') and
+                      len(command) == 3):
+                    # The capability cannot safely be used as a cache key.
+                    state.clear()
+            filtered.append(command)
+        return filtered
 
 
 class GlirQueue(object):

@@ -66,6 +66,71 @@ def test_queue():
     assert shader3.startswith('precision')
 
 
+def test_queue_filters_redundant_gl_state():
+    q = glir.GlirQueue()
+    parser = glir.GlirParser()
+    commands = [
+        ('FUNC', 'glEnable', 'blend'),
+        ('FUNC', 'glBlendFuncSeparate', 'src_alpha',
+         'one_minus_src_alpha', 'one', 'zero'),
+        ('DRAW', 1, 'triangles', None, 3),
+        ('FUNC', 'glEnable', 'blend'),
+        ('FUNC', 'glBlendFuncSeparate', 'src_alpha',
+         'one_minus_src_alpha', 'one', 'zero'),
+    ]
+
+    assert q._shared._filter(commands, parser) == commands[:3]
+
+
+def test_queue_preserves_gl_state_transitions_and_work():
+    q = glir.GlirQueue()
+    parser = glir.GlirParser()
+    commands = [
+        ('FUNC', 'glEnable', 'blend'),
+        ('FUNC', 'glDisable', 'blend'),
+        ('FUNC', 'glEnable', 'blend'),
+        ('FUNC', 'glViewport', 0, 0, 800, 600),
+        ('FUNC', 'glViewport', 0, 0, 400, 300),
+        ('FUNC', 'glViewport', 0, 0, 800, 600),
+        ('FUNC', 'glClear', 17664),
+        ('FUNC', 'glClear', 17664),
+    ]
+
+    assert q._shared._filter(commands, parser) == commands
+
+
+def test_queue_gl_state_groups_and_context_barriers():
+    q = glir.GlirQueue()
+    parser = glir.GlirParser()
+    separate = (
+        'FUNC', 'glBlendFuncSeparate', 'src_alpha',
+        'one_minus_src_alpha', 'one', 'zero',
+    )
+    commands = [
+        separate,
+        ('FUNC', 'glBlendFunc', 'one', 'zero'),
+        separate,
+        ('CURRENT', 0, 0),
+        separate,
+    ]
+
+    assert q._shared._filter(commands, parser) == commands
+
+
+def test_queue_preserves_state_commands_with_non_scalar_arguments():
+    q = glir.GlirQueue()
+    parser = glir.GlirParser()
+    commands = [
+        ('FUNC', 'glViewport', np.array([0, 0, 800, 600])),
+        ('FUNC', 'glViewport', (0, 0, 800, 600)),
+        ('FUNC', 'glEnable', ('blend',)),
+    ]
+
+    for command in commands:
+        expected = [command, command]
+        assert q._shared._filter(expected, parser) == expected
+
+
 @requires_application()
 def test_log_parser():
     """Test GLIR log parsing"""
