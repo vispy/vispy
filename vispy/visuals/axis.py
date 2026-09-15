@@ -7,6 +7,7 @@
 import math
 
 import numpy as np
+from numba import njit
 
 from .visual import CompoundVisual, updating_property
 from .line import LineVisual
@@ -551,12 +552,12 @@ def scale_range(vmin, vmax, n=1, threshold=100):
 # See "An Extension of Wilkinson's Algorithm for Positioning Tick Labels
 # on Axes" # by Justin Talbot, Sharon Lin, and Pat Hanrahan, InfoVis 2010.
 
-
+@njit(fastmath=True)
 def _coverage(dmin, dmax, lmin, lmax):
     return 1 - 0.5 * ((dmax - lmax) ** 2 +
                       (dmin - lmin) ** 2) / (0.1 * (dmax - dmin)) ** 2
 
-
+@njit(fastmath=True)
 def _coverage_max(dmin, dmax, span):
     range_ = dmax - dmin
     if span <= range_:
@@ -565,21 +566,25 @@ def _coverage_max(dmin, dmax, span):
         half = (span - range_) / 2.0
         return 1 - half ** 2 / (0.1 * range_) ** 2
 
-
+@njit(fastmath=True)
 def _density(k, m, dmin, dmax, lmin, lmax):
     r = (k-1.0) / (lmax-lmin)
     rt = (m-1.0) / (max(lmax, dmax) - min(lmin, dmin))
     return 2 - max(r / rt, rt / r)
 
-
+@njit(fastmath=True)
 def _density_max(k, m):
     return 2 - (k-1.0) / (m-1.0) if k >= m else 1.
 
-
+@njit(fastmath=True)
 def _simplicity(q, Q, j, lmin, lmax, lstep):
     eps = 1e-10
     n = len(Q)
-    i = Q.index(q) + 1
+    for i in range(n):
+        if Q[i] == q:
+            i = i + 1
+            break
+    i = min(i, n)
     if ((lmin % lstep) < eps or
             (lstep - lmin % lstep) < eps) and lmin <= 0 and lmax >= 0:
         v = 1
@@ -587,13 +592,19 @@ def _simplicity(q, Q, j, lmin, lmax, lstep):
         v = 0
     return (n - i) / (n - 1.0) + v - j
 
-
+@njit(fastmath=True)
 def _simplicity_max(q, Q, j):
     n = len(Q)
-    i = Q.index(q) + 1
+    # i = Q.index(q) + 1
+    i = 0
+    for i in range(n):
+        if Q[i] == q:
+            i = i + 1
+            break
+    i=min(i,n)
     return (n - i)/(n - 1.0) + 1. - j
 
-
+@njit(fathmath=True,)
 def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
     # density * size gives target number of intervals,
     # density * size + 1 gives target number of tick marks,
@@ -606,7 +617,7 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
 
     m = density * n_inches + 1.0
     only_inside = False  # we cull values outside ourselves
-    Q = [1, 5, 2, 2.5, 4, 3]
+    Q = Q = np.array([1, 5, 2, 2.5, 4, 3, ], dtype=np.float64)
     w = [0.25, 0.2, 0.5, 0.05]
     best_score = -2.0
     best = None
@@ -664,7 +675,7 @@ def _get_ticks_talbot(dmin, dmax, n_inches, density=1.):
                                 (not only_inside or (lmin >= dmin and
                                                      lmax <= dmax))):
                             best_score = score
-                            best = (lmin, lmax, lstep, q, k)
+                            best = np.array([lmin, lmax, lstep, q, k],dtype=np.float64)
                     z += 1
                 k += 1
             if k == n_max:
