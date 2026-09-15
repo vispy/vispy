@@ -102,6 +102,7 @@ class IsocurveVisual(LineVisual):
             self._data_is_uniform = True
 
         self._need_recompute = True
+        self._bounds_changed()
         self.update()
 
     def _get_verts_and_connect(self, paths):

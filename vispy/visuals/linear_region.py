@@ -118,6 +118,7 @@ class LinearRegionVisual(Visual):
                 vertex[:, 0] = np.tile([1, -1], num_elements)
             new_pos = vertex
             self._changed['pos'] = True
+            self._bounds_changed()
 
         if color is not None:
             color = np.array(color, dtype=np.float32)

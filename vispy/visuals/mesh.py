@@ -182,6 +182,7 @@ class MeshVisual(Visual):
                                       face_colors=face_colors,
                                       vertex_values=vertex_values)
         self._bounds = self._meshdata.get_bounds()
+        self._bounds_changed()
         if color is not None:
             self._color = Color(color)
         self.mesh_data_changed()

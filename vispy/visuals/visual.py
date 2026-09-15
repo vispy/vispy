@@ -257,8 +257,17 @@ class BaseVisual(Frozen):
     def _compute_bounds(self, axis, view):
         raise NotImplementedError(self)
 
-    def _bounds_changed(self):
+    def _bounds_changed(self, event=None):
+        """Invalidate the cached bounds of this visual.
+
+        This is called when the data of the visual has changed such that
+        the bounds may have changed (e.g. from ``set_data``). It clears the
+        cached bounds and emits the ``bounds_change`` event so that parent
+        compound visuals and views of this visual can invalidate their own
+        caches as well.
+        """
         self._vshare.bounds.clear()
+        self.events.bounds_change()
 
     def update(self):
         """Update the Visual"""
@@ -290,7 +299,7 @@ class BaseVisualView(object):
         self._visual._prepare_transforms(view)
 
     def _compute_bounds(self, axis, view):
-        self._visual._compute_bounds(axis, view)
+        return self._visual._compute_bounds(axis, view)
 
     def __repr__(self):
         return '<%s on %r>' % (self.__class__.__name__, self._visual)
@@ -634,6 +643,9 @@ class CompoundVisual(BaseVisual):
         visual._prepare_transforms(visual)
         self._subvisuals.append(visual)
         visual.events.update.connect(self._subv_update)
+        # If a subvisual's bounds change, our own (aggregated) bounds may
+        # change as well.
+        visual.events.bounds_change.connect(self._bounds_changed)
         self.update()
 
     def remove_subvisual(self, visual):
@@ -645,6 +657,7 @@ class CompoundVisual(BaseVisual):
             The visual to remove.
         """
         visual.events.update.disconnect(self._subv_update)
+        visual.events.bounds_change.disconnect(self._bounds_changed)
         self._subvisuals.remove(visual)
         self.update()
 
@@ -828,6 +841,10 @@ class CompoundVisualView(BaseVisualView, CompoundVisual):
         # Create a view on each sub-visual
         subv = [v.view() for v in visual._subvisuals]
         CompoundVisual.__init__(self, subv)
+
+        # If the viewed compound visual's bounds change, our own
+        # (aggregated) bounds may change as well.
+        visual.events.bounds_change.connect(self._bounds_changed)
 
         # Attach any shared filters
         for filt in self._vshare.filters:

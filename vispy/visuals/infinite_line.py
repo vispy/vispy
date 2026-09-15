@@ -118,6 +118,7 @@ class InfiniteLineVisual(Visual):
                 xy[1, 0] = 1
                 xy[1, 1] = pos
             self._changed['pos'] = True
+            self._bounds_changed()
 
         if color is not None:
             color = np.array(color, dtype=np.float32)
