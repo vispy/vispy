@@ -498,8 +498,23 @@ class _GlirQueueShare(object):
         self._commands = []
         return commands
 
-    def flush(self, parser):
-        """Flush all current commands to the GLIR interpreter."""
+    def flush(self, parser, force=False):
+        """Flush current commands to the GLIR interpreter.
+
+        When ``force=False``, any configured command scheduling policy, such
+        as texture-upload metering, is respected. When ``force=True``, such
+        scheduling limits are bypassed and all currently executable commands
+        are processed. If no scheduling policy is enabled, *force* has no
+        effect and commands are flushed immediately as usual.
+        """
+        from . import glir_metering
+
+        if (
+            glir_metering.is_installed()
+            and getattr(parser, 'supports_texture_upload_metering', False)
+        ):
+            glir_metering._flush(self, parser, force=force)
+            return
         if self._verbose:
             show = self._verbose if isinstance(self._verbose, str) else None
             self.show(show)
@@ -579,9 +594,9 @@ class GlirQueue(object):
             self._shared._associations[ch] = None
         queue._shared = self._shared
 
-    def flush(self, parser):
+    def flush(self, parser, force=False):
         """Flush all current commands to the GLIR interpreter."""
-        self._shared.flush(parser)
+        self._shared.flush(parser, force=force)
 
 
 def _convert_es2_shader(shader):
@@ -671,6 +686,8 @@ def as_es2_command(command):
 class BaseGlirParser(object):
     """Base class for GLIR parsers that can be attached to a GLIR queue."""
 
+    supports_texture_upload_metering = False
+
     def __init__(self):
         self.capabilities = dict(
             gl_version='Unknown',
@@ -703,6 +720,8 @@ class GlirParser(BaseGlirParser):
     dictionary so that commands like ACTIVATE and DATA can easily
     be executed on the corresponding objects.
     """
+
+    supports_texture_upload_metering = True
 
     def __init__(self):
         super(GlirParser, self).__init__()
@@ -746,6 +765,9 @@ class GlirParser(BaseGlirParser):
 
         if cmd == 'CURRENT':
             # This context is made current
+            from . import glir_metering
+
+            glir_metering._on_parser_current(self)
             self.env.clear()
             self._gl_initialize()
             self.env['fbo'] = args[0]
