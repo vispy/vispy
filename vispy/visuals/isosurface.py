@@ -79,6 +79,7 @@ class IsosurfaceVisual(MeshVisual):
         if data is not None:
             self._data = data
             self._recompute = True
+            self._bounds_changed()
         if vertex_colors is not None:
             self._vertex_colors = vertex_colors
             self._update_meshvisual = True

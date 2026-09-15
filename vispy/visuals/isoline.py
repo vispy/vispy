@@ -168,6 +168,8 @@ class IsolineVisual(LineVisual):
         if tris is not None:
             self._tris = tris
             self._need_recompute = True
+        if vertices is not None or data is not None or tris is not None:
+            self._bounds_changed()
         self.update()
 
     @property
