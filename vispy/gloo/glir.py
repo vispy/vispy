@@ -567,7 +567,9 @@ class _GlirQueueShare(object):
                 state.clear()
             elif command[0] == 'FUNC' and len(command) >= 2:
                 function = command[1]
-                if function in ('glEnable', 'glDisable') and len(command) == 3:
+                scalar_args = all(np.isscalar(arg) for arg in command[2:])
+                if (function in ('glEnable', 'glDisable') and
+                        len(command) == 3 and scalar_args):
                     key = ('capability', command[2])
                 elif function in _GL_STATE_FUNC_GROUPS:
                     key = ('function', _GL_STATE_FUNC_GROUPS[function])
@@ -577,17 +579,19 @@ class _GlirQueueShare(object):
                     key = None
 
                 if key is not None:
-                    try:
-                        hash(command)
-                    except TypeError:
-                        # Non-scalar arguments are outside the normalized
-                        # wrapper path; preserve them rather than guessing at
-                        # equality semantics.
+                    if not scalar_args:
+                        # Gloo's state wrappers emit scalar arguments. Preserve
+                        # commands from other callers when their equality
+                        # semantics are unknown.
                         state.pop(key, None)
                     else:
                         if state.get(key) == command:
                             continue
                         state[key] = command
+                elif (function in ('glEnable', 'glDisable') and
+                      len(command) == 3):
+                    # The capability cannot safely be used as a cache key.
+                    state.clear()
             filtered.append(command)
         return filtered
 
