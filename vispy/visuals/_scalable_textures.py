@@ -398,7 +398,7 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
                 raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
             texture_format = self._texture_dtype_format[texture_format]
         # adjust internalformat for format of data (RGBA vs L)
-        texture_format = texture_format.replace('r', 'rgba'[:num_channels])
+        texture_format = 'rgba'[:num_channels] + texture_format.lstrip('rgba')
         return texture_format
 
     def _get_texture_format_for_data(self, data, internalformat):
