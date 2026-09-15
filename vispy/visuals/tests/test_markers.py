@@ -132,4 +132,13 @@ def test_markers_canvas_size_limits(rendering_method):
     assert markers.canvas_size_limits is None
 
 
+def test_markers_bounds_invalidation():
+    from vispy.visuals import MarkersVisual
+    markers = MarkersVisual()
+    markers.set_data(pos=np.array([[0., 0.], [1., 1.]]))
+    assert markers.bounds(1) == (0., 1.)
+    markers.set_data(pos=np.array([[0., 0.], [200., 200.]]))
+    assert markers.bounds(1) == (0., 200.)
+
+
 run_tests_if_main()
