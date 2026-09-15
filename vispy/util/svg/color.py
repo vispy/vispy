@@ -191,17 +191,37 @@ class Color(object):
             if g.endswith("%"):
                 g = 255 * int(g[:-1]) // 100
             else:
-                g = int(r)
+                g = int(g)
             if b.endswith("%"):
                 b = 255 * int(b[:-1]) // 100
             else:
-                b = int(r)
+                b = int(b)
+        elif color.startswith("rgba("):
+            rgba = color[5:-1]
+            r, g, b, a = [value.strip() for value in rgba.split(',')]
+            if r.endswith("%"):
+                r = 255 * int(r[:-1]) // 100
+            else:
+                r = int(r)
+            if g.endswith("%"):
+                g = 255 * int(g[:-1]) // 100
+            else:
+                g = int(g)
+            if b.endswith("%"):
+                b = 255 * int(b[:-1]) // 100
+            else:
+                b = int(b)
+            if a.endswith("%"):
+                a = 255 * int(a[:-1]) // 100
+            else:
+                a = int(a)
         elif color in _keyword_colors:
             r, g, b = _keyword_colors[color]
         else:
             # text = "Unknown color (%s)" % color
             r, g, b = 0, 0, 0
         self._rgb = r / 255., g / 255., b / 255.
+        self._rgba = r / 255., g / 255., b / 255., a / 255. if 'a' in locals() else 1
 
     @property
     def rgb(self):
@@ -210,10 +230,10 @@ class Color(object):
 
     @property
     def rgba(self):
-        r, g, b = self._rgb
-        return r, g, b, 1
+        r, g, b, a = self._rgba
+        return r, g, b, a
 
     def __repr__(self):
-        r, g, b = self._rgb
+        r, g, b, a = self._rgba
         r, g, b = int(r * 255), int(g * 255), int(b * 255)
-        return "#%02x%02x%02x" % (r, g, b)
+        return "#%02x%02x%02x%02x" % (r, g, b, a)
