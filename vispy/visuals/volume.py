@@ -846,7 +846,7 @@ class VolumeVisual(Visual):
                        internalformat=texture_format,
                        wrapping='clamp_to_edge')
 
-    def set_data(self, vol, clim=None, copy=True):
+    def set_data(self, vol, clim=None, copy=True, offset=None):
         """Set the volume data.
 
         Parameters
@@ -864,7 +864,8 @@ class VolumeVisual(Visual):
             Data must be 32-bit floating point data to completely avoid any
             data copying when scaling on the CPU. Defaults to ``True`` for
             CPU scaled data. It is forced to ``False`` for GPU scaled data.
-
+        offset : tuple of ints
+            Offset in texture where to start copying data.
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
@@ -882,19 +883,20 @@ class VolumeVisual(Visual):
 
         # Apply to texture
         self._texture.check_data_format(vol)
-        self._last_data = vol
-        self._texture.scale_and_set_data(vol, copy=copy)
-        self.shared_program['clim'] = self._texture.clim_normalized
-        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
-                                          vol.shape[0])
+        self._texture.scale_and_set_data(vol, copy=copy, offset=offset)
         is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
         self.shared_program['u_rgb_mode'] = 1 if is_rgb else 0
 
-        shape = vol.shape[:3]
-        if self._vol_shape != shape:
+        if offset is None:
+            self._last_data = vol
+            self.shared_program['clim'] = self._texture.clim_normalized
+            self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
+                                              vol.shape[0])
+            shape = vol.shape[:3]
+            if self._vol_shape != shape:
+                self._vol_shape = shape
+                self._need_vertex_update = True
             self._vol_shape = shape
-            self._need_vertex_update = True
-        self._vol_shape = shape
 
     @property
     def rendering_methods(self):
