@@ -883,20 +883,34 @@ class VolumeVisual(Visual):
 
         # Apply to texture
         self._texture.check_data_format(vol)
-        self._texture.scale_and_set_data(vol, copy=copy, offset=offset)
-        is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
-        self.shared_program['u_rgb_mode'] = 1 if is_rgb else 0
-
+        
         if offset is None:
             self._last_data = vol
+            self._texture.scale_and_set_data(vol, copy=copy)
             self.shared_program['clim'] = self._texture.clim_normalized
             self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
                                               vol.shape[0])
+
+            is_rgb = vol.ndim == 4 and vol.shape[-1] >= 3
+            self.shared_program['u_rgb_mode'] = 1 if is_rgb else 0
+
             shape = vol.shape[:3]
             if self._vol_shape != shape:
                 self._vol_shape = shape
                 self._need_vertex_update = True
             self._vol_shape = shape
+        else:
+            self._texture.scale_and_set_data(vol, copy=copy, offset=offset)
+
+            sub_block_shape = vol.shape
+            z_min, y_min, x_min = offset[0], offset[1], offset[2]
+            
+            z_max = z_min + sub_block_shape[0]
+            y_max = y_min + sub_block_shape[1]
+            x_max = x_min + sub_block_shape[2]
+
+            self._last_data[z_min:z_max, y_min:y_max, x_min:x_max] = vol
+            self.shared_program['clim'] = self._texture.clim_normalized
 
     @property
     def rendering_methods(self):
