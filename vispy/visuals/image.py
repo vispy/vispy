@@ -5,12 +5,13 @@
 
 from __future__ import division
 
+import copy
 import warnings
 
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..color import get_colormap
+from ..color import Color, get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
@@ -462,13 +463,15 @@ class ImageVisual(Visual):
     @property
     def bad_color(self):
         """Color used to render NaN values."""
-        return self._cmap.get_bad_color()
+        return self._cmap.bad_color
 
     @bad_color.setter
     def bad_color(self, color):
-        self._cmap.set_bad_color(color)
-        self._need_colortransform_update = True
-        self.update()
+        # Named colormaps are shared instances, so change a copy.
+        cmap = copy.copy(self._cmap)
+        cmap.bad_color = Color((0, 0, 0, 0) if color is None else color)
+        cmap._set_bad_color_glsl()
+        self.cmap = cmap
 
     @property
     def method(self):
