@@ -91,8 +91,11 @@ _TEXTURE_LOOKUP = """
 
 _APPLY_CLIM_FLOAT = """
     float apply_clim(float data) {
-        // pass through NaN values to get handled by the colormap
-        if (!(data <= 0.0 || 0.0 <= data)) return data;
+        // pass through NaN values to get handled by the colormap.
+        // A NaN test against 0.0 is folded away by compilers that assume no
+        // NaN (e.g. Apple's GL-on-Metal). gl_DepthRange.far is a uniform the
+        // compiler cannot see, and is >= 0, so this is false for any number.
+        if (!(data <= gl_DepthRange.far || -gl_DepthRange.far <= data)) return data;
 
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
@@ -103,10 +106,10 @@ _APPLY_CLIM = """
     vec4 apply_clim(vec4 color) {
         // Handle NaN values (clamp them to the minimum value)
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
-        color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim.x, $clim.y) : color.r;
-        color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim.x, $clim.y) : color.g;
-        color.b = !(color.b <= 0.0 || 0.0 <= color.b) ? min($clim.x, $clim.y) : color.b;
-        color.a = !(color.a <= 0.0 || 0.0 <= color.a) ? 0 : color.a;
+        color.r = !(color.r <= gl_DepthRange.far || -gl_DepthRange.far <= color.r) ? min($clim.x, $clim.y) : color.r;
+        color.g = !(color.g <= gl_DepthRange.far || -gl_DepthRange.far <= color.g) ? min($clim.x, $clim.y) : color.g;
+        color.b = !(color.b <= gl_DepthRange.far || -gl_DepthRange.far <= color.b) ? min($clim.x, $clim.y) : color.b;
+        color.a = !(color.a <= gl_DepthRange.far || -gl_DepthRange.far <= color.a) ? 0 : color.a;
         color.rgb = clamp(color.rgb, min($clim.x, $clim.y), max($clim.x, $clim.y));
         color.rgb = (color.rgb - $clim.x) / ($clim.y - $clim.x);
         return max(color, 0.0);
@@ -116,7 +119,7 @@ _APPLY_CLIM = """
 _APPLY_GAMMA_FLOAT = """
     float apply_gamma(float data) {
         // pass through NaN values to get handled by the colormap
-        if (!(data <= 0.0 || 0.0 <= data)) return data;
+        if (!(data <= gl_DepthRange.far || -gl_DepthRange.far <= data)) return data;
 
         return pow(data, $gamma);
     }"""
