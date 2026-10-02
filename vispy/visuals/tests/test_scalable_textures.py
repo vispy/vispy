@@ -150,6 +150,47 @@ def test_clim_handling_cpu():
     assert st.clim_normalized == (0, 1)
 
 
+@pytest.mark.parametrize("clim", ["auto", (5, 25), (10, 10)])
+@pytest.mark.parametrize("shape", [(3, 3), (4, 4), (64, 64), (3, 3, 1)])
+def test_clim_handling_cpu_nan(clim, shape):
+    data = np.full(shape, 15, dtype=np.float32)
+    data.flat[0] = 5
+    data.flat[-1] = 25
+    data.flat[data.size // 2] = np.nan
+    original = data.copy()
+    data.flags.writeable = False
+
+    st = CPUScaledStub()
+    st.set_clim(clim)
+    st.scale_and_set_data(data, copy=False)
+
+    expected = original.copy()
+    cmin, cmax = (5, 25) if clim == "auto" else clim
+    if cmin != cmax:
+        expected = (expected - cmin) / (cmax - cmin)
+    expected[np.isnan(expected)] = 0
+    np.testing.assert_array_equal(st._data, expected)
+    np.testing.assert_array_equal(data, original)
+
+
+def test_clim_handling_cpu_all_nan():
+    data = np.full((3, 3), np.nan, dtype=np.float32)
+    st = CPUScaledStub()
+    st.set_clim("auto")
+    st.scale_and_set_data(data, copy=False)
+    np.testing.assert_array_equal(st._data, np.zeros_like(data))
+    assert np.isnan(data).all()
+    assert st.clim == (0, 0)
+
+
+@pytest.mark.parametrize("copy", [False, True])
+def test_cpu_scaling_nan_preserves_infinities(copy):
+    data = np.array([[np.nan, -np.inf, np.inf]], dtype=np.float32)
+    scaled = CPUScaledTextureMixin._scale_data_on_cpu(data, (0, 1), copy)
+    np.testing.assert_array_equal(scaled, [[0, -np.inf, np.inf]])
+    assert np.isnan(data[0, 0])
+
+
 def test_clim_handling_gpu():
     ref_data = np.array([[10, 10, 5], [15, 25, 15]])
 

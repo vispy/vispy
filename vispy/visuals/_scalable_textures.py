@@ -308,6 +308,13 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
                 data = data.copy()
             data -= clim[0]
             data *= 1 / (clim[1] - clim[0])
+        # NaN conversion to a normalized integer texture is driver-dependent.
+        # Map it to zero explicitly, as documented for CPU-scaled images.
+        nan_mask = np.isnan(data)
+        if nan_mask.any():
+            if not copy and clim[0] == clim[1]:
+                data = data.copy()
+            data[nan_mask] = 0
         return data
 
     def scale_and_set_data(self, data, offset=None, copy=True):
