@@ -359,6 +359,20 @@ def test_colormap_bad_color():
     assert_array_equal(cm[1].rgba, [green])
 
 
+def test_colormap_bad_color_include():
+    cm = Colormap(['white', 'green'], bad_color='red')
+    include = '#include "misc/is-nan.glsl"'
+    assert cm.glsl_map.count(include) == 1
+    cm._set_bad_color_glsl()
+    cm._set_bad_color_glsl()
+    assert cm.glsl_map.count(include) == 1
+
+    cm.glsl_map = 'vec4 colormap(float value) { return vec4(value); }'
+    original = cm.glsl_map
+    cm._set_bad_color_glsl()
+    assert cm.glsl_map == original
+
+
 def test_colormap_high_low_color():
     """Test handling of clim extremes."""
     hilo = get_colormap('HiLo')

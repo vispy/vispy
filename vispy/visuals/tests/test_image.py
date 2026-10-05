@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from unittest import mock
 
+from vispy.gloo.preprocessor import preprocess
 from vispy.scene import Image, PanZoomCamera
+from vispy.visuals.shaders import Compiler
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main, IS_CI)
 from vispy.testing.image_tester import assert_image_approved, downsample
@@ -10,6 +12,16 @@ import numpy as np
 import pytest
 
 from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
+
+
+def test_image_nan_shader_include():
+    image = Image(np.ones((2, 2), dtype=np.float32), cmap='grays', gamma=2,
+                  clim=(0, 1))
+    image._prepare_draw(image)
+    code = Compiler(frag=image.view_program.frag).compile()['frag']
+    code = preprocess(code)
+    assert code.count('bool is_nan(') == 1
+    assert '<= 0.0 ||' not in code
 
 
 @requires_application()

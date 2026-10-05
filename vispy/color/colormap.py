@@ -279,12 +279,15 @@ class BaseColormap(object):
         r, g, b, a = self.bad_color.rgba
 
         bad_color_glsl = f"""
-        // Map NaN to bad_color (see image.py for why gl_DepthRange)
-        if (!(t <= gl_DepthRange.far || -gl_DepthRange.far <= t)) {{
+        // Map NaN to bad_color
+        if (is_nan(t)) {{
             return vec4({r:.3f}, {g:.3f}, {b:.3f}, {a:.3f});
         }}"""
 
-        self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{bad_color_glsl}', self.glsl_map)
+        self.glsl_map, count = re.subn(r'float t\) \{', f'float t) {{{bad_color_glsl}', self.glsl_map)
+        include = '#include "misc/is-nan.glsl"\n'
+        if count and include not in self.glsl_map:
+            self.glsl_map = include + self.glsl_map
 
     def _set_high_color_glsl(self):
         """Set the color mapping for values greater than or equal to max clim."""
