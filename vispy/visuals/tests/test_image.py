@@ -138,9 +138,12 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
 
 
-@pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
 @requires_application()
-@pytest.mark.parametrize('texture_format', [None, 'auto'])
+@pytest.mark.parametrize('texture_format', [
+    None,
+    pytest.param('auto', marks=pytest.mark.xfail(
+        IS_CI, reason="CI environments sometimes treat NaN as 0")),
+])
 @pytest.mark.parametrize('bad_color', [None, (1, 0, 0, 1)])
 def test_image_nan(texture_format, bad_color):
     size = (80, 80)
@@ -150,20 +153,33 @@ def test_image_nan(texture_format, bad_color):
 
     expected = (np.ones(size + (4,)) * 255).astype(np.uint8)
     expected[-20: -20:] = (0, 0, 0, 225)
-    if texture_format is None:
-        # CPU scaling's NaNs get converted to 0s
-        expected[:20, :20] = (0, 0, 0, 255)
-    else:
-        # GPU receives NaNs
-        # nan - mapped to bad color
-        # no bad color means transparent, so we should see the green canvas
-        expected[:20, :20] = np.array((0, 1, 0, 1) if bad_color is None else bad_color) * 255
+    expected[:20, :20] = np.array((0, 1, 0, 1) if bad_color is None else bad_color) * 255
 
     with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
         Image(data, cmap=Colormap(['k', 'w'], bad_color=bad_color), clim=(0, 1),
               texture_format=texture_format, parent=c.scene)
         rendered = c.render()
         np.testing.assert_allclose(rendered, expected)
+
+
+@requires_application()
+def test_image_nan_to_rgba():
+    size = (40, 40)
+    data = np.ones(size, dtype=np.float32)
+    data[:20, :20] = np.nan
+
+    with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
+        image = Image(data, cmap=Colormap(['k', 'w'], bad_color='red'), clim=(0, 1),
+                      texture_format=None, parent=c.scene)
+        np.testing.assert_array_equal(c.render()[10, 10], (255, 0, 0, 255))
+
+        rgba = np.empty(size + (4,), dtype=np.float32)
+        rgba[:] = (0, 0, 1, 0.25)
+        image.set_data(rgba)
+        rendered = c.render()
+        expected = np.empty_like(rendered)
+        expected[:] = (0, 191, 64, 255)
+        np.testing.assert_allclose(rendered, expected, atol=1)
 
 
 @requires_application()
