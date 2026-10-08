@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest import mock
 
+from vispy.color import Colormap
 from vispy.gloo.preprocessor import preprocess
 from vispy.scene import Image, PanZoomCamera
 from vispy.visuals.shaders import Compiler
@@ -155,15 +156,12 @@ def test_image_nan(texture_format, bad_color):
     else:
         # GPU receives NaNs
         # nan - mapped to bad color
-        if bad_color is None:
-            # no bad color means transparent, so we should see the green canvas
-            bad_color = (0, 1, 0, 1)
-        expected[:20, :20] = np.array(bad_color) * 255
+        # no bad color means transparent, so we should see the green canvas
+        expected[:20, :20] = np.array((0, 1, 0, 1) if bad_color is None else bad_color) * 255
 
     with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
-        image = Image(data, cmap='grays', clim=(0, 1),
+        Image(data, cmap=Colormap(['k', 'w'], bad_color=bad_color), clim=(0, 1),
               texture_format=texture_format, parent=c.scene)
-        image.bad_color = bad_color
         rendered = c.render()
         np.testing.assert_allclose(rendered, expected)
 
