@@ -271,12 +271,14 @@ class BaseColormap(object):
             self.low_color = Color(low_color)
             self._set_low_color_glsl()
 
+        self._bad_color_glsl = ''
         self.bad_color = Color((0, 0, 0, 0) if bad_color is None else bad_color)
         self._set_bad_color_glsl()
 
     def _set_bad_color_glsl(self):
         """Set the color mapping for NaN values."""
         r, g, b, a = self.bad_color.rgba
+        self.glsl_map = self.glsl_map.replace(self._bad_color_glsl, '', 1)
 
         bad_color_glsl = f"""
         // Map NaN to bad_color
@@ -285,6 +287,7 @@ class BaseColormap(object):
         }}"""
 
         self.glsl_map = re.sub(r'float t\) \{', f'float t) {{{bad_color_glsl}', self.glsl_map)
+        self._bad_color_glsl = bad_color_glsl
 
     def _set_high_color_glsl(self):
         """Set the color mapping for values greater than or equal to max clim."""

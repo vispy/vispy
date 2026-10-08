@@ -133,6 +133,12 @@ def test_image_bad_color_leaves_named_colormap_unchanged():
     assert tuple(image.bad_color.rgba) == (1, 0, 0, 1)
     assert tuple(get_colormap('grays').bad_color.rgba) == (0, 0, 0, 0)
 
+    image.cmap.glsl_map = image.cmap.glsl_map.replace('grays', 'custom_grays')
+    image.bad_color = (0, 1, 0, 1)
+    assert image.cmap.glsl_map.count('// Map NaN to bad_color') == 1
+    assert 'return vec4(0.000, 1.000, 0.000, 1.000);' in image.cmap.glsl_map
+    assert 'vec4 custom_grays(float t)' in image.cmap.glsl_map
+
 
 @pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
 @requires_application()
