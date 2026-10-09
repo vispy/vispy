@@ -153,6 +153,48 @@ def test_transform_chain():
     assert t2.shader_imap() in funcsi
 
 
+@pytest.mark.parametrize('index, expected', [
+    (0, (21, 33, 0, 1)),
+    (1, (12, 15, 0, 1)),
+    (-1, (12, 15, 0, 1)),
+])
+def test_transform_chain_setitem(index, expected):
+    transforms = [ST(scale=(2, 3)), ST(translate=(3, 4))]
+    chain = CT(transforms)
+    replacement = ST(scale=(5, 7), translate=(1, -2))
+
+    chain[index] = replacement
+
+    assert chain.transforms[index] is replacement
+    assert_allclose(chain.map((1, 1)), expected)
+    assert_allclose(chain.imap(expected), (1, 1, 0, 1))
+    assert chain.shader_map().functions == [t.shader_map() for t in reversed(chain.transforms)]
+    assert chain.shader_imap().functions == [t.shader_imap() for t in chain.transforms]
+
+
+def test_transform_chain_setitem_events():
+    removed = ST(scale=(2, 3))
+    remaining = ST(translate=(3, 4))
+    replacement = ST(scale=(5, 7))
+    chain = CT(removed, remaining)
+    events = []
+    chain.changed.connect(events.append)
+
+    chain[0] = replacement
+    assert len(events) == 1
+
+    removed.translate = (10, 20)
+    assert len(events) == 1
+
+    replacement.translate = (1, -2)
+    assert len(events) == 2
+    assert_allclose(chain.map((1, 1)), (21, 33, 0, 1))
+
+    remaining.translate = (2, 3)
+    assert len(events) == 3
+    assert_allclose(chain.map((1, 1)), (16, 26, 0, 1))
+
+
 def test_map_rect():
     r = Rect((2, 7), (13, 19))
     r1 = ST(scale=(2, 2), translate=(-10, 10)).map(r)
