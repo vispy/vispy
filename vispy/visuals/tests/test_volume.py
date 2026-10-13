@@ -3,6 +3,7 @@
 import pytest
 import numpy as np
 from vispy import scene
+from vispy.color import Colormap
 
 from vispy.testing import (TestingCanvas, requires_application,
                            run_tests_if_main, requires_pyopengl,
@@ -406,6 +407,59 @@ def test_volume_depth():
         assert reds > 0
         np.testing.assert_allclose(greens, 0)
         assert blues > 0
+
+
+@requires_pyopengl()
+@requires_application()
+@pytest.mark.parametrize('method', ['iso', 'mip', 'attenuated_mip', 'minip'])
+@pytest.mark.parametrize('elevation', [90, -90])
+@pytest.mark.parametrize('offset', [0.25, -0.25])
+def test_volume_depth_position(method, elevation, offset):
+    """Check that the depth written by the volume is in data coordinates.
+
+    Voxel i spans [i - 0.5, i + 0.5] in data coordinates. Looking straight at
+    a one voxel thick slab, a red quad slightly in front of the slab's front
+    face must be visible, and one slightly behind it must be hidden.
+    """
+    data = np.zeros((16, 16, 16), dtype=np.float32)
+    data[8] = 1  # slab spanning z in [7.5, 8.5]
+    if method == 'minip':
+        data = 1 - data
+
+    with TestingCanvas(size=(40, 40)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        # look down -z (elevation 90) or up +z (elevation -90)
+        v.camera = scene.TurntableCamera(
+            fov=0, elevation=elevation, azimuth=0, center=(7.5, 7.5, 7.5),
+            scale_factor=16)
+        # the default depth range (+-1e6) can't separate surfaces even a few
+        # voxels apart here
+        v.camera.depth_value = 50
+
+        scene.visuals.Volume(
+            data,
+            method=method,
+            threshold=0.5,
+            interpolation="nearest",
+            # keeps the sampling error (up to one step for attenuated_mip,
+            # half a step for mip) well below the 0.25 voxel offset
+            relative_step_size=0.15,
+            clim=(0, 1),
+            cmap=Colormap(["blue", "green"]),
+            parent=v.scene,
+        )
+
+        towards_camera = np.sign(elevation)
+        z = 8 + towards_camera * (0.5 + offset)
+        vertices = np.array([[-0.5, -0.5, z], [15.5, -0.5, z],
+                             [15.5, 15.5, z], [-0.5, 15.5, z]], np.float32)
+        scene.visuals.Mesh(vertices=vertices, faces=[[0, 1, 2], [0, 2, 3]],
+                           color="red", parent=v.scene)
+
+        rendered = c.render()
+        center = rendered[rendered.shape[0] // 2, rendered.shape[1] // 2]
+        quad_visible = center[0] > 128
+        assert quad_visible == (offset > 0)
 
 
 @requires_pyopengl()
