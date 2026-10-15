@@ -436,7 +436,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         // * attenuation value does not depend on data values
         // * negative values do not amplify instead of attenuate
         sumval = sumval + u_relative_step_size * clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0);
-        scale = exp(-u_attenuation * (sumval - 1));
+        scale = exp(-u_attenuation * (sumval));
         if( maxval > scale * clim.y ) {
             // stop if no chance of finding a higher maxval
             iter = nsteps;
