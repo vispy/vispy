@@ -89,7 +89,7 @@ uniform vec2 clim;
 uniform float gamma;
 uniform float u_threshold;
 uniform float u_attenuation;
-uniform float u_empty_space_attenuation;
+uniform float u_base_attenuation;
 uniform float u_relative_step_size;
 uniform float u_mip_cutoff;
 uniform float u_minip_cutoff;
@@ -437,7 +437,7 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         // * attenuation value does not depend on data values
         // * negative values do not amplify instead of attenuate
         sumval = sumval + u_relative_step_size * (
-            clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0) + u_empty_space_attenuation);
+            clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0) + u_base_attenuation);
         scale = exp(-u_attenuation * (sumval));
         if( maxval > scale * clim.y ) {
             // stop if no chance of finding a higher maxval
@@ -639,9 +639,9 @@ class VolumeVisual(Visual):
     attenuation: float
         The attenuation rate to apply for the attenuated mip render method.
         Default: 1.0.
-    empty_space_attenuation: float
-        The attenuation rate to apply for empty space for the attenuated mip
-        render method. Default: 0.0.
+    base_attenuation: float
+        A constant attenuation added at every step for the attenuated mip
+        render method, including through empty space. Default: 0.0.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
         Increase to e.g. 1.5 to increase performance, at the cost of
@@ -731,7 +731,7 @@ class VolumeVisual(Visual):
     }
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
-                 attenuation=1.0, empty_space_attenuation=0.0, relative_step_size=0.8, cmap='grays',
+                 attenuation=1.0, base_attenuation=0.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
@@ -797,7 +797,7 @@ class VolumeVisual(Visual):
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
-        self.empty_space_attenuation = empty_space_attenuation
+        self.base_attenuation = base_attenuation
 
         # Set plane params
         if plane_position is None:
@@ -1185,14 +1185,14 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
-    def empty_space_attenuation(self):
-        """The empty space attenuation rate to apply for the attenuated mip render method."""
-        return self._empty_space_attenuation
+    def base_attenuation(self):
+        """The constant attenuation added at every step for the attenuated mip render method."""
+        return self._base_attenuation
 
-    @empty_space_attenuation.setter
-    def empty_space_attenuation(self, value):
-        self._empty_space_attenuation = float(value)
-        self.shared_program['u_empty_space_attenuation'] = self._empty_space_attenuation
+    @base_attenuation.setter
+    def base_attenuation(self, value):
+        self._base_attenuation = float(value)
+        self.shared_program['u_base_attenuation'] = self._base_attenuation
         self.update()
 
     @property
