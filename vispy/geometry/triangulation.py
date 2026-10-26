@@ -558,6 +558,9 @@ class Triangulation(object):
             # record for all edges the location of cut points
             edge_cuts = cuts.setdefault(i, [])
             for j, ind in enumerate(inds):
+                # Shared endpoints need no split, even with rounding error.
+                if np.isin(self.edges[i], self.edges[ind+i+1]).any():
+                    continue
                 if 0 < int2[ind] < 1:
                     edge_cuts.append((int2[ind], pts[j]))
                 if 0 < int1[ind] < 1:
