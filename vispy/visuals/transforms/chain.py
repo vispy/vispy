@@ -212,7 +212,7 @@ class ChainTransform(BaseTransform):
     def __setitem__(self, index, tr):
         self._transforms[index].changed.disconnect(self._subtr_changed)
         self._transforms[index] = tr
-        tr.changed.connect(self.subtr_changed)
+        tr.changed.connect(self._subtr_changed)
         self._rebuild_shaders()
         self.update()
 
