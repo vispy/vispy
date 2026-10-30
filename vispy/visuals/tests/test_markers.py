@@ -2,7 +2,10 @@
 import numpy as np
 import pytest
 
+from vispy.color import get_colormap
 from vispy.scene.visuals import Markers
+from vispy.visuals.filters import Filter
+from vispy.visuals.shaders import Function
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main)
 from vispy.testing.image_tester import assert_image_approved
@@ -26,6 +29,17 @@ def test_markers(rendering_method):
         marker = Markers(parent=c.scene, method=rendering_method)
         marker.set_data(data)
         assert_image_approved(c.render(), "visuals/markers.png")
+
+
+@requires_application()
+def test_markers_with_colormap_filter(rendering_method):
+    with TestingCanvas() as c:
+        marker = Markers(parent=c.scene, method=rendering_method)
+        marker.set_data(np.array([[20, 20]], dtype=np.float32))
+        recolor = Filter(fcode="void recolor() { gl_FragColor = $cmap(gl_FragColor.r); }")
+        recolor.fshader['cmap'] = Function(get_colormap('autumn').glsl_map)
+        marker.attach(recolor)
+        c.render()
 
 
 def test_markers_edge_width(rendering_method):
