@@ -5,6 +5,7 @@
 
 from __future__ import division
 
+import copy
 import warnings
 
 import numpy as np
@@ -462,13 +463,14 @@ class ImageVisual(Visual):
     @property
     def bad_color(self):
         """Color used to render NaN values."""
-        return self._cmap.get_bad_color()
+        return self._cmap.bad_color
 
     @bad_color.setter
     def bad_color(self, color):
-        self._cmap.set_bad_color(color)
-        self._need_colortransform_update = True
-        self.update()
+        # Named colormaps are shared instances, so change a copy.
+        cmap = copy.copy(self._cmap)
+        cmap._set_bad_color(color)
+        self.cmap = cmap
 
     @property
     def method(self):
