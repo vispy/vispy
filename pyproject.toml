@@ -238,6 +238,7 @@ jupyter-rfb = "*"
 matplotlib-base = "*"
 pyopengl = "*"
 scikit-image = "*"
+plyfile = "*"
 
 [tool.pixi.feature.docs.pypi-dependencies]
 numpydoc = "*"
