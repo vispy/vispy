@@ -265,15 +265,24 @@ class BaseColormap(object):
             self.glsl_map = _process_glsl_template(self.glsl_map,
                                                    self.colors.rgba)
         if high_color is not None:
-            self.high_color = Color(high_color)
-            self._set_high_color_glsl()
+            self._set_high_color(high_color)
         if low_color is not None:
-            self.low_color = Color(low_color)
-            self._set_low_color_glsl()
+            self._set_low_color(low_color)
 
         self._bad_color_glsl = ''
-        self.bad_color = Color((0, 0, 0, 0) if bad_color is None else bad_color)
+        self._set_bad_color(bad_color)
+
+    def _set_bad_color(self, color):
+        self.bad_color = Color((0, 0, 0, 0) if color is None else color)
         self._set_bad_color_glsl()
+
+    def _set_high_color(self, color):
+        self.high_color = Color(color)
+        self._set_high_color_glsl()
+
+    def _set_low_color(self, color):
+        self.low_color = Color(color)
+        self._set_low_color_glsl()
 
     def _set_bad_color_glsl(self):
         """Set the color mapping for NaN values."""

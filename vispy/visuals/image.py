@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 
 from ..gloo import Texture2D, VertexBuffer
-from ..color import Color, get_colormap
+from ..color import get_colormap
 from .shaders import Function, FunctionChain
 from .transforms import NullTransform
 from .visual import Visual
@@ -469,8 +469,7 @@ class ImageVisual(Visual):
     def bad_color(self, color):
         # Named colormaps are shared instances, so change a copy.
         cmap = copy.copy(self._cmap)
-        cmap.bad_color = Color((0, 0, 0, 0) if color is None else color)
-        cmap._set_bad_color_glsl()
+        cmap._set_bad_color(color)
         self.cmap = cmap
 
     @property
