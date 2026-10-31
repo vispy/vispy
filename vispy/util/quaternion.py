@@ -82,39 +82,40 @@ class Quaternion(object):
         return new
 
     def exp(self):
-        """Returns the exponent of the quaternion. 
-        (not tested)
-        """
-        # Init
-        vecNorm = self.x**2 + self.y**2 + self.z**2
-        wPart = np.exp(self.w)        
-        q = Quaternion()
+        """Return the exponential of the quaternion."""
+        vec_norm = (self.x**2 + self.y**2 + self.z**2)**0.5
+        w_part = np.exp(self.w)
+        if not vec_norm:
+            return Quaternion(w_part, 0, 0, 0, normalize=False)
 
-        # Calculate
-        q.w = wPart * np.cos(vecNorm)
-        q.x = wPart * self.x * np.sin(vecNorm) / vecNorm
-        q.y = wPart * self.y * np.sin(vecNorm) / vecNorm
-        q.z = wPart * self.z * np.sin(vecNorm) / vecNorm
-
-        return q
+        scale = w_part * np.sin(vec_norm) / vec_norm
+        return Quaternion(w_part * np.cos(vec_norm),
+                          self.x * scale, self.y * scale, self.z * scale,
+                          normalize=False)
 
     def log(self):
-        """Returns the natural logarithm of the quaternion. 
-        (not tested)
+        """Return the natural logarithm of the quaternion.
+
+        Raises
+        ------
+        ValueError
+            If the quaternion is zero or a negative real number.
         """
-        # Init
         norm = self.norm()
-        vecNorm = self.x**2 + self.y**2 + self.z**2
-        tmp = self.w / norm
-        q = Quaternion()
+        if not norm:
+            raise ValueError('The logarithm of a zero quaternion is undefined.')
 
-        # Calculate
-        q.w = np.log(norm)
-        q.x = np.log(norm) * self.x * np.arccos(tmp) / vecNorm
-        q.y = np.log(norm) * self.y * np.arccos(tmp) / vecNorm
-        q.z = np.log(norm) * self.z * np.arccos(tmp) / vecNorm
+        vec_norm = (self.x**2 + self.y**2 + self.z**2)**0.5
+        if not vec_norm:
+            if self.w < 0:
+                raise ValueError('A negative real quaternion has no unique '
+                                 'logarithm.')
+            return Quaternion(np.log(norm), 0, 0, 0, normalize=False)
 
-        return q
+        angle = np.arctan2(vec_norm, self.w)
+        scale = angle / vec_norm
+        return Quaternion(np.log(norm), self.x * scale, self.y * scale,
+                          self.z * scale, normalize=False)
 
     def __add__(self, q):
         """Add quaternions."""
