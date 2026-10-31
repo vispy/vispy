@@ -121,7 +121,7 @@ class PolarTransform(BaseTransform):
         """
 
     glsl_imap = """
-        vec4 polar_transform_map(vec4 pos) {
+        vec4 polar_transform_imap(vec4 pos) {
             // TODO: need some modulo math to handle larger theta values..?
             float theta = atan(pos.y, pos.x);
             float r = length(pos.xy);
@@ -146,7 +146,7 @@ class PolarTransform(BaseTransform):
     @arg_to_array
     def imap(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
-        ret[..., 0] = np.arctan2(coords[..., 0], coords[..., 1])
+        ret[..., 0] = np.arctan2(coords[..., 1], coords[..., 0])
         ret[..., 1] = (coords[..., 0]**2 + coords[..., 1]**2) ** 0.5
         for i in range(2, coords.shape[-1]):  # copy any further axes
             ret[..., i] = coords[..., i]

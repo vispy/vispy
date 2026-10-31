@@ -283,3 +283,19 @@ def test_inverse(trn):
 
 
 run_tests_if_main()
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize('ncoords', [2, 3, 4])
+@pytest.mark.parametrize('leading_shape', [(8,), (2, 4)])
+def test_polar_transform_cpu_inverse(dtype, ncoords, leading_shape):
+    coords = np.ones((8, ncoords), dtype=dtype)
+    coords[:, 0] = np.linspace(-0.875 * np.pi, 0.875 * np.pi, 8)
+    coords[:, 1] = np.arange(1, 9)
+    if ncoords > 2:
+        coords[:, 2] = np.arange(8) - 3
+    coords = coords.reshape(leading_shape + (ncoords,))
+    transform = PT()
+
+    assert_allclose(transform.imap(transform.map(coords)), coords,
+                    rtol=2e-6, atol=2e-6)
