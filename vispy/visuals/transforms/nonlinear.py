@@ -85,8 +85,6 @@ class LogTransform(BaseTransform):
                 ret[..., i] = np.log(coords[..., i]) / np.log(base[i])
             elif base[i] < -1.0:
                 ret[..., i] = (-base[i]) ** coords[..., i]
-            else:
-                ret[..., i] = coords[..., i]
         return ret
 
     @arg_to_array
