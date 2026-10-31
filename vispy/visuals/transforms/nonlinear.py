@@ -121,7 +121,7 @@ class PolarTransform(BaseTransform):
         """
 
     glsl_imap = """
-        vec4 polar_transform_map(vec4 pos) {
+        vec4 polar_transform_imap(vec4 pos) {
             // TODO: need some modulo math to handle larger theta values..?
             float theta = atan(pos.y, pos.x);
             float r = length(pos.xy);
