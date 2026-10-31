@@ -459,6 +459,21 @@ class CPUScaledTexture2D(CPUScaledTextureMixin, Texture2D):
 
     """
 
+    def _create_rep_array(self, data):
+        data = super()._create_rep_array(data)
+        if data.shape[-1] == 1:
+            data = np.zeros(data.shape[:2] + (2,), dtype=data.dtype)
+        return data
+
+    def _scale_data_on_cpu(self, data, clim, copy=True):
+        data = super()._scale_data_on_cpu(data, clim, copy=copy)
+        nan = np.isnan(data)
+        texels = np.empty(data.shape[:2] + (2,), dtype=np.float32)
+        texels[..., 0] = np.where(nan, 0, data).reshape(data.shape[:2])
+        # Alpha stores a class code: 0 for NaN, 1 for non-NaN.
+        texels[..., 1] = (~nan).reshape(data.shape[:2])
+        return texels
+
 
 class GPUScaledTexture2D(GPUScaledTextureMixin, Texture2D):
     """Texture class with clim scaling handling builtin.

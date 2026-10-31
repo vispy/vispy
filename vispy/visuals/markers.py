@@ -134,9 +134,7 @@ varying float v_alias_ratio;
 varying float v_symbol;
 
 
-bool isnan(float val) {
-  return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
-}
+#include "misc/is-nan.glsl"
 
 bool isinf(float val) {
     return (val != 0.0 && val * 2.0 == val) ? true : false;
@@ -150,7 +148,7 @@ void main()
     // Discard plotting marker body and edge if zero-size or nan/inf.
     // Sometimes edgewidth becomes nan/inf even if size is not exactly zero here due to float
     // imprecision. We really are checking for `a_size == 0`, but this is the fragment shader proxy
-    if ($v_size <= 0. || isnan($v_size) || isinf($v_size) || isnan(v_edgewidth) || isinf(v_edgewidth))
+    if ($v_size <= 0. || is_nan($v_size) || isinf($v_size) || is_nan(v_edgewidth) || isinf(v_edgewidth))
         discard;
 
     float edgealphafactor = min(v_edgewidth, 1.0);
