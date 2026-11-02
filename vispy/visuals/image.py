@@ -66,7 +66,10 @@ void main()
         texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
     }
 
-    gl_FragColor = $color_transform($get_data(texcoord));
+    vec4 texel = $get_data(texcoord);
+    // Takes texcoord, not the texel: CPU-scaled textures can't store NaN, so
+    // they mark it in the alpha channel instead. Returns 1.0 for NaN.
+    gl_FragColor = $is_nan(texcoord) > 0.5 ? $bad_color : $color_transform(texel);
 }
 """  # noqa
 
@@ -90,9 +93,10 @@ _TEXTURE_LOOKUP = """
     }"""
 
 _APPLY_CLIM_FLOAT = """
+    #include "misc/is-nan.glsl"
     float apply_clim(float data) {
-        // pass through NaN values to get handled by the colormap
-        if (!(data <= 0.0 || 0.0 <= data)) return data;
+        // pass through NaN values to get handled by the colormap.
+        if (is_nan(data)) return data;
 
         data = clamp(data, min($clim.x, $clim.y), max($clim.x, $clim.y));
         data = (data - $clim.x) / ($clim.y - $clim.x);
@@ -100,13 +104,14 @@ _APPLY_CLIM_FLOAT = """
     }"""
 
 _APPLY_CLIM = """
+    #include "misc/is-nan.glsl"
     vec4 apply_clim(vec4 color) {
         // Handle NaN values (clamp them to the minimum value)
         // http://stackoverflow.com/questions/11810158/how-to-deal-with-nan-or-inf-in-opengl-es-2-0-shaders
-        color.r = !(color.r <= 0.0 || 0.0 <= color.r) ? min($clim.x, $clim.y) : color.r;
-        color.g = !(color.g <= 0.0 || 0.0 <= color.g) ? min($clim.x, $clim.y) : color.g;
-        color.b = !(color.b <= 0.0 || 0.0 <= color.b) ? min($clim.x, $clim.y) : color.b;
-        color.a = !(color.a <= 0.0 || 0.0 <= color.a) ? 0 : color.a;
+        color.r = is_nan(color.r) ? min($clim.x, $clim.y) : color.r;
+        color.g = is_nan(color.g) ? min($clim.x, $clim.y) : color.g;
+        color.b = is_nan(color.b) ? min($clim.x, $clim.y) : color.b;
+        color.a = is_nan(color.a) ? 0 : color.a;
         color.rgb = clamp(color.rgb, min($clim.x, $clim.y), max($clim.x, $clim.y));
         color.rgb = (color.rgb - $clim.x) / ($clim.y - $clim.x);
         return max(color, 0.0);
@@ -114,9 +119,10 @@ _APPLY_CLIM = """
 """
 
 _APPLY_GAMMA_FLOAT = """
+    #include "misc/is-nan.glsl"
     float apply_gamma(float data) {
         // pass through NaN values to get handled by the colormap
-        if (!(data <= 0.0 || 0.0 <= data)) return data;
+        if (is_nan(data)) return data;
 
         return pow(data, $gamma);
     }"""
@@ -131,6 +137,9 @@ _APPLY_GAMMA = """
 _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 
 _C2L_RED = 'float color_to_luminance(vec4 color) { return color.r; }'
+
+_IS_NAN_ALPHA = 'float is_nan_alpha(vec2 texcoord) { return float(texture2D($texture, texcoord).a < 0.5); }'
+_IS_NAN_NEVER = 'float is_nan_never(vec2 texcoord) { return 0.0; }'
 
 _CUSTOM_FILTER = """
 vec4 texture_lookup(vec2 texcoord) {
@@ -170,13 +179,13 @@ class ImageVisual(Visual):
     ----------
     data : ndarray
         ImageVisual data. Can be shape (M, N), (M, N, 3), or (M, N, 4).
-        If floating point data is provided and contains NaNs, they will
-        be made transparent (discarded) for the single band data case when
-        scaling is done on the GPU (see ``texture_format``). On the CPU,
-        single band NaNs are mapped to 0 as they are sent to the GPU which
-        result in them using the lowest ``clim`` value in the GPU.
+        For single band data, NaNs render with the colormap's ``bad_color``
+        (transparent by default) with both CPU and GPU scaling (see
+        ``texture_format``).
         For RGB data, NaNs will be mapped to the lowest ``clim`` value.
         If the Alpha band is NaN it will be mapped to 0 (transparent).
+        In all cases, interpolation other than ``'nearest'`` can change
+        the pixels next to a NaN.
         Note that NaN handling is not required by some OpenGL implementations
         and NaNs may be treated differently on some systems (ex. as 0s).
     method : str
@@ -315,6 +324,8 @@ class ImageVisual(Visual):
         self._init_view(self)
 
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
+        self.shared_program.frag['is_nan'] = Function(_IS_NAN_NEVER)
+        self.shared_program.frag['bad_color'] = (0., 0., 0., 0.)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
@@ -392,6 +403,8 @@ class ImageVisual(Visual):
         if self._data is None or self._data.shape[:2] != data.shape[:2]:
             # Only rebuild if the size of the image changed
             self._need_vertex_update = True
+        if self._data is None or self._data.shape[2:] != data.shape[2:]:
+            self._need_colortransform_update = True
         self._data = data
         self._need_texture_upload = True
 
@@ -628,16 +641,17 @@ class ImageVisual(Visual):
         except RuntimeError:
             pre_clims = "auto"
         pre_internalformat = self._texture.internalformat
+        pre_format = self._texture.format
         # copy was already made on `set_data` if requested
         self._texture.scale_and_set_data(self._data, copy=False)
         post_clims = self._texture.clim_normalized
         post_internalformat = self._texture.internalformat
-        # color transform needs rebuilding if the internalformat was changed
+        # color transform needs rebuilding if the texture format was changed
         # new color limits need to be assigned if the normalized clims changed
         # otherwise, the original color transform should be fine
         new_if = post_internalformat != pre_internalformat
         new_cl = post_clims != pre_clims
-        if new_if:
+        if new_if or self._texture.format != pre_format:
             self._need_colortransform_update = True
         elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
@@ -651,7 +665,11 @@ class ImageVisual(Visual):
             return 0, self.size[axis]
 
     def _build_color_transform(self):
+        is_nan = Function(_IS_NAN_NEVER)
         if self._data.ndim == 2 or self._data.shape[2] == 1:
+            if isinstance(self._texture, CPUScaledTexture2D) and self._texture.shape[-1] == 2:
+                is_nan = Function(_IS_NAN_ALPHA)
+                is_nan['texture'] = self._texture
             # luminance data
             fclim = Function(self._func_templates['clim_float'])
             fgamma = Function(self._func_templates['gamma_float'])
@@ -667,6 +685,8 @@ class ImageVisual(Visual):
             fun = FunctionChain(None, [Function(self._func_templates['null_color_transform']), fclim, fgamma])
         fclim['clim'] = self._texture.clim_normalized
         fgamma['gamma'] = self.gamma
+        self.shared_program.frag['is_nan'] = is_nan
+        self.shared_program.frag['bad_color'] = self.cmap.bad_color.rgba
         return fun
 
     def _prepare_transforms(self, view):

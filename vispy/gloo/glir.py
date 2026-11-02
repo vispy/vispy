@@ -1151,6 +1151,8 @@ class GlirProgram(GlirObject):
                                        (uniforms, cu, gl.glGetActiveUniform)]:
             for i in range(count):
                 name, size, gtype = func(self._handle, i)
+                if name.startswith('gl_'):
+                    continue  # Built-ins are set by GL, not by the user.
                 m = regex.match(name)  # Check if xxx[0] instead of xx
                 if m:
                     name = m.group('name')

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from unittest import mock
 
+from vispy.color import Colormap
+from vispy.gloo.preprocessor import preprocess
 from vispy.scene import Image, PanZoomCamera
+from vispy.visuals.shaders import Compiler
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main, IS_CI)
 from vispy.testing.image_tester import assert_image_approved, downsample
@@ -10,6 +13,21 @@ import numpy as np
 import pytest
 
 from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
+
+
+def test_image_nan_shader_include():
+    data = np.ones((2, 2), dtype=np.float32)
+    image = Image(data, cmap='grays', gamma=2, clim=(0, 1))
+    for has_nan in (False, True, False):
+        data[0, 0] = np.nan if has_nan else 1
+        image.set_data(data)
+        image._prepare_draw(image)
+        code = Compiler(frag=image.view_program.frag).compile()['frag']
+        code = preprocess(code)
+        assert code.count('bool is_nan(') == 1
+        assert '<= 0.0 ||' not in code
+        assert ('is_nan_alpha' in code) == has_nan
+        assert ('is_nan_never' in code) != has_nan
 
 
 @requires_application()
@@ -125,9 +143,12 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
 
 
-@pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
 @requires_application()
-@pytest.mark.parametrize('texture_format', [None, 'auto'])
+@pytest.mark.parametrize('texture_format', [
+    None,
+    pytest.param('auto', marks=pytest.mark.xfail(
+        IS_CI, reason="CI environments sometimes treat NaN as 0")),
+])
 @pytest.mark.parametrize('bad_color', [None, (1, 0, 0, 1)])
 def test_image_nan(texture_format, bad_color):
     size = (80, 80)
@@ -137,23 +158,79 @@ def test_image_nan(texture_format, bad_color):
 
     expected = (np.ones(size + (4,)) * 255).astype(np.uint8)
     expected[-20: -20:] = (0, 0, 0, 225)
-    if texture_format is None:
-        # CPU scaling's NaNs get converted to 0s
-        expected[:20, :20] = (0, 0, 0, 255)
-    else:
-        # GPU receives NaNs
-        # nan - mapped to bad color
-        if bad_color is None:
-            # no bad color means transparent, so we should see the green canvas
-            bad_color = (0, 1, 0, 1)
-        expected[:20, :20] = np.array(bad_color) * 255
+    expected[:20, :20] = np.array((0, 1, 0, 1) if bad_color is None else bad_color) * 255
 
     with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
-        image = Image(data, cmap='grays', clim=(0, 1),
+        Image(data, cmap=Colormap(['k', 'w'], bad_color=bad_color), clim=(0, 1),
               texture_format=texture_format, parent=c.scene)
-        image.bad_color = bad_color
         rendered = c.render()
         np.testing.assert_allclose(rendered, expected)
+
+
+@requires_application()
+def test_image_nan_to_rgba():
+    size = (40, 40)
+    data = np.ones(size, dtype=np.float32)
+    data[:20, :20] = np.nan
+
+    with TestingCanvas(size=size[::-1], bgcolor=(0, 1, 0)) as c:
+        image = Image(data, cmap=Colormap(['k', 'w'], bad_color='red'), clim=(0, 1),
+                      texture_format=None, parent=c.scene)
+        np.testing.assert_array_equal(c.render()[10, 10], (255, 0, 0, 255))
+
+        rgba = np.empty(size + (4,), dtype=np.float32)
+        rgba[:] = (0, 0, 1, 0.25)
+        image.set_data(rgba)
+        rendered = c.render()
+        expected = np.empty_like(rendered)
+        expected[:] = (0, 191, 64, 255)
+        np.testing.assert_allclose(rendered, expected, atol=1)
+
+        image.set_data(data)
+        np.testing.assert_array_equal(c.render()[10, 10], (255, 0, 0, 255))
+        assert image._texture.shape[-1] == 2
+
+
+@requires_application()
+@pytest.mark.parametrize('shape, all_nan, interpolation', [
+    ((40, 40), False, 'nearest'),
+    ((40, 40), True, 'nearest'),
+    ((40, 40), False, 'custom'),
+])
+def test_image_nan_layout_changes(shape, all_nan, interpolation):
+    data = np.ones(shape, dtype=np.float32)
+    nan = np.zeros(shape[:2], dtype=bool)
+    if all_nan:
+        nan[:] = True
+    else:
+        nan[:20, :20] = True
+
+    with TestingCanvas(size=shape[:2][::-1], bgcolor='green') as c:
+        image = Image(data, cmap=Colormap(['k', 'w'], bad_color='red'), clim=(0, 1),
+                      interpolation=interpolation, custom_kernel=np.array([[0]]),
+                      texture_format=None, parent=c.scene)
+        assert image._texture.shape[-1] == 1
+        for has_nan in (False, True, False):
+            new_data = data.copy()
+            if has_nan:
+                new_data[nan] = np.nan
+            image.set_data(new_data)
+            expected = np.full(shape[:2] + (4,), 255, dtype=np.uint8)
+            if interpolation == 'custom':
+                expected[..., :3] = 0
+            if has_nan:
+                expected[nan] = (255, 0, 0, 255)
+            np.testing.assert_array_equal(c.render(), expected)
+            assert image._texture.shape[-1] == (2 if has_nan else 1)
+
+            if has_nan:
+                image.clim = (0, 2)
+                assert image._need_texture_upload
+                if interpolation != 'custom':
+                    expected[~nan, :3] = 128
+                np.testing.assert_allclose(c.render(), expected, atol=1)
+                assert image._texture.shape[-1] == 2
+                image.clim = (0, 1)
 
 
 @requires_application()
