@@ -3,6 +3,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # Based on the quaternion class in the visvis project.
 
+import math
+
 import numpy as np
 
 
@@ -32,10 +34,9 @@ class Quaternion(object):
     def norm(self):
         """Returns the norm of the quaternion
 
-        norm = w**2 + x**2 + y**2 + z**2
+        norm = (w**2 + x**2 + y**2 + z**2)**0.5
         """
-        tmp = self.w**2 + self.x**2 + self.y**2 + self.z**2
-        return tmp**0.5
+        return math.hypot(self.w, self.x, self.y, self.z)
 
     def _normalize(self):
         """Make the quaternion unit length."""
@@ -83,7 +84,7 @@ class Quaternion(object):
 
     def exp(self):
         """Return the exponential of the quaternion."""
-        vec_norm = (self.x**2 + self.y**2 + self.z**2)**0.5
+        vec_norm = math.hypot(self.x, self.y, self.z)
         w_part = np.exp(self.w)
         if not vec_norm:
             return Quaternion(w_part, 0, 0, 0, normalize=False)
@@ -96,26 +97,29 @@ class Quaternion(object):
     def log(self):
         """Return the natural logarithm of the quaternion.
 
+        For a negative real quaternion, choose the positive x-axis as the
+        imaginary direction, giving ``log(-w) + pi*i``.
+
         Raises
         ------
         ValueError
-            If the quaternion is zero or a negative real number.
+            If the quaternion is zero.
         """
         norm = self.norm()
         if not norm:
             raise ValueError('The logarithm of a zero quaternion is undefined.')
 
-        vec_norm = (self.x**2 + self.y**2 + self.z**2)**0.5
+        vec_norm = math.hypot(self.x, self.y, self.z)
         if not vec_norm:
             if self.w < 0:
-                raise ValueError('A negative real quaternion has no unique '
-                                 'logarithm.')
-            return Quaternion(np.log(norm), 0, 0, 0, normalize=False)
+                return Quaternion(math.log(-self.w), math.pi, 0, 0,
+                                  normalize=False)
+            return Quaternion(math.log(norm), 0, 0, 0, normalize=False)
 
-        angle = np.arctan2(vec_norm, self.w)
-        scale = angle / vec_norm
-        return Quaternion(np.log(norm), self.x * scale, self.y * scale,
-                          self.z * scale, normalize=False)
+        angle = math.atan2(vec_norm, self.w)
+        return Quaternion(math.log(norm), (self.x / vec_norm) * angle,
+                          (self.y / vec_norm) * angle,
+                          (self.z / vec_norm) * angle, normalize=False)
 
     def __add__(self, q):
         """Add quaternions."""
@@ -227,4 +231,4 @@ class Quaternion(object):
         qy = Quaternion(np.cos(ry/2), 0, np.sin(ry/2), 0)
         qz = Quaternion(np.cos(rz/2), np.sin(rz/2), 0, 0)
         # Almost done
-        return qx*qy*qz   
+        return qx*qy*qz
