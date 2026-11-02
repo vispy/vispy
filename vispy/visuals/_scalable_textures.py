@@ -457,6 +457,11 @@ class CPUScaledTexture2D(CPUScaledTextureMixin, Texture2D):
     See :class:`vispy.visuals._scalable_textures.CPUScaledTextureMixin` for
     more information.
 
+    Single band data is stored with two channels, because the normalized
+    texture formats used for CPU-scaled data can't hold NaN. The first channel
+    is the scaled value, with NaN replaced by 0, and the alpha channel is 0
+    where the data is NaN and 1 elsewhere.
+
     """
 
     def _create_rep_array(self, data):

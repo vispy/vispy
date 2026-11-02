@@ -67,7 +67,9 @@ void main()
     }
 
     vec4 texel = $get_data(texcoord);
-    gl_FragColor = $validity(texcoord) < 0.5 ? $bad_color : $color_transform(texel);
+    // Takes texcoord, not the texel: CPU-scaled textures can't store NaN, so
+    // they mark it in the alpha channel instead. Returns 1.0 for NaN.
+    gl_FragColor = $is_nan(texcoord) > 0.5 ? $bad_color : $color_transform(texel);
 }
 """  # noqa
 
@@ -136,8 +138,8 @@ _NULL_COLOR_TRANSFORM = 'vec4 pass(vec4 color) { return color; }'
 
 _C2L_RED = 'float color_to_luminance(vec4 color) { return color.r; }'
 
-_VALIDITY_ALPHA = 'float validity(vec2 texcoord) { return texture2D($texture, texcoord).a; }'
-_VALIDITY_ALL = 'float validity(vec2 texcoord) { return 1.0; }'
+_IS_NAN_ALPHA = 'float is_nan_alpha(vec2 texcoord) { return float(texture2D($texture, texcoord).a < 0.5); }'
+_IS_NAN_NEVER = 'float is_nan_never(vec2 texcoord) { return 0.0; }'
 
 _CUSTOM_FILTER = """
 vec4 texture_lookup(vec2 texcoord) {
@@ -182,8 +184,8 @@ class ImageVisual(Visual):
         ``texture_format``).
         For RGB data, NaNs will be mapped to the lowest ``clim`` value.
         If the Alpha band is NaN it will be mapped to 0 (transparent).
-        NaN is rendered exactly only with ``interpolation='nearest'``;
-        other interpolation mixes it with neighboring values.
+        In all cases, interpolation other than ``'nearest'`` can change
+        the pixels next to a NaN.
         Note that NaN handling is not required by some OpenGL implementations
         and NaNs may be treated differently on some systems (ex. as 0s).
     method : str
@@ -322,7 +324,7 @@ class ImageVisual(Visual):
         self._init_view(self)
 
         Visual.__init__(self, vcode=self._shaders['vertex'], fcode=self._shaders['fragment'])
-        self.shared_program.frag['validity'] = Function(_VALIDITY_ALL)
+        self.shared_program.frag['is_nan'] = Function(_IS_NAN_NEVER)
         self.shared_program.frag['bad_color'] = (0., 0., 0., 0.)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
@@ -662,11 +664,11 @@ class ImageVisual(Visual):
             return 0, self.size[axis]
 
     def _build_color_transform(self):
-        validity = Function(_VALIDITY_ALL)
+        is_nan = Function(_IS_NAN_NEVER)
         if self._data.ndim == 2 or self._data.shape[2] == 1:
             if isinstance(self._texture, CPUScaledTexture2D):
-                validity = Function(_VALIDITY_ALPHA)
-                validity['texture'] = self._texture
+                is_nan = Function(_IS_NAN_ALPHA)
+                is_nan['texture'] = self._texture
             # luminance data
             fclim = Function(self._func_templates['clim_float'])
             fgamma = Function(self._func_templates['gamma_float'])
@@ -682,7 +684,7 @@ class ImageVisual(Visual):
             fun = FunctionChain(None, [Function(self._func_templates['null_color_transform']), fclim, fgamma])
         fclim['clim'] = self._texture.clim_normalized
         fgamma['gamma'] = self.gamma
-        self.shared_program.frag['validity'] = validity
+        self.shared_program.frag['is_nan'] = is_nan
         self.shared_program.frag['bad_color'] = self.cmap.bad_color.rgba
         return fun
 
