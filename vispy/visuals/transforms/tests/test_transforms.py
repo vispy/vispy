@@ -282,9 +282,6 @@ def test_inverse(trn):
     # assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
 
 
-run_tests_if_main()
-
-
 @pytest.mark.parametrize('dtype', [np.float32, np.float64])
 @pytest.mark.parametrize('ncoords', [2, 3, 4])
 @pytest.mark.parametrize('leading_shape', [(8,), (2, 4)])
@@ -299,3 +296,21 @@ def test_polar_transform_cpu_inverse(dtype, ncoords, leading_shape):
 
     assert_allclose(transform.imap(transform.map(coords)), coords,
                     rtol=2e-6, atol=2e-6)
+
+
+@pytest.mark.parametrize('leading_shape', [(4,), (2, 2)])
+def test_log_transform_cpu_inverse(dtype, ncoords, leading_shape):
+    coords = np.linspace(1, 2, 4 * ncoords, dtype=dtype).reshape(
+        leading_shape + (ncoords,))
+    original = coords.copy()
+    transform = LT(base=(2, -10, 0))
+    expected = coords.copy()
+    expected[..., 0] = np.log2(coords[..., 0])
+    expected[..., 1] = 10 ** coords[..., 1]
+
+    assert_allclose(transform.map(coords), expected, rtol=2e-6)
+    assert_allclose(transform.imap(expected), coords, rtol=2e-6)
+    assert_allclose(coords, original, rtol=0, atol=0)
+
+
+run_tests_if_main()
