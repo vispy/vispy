@@ -395,6 +395,7 @@ class ImageVisual(Visual):
         self._data = data
         self._need_texture_upload = True
 
+        self._bounds_changed()
         self.update()
 
     def view(self):

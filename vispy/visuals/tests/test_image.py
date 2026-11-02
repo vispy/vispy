@@ -389,4 +389,16 @@ def test_image_set_data_different_dtype():
         assert np.allclose(render[right], white)
 
 
+def test_image_bounds_invalidation():
+    # This is the scenario of issue #1899: set_range() does not respect
+    # image resizing after set_data is called with differently-shaped data.
+    from vispy.visuals import ImageVisual
+    image = ImageVisual(np.zeros((10, 10), dtype=np.float32))
+    assert image.bounds(0) == (0, 10)
+    assert image.bounds(1) == (0, 10)
+    image.set_data(np.zeros((100, 50), dtype=np.float32))
+    assert image.bounds(0) == (0, 50)
+    assert image.bounds(1) == (0, 100)
+
+
 run_tests_if_main()

@@ -189,6 +189,7 @@ class LineVisual(CompoundVisual):
             self._bounds = None
             self._pos = pos
             self._changed['pos'] = True
+            self._bounds_changed()
 
         if color is not None:
             self._color = color

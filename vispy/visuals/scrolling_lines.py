@@ -160,7 +160,8 @@ class ScrollingLinesVisual(Visual):
     def _compute_bounds(self, axis, view):
         if self._pos_data is None:
             return None
-        return self._pos_data[..., axis].min(), self.pos_data[..., axis].max()
+        return (self._pos_data[..., axis].min(),
+                self._pos_data[..., axis].max())
 
     def roll_data(self, data):
         """Append new data to the right side of every line strip and remove
@@ -181,6 +182,7 @@ class ScrollingLinesVisual(Visual):
             self._pos_tex[:, self._offset:self._offset+data.shape[1]] = data
             self._offset += data.shape[1]
         self.shared_program['offset'] = self._offset
+        self._bounds_changed()
         self.update()
 
     def set_data(self, index, data):
@@ -194,4 +196,5 @@ class ScrollingLinesVisual(Visual):
             The data to assign to the selected line strip.
         """
         self._pos_tex[index, :] = data
+        self._bounds_changed()
         self.update()

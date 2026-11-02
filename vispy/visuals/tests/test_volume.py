@@ -601,4 +601,13 @@ def test_volume_rgb_render_methods(method_name):
         assert rendered.sum() != 255 * rendered.size
 
 
+@requires_pyopengl()
+def test_volume_bounds_invalidation():
+    from vispy.visuals import VolumeVisual
+    vol = VolumeVisual(np.zeros((5, 5, 5), dtype=np.float32))
+    assert vol.bounds(0) == (0, 5)
+    vol.set_data(np.zeros((50, 50, 50), dtype=np.float32))
+    assert vol.bounds(0) == (0, 50)
+
+
 run_tests_if_main()
