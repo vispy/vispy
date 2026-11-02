@@ -439,8 +439,10 @@ def test_mip_cutoff():
         rendered = c.render()
         assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
 
-        # repeat for attenuated_mip
+        # repeat for attenuated_mip, with no attenuation so the volume
+        # still renders as full white
         vol.method = 'attenuated_mip'
+        vol.attenuation = 0
         vol.mip_cutoff = None
 
         # we should see white
