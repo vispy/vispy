@@ -299,7 +299,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         return clim_min, clim_max
 
     @staticmethod
-    def _scale_data_on_cpu(data, clim, copy=True):
+    def _scale_data_on_cpu(data, clim, copy=True, offset=None):
         data = np.array(data, dtype=np.float32, copy=copy or np_copy_if_needed)
         if clim[0] != clim[1]:
             # we always must copy the data if we change it here, otherwise it might change
@@ -324,7 +324,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
         if data.ndim == self._ndim or data.shape[self._ndim] == 1:
             if is_auto:
                 clim = get_default_clim_from_data(data)
-            data = self._scale_data_on_cpu(data, clim, copy=False)
+            data = self._scale_data_on_cpu(data, clim, copy=False, offset=offset)
             data_limits = clim
         else:
             data_limits = get_default_clim_from_dtype(data.dtype)
@@ -457,25 +457,27 @@ class CPUScaledTexture2D(CPUScaledTextureMixin, Texture2D):
     See :class:`vispy.visuals._scalable_textures.CPUScaledTextureMixin` for
     more information.
 
-    Single band data is stored as luminance and alpha, because the normalized
-    formats used for CPU-scaled data can't hold NaN. Luminance is the scaled
-    value (0 at NaN); alpha is 0 at NaN and 1 elsewhere.
+    Single band data containing NaN is stored as luminance and alpha, because
+    the normalized formats used for CPU-scaled data can't hold NaN. Luminance
+    is the scaled value (0 at NaN); alpha is 0 at NaN and 1 elsewhere. Partial
+    uploads keep the current layout, so NaN in a one-channel texture is not
+    marked.
 
     """
 
-    def _create_rep_array(self, data):
-        data = super()._create_rep_array(data)
-        # Single band data gets an alpha channel that marks NaN.
-        if data.shape[-1] == 1:
-            data = np.zeros(data.shape[:2] + (2,), dtype=data.dtype)
-        return data
-
-    def _scale_data_on_cpu(self, data, clim, copy=True):
+    def _scale_data_on_cpu(self, data, clim, copy=True, offset=None):
+        nan = np.isnan(data) if np.issubdtype(data.dtype, np.floating) else None
+        needs_mask = self.shape[-1] == 2 if offset is not None else nan is not None and nan.any()
         data = super()._scale_data_on_cpu(data, clim, copy=copy)
-        nan = np.isnan(data)
+        if not needs_mask:
+            return data
         texels = np.empty(data.shape[:2] + (2,), dtype=np.float32)
-        texels[..., 0] = np.where(nan, 0, data).reshape(data.shape[:2])
-        texels[..., 1] = (~nan).reshape(data.shape[:2])
+        if nan is None:
+            texels[..., 0] = data.reshape(data.shape[:2])
+            texels[..., 1] = 1
+        else:
+            texels[..., 0] = np.where(nan, 0, data).reshape(data.shape[:2])
+            texels[..., 1] = (~nan).reshape(data.shape[:2])
         return texels
 
 

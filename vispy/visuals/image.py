@@ -641,16 +641,17 @@ class ImageVisual(Visual):
         except RuntimeError:
             pre_clims = "auto"
         pre_internalformat = self._texture.internalformat
+        pre_format = self._texture.format
         # copy was already made on `set_data` if requested
         self._texture.scale_and_set_data(self._data, copy=False)
         post_clims = self._texture.clim_normalized
         post_internalformat = self._texture.internalformat
-        # color transform needs rebuilding if the internalformat was changed
+        # color transform needs rebuilding if the texture format was changed
         # new color limits need to be assigned if the normalized clims changed
         # otherwise, the original color transform should be fine
         new_if = post_internalformat != pre_internalformat
         new_cl = post_clims != pre_clims
-        if new_if:
+        if new_if or self._texture.format != pre_format:
             self._need_colortransform_update = True
         elif new_cl and not self._need_colortransform_update:
             # shortcut so we don't have to rebuild the whole color transform
@@ -666,7 +667,7 @@ class ImageVisual(Visual):
     def _build_color_transform(self):
         is_nan = Function(_IS_NAN_NEVER)
         if self._data.ndim == 2 or self._data.shape[2] == 1:
-            if isinstance(self._texture, CPUScaledTexture2D):
+            if isinstance(self._texture, CPUScaledTexture2D) and self._texture.shape[-1] == 2:
                 is_nan = Function(_IS_NAN_ALPHA)
                 is_nan['texture'] = self._texture
             # luminance data

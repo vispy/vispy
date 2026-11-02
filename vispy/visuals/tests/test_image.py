@@ -16,13 +16,18 @@ from vispy.testing.rendered_array_tester import compare_render, max_for_dtype
 
 
 def test_image_nan_shader_include():
-    image = Image(np.ones((2, 2), dtype=np.float32), cmap='grays', gamma=2,
-                  clim=(0, 1))
-    image._prepare_draw(image)
-    code = Compiler(frag=image.view_program.frag).compile()['frag']
-    code = preprocess(code)
-    assert code.count('bool is_nan(') == 1
-    assert '<= 0.0 ||' not in code
+    data = np.ones((2, 2), dtype=np.float32)
+    image = Image(data, cmap='grays', gamma=2, clim=(0, 1))
+    for has_nan in (False, True, False):
+        data[0, 0] = np.nan if has_nan else 1
+        image.set_data(data)
+        image._prepare_draw(image)
+        code = Compiler(frag=image.view_program.frag).compile()['frag']
+        code = preprocess(code)
+        assert code.count('bool is_nan(') == 1
+        assert '<= 0.0 ||' not in code
+        assert ('is_nan_alpha' in code) == has_nan
+        assert ('is_nan_never' in code) != has_nan
 
 
 @requires_application()
@@ -180,6 +185,52 @@ def test_image_nan_to_rgba():
         expected = np.empty_like(rendered)
         expected[:] = (0, 191, 64, 255)
         np.testing.assert_allclose(rendered, expected, atol=1)
+
+        image.set_data(data)
+        np.testing.assert_array_equal(c.render()[10, 10], (255, 0, 0, 255))
+        assert image._texture.shape[-1] == 2
+
+
+@requires_application()
+@pytest.mark.parametrize('shape, all_nan, interpolation', [
+    ((40, 40), False, 'nearest'),
+    ((40, 40), True, 'nearest'),
+    ((40, 40), False, 'custom'),
+])
+def test_image_nan_layout_changes(shape, all_nan, interpolation):
+    data = np.ones(shape, dtype=np.float32)
+    nan = np.zeros(shape[:2], dtype=bool)
+    if all_nan:
+        nan[:] = True
+    else:
+        nan[:20, :20] = True
+
+    with TestingCanvas(size=shape[:2][::-1], bgcolor='green') as c:
+        image = Image(data, cmap=Colormap(['k', 'w'], bad_color='red'), clim=(0, 1),
+                      interpolation=interpolation, custom_kernel=np.array([[0]]),
+                      texture_format=None, parent=c.scene)
+        assert image._texture.shape[-1] == 1
+        for has_nan in (False, True, False):
+            new_data = data.copy()
+            if has_nan:
+                new_data[nan] = np.nan
+            image.set_data(new_data)
+            expected = np.full(shape[:2] + (4,), 255, dtype=np.uint8)
+            if interpolation == 'custom':
+                expected[..., :3] = 0
+            if has_nan:
+                expected[nan] = (255, 0, 0, 255)
+            np.testing.assert_array_equal(c.render(), expected)
+            assert image._texture.shape[-1] == (2 if has_nan else 1)
+
+            if has_nan:
+                image.clim = (0, 2)
+                assert image._need_texture_upload
+                if interpolation != 'custom':
+                    expected[~nan, :3] = 128
+                np.testing.assert_allclose(c.render(), expected, atol=1)
+                assert image._texture.shape[-1] == 2
+                image.clim = (0, 1)
 
 
 @requires_application()
