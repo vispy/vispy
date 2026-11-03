@@ -66,6 +66,23 @@ def test_queue():
     assert shader3.startswith('precision')
 
 
+@mock.patch('vispy.gloo.glir.gl')
+def test_program_ignores_active_builtins(gl):
+    gl.glGetProgramParameter.side_effect = [True, 3, 2]
+    gl.glGetActiveUniform.side_effect = [
+        ('gl_DepthRange.far', 1, gl.GL_FLOAT),
+        ('gl_DepthRange.near', 1, gl.GL_FLOAT),
+        ('u_color', 1, gl.GL_FLOAT_VEC4),
+    ]
+    gl.glGetActiveAttrib.side_effect = [
+        ('gl_Vertex', 1, gl.GL_FLOAT_VEC4),
+        ('a_position', 1, gl.GL_FLOAT_VEC2),
+    ]
+    program = glir.GlirProgram(mock.MagicMock(), 1)
+    program.link_program()
+    assert program._unset_variables == {'u_color', 'a_position'}
+
+
 @requires_application()
 def test_log_parser():
     """Test GLIR log parsing"""
