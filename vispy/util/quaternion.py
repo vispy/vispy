@@ -90,9 +90,12 @@ class Quaternion(object):
             return Quaternion(w_part, 0, 0, 0, normalize=False)
 
         scale = w_part * np.sin(vec_norm) / vec_norm
-        return Quaternion(w_part * np.cos(vec_norm),
-                          self.x * scale, self.y * scale, self.z * scale,
-                          normalize=False)
+        if math.isinf(scale):
+            # exp(w) overflowed: keep zero components at zero, not 0 * inf = nan
+            x, y, z = (c * scale if c else c for c in (self.x, self.y, self.z))
+        else:
+            x, y, z = self.x * scale, self.y * scale, self.z * scale
+        return Quaternion(w_part * np.cos(vec_norm), x, y, z, normalize=False)
 
     def log(self):
         """Return the natural logarithm of the quaternion.
@@ -195,7 +198,7 @@ class Quaternion(object):
         """
         # Init
         angle = 2 * np.arccos(max(min(self.w, 1.), -1.))
-        scale = (self.x**2 + self.y**2 + self.z**2)**0.5    
+        scale = math.hypot(self.x, self.y, self.z)
 
         # Calc axis
         if scale:

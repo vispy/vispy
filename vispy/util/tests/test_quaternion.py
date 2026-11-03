@@ -24,7 +24,7 @@ def test_quaternion_exp():
 
 
 def test_quaternion_exp_overflow():
-    """Preserve NumPy's configurable overflow behavior for real inputs."""
+    """Preserve NumPy's overflow behavior and keep zero components at zero."""
     q = Quaternion(1000, 0, 0, 0, normalize=False)
     with np.errstate(over='raise'):
         assert_raises(FloatingPointError, q.exp)
@@ -32,6 +32,13 @@ def test_quaternion_exp_overflow():
         result = q.exp()
     assert np.isinf(result.w)
     assert_allclose((result.x, result.y, result.z), (0, 0, 0))
+
+    q = Quaternion(1000, 0, 1, 0, normalize=False)
+    with np.errstate(over='raise'):
+        assert_raises(FloatingPointError, q.exp)
+    with np.errstate(over='ignore'):
+        result = q.exp()
+    assert_allclose(_components(result), (np.inf, 0, np.inf, 0))
 
 
 def test_quaternion_log():
@@ -63,6 +70,13 @@ def test_quaternion_norm_extreme_magnitudes():
     for value in (1e-200, 1e200):
         q = Quaternion(value, value, value, value, normalize=False)
         assert_allclose(q.norm(), 2 * value, atol=0)
+
+
+def test_quaternion_axis_angle_extreme_vector_magnitudes():
+    """Test the rotation axis of tiny and large vectors."""
+    for value in (1e-200, 1e200):
+        q = Quaternion(0, 0, value, 0, normalize=False)
+        assert_allclose(q.get_axis_angle()[1:], (0, 1, 0))
 
 
 def test_quaternion_log_extreme_vector_magnitudes():
