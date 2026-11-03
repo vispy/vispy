@@ -414,7 +414,8 @@ _MIP_SNIPPETS = dict(
                 }
                 loc += small_step;
             }
-            frag_depth_point = max_loc_tex * u_shape;
+            // texture to data coordinates (inverse of start_loc, vispy#2239)
+            frag_depth_point = max_loc_tex * u_shape - 0.5;
             gl_FragColor = applyColormap(maxcolor);
         } else {
             discard;
@@ -449,7 +450,8 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         """,
     after_loop="""
         if ( maxi > -1 ) {
-            frag_depth_point = max_loc_tex * u_shape;
+            // texture to data coordinates (inverse of start_loc, vispy#2239)
+            frag_depth_point = max_loc_tex * u_shape - 0.5;
             gl_FragColor = applyColormap(maxcolor);
         }
         else {
@@ -497,7 +499,8 @@ _MINIP_SNIPPETS = dict(
                 }
                 loc += small_step;
             }
-            frag_depth_point = min_loc_tex * u_shape;
+            // texture to data coordinates (inverse of start_loc, vispy#2239)
+            frag_depth_point = min_loc_tex * u_shape - 0.5;
             gl_FragColor = applyColormap(mincolor);
         } else {
             discard;
@@ -565,8 +568,9 @@ _ISO_SNIPPETS = dict(
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color);
 
-                    // set the variables for the depth buffer
-                    frag_depth_point = iloc * u_shape;
+                    // set the variables for the depth buffer, converting
+                    // texture to data coordinates (inverse of start_loc, vispy#2239)
+                    frag_depth_point = iloc * u_shape - 0.5;
                     discard_fragment = false;
 
                     iter = nsteps;
