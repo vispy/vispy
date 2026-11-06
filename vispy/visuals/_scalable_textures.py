@@ -249,6 +249,8 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
     def _clim_outside_data_limits(self, cmin, cmax):
         if self._data_limits is None:
             return False
+        if self._data_limits[0] == self._data_limits[1]:
+            return True
         return cmin < self._data_limits[0] or cmax > self._data_limits[1]
 
     def set_clim(self, clim):
