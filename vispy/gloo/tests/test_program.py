@@ -93,6 +93,39 @@ class ProgramTest(unittest.TestCase):
             else:
                 raise Exception("Compile program should have failed.")
 
+    def test_scalar_uniform_array(self):
+        """Accept one-dimensional scalar uniform arrays, preserving GL types."""
+        for glsl_type, dtype, values in (
+                ('float', np.float32, [0.25, 0.5, 0.75]),
+                ('int', np.int32, [1, 0, 2]),
+                ('bool', np.int32, [True, False, True])):
+            for data in (values, tuple(values), np.array(values),
+                         np.array(values).reshape(3, 1)):
+                with self.subTest(glsl_type=glsl_type, data=repr(data)):
+                    program = Program('uniform %s values[3];' % glsl_type, 'foo')
+                    program['values'] = data
+                    np.testing.assert_array_equal(program['values'], values)
+                    self.assertEqual(program['values'].dtype, dtype)
+            program = Program('uniform %s values[3];' % glsl_type, 'foo')
+            for data in (values[:2], values + values[:1], [values],
+                         np.ones((3, 1, 1))):
+                self.assertRaises(ValueError, program.__setitem__, 'values', data)
+        program = Program('uniform float values[1];', 'foo')
+        for data in (0.5, [0.5], [[0.5]]):
+            program['values'] = data
+            np.testing.assert_array_equal(program['values'], [0.5])
+
+    def test_vector_uniform_array_shape(self):
+        """Keep row-per-vector shapes for vector and matrix uniform arrays."""
+        for glsl_type, numel in (('vec2', 2), ('mat2', 4)):
+            program = Program('uniform %s values[3];' % glsl_type, 'foo')
+            values = np.arange(3 * numel).reshape(3, numel)
+            program['values'] = values
+            np.testing.assert_array_equal(program['values'], values.ravel())
+            for data in (values.ravel(), np.ones((numel, 3)),
+                         np.ones((3, 2, 2))):
+                self.assertRaises(ValueError, program.__setitem__, 'values', data)
+
     def test_uniform(self):
 
         # Text array unoforms
@@ -298,5 +331,35 @@ class ProgramTest(unittest.TestCase):
 
         finally:
             forget_canvas(dummy_canvas)
+
+
+@requires_application()
+def test_scalar_uniform_array_render():
+    """Upload one-dimensional scalar arrays to a real GL program."""
+    vertex = """
+    attribute vec2 position;
+    void main() { gl_Position = vec4(position, 0.0, 1.0); }
+    """
+    fragment = """
+    uniform %s values[3];
+    void main() {
+        gl_FragColor = vec4(float(values[0]), float(values[1]),
+                            float(values[2]), 1.0);
+    }
+    """
+    with app.Canvas(size=(8, 8)) as canvas:
+        canvas.set_current()
+        gloo.set_viewport(0, 0, 8, 8)
+        for glsl_type, values in (('float', [0.25, 0.5, 0.75]),
+                                  ('int', [1, 0, 1]),
+                                  ('bool', [True, False, True])):
+            program = Program(vertex, fragment % glsl_type)
+            program['position'] = [[-1., -1.], [1., -1.],
+                                   [-1., 1.], [1., 1.]]
+            program['values'] = values
+            program.draw('triangle_strip')
+            pixel = gloo.read_pixels((0, 0, 1, 1), alpha=False)[0, 0]
+            np.testing.assert_allclose(pixel / 255., values, atol=1. / 255.)
+
 
 run_tests_if_main()
