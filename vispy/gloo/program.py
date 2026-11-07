@@ -381,7 +381,11 @@ class Program(GLObject):
             elif kind == 'uniform_array':
                 # Normal uniform; convert to np array and check size
                 dtype, numel = self._gtypes[type_]
-                data = np.atleast_2d(data).astype(dtype)
+                data = np.array(data, dtype=dtype)
+                if numel == 1 and data.ndim == 1:
+                    data = data[:, np.newaxis]
+                else:
+                    data = np.atleast_2d(data)
                 need_shape = (size, numel)
                 if data.shape != need_shape:
                     raise ValueError('Uniform array %r needs shape %s not %s'
