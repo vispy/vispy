@@ -421,6 +421,7 @@ JUST_DELETED = 'JUST_DELETED'
 # group can supersede one another, so the most recently applied command is
 # tracked per group while filtering one GLIR batch. Commands that perform work
 # (notably glClear, glFlush, and glFinish) are deliberately absent.
+# Covers Gloo's OpenGL ES 2.0 API; unlisted functions pass through unchanged.
 _GL_STATE_FUNC_GROUPS = {
     'glBlendFunc': 'blend_func',
     'glBlendFuncSeparate': 'blend_func',
