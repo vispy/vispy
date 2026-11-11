@@ -469,6 +469,40 @@ def as_enum(enum):
     return enum
 
 
+def _gl_state_key(command):
+    """Identify the context state changed by a FUNC command, if tracked."""
+    function = command[1]
+    if function in ('glEnable', 'glDisable') and len(command) == 3:
+        # Both functions change the enabled state of their enum argument.
+        return ('enabled', command[2])
+    if function in _GL_STATE_FUNC_GROUPS:
+        return ('function', _GL_STATE_FUNC_GROUPS[function])
+    if function in _GL_STATE_FUNCS:
+        return ('function', function)
+    return None
+
+
+def _filter_redundant_state(commands):
+    """Remove repeated GL state setters within one command batch.
+
+    FUNC arguments are expected to follow their OpenGL signatures.
+    """
+    state = {}
+    filtered = []
+    for command in commands:
+        if command[0] == 'CURRENT':
+            # A context switch makes all previously observed state stale.
+            state.clear()
+        elif command[0] == 'FUNC' and len(command) >= 2:
+            key = _gl_state_key(command)
+            if key is not None:
+                if state.get(key) == command:
+                    continue
+                state[key] = command
+        filtered.append(command)
+    return filtered
+
+
 class _GlirQueueShare(object):
     """This class contains the actual queues of GLIR commands that are
     collected until a context becomes available to execute the commands.
@@ -555,40 +589,7 @@ class _GlirQueueShare(object):
             elif command[0] == 'SIZE':
                 resized.add(command[1])
             commands2.append(command)
-        return self._filter_redundant_state(reversed(commands2))
-
-    @staticmethod
-    def _filter_redundant_state(commands):
-        """Remove repeated GL state setters within one command batch.
-
-        FUNC arguments are expected to follow their OpenGL signatures.
-        """
-        state = {}
-        filtered = []
-        for command in commands:
-            if command[0] == 'CURRENT':
-                # A context switch makes all previously observed state stale.
-                state.clear()
-            elif command[0] == 'FUNC' and len(command) >= 2:
-                function = command[1]
-                if (function in ('glEnable', 'glDisable') and
-                        len(command) == 3):
-                    # Both functions set the enabled state of the enum passed
-                    # as their only argument.
-                    key = ('enabled', command[2])
-                elif function in _GL_STATE_FUNC_GROUPS:
-                    key = ('function', _GL_STATE_FUNC_GROUPS[function])
-                elif function in _GL_STATE_FUNCS:
-                    key = ('function', function)
-                else:
-                    key = None
-
-                if key is not None:
-                    if state.get(key) == command:
-                        continue
-                    state[key] = command
-            filtered.append(command)
-        return filtered
+        return _filter_redundant_state(reversed(commands2))
 
 
 class GlirQueue(object):
