@@ -6,6 +6,7 @@
 import unittest
 
 import numpy as np
+import pytest
 
 from vispy import gloo, app
 from vispy.gloo.program import Program
@@ -92,39 +93,6 @@ class ProgramTest(unittest.TestCase):
                 assert 'error on this line' in str(err)
             else:
                 raise Exception("Compile program should have failed.")
-
-    def test_scalar_uniform_array(self):
-        """Accept one-dimensional scalar uniform arrays, preserving GL types."""
-        for glsl_type, dtype, values in (
-                ('float', np.float32, [0.25, 0.5, 0.75]),
-                ('int', np.int32, [1, 0, 2]),
-                ('bool', np.int32, [True, False, True])):
-            for data in (values, tuple(values), np.array(values),
-                         np.array(values).reshape(3, 1)):
-                with self.subTest(glsl_type=glsl_type, data=repr(data)):
-                    program = Program('uniform %s values[3];' % glsl_type, 'foo')
-                    program['values'] = data
-                    np.testing.assert_array_equal(program['values'], values)
-                    self.assertEqual(program['values'].dtype, dtype)
-            program = Program('uniform %s values[3];' % glsl_type, 'foo')
-            for data in (values[:2], values + values[:1], [values],
-                         np.ones((3, 1, 1))):
-                self.assertRaises(ValueError, program.__setitem__, 'values', data)
-        program = Program('uniform float values[1];', 'foo')
-        for data in (0.5, [0.5], [[0.5]]):
-            program['values'] = data
-            np.testing.assert_array_equal(program['values'], [0.5])
-
-    def test_vector_uniform_array_shape(self):
-        """Keep row-per-vector shapes for vector and matrix uniform arrays."""
-        for glsl_type, numel in (('vec2', 2), ('mat2', 4)):
-            program = Program('uniform %s values[3];' % glsl_type, 'foo')
-            values = np.arange(3 * numel).reshape(3, numel)
-            program['values'] = values
-            np.testing.assert_array_equal(program['values'], values.ravel())
-            for data in (values.ravel(), np.ones((numel, 3)),
-                         np.ones((3, 2, 2))):
-                self.assertRaises(ValueError, program.__setitem__, 'values', data)
 
     def test_uniform(self):
 
@@ -333,9 +301,79 @@ class ProgramTest(unittest.TestCase):
             forget_canvas(dummy_canvas)
 
 
+@pytest.mark.parametrize("glsl_type", ["float", "int", "bool"])
+@pytest.mark.parametrize("size, shape", [
+    (1, ()), (1, (1,)), (1, (1, 1)),
+    (2, (2,)), (2, (2, 1)),
+    (3, (3,)), (3, (3, 1)),
+    (5, (5,)), (5, (5, 1)),
+])
+def test_scalar_uniform_array_shape(glsl_type, size, shape):
+    """Accept flat scalar arrays and one row per scalar, including singletons."""
+    values = np.arange(size) % 2
+    data = values.reshape(shape)
+    program = Program('uniform %s values[%d];' % (glsl_type, size), 'foo')
+    program['values'] = data
+    np.testing.assert_array_equal(program['values'], values)
+
+
+@pytest.mark.parametrize("data", [[0., 1., 0.], (0., 1., 0.)])
+def test_scalar_uniform_array_sequence(data):
+    """Accept Python sequences as well as NumPy arrays."""
+    program = Program('uniform float values[3];', 'foo')
+    program['values'] = data
+    np.testing.assert_array_equal(program['values'], data)
+
+
+@pytest.mark.parametrize("size, shape", [
+    (1, (0,)), (1, (2,)), (1, (1, 1, 1)),
+    (3, ()), (3, (0,)), (3, (2,)), (3, (4,)),
+    (3, (1, 3)), (3, (3, 1, 1)), (3, (1, 3, 1)),
+])
+def test_scalar_uniform_array_invalid_shape(size, shape):
+    """Reject wrong lengths and row/higher-dimensional scalar arrays."""
+    program = Program('uniform float values[%d];' % size, 'foo')
+    with pytest.raises(ValueError, match='needs shape'):
+        program['values'] = np.ones(shape)
+
+
+@pytest.mark.parametrize("glsl_type, numel", [
+    ('vec2', 2), ('vec3', 3), ('vec4', 4),
+    ('mat2', 4), ('mat3', 9), ('mat4', 16),
+])
+@pytest.mark.parametrize("size", [1, 2, 3, 5])
+def test_vector_uniform_array_shape(glsl_type, numel, size):
+    """Keep one row per vector or flattened matrix, at varied array lengths."""
+    values = np.arange(size * numel).reshape(size, numel)
+    program = Program('uniform %s values[%d];' % (glsl_type, size), 'foo')
+    program['values'] = values
+    np.testing.assert_array_equal(program['values'], values.ravel())
+
+
+@pytest.mark.parametrize("glsl_type, shape", [
+    ('vec2', (6,)), ('vec2', (2, 3)), ('vec2', (3, 1, 2)),
+    ('vec3', (9,)), ('vec3', (1, 9)), ('vec3', (3, 1, 3)),
+    ('vec4', (12,)), ('vec4', (4, 3)),
+    ('mat2', (12,)), ('mat2', (4, 3)), ('mat2', (3, 2, 2)),
+    ('mat3', (27,)), ('mat3', (9, 3)), ('mat3', (3, 3, 3)),
+    ('mat4', (48,)), ('mat4', (16, 3)), ('mat4', (3, 4, 4)),
+])
+def test_vector_uniform_array_invalid_shape(glsl_type, shape):
+    """Reject transposed, flat and unflattened matrix array layouts."""
+    program = Program('uniform %s values[3];' % glsl_type, 'foo')
+    with pytest.raises(ValueError, match='needs shape'):
+        program['values'] = np.ones(shape)
+
+
+@pytest.mark.parametrize("shape", [(3,), (3, 1)])
+@pytest.mark.parametrize("glsl_type, values", [
+    ('float', [0.25, 0.5, 0.75]),
+    ('int', [1, 0, 1]),
+    ('bool', [True, False, True]),
+])
 @requires_application()
-def test_scalar_uniform_array_render():
-    """Upload one-dimensional scalar arrays to a real GL program."""
+def test_scalar_uniform_array_render(glsl_type, values, shape):
+    """Upload flat and column scalar arrays to a real GL program."""
     vertex = """
     attribute vec2 position;
     void main() { gl_Position = vec4(position, 0.0, 1.0); }
@@ -350,16 +388,13 @@ def test_scalar_uniform_array_render():
     with app.Canvas(size=(8, 8)) as canvas:
         canvas.set_current()
         gloo.set_viewport(0, 0, 8, 8)
-        for glsl_type, values in (('float', [0.25, 0.5, 0.75]),
-                                  ('int', [1, 0, 1]),
-                                  ('bool', [True, False, True])):
-            program = Program(vertex, fragment % glsl_type)
-            program['position'] = [[-1., -1.], [1., -1.],
-                                   [-1., 1.], [1., 1.]]
-            program['values'] = values
-            program.draw('triangle_strip')
-            pixel = gloo.read_pixels((0, 0, 1, 1), alpha=False)[0, 0]
-            np.testing.assert_allclose(pixel / 255., values, atol=1. / 255.)
+        program = Program(vertex, fragment % glsl_type)
+        program['position'] = [[-1., -1.], [1., -1.],
+                               [-1., 1.], [1., 1.]]
+        program['values'] = np.array(values).reshape(shape)
+        program.draw('triangle_strip')
+        pixel = gloo.read_pixels((0, 0, 1, 1), alpha=False)[0, 0]
+        np.testing.assert_allclose(pixel / 255., values, atol=1. / 255.)
 
 
 run_tests_if_main()

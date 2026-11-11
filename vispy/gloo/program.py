@@ -379,7 +379,9 @@ class Program(GLObject):
                     self._glir.command('UNIFORM', self._id, name, type_, data)
 
             elif kind == 'uniform_array':
-                # Normal uniform; convert to np array and check size
+                # numel is the number of scalar components in each array entry:
+                # 1 for scalar types, N for vecN, and N*N for matN.
+                # Each of the `size` entries occupies one row of the input.
                 dtype, numel = self._gtypes[type_]
                 data = np.array(data, dtype=dtype)
                 if numel == 1 and data.ndim == 1:
