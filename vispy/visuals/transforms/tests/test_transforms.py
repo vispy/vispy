@@ -153,6 +153,48 @@ def test_transform_chain():
     assert t2.shader_imap() in funcsi
 
 
+@pytest.mark.parametrize('index, expected', [
+    (0, (21, 33, 0, 1)),
+    (1, (12, 15, 0, 1)),
+    (-1, (12, 15, 0, 1)),
+])
+def test_transform_chain_setitem(index, expected):
+    transforms = [ST(scale=(2, 3)), ST(translate=(3, 4))]
+    chain = CT(transforms)
+    replacement = ST(scale=(5, 7), translate=(1, -2))
+
+    chain[index] = replacement
+
+    assert chain.transforms[index] is replacement
+    assert_allclose(chain.map((1, 1)), expected)
+    assert_allclose(chain.imap(expected), (1, 1, 0, 1))
+    assert chain.shader_map().functions == [t.shader_map() for t in reversed(chain.transforms)]
+    assert chain.shader_imap().functions == [t.shader_imap() for t in chain.transforms]
+
+
+def test_transform_chain_setitem_events():
+    removed = ST(scale=(2, 3))
+    remaining = ST(translate=(3, 4))
+    replacement = ST(scale=(5, 7))
+    chain = CT(removed, remaining)
+    events = []
+    chain.changed.connect(events.append)
+
+    chain[0] = replacement
+    assert len(events) == 1
+
+    removed.translate = (10, 20)
+    assert len(events) == 1
+
+    replacement.translate = (1, -2)
+    assert len(events) == 2
+    assert_allclose(chain.map((1, 1)), (21, 33, 0, 1))
+
+    remaining.translate = (2, 3)
+    assert len(events) == 3
+    assert_allclose(chain.map((1, 1)), (16, 26, 0, 1))
+
+
 def test_map_rect():
     r = Rect((2, 7), (13, 19))
     r1 = ST(scale=(2, 2), translate=(-10, 10)).map(r)
@@ -238,6 +280,38 @@ def test_inverse(trn):
     # abs_pos = np.abs(pos)
     # tr = LT(base=(2, 4.5, 0))
     # assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize('ncoords', [2, 3, 4])
+@pytest.mark.parametrize('leading_shape', [(8,), (2, 4)])
+def test_polar_transform_cpu_inverse(dtype, ncoords, leading_shape):
+    coords = np.ones((8, ncoords), dtype=dtype)
+    coords[:, 0] = np.linspace(-0.875 * np.pi, 0.875 * np.pi, 8)
+    coords[:, 1] = np.arange(1, 9)
+    if ncoords > 2:
+        coords[:, 2] = np.arange(8) - 3
+    coords = coords.reshape(leading_shape + (ncoords,))
+    transform = PT()
+
+    assert_allclose(transform.imap(transform.map(coords)), coords,
+                    rtol=2e-6, atol=2e-6)
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+@pytest.mark.parametrize('ncoords', [2, 3, 4])
+@pytest.mark.parametrize('leading_shape', [(4,), (2, 2)])
+def test_log_transform_cpu_inverse(dtype, ncoords, leading_shape):
+    coords = np.linspace(1, 2, 4 * ncoords, dtype=dtype).reshape(
+        leading_shape + (ncoords,))
+    original = coords.copy()
+    transform = LT(base=(2, -10, 0))
+    expected = coords.copy()
+    expected[..., 0] = np.log2(coords[..., 0])
+    expected[..., 1] = 10 ** coords[..., 1]
+
+    assert_allclose(transform.map(coords), expected, rtol=2e-6)
+    assert_allclose(transform.imap(expected), coords, rtol=2e-6)
+    assert_allclose(coords, original, rtol=0, atol=0)
 
 
 run_tests_if_main()

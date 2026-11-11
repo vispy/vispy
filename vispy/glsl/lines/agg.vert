@@ -90,9 +90,26 @@ void main()
 
     // Attributes to varyings
     v_angles  = a_angles;
-    //v_segment = a_segment * u_scale.x * tr_scale.x;  // TODO: proper scaling
-    //v_length  = v_length * u_scale * tr_scale;  // TODO: proper scaling
-    v_segment = a_segment;
+
+    // Transform the vectors into document (pixel) space, preserving lengths.
+    vec2 T1 = transform_vector(a_tangents.xy, a_position);  // tangent to previous
+    vec2 T2 = transform_vector(a_tangents.zw, a_position);  // tangent to next
+
+    // Each vertex is drawn with the tangents to the previous (xy) and
+    // subsequent (zw) points. We can only compute scale from the segment
+    // that the vertex belongs to (needed for independent X/Y scaling), so
+    // we pick the correct segment here based upon a_texcoord.x.
+    vec2 Td = (a_texcoord.x < 0.0) ? a_tangents.zw : a_tangents.xy;  // data space
+    vec2 Tp = (a_texcoord.x < 0.0) ? T2 : T1;                        // pixel space
+
+    // Ratio from pixel to data space, defaulting to 1.0 for 0-length (repeated) points
+    float data_len = length(Td);
+    float scale = (data_len > 0.0) ? length(Tp) / data_len : 1.0;
+
+    // a_segment and alength are in data units, but the join/cap extensions expect
+    // them to be in pixel units - scale them so they match.
+    v_segment = a_segment * scale;
+    v_length  = v_length * scale;
 
     // Thickness below 1 pixel are represented using a 1 pixel thickness
     // and a modified alpha
@@ -111,8 +128,8 @@ void main()
 
     //vec2 t1 = normalize(tr_scale*a_tangents.xy);
     //vec2 t2 = normalize(tr_scale*a_tangents.zw);
-    vec2 t1 = normalize(transform_vector(a_tangents.xy, a_position));
-    vec2 t2 = normalize(transform_vector(a_tangents.zw, a_position));
+    vec2 t1 = normalize(T1);
+    vec2 t2 = normalize(T2);
     float u = a_texcoord.x;
     float v = a_texcoord.y;
     vec2 o1 = vec2( +t1.y, -t1.x);
