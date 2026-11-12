@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest import mock
 
+from vispy.color import get_colormap
 from vispy.scene import Image, PanZoomCamera
 from vispy.testing import (requires_application, TestingCanvas,
                            run_tests_if_main, IS_CI)
@@ -123,6 +124,20 @@ def test_image_clims_and_gamma(input_dtype, texture_format, num_channels,
         image.gamma = 2
         rendered3 = downsample(c.render(), shape_ratio, axis=(0, 1)).astype(_dtype)
         compare_render(scaled_data ** 2, rendered3, rendered2, atol=gamma_atol)
+
+
+def test_image_bad_color_leaves_named_colormap_unchanged():
+    image = Image(np.ones((2, 2)), cmap='grays')
+    image.bad_color = (1, 0, 0, 1)
+
+    assert tuple(image.bad_color.rgba) == (1, 0, 0, 1)
+    assert tuple(get_colormap('grays').bad_color.rgba) == (0, 0, 0, 0)
+
+    image.cmap.glsl_map = image.cmap.glsl_map.replace('grays', 'custom_grays')
+    image.bad_color = (0, 1, 0, 1)
+    assert image.cmap.glsl_map.count('// Map NaN to bad_color') == 1
+    assert 'return vec4(0.000, 1.000, 0.000, 1.000);' in image.cmap.glsl_map
+    assert 'vec4 custom_grays(float t)' in image.cmap.glsl_map
 
 
 @pytest.mark.xfail(IS_CI, reason="CI environments sometimes treat NaN as 0")
