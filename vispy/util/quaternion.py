@@ -3,6 +3,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # Based on the quaternion class in the visvis project.
 
+import math
+
 import numpy as np
 
 
@@ -32,10 +34,9 @@ class Quaternion(object):
     def norm(self):
         """Returns the norm of the quaternion
 
-        norm = w**2 + x**2 + y**2 + z**2
+        norm = (w**2 + x**2 + y**2 + z**2)**0.5
         """
-        tmp = self.w**2 + self.x**2 + self.y**2 + self.z**2
-        return tmp**0.5
+        return math.hypot(self.w, self.x, self.y, self.z)
 
     def _normalize(self):
         """Make the quaternion unit length."""
@@ -82,39 +83,46 @@ class Quaternion(object):
         return new
 
     def exp(self):
-        """Returns the exponent of the quaternion. 
-        (not tested)
-        """
-        # Init
-        vecNorm = self.x**2 + self.y**2 + self.z**2
-        wPart = np.exp(self.w)        
-        q = Quaternion()
+        """Return the exponential of the quaternion."""
+        vec_norm = math.hypot(self.x, self.y, self.z)
+        w_part = np.exp(self.w)
+        if not vec_norm:
+            return Quaternion(w_part, 0, 0, 0, normalize=False)
 
-        # Calculate
-        q.w = wPart * np.cos(vecNorm)
-        q.x = wPart * self.x * np.sin(vecNorm) / vecNorm
-        q.y = wPart * self.y * np.sin(vecNorm) / vecNorm
-        q.z = wPart * self.z * np.sin(vecNorm) / vecNorm
-
-        return q
+        scale = w_part * np.sin(vec_norm) / vec_norm
+        if math.isinf(scale):
+            # exp(w) overflowed: keep zero components at zero, not 0 * inf = nan
+            x, y, z = (c * scale if c else c for c in (self.x, self.y, self.z))
+        else:
+            x, y, z = self.x * scale, self.y * scale, self.z * scale
+        return Quaternion(w_part * np.cos(vec_norm), x, y, z, normalize=False)
 
     def log(self):
-        """Returns the natural logarithm of the quaternion. 
-        (not tested)
+        """Return the natural logarithm of the quaternion.
+
+        For a negative real quaternion, choose the positive x-axis as the
+        imaginary direction, giving ``log(-w) + pi*i``.
+
+        Raises
+        ------
+        ValueError
+            If the quaternion is zero.
         """
-        # Init
         norm = self.norm()
-        vecNorm = self.x**2 + self.y**2 + self.z**2
-        tmp = self.w / norm
-        q = Quaternion()
+        if not norm:
+            raise ValueError('The logarithm of a zero quaternion is undefined.')
 
-        # Calculate
-        q.w = np.log(norm)
-        q.x = np.log(norm) * self.x * np.arccos(tmp) / vecNorm
-        q.y = np.log(norm) * self.y * np.arccos(tmp) / vecNorm
-        q.z = np.log(norm) * self.z * np.arccos(tmp) / vecNorm
+        vec_norm = math.hypot(self.x, self.y, self.z)
+        if not vec_norm:
+            if self.w < 0:
+                return Quaternion(math.log(-self.w), math.pi, 0, 0,
+                                  normalize=False)
+            return Quaternion(math.log(norm), 0, 0, 0, normalize=False)
 
-        return q
+        angle = math.atan2(vec_norm, self.w)
+        return Quaternion(math.log(norm), (self.x / vec_norm) * angle,
+                          (self.y / vec_norm) * angle,
+                          (self.z / vec_norm) * angle, normalize=False)
 
     def __add__(self, q):
         """Add quaternions."""
@@ -190,7 +198,7 @@ class Quaternion(object):
         """
         # Init
         angle = 2 * np.arccos(max(min(self.w, 1.), -1.))
-        scale = (self.x**2 + self.y**2 + self.z**2)**0.5    
+        scale = math.hypot(self.x, self.y, self.z)
 
         # Calc axis
         if scale:
@@ -226,4 +234,4 @@ class Quaternion(object):
         qy = Quaternion(np.cos(ry/2), 0, np.sin(ry/2), 0)
         qz = Quaternion(np.cos(rz/2), np.sin(rz/2), 0, 0)
         # Almost done
-        return qx*qy*qz   
+        return qx*qy*qz

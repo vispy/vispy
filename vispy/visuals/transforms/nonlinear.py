@@ -16,9 +16,9 @@ class LogTransform(BaseTransform):
 
     Maps (x, y, z) => (log(base.x, x), log(base.y, y), log(base.z, z))
 
-    No transformation is applied for axes with base == 0.
+    No transformation is applied for axes with -1 <= base <= 1.
 
-    If base < 0, then the inverse function is applied: x => base.x ** x
+    If base < -1, then the inverse function is applied: x => (-base.x) ** x
 
     Parameters
     ----------
@@ -65,8 +65,8 @@ class LogTransform(BaseTransform):
     def base(self):
         """
         *base* is a tuple (x, y, z) containing the log base that should be
-        applied to each axis of the input vector. If any axis has a base <= 0,
-        then that axis is not affected.
+        applied to each axis of the input vector. Bases below -1 apply the
+        inverse function; bases between -1 and 1 leave the axis unchanged.
         """
         return self._base.copy()
 
@@ -77,16 +77,14 @@ class LogTransform(BaseTransform):
 
     @arg_to_array
     def map(self, coords, base=None):
-        ret = np.empty(coords.shape, coords.dtype)
+        ret = coords.copy()
         if base is None:
             base = self.base
         for i in range(min(ret.shape[-1], 3)):
             if base[i] > 1.0:
                 ret[..., i] = np.log(coords[..., i]) / np.log(base[i])
             elif base[i] < -1.0:
-                ret[..., i] = -base[i] ** coords[..., i]
-            else:
-                ret[..., i] = coords[..., i]
+                ret[..., i] = (-base[i]) ** coords[..., i]
         return ret
 
     @arg_to_array
@@ -121,7 +119,7 @@ class PolarTransform(BaseTransform):
         """
 
     glsl_imap = """
-        vec4 polar_transform_map(vec4 pos) {
+        vec4 polar_transform_imap(vec4 pos) {
             // TODO: need some modulo math to handle larger theta values..?
             float theta = atan(pos.y, pos.x);
             float r = length(pos.xy);
@@ -146,7 +144,7 @@ class PolarTransform(BaseTransform):
     @arg_to_array
     def imap(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
-        ret[..., 0] = np.arctan2(coords[..., 0], coords[..., 1])
+        ret[..., 0] = np.arctan2(coords[..., 1], coords[..., 0])
         ret[..., 1] = (coords[..., 0]**2 + coords[..., 1]**2) ** 0.5
         for i in range(2, coords.shape[-1]):  # copy any further axes
             ret[..., i] = coords[..., i]
