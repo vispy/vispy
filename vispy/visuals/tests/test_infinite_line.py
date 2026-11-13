@@ -50,4 +50,12 @@ def test_set_data():
             assert_raises(ValueError, region.set_data, color=[1, 2])
 
 
+def test_infinite_line_bounds_invalidation():
+    from vispy.visuals import InfiniteLineVisual
+    line = InfiniteLineVisual(pos=3., vertical=True)
+    assert line.bounds(0) == (3., 3.)
+    line.set_data(pos=17.)
+    assert line.bounds(0) == (17., 17.)
+
+
 run_tests_if_main()

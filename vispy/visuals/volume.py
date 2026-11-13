@@ -896,6 +896,8 @@ class VolumeVisual(Visual):
             self._need_vertex_update = True
         self._vol_shape = shape
 
+        self._bounds_changed()
+
     @property
     def rendering_methods(self):
         return list(self._rendering_methods)
