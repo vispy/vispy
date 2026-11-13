@@ -45,6 +45,7 @@ Example::
 from __future__ import division
 
 from . import gl  # noqa
+from . import glir_metering  # noqa
 from .wrappers import *  # noqa
 from .context import (GLContext, get_default_config,  # noqa
                       get_current_canvas)  # noqa
