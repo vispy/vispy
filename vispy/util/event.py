@@ -629,6 +629,7 @@ class EmitterGroup(EventEmitter):
 
     def add(self, auto_connect=None, **kwargs):
         """Add one or more EventEmitter instances to this emitter group.
+        
         Each keyword argument may be specified as either an EventEmitter
         instance or an Event subclass, in which case an EventEmitter will be
         generated automatically::

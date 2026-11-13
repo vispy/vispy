@@ -24,6 +24,8 @@ from __future__ import annotations
 import os
 import time
 import shutil
+from pathlib import Path
+
 from vispy.io import imsave
 from vispy.gloo.util import _screenshot
 from vispy.scene import SceneCanvas
@@ -91,7 +93,7 @@ class VisPyGalleryScraper:
             frame_grabber.save_frame(image_path)
         frame_grabber.cleanup()
         if 'images' in gallery_conf['compress_images']:
-            optipng(image_path, gallery_conf['compress_images_args'])
+            optipng(Path(image_path), gallery_conf['compress_images_args'])
         return [image_path]
 
     def _get_frame_list_from_source(self, filename):
