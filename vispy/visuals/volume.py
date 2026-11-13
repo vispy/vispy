@@ -61,6 +61,7 @@ uniform vec3 u_shape;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
+varying vec3 v_view_dir;
 
 void main() {
     v_position = a_position;
@@ -77,6 +78,11 @@ void main() {
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
 
+    // view direction from near plane to far plane in volume coordinates
+    vec4 near_center = $transformi(vec4(0.0, 0.0, -1.0, 1.0));
+    vec4 far_center = $transformi(vec4(0.0, 0.0, 1.0, 1.0));
+    v_view_dir = normalize(far_center.xyz/far_center.w - near_center.xyz/near_center.w);
+
     gl_Position = $transform(vec4(v_position, 1.0));
 }
 """  # noqa
@@ -89,6 +95,7 @@ uniform vec2 clim;
 uniform float gamma;
 uniform float u_threshold;
 uniform float u_attenuation;
+uniform float u_base_attenuation;
 uniform float u_relative_step_size;
 uniform float u_mip_cutoff;
 uniform float u_minip_cutoff;
@@ -98,6 +105,7 @@ uniform int u_rgb_mode;
 varying vec3 v_position;
 varying vec4 v_nearpos;
 varying vec4 v_farpos;
+varying vec3 v_view_dir;
 
 // uniforms for lighting. Hard coded until we figure out how to do lights
 const vec4 u_ambient = vec4(0.2, 0.2, 0.2, 1.0);
@@ -251,10 +259,11 @@ void main() {
     vec3 frag_depth_point;
 
     // Set up the ray casting
-    // This snippet must define three variables:
+    // This snippet must define four variables:
     // vec3 start_loc - the starting location of the ray in texture coordinates
     // vec3 step - the step vector in texture coordinates
     // int nsteps - the number of steps to make through the texture
+    // float start_depth - how far behind the start plane the ray starts
     
     $raycasting_setup
 
@@ -319,6 +328,12 @@ _RAYCASTING_SETUP_VOLUME = """
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
 
+    // start_depth of a ray is calculated with respect to a view-aligned plane touching the volume's bounding box
+    // on the viewer's side, ie how far the start of the ray is from this plane.
+    vec3 center = u_shape / 2.0 - 0.5;
+    vec3 depth_plane_pos = center - dot(abs(v_view_dir), u_shape / 2.0) * v_view_dir;
+    float start_depth = dot(front - depth_plane_pos, v_view_dir);
+
     // Decide how many steps to take
     int nsteps = int(-distance / u_relative_step_size + 0.5);
     float f_nsteps = float(nsteps);
@@ -371,6 +386,9 @@ _RAYCASTING_SETUP_PLANE = """
 
     // Ensure that frag depth value will be set to plane intersection
     frag_depth_point = intersection;
+
+    // plane mode keeps the attenuation starting at the plane as before
+    float start_depth = 0.0;
 """
 
 
@@ -425,7 +443,11 @@ _MIP_SNIPPETS = dict(
 _ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = u_mip_cutoff; // The maximum encountered value
-        float sumval = 0.0; // The sum of the encountered values
+
+        // initial sumval is the base attenuation times the starting depth
+        // (attenuation begins from the start plane and not from the front surface of the volume)
+        float sumval = u_base_attenuation*start_depth; // The sum of the encountered values
+        
         float scale = 0.0; // The cumulative attenuation
         int maxi = -1;  // Where the maximum value was encountered
         vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
@@ -435,8 +457,9 @@ _ATTENUATED_MIP_SNIPPETS = dict(
         // Scale and clamp accumulation in `sumval` by contrast limits so that:
         // * attenuation value does not depend on data values
         // * negative values do not amplify instead of attenuate
-        sumval = sumval + u_relative_step_size * clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0);
-        scale = exp(-u_attenuation * (sumval - 1));
+        sumval = sumval + u_relative_step_size * (
+            clamp((val - clim.x) / (clim.y - clim.x), 0.0, 1.0) + u_base_attenuation);
+        scale = exp(-u_attenuation * (sumval));
         if( maxval > scale * clim.y ) {
             // stop if no chance of finding a higher maxval
             iter = nsteps;
@@ -637,6 +660,9 @@ class VolumeVisual(Visual):
     attenuation: float
         The attenuation rate to apply for the attenuated mip render method.
         Default: 1.0.
+    base_attenuation: float
+        A constant attenuation added at every step for the attenuated mip
+        render method, including through empty space. Default: 0.0.
     relative_step_size : float
         The relative step size to step through the volume. Default 0.8.
         Increase to e.g. 1.5 to increase performance, at the cost of
@@ -726,7 +752,7 @@ class VolumeVisual(Visual):
     }
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
-                 attenuation=1.0, relative_step_size=0.8, cmap='grays',
+                 attenuation=1.0, base_attenuation=0.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
                  plane_normal=None, plane_thickness=1.0, clipping_planes=None,
@@ -792,6 +818,7 @@ class VolumeVisual(Visual):
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
+        self.base_attenuation = base_attenuation
 
         # Set plane params
         if plane_position is None:
@@ -1179,6 +1206,17 @@ class VolumeVisual(Visual):
         self.update()
 
     @property
+    def base_attenuation(self):
+        """The constant attenuation added at every step for the attenuated mip render method."""
+        return self._base_attenuation
+
+    @base_attenuation.setter
+    def base_attenuation(self, value):
+        self._base_attenuation = float(value)
+        self.shared_program['u_base_attenuation'] = self._base_attenuation
+        self.update()
+
+    @property
     def relative_step_size(self):
         """The relative step size used during raycasting.
 
@@ -1375,6 +1413,7 @@ class VolumeVisual(Visual):
     def _prepare_transforms(self, view):
         trs = view.transforms
         view.view_program.vert['transform'] = trs.get_transform()
+        view.view_program.vert['transformi'] = trs.get_transform('render', 'visual') 
 
         view_tr_f = trs.get_transform('visual', 'document')
         view_tr_i = view_tr_f.inverse

@@ -439,8 +439,10 @@ def test_mip_cutoff():
         rendered = c.render()
         assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
 
-        # repeat for attenuated_mip
+        # repeat for attenuated_mip, with no attenuation so the volume
+        # still renders as full white
         vol.method = 'attenuated_mip'
+        vol.attenuation = 0
         vol.mip_cutoff = None
 
         # we should see white
@@ -489,6 +491,77 @@ def test_minip_cutoff():
         # we should see black
         rendered = c.render()
         assert np.array_equal(rendered[40, 40], [0, 0, 0, 255])
+
+
+@requires_pyopengl()
+@requires_application()
+def test_attenuated_mip_base_attenuation():
+    """base_attenuation dims a sample seen through empty space"""
+    data = np.zeros((80, 80, 80), dtype=np.float32)
+    data[:, 60:70, :] = 1  # a slab behind 60 voxels of empty space
+
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = 'arcball'
+        v.camera.fov = 0
+        v.camera.center = (40, 40, 40)
+        v.camera.scale_factor = 80.0
+
+        vol = scene.visuals.Volume(
+            data,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            method="attenuated_mip",
+            attenuation=0.5,
+            parent=v.scene,
+        )
+        no_base = c.render()[40, 40, 0]
+
+        vol.base_attenuation = 0.02
+        with_base = c.render()[40, 40, 0]
+        assert 0 < with_base < no_base
+
+
+@requires_pyopengl()
+@requires_application()
+def test_attenuated_mip_start_plane():
+    """base_attenuation is measured from a plane facing the viewer, so two
+    spots at the same depth are dimmed equally, even though their rays enter
+    the volume at different depths
+    """
+    data = np.zeros((80, 80, 80), dtype=np.float32)
+    center, side = (39, 39, 39), (57, 57, 39)  # (x, y, z), same depth in this view
+    for x, y, z in (center, side):
+        data[z - 2:z + 3, y - 2:y + 3, x - 2:x + 3] = 1
+
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        # view the box edge-on, along (-1, 1, 0): the ray through the center
+        # spot enters at the near edge, the ray through the side spot enters
+        # about 25 voxels further back
+        v.camera = scene.TurntableCamera(fov=0, azimuth=45, elevation=0,
+                                         center=(39.5, 39.5, 39.5),
+                                         scale_factor=80.0)
+
+        vol = scene.visuals.Volume(
+            data,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            method="attenuated_mip",
+            attenuation=0.5,
+            parent=v.scene,
+        )
+        no_base = c.render()
+        to_canvas = vol.get_transform('visual', 'canvas')
+        (x0, y0), (x1, y1) = [to_canvas.map(p)[:2].astype(int) for p in (center, side)]
+
+        vol.base_attenuation = 0.02
+        rendered = c.render()
+        a, b = int(rendered[y0, x0, 0]), int(rendered[y1, x1, 0])
+        assert 0 < a < no_base[y0, x0, 0]
+        assert abs(a - b) <= 3
 
 
 @requires_pyopengl()
