@@ -151,6 +151,19 @@ def test_clim_handling_cpu():
     assert st.clim_normalized == (0, 1)
 
 
+def test_clim_handling_cpu_equal_to_inverted():
+    data = np.array([[0, 10]], dtype=np.float32)
+    st = CPUScaledStub()
+    st.set_clim((5, 5))
+    st.scale_and_set_data(data)
+    assert st.clim_normalized == (0, np.inf)
+
+    assert st.set_clim((10, 0))
+    st.scale_and_set_data(data)
+    assert st.clim_normalized == (0, 1)
+    assert np.all(st._data == (data - 10) / -10)
+
+
 def test_clim_handling_gpu():
     ref_data = np.array([[10, 10, 5], [15, 25, 15]])
 
