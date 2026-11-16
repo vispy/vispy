@@ -216,10 +216,13 @@ def generate_docstring(subclass, clsname):
                 "        (optional).")
 
     # assemble all docstring parts
+    extra = []
+    if param_end < len(lines) and lines[param_end].strip() != '':
+        extra = ['']
     lines = (lines[:first_blank] +
              [class_desc] +
              lines[first_blank:param_end] +
-             [parm_doc] +
+             [parm_doc] + extra +
              lines[param_end:])
 
     doc = '\n'.join(lines)
