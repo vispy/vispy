@@ -160,10 +160,10 @@ def assert_image_approved(image, standard_file, message=None, **kwargs):
 # TODO: check for more properties of image
 def assert_image_reasonable(image):
     """Check that an image is reasonable.
-    
+
     The given image is checked to not be completely black or white.
-    
-    Parameters:
+
+    Parameters
     -----------
     image : (h, w, 4) ndarray or 'screenshot'
         The test result to check
