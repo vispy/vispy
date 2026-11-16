@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from itertools import product
 from string import hexdigits
 
 
@@ -159,49 +158,74 @@ _keyword_colors = {
     "yellowgreen": (154, 205, 50)}
 
 
-_HEXDEC = {}
-for x, y in product(hexdigits, repeat=2):
-    v = x + y
-    _HEXDEC[v] = int(v, 16)
+def _hex(color):
+    """Parse the digits of #rgb, #rgba, #rrggbb or #rrggbbaa."""
+    if len(color) in (3, 4):
+        color = "".join(c + c for c in color)
+    if len(color) not in (6, 8) or any(c not in hexdigits for c in color):
+        raise ValueError("Invalid hex color (#%s)" % color)
+    values = [int(color[i:i + 2], 16) for i in range(0, len(color), 2)]
+    r, g, b = values[:3]
+    a = values[3] / 255. if len(values) == 4 else 1.
+    return r, g, b, a
 
 
-def _rgb(triplet):
-    return _HEXDEC[triplet[0:2]], _HEXDEC[triplet[2:4]], _HEXDEC[triplet[4:6]]
+def _channel(value):
+    """Parse an rgb()/rgba() color channel into the 0-255 range."""
+    value = value.strip()
+    if value.endswith("%"):
+        value = 255 * float(value[:-1]) / 100
+    else:
+        value = float(value)
+    return int(min(max(value, 0), 255))
+
+
+def _alpha(value):
+    """Parse an rgba() alpha value into the 0-1 range."""
+    value = value.strip()
+    if value.endswith("%"):
+        value = float(value[:-1]) / 100
+    else:
+        value = float(value)
+    return min(max(value, 0.), 1.)
+
+
+def _functional(color):
+    """Parse the arguments of rgb(r, g, b) or rgba(r, g, b, a)."""
+    name, _, args = color.partition("(")
+    values = args.rstrip(")").split(",")
+    if len(values) != len(name):
+        raise ValueError("Invalid color (%s)" % color)
+    r, g, b = [_channel(value) for value in values[:3]]
+    a = _alpha(values[3]) if len(values) == 4 else 1.
+    return r, g, b, a
 
 
 class Color(object):
+    """An SVG color.
+
+    Accepts the hexadecimal notations ``#rgb``, ``#rgba``, ``#rrggbb`` and
+    ``#rrggbbaa``, the functional notations ``rgb(r, g, b)`` and
+    ``rgba(r, g, b, a)`` (channels as integers or percentages), and the SVG
+    color keywords. Anything else is read as opaque black.
+    """
 
     def __init__(self, content):
 
-        color = content.strip()
-        if color.startswith("#"):
-            rgb = color[1:]
-            if len(rgb) == 3:
-                r, g, b = tuple(ord((c + c).decode('hex')) for c in rgb)
+        color = content.strip().lower()
+        try:
+            if color.startswith("#"):
+                r, g, b, a = _hex(color[1:])
+            elif color.startswith(("rgb(", "rgba(")) and color.endswith(")"):
+                r, g, b, a = _functional(color)
             else:
-                # r,g,b = tuple(ord(c) for c in rgb.decode('hex'))
-                r, g, b = tuple(c for c in _rgb(rgb))
-        elif color.startswith("rgb("):
-            rgb = color[4:-1]
-            r, g, b = [value.strip() for value in rgb.split(',')]
-            if r.endswith("%"):
-                r = 255 * int(r[:-1]) // 100
-            else:
-                r = int(r)
-            if g.endswith("%"):
-                g = 255 * int(g[:-1]) // 100
-            else:
-                g = int(r)
-            if b.endswith("%"):
-                b = 255 * int(b[:-1]) // 100
-            else:
-                b = int(r)
-        elif color in _keyword_colors:
-            r, g, b = _keyword_colors[color]
-        else:
+                r, g, b = _keyword_colors[color]
+                a = 1.
+        except (KeyError, ValueError):
             # text = "Unknown color (%s)" % color
-            r, g, b = 0, 0, 0
+            r, g, b, a = 0, 0, 0, 1.
         self._rgb = r / 255., g / 255., b / 255.
+        self._alpha = a
 
     @property
     def rgb(self):
@@ -209,11 +233,17 @@ class Color(object):
         return r, g, b
 
     @property
+    def alpha(self):
+        return self._alpha
+
+    @property
     def rgba(self):
         r, g, b = self._rgb
-        return r, g, b, 1
+        return r, g, b, self._alpha
 
     def __repr__(self):
         r, g, b = self._rgb
-        r, g, b = int(r * 255), int(g * 255), int(b * 255)
+        r, g, b = int(round(r * 255)), int(round(g * 255)), int(round(b * 255))
+        if self._alpha < 1:
+            return "#%02x%02x%02x%02x" % (r, g, b, int(round(self._alpha * 255)))
         return "#%02x%02x%02x" % (r, g, b)
