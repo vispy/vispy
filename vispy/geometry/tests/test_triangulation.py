@@ -591,4 +591,56 @@ def _triangulation_from_points(points):
     return T(points, edges)
 
 
+def _assert_triangles_cover_polygon(t, pts):
+    """Check that the triangles of t fill the simple polygon pts exactly."""
+    x, y = pts[:, 0].astype(float), pts[:, 1].astype(float)
+    polygon_area = 0.5 * abs(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
+    tri_pts = t.pts[t.tris]
+    v1 = tri_pts[:, 1] - tri_pts[:, 0]
+    v2 = tri_pts[:, 2] - tri_pts[:, 0]
+    tri_area = 0.5 * np.abs(v1[:, 0] * v2[:, 1] - v1[:, 1] * v2[:, 0]).sum()
+    assert len(t.tris) == len(pts) - 2
+    np.testing.assert_allclose(tri_area, polygon_area, rtol=1e-4)
+
+
+def test_triangulate_edges_sharing_vertex():
+    """Edges that meet at a vertex must not be reported as crossing.
+
+    Rounding in the intercept calculation made the last edge of this triangle
+    look like it crossed the front edge it shares a vertex with.
+    """
+    pts = np.array([
+        [0.053957583840728525, 0.21042572074459756],
+        [-0.5722589897420505, -0.4875137973973931],
+        [-0.07422878668585722, -0.085323710588769],
+    ])
+    t = _triangulation_from_points(pts)
+
+    t.triangulate()
+
+    _assert_triangles_cover_polygon(t, pts)
+
+
+def test_triangulate_edge_leaving_front_immediately():
+    """An edge may cut one triangle and then leave the mesh across the front.
+
+    See https://github.com/vispy/vispy/issues/2648
+    """
+    pts = np.array([
+        [0.48180634, 0.4793276],
+        [0.7378502, 0.76005864],
+        [0.34730422, 0.40774867],
+        [1.2419883, 1.5478982],
+        [0.5106253, 0.63736695],
+        [-0.95527506, 1.3063561],
+        [0.19488575, -0.00430449],
+    ], dtype=np.float32)
+    t = _triangulation_from_points(pts)
+
+    t.triangulate()
+
+    _assert_triangles_cover_polygon(t, pts)
+    _assert_triangle_pts_in_input(t, pts)
+
+
 run_tests_if_main()
