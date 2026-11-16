@@ -235,7 +235,7 @@ environments, for example:
 
 .. code-block:: bash
 
-  pixi run -e py312-full unit
+  pixi run -e py313-full unit
 
 This runs tests in the same way that tests are run on the CI environments.
 Additional test commands are available including:
@@ -248,7 +248,7 @@ or, with Pixi:
 
 .. code-block:: bash
 
-  pixi run -e py312-full nobackend
+  pixi run -e py313-full nobackend
 
 To run tests without any backend selected. Or:
 
@@ -260,7 +260,7 @@ or, with Pixi:
 
 .. code-block:: bash
 
-  pixi run -e py312-full test
+  pixi run -e py313-full test
 
 To run both nobackend and unit tests as well as "extra" tests including
 docstring and flake tests. Lastly:
@@ -273,7 +273,7 @@ or, with Pixi:
 
 .. code-block:: bash
 
-  pixi run -e py312-full examples
+  pixi run -e py313-full examples
 
 Which will attempt to run all example scripts.
 
@@ -282,8 +282,8 @@ backends. For example:
 
 .. code-block:: bash
 
-  pixi run -e py310-full unit
-  pixi run -e py312-newqt unit
+  pixi run -e py311-full unit
+  pixi run -e py313-newqt unit
   pixi run -e py314-full unit
 
 .. note::

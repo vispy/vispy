@@ -15,7 +15,7 @@ name = "vispy"
 dynamic = ["version"]
 description = "Interactive visualization in Python"
 readme = { file = "README.rst", content-type = "text/x-rst" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "BSD-3-Clause"
 authors = [
     { name = "Vispy contributors", email = "vispy@googlegroups.com" },
@@ -52,7 +52,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -256,25 +255,25 @@ pyqt6 = "*"
 pysdl2 = "*"
 
 # Python versions
-[tool.pixi.feature.py310.dependencies]
-python = "3.10.*"
-[tool.pixi.feature.py312.dependencies]
-python = "3.12.*"
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
 [tool.pixi.feature.py314.dependencies]
 python = "3.14.*"
 python-gil = "*"
 
 [tool.pixi.environments]
-website = ["py312", "test", "full", "docs", "qt5"]
-py310-min = ["py310", "min"]
-py310-osmesa = ["py310", "osmesa", "test"]
-py310-full = ["py310", "test", "full", "qt5", "sdl2"]
-py310-newqt = ["py310", "test", "full", "qt6"]
-py312-full = ["py312", "test", "full", "qt5", "sdl2"]
-py312-newqt = ["py312", "test", "full", "qt6"]
+website = ["py313", "test", "full", "docs", "qt5"]
+py311-min = ["py311", "min"]
+py311-osmesa = ["py311", "osmesa", "test"]
+py311-full = ["py311", "test", "full", "qt5", "sdl2"]
+py311-newqt = ["py311", "test", "full", "qt6"]
+py313-full = ["py313", "test", "full", "qt5", "sdl2"]
+py313-newqt = ["py313", "test", "full", "qt6"]
 py314-full = ["py314", "test", "full", "qt5", "sdl2"]
 py314-newqt = ["py314", "test", "full", "qt6"]
-lint = ["py312", "lint", "min"]
+lint = ["py313", "lint", "min"]
 
 [tool.pytest.ini_options]
 norecursedirs = [
