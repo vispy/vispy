@@ -164,7 +164,7 @@ def assert_image_reasonable(image):
     The given image is checked to not be completely black or white.
 
     Parameters
-    -----------
+    ----------
     image : (h, w, 4) ndarray or 'screenshot'
         The test result to check
     """
