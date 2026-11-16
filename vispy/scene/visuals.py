@@ -206,7 +206,7 @@ def generate_docstring(subclass, clsname):
         params_started = True
 
     # build class and parameter description strings
-    class_desc = ("\n    This class inherits from visuals.%sVisual and "
+    class_desc = ("\nNOTE: This class inherits from visuals.%sVisual and "
                   "scene.Node, allowing the visual to be placed inside a "
                   "scenegraph.\n" % (clsname))
     parm_doc = ("    parent : Node\n"
