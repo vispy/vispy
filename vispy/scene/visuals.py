@@ -209,11 +209,12 @@ def generate_docstring(subclass, clsname):
     class_desc = ("\nNOTE: This class inherits from visuals.%sVisual and "
                   "scene.Node, allowing the visual to be placed inside a "
                   "scenegraph.\n" % (clsname))
-    parm_doc = ("    parent : Node\n"
-                "        The parent node to assign to this node (optional).\n"
-                "    name : string\n"
-                "        A name for this node, used primarily for debugging\n"
-                "        (optional).")
+    indent = " " * (param_indent or 0)
+    parm_doc = (f"{indent}parent : Node\n"
+                f"{indent}    The parent node to assign to this node (optional).\n"
+                f"{indent}name : string\n"
+                f"{indent}    A name for this node, used primarily for debugging\n"
+                f"{indent}    (optional).")
 
     # assemble all docstring parts
     extra = []
