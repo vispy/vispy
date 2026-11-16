@@ -175,7 +175,7 @@ def generate_docstring(subclass, clsname):
                     break
                 elif indent == param_indent:
                     # might be end of parameters block..
-                    if re.match(r'\s*[a-zA-Z0-9_]+\s*:\s*\S+', line) is None:
+                    if re.match(r'\s*[a-zA-Z0-9_]+\s*:', line) is None:
                         break
                 param_end = i + 1
 
