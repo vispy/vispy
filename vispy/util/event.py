@@ -631,7 +631,9 @@ class EmitterGroup(EventEmitter):
         """Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
         instance or an Event subclass, in which case an EventEmitter will be
-        generated automatically::
+        generated automatically.
+
+        .. code-block:: python
 
             # This statement:
             group.add(mouse_press=MouseEvent,
@@ -642,6 +644,7 @@ class EmitterGroup(EventEmitter):
                                                MouseEvent),
                       mouse_release=EventEmitter(group.source, 'mouse_press',
                                                  MouseEvent))
+
         """
         if auto_connect is None:
             auto_connect = self.auto_connect

@@ -175,7 +175,7 @@ def generate_docstring(subclass, clsname):
                     break
                 elif indent == param_indent:
                     # might be end of parameters block..
-                    if re.match(r'\s*[a-zA-Z0-9_]+\s*:\s*\S+', line) is None:
+                    if re.match(r'\s*[a-zA-Z0-9_]+\s*:', line) is None:
                         break
                 param_end = i + 1
 
@@ -206,20 +206,24 @@ def generate_docstring(subclass, clsname):
         params_started = True
 
     # build class and parameter description strings
-    class_desc = ("\n    This class inherits from visuals.%sVisual and "
+    class_desc = ("\nNOTE: This class inherits from visuals.%sVisual and "
                   "scene.Node, allowing the visual to be placed inside a "
                   "scenegraph.\n" % (clsname))
-    parm_doc = ("    parent : Node\n"
-                "        The parent node to assign to this node (optional).\n"
-                "    name : string\n"
-                "        A name for this node, used primarily for debugging\n"
-                "        (optional).")
+    indent = " " * (param_indent or 0)
+    parm_doc = (f"{indent}parent : Node\n"
+                f"{indent}    The parent node to assign to this node (optional).\n"
+                f"{indent}name : string\n"
+                f"{indent}    A name for this node, used primarily for debugging\n"
+                f"{indent}    (optional).")
 
     # assemble all docstring parts
+    extra = []
+    if param_end < len(lines) and lines[param_end].strip() != '':
+        extra = ['']
     lines = (lines[:first_blank] +
              [class_desc] +
              lines[first_blank:param_end] +
-             [parm_doc] +
+             [parm_doc] + extra +
              lines[param_end:])
 
     doc = '\n'.join(lines)

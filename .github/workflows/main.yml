@@ -108,7 +108,7 @@ jobs:
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
         sleep 5
         # export python_version
-        echo "python_version=312" >> $GITHUB_OUTPUT
+        echo "python_version=313" >> $GITHUB_OUTPUT
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0
       with:
@@ -160,22 +160,22 @@ jobs:
       matrix:
         include:
           - test_number: 1
-            environment: py310-min
+            environment: py311-min
             test: standard
           - test_number: 2
-            environment: py310-full
+            environment: py311-full
             test: standard
           - test_number: 3
-            environment: py310-newqt
+            environment: py311-newqt
             test: standard
           - test_number: 4
-            environment: py310-osmesa
+            environment: py311-osmesa
             test: osmesa
           - test_number: 5
-            environment: py312-full
+            environment: py313-full
             test: standard
           - test_number: 6
-            environment: py312-newqt
+            environment: py313-newqt
             test: standard
           - test_number: 7
             environment: py314-full

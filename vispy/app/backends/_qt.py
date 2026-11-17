@@ -435,7 +435,7 @@ class QtBaseCanvasBackend(BaseCanvasBackend):
             ratio = self.devicePixelRatioF()
         else:
             ratio = 1
-        self._physical_size = (p.size[0] * ratio, p.size[1] * ratio)
+        self._physical_size = int(p.size[0] * ratio), int(p.size[1] * ratio)
 
         if not p.resizable:
             self.setFixedSize(self.size())
