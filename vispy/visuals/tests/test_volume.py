@@ -566,6 +566,43 @@ def test_attenuated_mip_start_plane():
 
 @requires_pyopengl()
 @requires_application()
+def test_attenuated_mip_start_plane_sphere():
+    """The start plane touches the bounding sphere, so a ball at the centre of
+    the volume is dimmed the same from every viewing direction
+    """
+    data = np.zeros((80, 80, 80), dtype=np.float32)
+    z, y, x = np.ogrid[:80, :80, :80]
+    data[(x - 39.5) ** 2 + (y - 39.5) ** 2 + (z - 39.5) ** 2 <= 9] = 1  # ball, radius 3
+
+    with TestingCanvas(size=(80, 80)) as c:
+        v = c.central_widget.add_view(border_width=0)
+        v.camera = scene.TurntableCamera(fov=0, azimuth=0, elevation=0,
+                                         center=(39.5, 39.5, 39.5),
+                                         scale_factor=80.0)
+
+        vol = scene.visuals.Volume(
+            data,
+            interpolation="nearest",
+            clim=(0, 1),
+            cmap="grays",
+            method="attenuated_mip",
+            attenuation=0.5,
+            base_attenuation=0.02,
+            parent=v.scene,
+        )
+        values = []
+        for azimuth in (0, 45):  # face-on, then edge-on
+            v.camera.azimuth = azimuth
+            rendered = c.render()
+            to_canvas = vol.get_transform('visual', 'canvas')
+            x0, y0 = to_canvas.map((39.5, 39.5, 39.5))[:2].astype(int)
+            values.append(int(rendered[y0, x0, 0]))
+        assert values[0] > 0
+        assert abs(values[0] - values[1]) <= 3
+
+
+@requires_pyopengl()
+@requires_application()
 def test_volume_set_data_different_dtype():
     size = (80, 80)
     data = np.array([[[0, 127]]], dtype=np.int8)
