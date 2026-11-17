@@ -328,10 +328,12 @@ _RAYCASTING_SETUP_VOLUME = """
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
 
-    // start_depth of a ray is calculated with respect to a view-aligned plane touching the volume's bounding box
-    // on the viewer's side, ie how far the start of the ray is from this plane.
+    // start_depth of a ray is calculated with respect to a view-aligned plane tangential to a sphere
+    // touching the volume's bounding box.
     vec3 center = u_shape / 2.0 - 0.5;
-    vec3 depth_plane_pos = center - dot(abs(v_view_dir), u_shape / 2.0) * v_view_dir;
+    vec3 half_size = u_shape / 2.0;
+    float reach = length(half_size);
+    vec3 depth_plane_pos = center - reach * v_view_dir;
     float start_depth = dot(front - depth_plane_pos, v_view_dir);
 
     // Decide how many steps to take
@@ -660,7 +662,7 @@ class VolumeVisual(Visual):
     attenuation: float
         The attenuation rate to apply for the attenuated mip render method.
         Default: 1.0.
-    base_attenuation: float
+    base_attenuation : float
         A constant attenuation added at every step for the attenuated mip
         render method, including through empty space. Default: 0.0.
     relative_step_size : float
