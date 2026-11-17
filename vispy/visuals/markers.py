@@ -872,6 +872,7 @@ class MarkersVisual(Visual):
         else:
             self._data = None
 
+        self._bounds_changed()
         self.events.data_updated()
         self.update()
 

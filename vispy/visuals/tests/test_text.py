@@ -92,4 +92,12 @@ def test_text_depth_test():
     assert not t._vshare.gl_state["depth_test"]
 
 
+def test_text_bounds_invalidation():
+    from vispy.visuals import TextVisual
+    text = TextVisual('hello', pos=(5, 5))
+    assert text.bounds(0) == (5, 5)
+    text.pos = (90, 5)
+    assert text.bounds(0) == (90, 90)
+
+
 run_tests_if_main()

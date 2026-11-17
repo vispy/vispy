@@ -149,4 +149,12 @@ def test_linear_region_gradient():
         assert_image_approved(c.render(), 'visuals/linear_region2.png')
 
 
+def test_linear_region_bounds_invalidation():
+    from vispy.visuals import LinearRegionVisual
+    region = LinearRegionVisual(pos=(2, 4), vertical=True)
+    assert region.bounds(0) == (2, 4)
+    region.set_data(pos=(10, 20))
+    assert region.bounds(0) == (10, 20)
+
+
 run_tests_if_main()

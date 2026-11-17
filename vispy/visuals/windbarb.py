@@ -271,6 +271,8 @@ class WindbarbVisual(Visual):
         self._data = data
         self._vbo.set_data(data)
         self.shared_program.bind(self._vbo)
+
+        self._bounds_changed()
         self.update()
 
     def _prepare_transforms(self, view):

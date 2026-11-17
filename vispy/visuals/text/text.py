@@ -567,6 +567,7 @@ class TextVisual(Visual):
             raise ValueError('at least one position must be given')
         self._pos = pos
         self._pos_changed = True
+        self._bounds_changed()
         self.update()
 
     def _prepare_draw(self, view):

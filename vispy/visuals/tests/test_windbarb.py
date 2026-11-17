@@ -30,4 +30,15 @@ def test_windbarb_draw():
                  size=length, parent=c.scene)
         assert_image_approved(c.render(), 'visuals/windbarb.png')
 
+
+def test_windbarb_bounds_invalidation():
+    from vispy.visuals import WindbarbVisual
+    pos = np.array([[0., 0.]])
+    wind = np.array([[5., 3.]])
+    barbs = WindbarbVisual(pos=pos, wind=wind)
+    assert barbs.bounds(0) == (0., 0.)
+    barbs.set_data(pos=np.array([[9., 9.]]), wind=wind)
+    assert barbs.bounds(0) == (9., 9.)
+
+
 run_tests_if_main()

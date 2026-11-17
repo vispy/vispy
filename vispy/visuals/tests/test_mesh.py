@@ -258,4 +258,16 @@ def test_mesh_wireframe_filter():
                       rendered_with_faces_only, rendered_with_wf_only)
 
 
+def test_mesh_bounds_invalidation():
+    from vispy.visuals import MeshVisual
+    verts = np.array([[0., 0., 0.], [1., 1., 1.]], dtype=np.float32)
+    faces = np.array([[0, 1, 0]], dtype=np.uint32)
+    mesh = MeshVisual(vertices=verts, faces=faces)
+    assert mesh.bounds(0) == (0., 1.)
+    mesh.set_data(vertices=np.array([[0., 0., 0.], [42., 42., 42.]],
+                                    dtype=np.float32),
+                  faces=faces)
+    assert mesh.bounds(0) == (0., 42.)
+
+
 run_tests_if_main()
