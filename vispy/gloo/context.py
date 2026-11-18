@@ -153,13 +153,17 @@ class GLContext(BaseGlooFunctions):
         """The OpenGL capabilities"""
         return deepcopy(self.shared.parser.capabilities)
 
-    def flush_commands(self, event=None):
+    def flush_commands(self, event=None, force=False):
         """Flush
 
         Parameters
         ----------
         event : instance of Event
             The event.
+        force : bool
+            Execute all currently executable queued work. Automatic draw
+            flushes leave this false so optional command scheduling can apply
+            a per-draw budget.
         """
         if self._do_CURRENT_command:
             self._do_CURRENT_command = False
@@ -169,7 +173,11 @@ class GLContext(BaseGlooFunctions):
             else:
                 fbo = 0
             self.shared.parser.parse([('CURRENT', 0, fbo)])
-        self.glir.flush(self.shared.parser)
+        if force:
+            self.glir.flush(self.shared.parser, force=True)
+        else:
+            # Preserve the long-standing one-argument call for normal draws.
+            self.glir.flush(self.shared.parser)
 
     def set_viewport(self, *args):
         BaseGlooFunctions.set_viewport(self, *args)
