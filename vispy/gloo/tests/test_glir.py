@@ -119,6 +119,10 @@ def test_queue_gl_state_groups_and_context_barriers():
 
 @mock.patch('vispy.gloo.glir.gl')
 def test_program_ignores_active_builtins(gl):
+    """GL reports built-ins such as ``gl_DepthRange`` as active variables.
+
+    They are set by GL itself, so linking must not track them as unset.
+    """
     gl.glGetProgramParameter.side_effect = [True, 3, 2]
     gl.glGetActiveUniform.side_effect = [
         ('gl_DepthRange.far', 1, gl.GL_FLOAT),
