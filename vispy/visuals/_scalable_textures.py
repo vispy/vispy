@@ -459,11 +459,14 @@ class CPUScaledTexture2D(CPUScaledTextureMixin, Texture2D):
     See :class:`vispy.visuals._scalable_textures.CPUScaledTextureMixin` for
     more information.
 
-    Single band data containing NaN is stored as luminance and alpha, because
-    the normalized formats used for CPU-scaled data can't hold NaN. Luminance
-    is the scaled value (0 at NaN); alpha is 0 at NaN and 1 elsewhere. Partial
-    uploads keep the current layout, so NaN in a one-channel texture is not
-    marked.
+    Single band data is stored as luminance. If it contains NaN, it is stored
+    as luminance and alpha instead, because the normalized formats used for
+    CPU-scaled data can't hold NaN: luminance is the scaled value (0 at NaN)
+    and alpha is 0 at NaN and 1 elsewhere.
+
+    A partial upload (``offset``) can't change the number of channels. NaN
+    uploaded this way into a luminance-only texture is therefore not marked
+    and renders as the lowest ``clim`` value.
 
     """
 
