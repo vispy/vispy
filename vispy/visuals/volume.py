@@ -389,7 +389,9 @@ _RAYCASTING_SETUP_PLANE = """
     // Ensure that frag depth value will be set to plane intersection
     frag_depth_point = intersection;
 
-    // plane mode keeps the attenuation starting at the plane as before
+    // plane mode samples across the slab along the plane's normal, starting at the slab's face.
+    // Moving the camera only changes how the slab is seen, not where the calculation starts,
+    // so start_depth is 0 for every pixel.
     float start_depth = 0.0;
 """
 
