@@ -12,6 +12,7 @@ defined in vispy.scene.
 """
 
 from .axis import AxisVisual  # noqa
+from .bar import BarVisual  # noqa
 from .box import BoxVisual  # noqa
 from .cube import CubeVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
