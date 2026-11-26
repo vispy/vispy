@@ -628,7 +628,7 @@ def create_grid_mesh(xs, ys, zs):
     vertices[:, 2] = zs.reshape(length)
 
     basic_indices = np.array([0, 1, 1 + shape[1], 0,
-                              0 + shape[1], 1 + shape[1]],
+                              1 + shape[1], 0 + shape[1]],
                              dtype=np.uint32)
 
     inner_grid_length = (shape[0] - 1) * (shape[1] - 1)
