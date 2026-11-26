@@ -293,12 +293,26 @@ class Triangulation(object):
             tri = self._find_cut_triangle((i, j))
             last_edge = self._edge_opposite_point(tri, i)
             next_tri = self._adjacent_tri(last_edge, i)
-            assert next_tri is not None
             self._remove_tri(*tri)
             # todo: does this work? can we count on last_edge to be clockwise
             # around point i?
             lower_polygon.append(last_edge[1])
             upper_polygon.append(last_edge[0])
+
+            if next_tri is None:
+                # The far edge of the first cut triangle is part of the
+                # front, so the cutting edge leaves the mesh right away.
+                # Continue along the front, as when crossing it in the loop
+                # below.
+                x = self._edge_in_front(last_edge)
+                assert x >= 0
+                mode = 2
+                front_index = x + (1 if front_dir == -1 else 0)
+                if lower_polygon[-1] == front[front_index]:
+                    tmp = lower_polygon, upper_polygon
+                    upper_polygon, lower_polygon = tmp
+                else:
+                    assert upper_polygon[-1] == front[front_index]
         else:
             mode = 2  # follow front
 
@@ -675,6 +689,11 @@ class Triangulation(object):
 
     def _edges_intersect(self, edge1, edge2):
         """Return 1 if edges intersect completely (endpoints excluded)"""
+        # Edges that share a vertex can only meet at that vertex. Computing
+        # the intercepts for them gives values that should be exactly 0 or 1
+        # but can land just inside (0, 1) due to floating point error.
+        if edge1[0] in edge2 or edge1[1] in edge2:
+            return False
         h12 = self._intersect_edge_arrays(self.pts[np.array(edge1)],
                                           self.pts[np.array(edge2)])
         h21 = self._intersect_edge_arrays(self.pts[np.array(edge2)],
