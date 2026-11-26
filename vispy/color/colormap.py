@@ -745,7 +745,7 @@ class HSL(Colormap):
 
     Parameters
     ----------
-    n_colors : int, optional
+    ncolors : int, optional
         The number of colors to generate.
     hue_start : int, optional
         The hue start value. Must be in the range [0, 360], the default is 0.
@@ -785,7 +785,7 @@ class HSLuv(Colormap):
 
     Parameters
     ----------
-    n_colors : int, optional
+    ncolors : int, optional
         The number of colors to generate.
     hue_start : int, optional
         The hue start value. Must be in the range [0, 360], the default is 0.
