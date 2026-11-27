@@ -158,6 +158,20 @@ def test_edge_intersections():
         assert len(cuts) == 0
 
 
+def test_shared_endpoint_not_split():
+    # Coordinates from the edge-order-dependent triangulation in #2666.
+    pts = np.array([[-28.58, 196.34],
+                    [-30.73, 197.57],
+                    [-29.88, 197.06]], dtype=np.float32)
+    edges = np.array([[0, 1], [0, 2], [1, 2]])
+    t = T(pts, edges)
+    t.triangulate()
+
+    assert_array_almost_equal(t.pts[2:], pts[np.argsort(pts[:, 1])])
+    assert len(t.tris) == 1
+    assert set(t.tris[0]) == {2, 3, 4}
+
+
 def test_merge_duplicate_points():
     global t
     pts = np.array([
