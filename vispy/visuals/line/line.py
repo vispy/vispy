@@ -64,7 +64,7 @@ class LineVisual(CompoundVisual):
         Mode to use for drawing.
 
             * "agg" uses anti-grain geometry to draw nicely antialiased lines
-              with proper joins and endcaps.
+              with proper joins and endcaps. Only supports 2D coordinates.
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
@@ -130,6 +130,12 @@ class LineVisual(CompoundVisual):
     def method(self, method):
         if method not in ('agg', 'gl'):
             raise ValueError('method argument must be "agg" or "gl".')
+        if method == 'agg' and self._pos is not None:
+            pos = np.asanyarray(self._pos)
+            if pos.ndim >= 2 and pos.shape[-1] != 2:
+                raise ValueError(
+                    f"Line method 'agg' only supports 2D coordinates; got {pos.shape[-1]}D coordinates."
+                )
         if method == self._method:
             return
 
@@ -186,6 +192,12 @@ class LineVisual(CompoundVisual):
 
         """
         if pos is not None:
+            if self._method == 'agg':
+                pos_arr = np.asanyarray(pos)
+                if pos_arr.ndim >= 2 and pos_arr.shape[-1] != 2:
+                    raise ValueError(
+                        f"Line method 'agg' only supports 2D coordinates; got {pos_arr.shape[-1]}D coordinates."
+                    )
             self._bounds = None
             self._pos = pos
             self._changed['pos'] = True
@@ -462,6 +474,10 @@ class _AggLineVisual(Visual):
             if self._parent._pos is None:
                 return False
             self._pos = np.ascontiguousarray(self._parent._pos, dtype=np.float32)
+            if self._pos.ndim < 2 or self._pos.shape[-1] != 2:
+                raise ValueError(
+                    f"Line method 'agg' only supports 2D coordinates; got {self._pos.shape[-1]}D coordinates."
+                )
             bake = True
 
         if self._parent._changed['color']:
@@ -496,6 +512,11 @@ class _AggLineVisual(Visual):
         segment must have its own vertices because of antialias (this means no
         vertex sharing between two adjacent line segments).
         """
+        arr = np.asanyarray(vertices)
+        if arr.ndim < 2 or arr.shape[-1] != 2:
+            raise ValueError(
+                f"Line method 'agg' only supports 2D coordinates; got {arr.shape[-1]}D coordinates."
+            )
         n = len(vertices)
         P = np.array(vertices).reshape(n, 2).astype(float)
         idx = np.arange(n)  # used to eventually tile the color array
