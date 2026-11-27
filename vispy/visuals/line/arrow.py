@@ -137,7 +137,7 @@ class ArrowVisual(LineVisual):
         Mode to use for drawing.
 
             * "agg" uses anti-grain geometry to draw nicely antialiased lines
-              with proper joins and endcaps.
+              with proper joins and endcaps. Only supports 2D coordinates and arrows.
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
@@ -234,10 +234,26 @@ class ArrowVisual(LineVisual):
             the arrow head orientation.
         """
         if arrows is not None:
+            if self.method == 'agg':
+                arr = np.asanyarray(arrows)
+                if arr.ndim >= 2 and arr.shape[-1] > 4:
+                    raise ValueError(
+                        f"Arrow method 'agg' only supports 2D arrows (shape (N, 4)); got shape {arr.shape}."
+                    )
             self._arrows = arrows
             self._arrows_changed = True
 
         LineVisual.set_data(self, pos, color, width, connect)
+
+    @LineVisual.method.setter
+    def method(self, method):
+        if method == 'agg' and self._arrows is not None:
+            arr = np.asanyarray(self._arrows)
+            if arr.ndim >= 2 and arr.shape[-1] > 4:
+                raise ValueError(
+                    f"Arrow method 'agg' only supports 2D arrows (shape (N, 4)); got shape {arr.shape}."
+                )
+        LineVisual.method.fset(self, method)
 
     @property
     def arrow_type(self):
