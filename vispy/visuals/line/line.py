@@ -259,9 +259,6 @@ class LineVisual(CompoundVisual):
 
         Parameters
         ----------
-        mode : str
-            Describes the type of boundary requested. Can be "visual", "data",
-            or "mouse".
         axis : 0, 1, 2
             The axis along which to measure the bounding values, in
             x-y-z order.
