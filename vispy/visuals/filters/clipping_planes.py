@@ -19,7 +19,7 @@ class PlanesClipper(Filter):
 
     Parameters
     ----------
-    cliping_planes : ArrayLike
+    clipping_planes : ArrayLike
         Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
     coord_system : str
         Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)

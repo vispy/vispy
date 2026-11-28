@@ -383,7 +383,6 @@ class ImageVisual(Visual):
         ----------
         image : array-like
             The image data.
-        texture_format : str or None
 
         """
         data = np.array(image, copy=copy or np_copy_if_needed)
